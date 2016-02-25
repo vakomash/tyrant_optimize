@@ -1,11 +1,12 @@
 #ifndef TYRANT_H_INCLUDED
 #define TYRANT_H_INCLUDED
 
-#define TYRANT_OPTIMIZER_VERSION "2.17.1"
+#define TYRANT_OPTIMIZER_VERSION "2.19.2"
 
 #include <string>
 #include <sstream>
 #include <unordered_set>
+#include <unordered_map>
 #include <tuple>
 
 enum Faction
@@ -43,7 +44,7 @@ enum Skill
     // Damage-Dependent:
     berserk, inhibit, leech, poison,
     // Triggered:
-    flurry, valor,
+    allegiance, flurry, valor,
     // Pseudo-Skill for BGE:
     BEGIN_BGE_SKILL,
     bloodlust, brigade, counterflux, divert, enduringrage, fortification, heroism, metamorphosis, revenge, turningtides, virulence,

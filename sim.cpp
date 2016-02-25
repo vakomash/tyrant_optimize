@@ -291,7 +291,7 @@ void prepend_on_death(Field* fd)
                 }
             }
             // Virulence
-            if (fd->bg_effects[opponent(status->m_player)].count(virulence))
+            if (fd->bg_effects.count(virulence))
             {
                 if (status->m_index != last_index + 1)
                 {
@@ -329,10 +329,10 @@ void prepend_on_death(Field* fd)
             }
         }
         // Revenge
-        if (fd->bg_effects[status->m_player].count(revenge))
+        if (fd->bg_effects.count(revenge))
         {
-            SkillSpec ss_heal{heal, fd->bg_effects[status->m_player].at(revenge), allfactions, 0, 0, no_skill, no_skill, true,};
-            SkillSpec ss_rally{rally, fd->bg_effects[status->m_player].at(revenge), allfactions, 0, 0, no_skill, no_skill, true,};
+            SkillSpec ss_heal{heal, fd->bg_effects.at(revenge), allfactions, 0, 0, no_skill, no_skill, true,};
+            SkillSpec ss_rally{rally, fd->bg_effects.at(revenge), allfactions, 0, 0, no_skill, no_skill, true,};
             CardStatus * commander = &fd->players[status->m_player]->commander;
             _DEBUG_MSG(2, "Revenge: Preparing skill %s and %s\n", skill_description(fd->cards, ss_heal).c_str(), skill_description(fd->cards, ss_rally).c_str());
             od_skills.emplace_back(commander, ss_heal);
@@ -354,6 +354,7 @@ void resolve_skill(Field* fd)
         fd->skill_queue.pop_front();
         if (status->m_jammed)
         {
+            _DEBUG_MSG(2, "%s failed to %s because it is Jammed.", status_description(status).c_str(), skill_description(fd->cards, ss).c_str());
             continue;
         }
         signed evolved_offset = status->m_evolved_skill_offset[ss.id];
@@ -734,7 +735,7 @@ void turn_end_phase(Field* fd)
                         fd->inc_counter(QuestType::skill_damage, poison, 0, poison_dmg);
                     }
                     _DEBUG_MSG(1, "%s takes poison damage %u\n", status_description(&status).c_str(), poison_dmg);
-                    remove_hp(fd, &status, poison_dmg);
+                    remove_hp(fd, &status, poison_dmg);  // simultaneous
                 }
             }
             // end of the opponent's next turn for enemy units
@@ -750,7 +751,7 @@ void turn_end_phase(Field* fd)
     // Active player's structure cards:
     // nothing so far
 
-    prepend_on_death(fd);
+    prepend_on_death(fd);  // poison
     resolve_skill(fd);
     remove_dead(fd->tap->assaults);
     remove_dead(fd->tap->structures);
@@ -839,9 +840,11 @@ struct PerformAttack
             }
             _DEBUG_MSG(1, "%s takes %u counter damage from %s\n", status_description(att_status).c_str(), counter_dmg, status_description(def_status).c_str());
             remove_hp(fd, att_status, counter_dmg);
-            if (def_cardtype == CardType::assault && def_status->m_hp > 0 && fd->bg_effects[def_status->m_player].count(counterflux))
+            prepend_on_death(fd);
+            resolve_skill(fd);
+            if (def_cardtype == CardType::assault && def_status->m_hp > 0 && fd->bg_effects.count(counterflux))
             {
-                unsigned flux_denominator = fd->bg_effects[def_status->m_player].at(counterflux) ? fd->bg_effects[def_status->m_player].at(counterflux) : 4;
+                unsigned flux_denominator = fd->bg_effects.at(counterflux) ? fd->bg_effects.at(counterflux) : 4;
                 unsigned flux_value = (def_status->skill(counter) - 1) / flux_denominator + 1;
                 _DEBUG_MSG(1, "Counterflux: %s heals itself and berserks for %u\n", status_description(def_status).c_str(), flux_value);
                 add_hp(fd, def_status, flux_value);
@@ -865,9 +868,9 @@ struct PerformAttack
             {
                 fd->inc_counter(QuestType::skill_use, berserk);
             }
-            if (fd->bg_effects[att_status->m_player].count(enduringrage))
+            if (fd->bg_effects.count(enduringrage))
             {
-                unsigned bge_denominator = fd->bg_effects[att_status->m_player].at(enduringrage) ? fd->bg_effects[att_status->m_player].at(enduringrage) : 2;
+                unsigned bge_denominator = fd->bg_effects.at(enduringrage) ? fd->bg_effects.at(enduringrage) : 2;
                 unsigned bge_value = (berserk_value - 1) / bge_denominator + 1;
                 _DEBUG_MSG(1, "EnduringRage: %s heals and protects itself for %u\n", status_description(att_status).c_str(), bge_value);
                 add_hp(fd, att_status, bge_value);
@@ -876,13 +879,11 @@ struct PerformAttack
         }
         do_leech<def_cardtype>();
         unsigned valor_value = att_status->skill(valor);
-        if (valor_value > 0 && ! att_status->m_sundered && fd->bg_effects[att_status->m_player].count(heroism) && def_cardtype == CardType::assault && def_status->m_hp <= 0)
+        if (valor_value > 0 && ! att_status->m_sundered && fd->bg_effects.count(heroism) && def_cardtype == CardType::assault && def_status->m_hp <= 0)
         {
             _DEBUG_MSG(1, "Heroism: %s gain %u attack\n", status_description(att_status).c_str(), valor_value);
             att_status->m_attack += valor_value;
         }
-        prepend_on_death(fd);
-        resolve_skill(fd);
         return att_dmg;
     }
 
@@ -938,7 +939,7 @@ struct PerformAttack
         std::string reduced_desc;
         unsigned reduced_dmg(0);
         unsigned armor_value = def_status->skill(armor);
-        if (def_status->m_card->m_type == CardType::assault && fd->bg_effects[def_status->m_player].count(fortification))
+        if (def_status->m_card->m_type == CardType::assault && fd->bg_effects.count(fortification))
         {
             for (auto && adj_status: fd->adjacent_assaults(def_status))
             {
@@ -968,7 +969,7 @@ struct PerformAttack
             if(!desc.empty()) { desc += "=" + to_string(att_dmg); }
             _DEBUG_MSG(1, "%s attacks %s for %u%s damage\n", status_description(att_status).c_str(), status_description(def_status).c_str(), pre_modifier_dmg, desc.c_str());
         }
-        if (legion_value > 0 && can_be_healed(att_status) && fd->bg_effects[att_status->m_player].count(brigade))
+        if (legion_value > 0 && can_be_healed(att_status) && fd->bg_effects.count(brigade))
         {
             _DEBUG_MSG(1, "Brigade: %s heals itself for %u\n", status_description(att_status).c_str(), legion_value);
             add_hp(fd, att_status, legion_value);
@@ -979,6 +980,8 @@ struct PerformAttack
     void attack_damage()
     {
         remove_hp(fd, def_status, att_dmg);
+        prepend_on_death(fd);
+        resolve_skill(fd);
     }
 
     template<enum CardType::CardType>
@@ -1064,6 +1067,8 @@ bool attack_phase(Field* fd)
                     _DEBUG_MSG(1, "%s swipes %s for %u damage\n", status_description(att_status).c_str(), status_description(adj_status).c_str(), swipe_dmg);
                     remove_hp(fd, adj_status, swipe_dmg);
                 }
+                prepend_on_death(fd);
+                resolve_skill(fd);
             }
         }
         return false;
@@ -1083,6 +1088,8 @@ bool attack_phase(Field* fd)
                 _DEBUG_MSG(1, "%s swipes %s for %u damage\n", status_description(att_status).c_str(), status_description(adj_status).c_str(), swipe_dmg);
                 remove_hp(fd, adj_status, swipe_dmg);
             }
+            prepend_on_death(fd);
+            resolve_skill(fd);
         }
     }
     else
@@ -1091,9 +1098,9 @@ bool attack_phase(Field* fd)
         att_dmg = attack_commander(fd, att_status);
     }
 
-    if (att_dmg > 0 && !fd->assault_bloodlusted && fd->bg_effects[fd->tapi].count(bloodlust))
+    if (att_dmg > 0 && !fd->assault_bloodlusted && fd->bg_effects.count(bloodlust))
     {
-        fd->bloodlust_value += fd->bg_effects[fd->tapi].at(bloodlust);
+        fd->bloodlust_value += fd->bg_effects.at(bloodlust);
         fd->assault_bloodlusted = true;
     }
 
@@ -1329,7 +1336,7 @@ inline void perform_skill<weaken>(Field* fd, CardStatus* src, CardStatus* dst, c
 template<unsigned skill_id>
 inline unsigned select_fast(Field* fd, CardStatus* src, const std::vector<CardStatus*>& cards, const SkillSpec& s)
 {
-    if (s.y == allfactions || fd->bg_effects[src->m_player].count(metamorphosis))
+    if (s.y == allfactions || fd->bg_effects.count(metamorphosis))
     {
         return(fd->make_selection_array(cards.begin(), cards.end(), [fd, src, s](CardStatus* c){return(skill_predicate<skill_id>(fd, src, c, s));}));
     }
@@ -1556,7 +1563,7 @@ void perform_targetted_allied_fast(Field* fd, CardStatus* src, const SkillSpec& 
         }
         check_and_perform_skill<skill_id>(fd, src, dst, s, false, has_counted_quest);
     }
-    if (num_inhibited > 0 && fd->bg_effects[opponent(src->m_player)].count(divert))
+    if (num_inhibited > 0 && fd->bg_effects.count(divert))
     {
         SkillSpec diverted_ss = s;
         diverted_ss.y = allfactions;
@@ -1582,6 +1589,11 @@ void perform_targetted_allied_fast(Field* fd, CardStatus* src, const SkillSpec& 
 
 void perform_targetted_allied_fast_rush(Field* fd, CardStatus* src, const SkillSpec& s)
 {
+    if (src->m_card->m_type == CardType::commander)
+    {  // BGE skills are casted as by commander
+        perform_targetted_allied_fast<rush>(fd, src, s);
+        return;
+    }
     if (src->m_rush_attempted)
     {
         _DEBUG_MSG(2, "%s does not check Rush again.\n", status_description(src).c_str());
@@ -1598,7 +1610,7 @@ void perform_targetted_hostile_fast(Field* fd, CardStatus* src, const SkillSpec&
     select_targets<skill_id>(fd, src, s);
     bool has_counted_quest = false;
     std::vector<CardStatus *> paybackers;
-    if (fd->bg_effects[src->m_player].count(turningtides) && skill_id == weaken)
+    if (fd->bg_effects.count(turningtides) && skill_id == weaken)
     {
         unsigned turningtides_value = 0;
         for (CardStatus * dst: fd->selection_array)
@@ -1621,7 +1633,6 @@ void perform_targetted_hostile_fast(Field* fd, CardStatus* src, const SkillSpec&
             _DEBUG_MSG(1, "TurningTides %u!\n", turningtides_value);
             perform_targetted_allied_fast<rally>(fd, &fd->players[src->m_player]->commander, ss_rally);
         }
-        prepend_on_death(fd);
         for (CardStatus * pb_status: paybackers)
         {
             ++ pb_status->m_paybacked;
@@ -1636,7 +1647,6 @@ void perform_targetted_hostile_fast(Field* fd, CardStatus* src, const SkillSpec&
                 perform_targetted_allied_fast<rally>(fd, &fd->players[pb_status->m_player]->commander, ss_rally);
             }
         }
-        prepend_on_death(fd);
         return;
     }
     for (CardStatus * dst: fd->selection_array)
@@ -1651,14 +1661,14 @@ void perform_targetted_hostile_fast(Field* fd, CardStatus* src, const SkillSpec&
             }
         }
     }
-    prepend_on_death(fd);
+    prepend_on_death(fd);  // skills
     for (CardStatus * pb_status: paybackers)
     {
         ++ pb_status->m_paybacked;
         _DEBUG_MSG(1, "%s Payback %s on %s\n", status_description(pb_status).c_str(), skill_short_description(s).c_str(), status_description(src).c_str());
         perform_skill<skill_id>(fd, pb_status, src, s);
     }
-    prepend_on_death(fd);
+    prepend_on_death(fd);  // paybacked skills
 }
 
 //------------------------------------------------------------------------------
@@ -1695,6 +1705,21 @@ Results<uint64_t> play(Field* fd)
         const Card* played_card(fd->tap->deck->next());
         if(played_card)
         {
+            // Evaluate skill Allegiance
+            for (CardStatus * status : fd->tap->assaults.m_indirect)
+            {
+                unsigned allegiance_value = status->skill(allegiance);
+                assert(status->m_card);
+                if (allegiance_value > 0 && status->m_hp > 0 && status->m_card->m_faction == played_card->m_faction)
+                {
+                    _DEBUG_MSG(1, "%s activates Allegiance %u\n", status_description(status).c_str(), allegiance_value);
+                    if (! status->m_sundered)
+                    { status->m_attack += allegiance_value; }
+                    status->m_max_hp += allegiance_value;
+                    status->m_hp += allegiance_value;
+                }
+            }
+            // End Evaluate skill Allegiance
             switch(played_card->m_type)
             {
             case CardType::assault:
@@ -1712,8 +1737,8 @@ Results<uint64_t> play(Field* fd)
         }
         if(__builtin_expect(fd->end, false)) { break; }
 
-        // Evaluate Heroism Battleground skills
-        if (fd->bg_effects[fd->tapi].count(heroism))
+        // Evaluate Heroism BGE skills
+        if (fd->bg_effects.count(heroism))
         {
             for (CardStatus * dst: fd->tap->assaults.m_indirect)
             {
@@ -1725,7 +1750,7 @@ Results<uint64_t> play(Field* fd)
                 {
                     _DEBUG_MSG(1, "Heroism: %s on %s but it is inhibited\n", skill_short_description(ss_protect).c_str(), status_description(dst).c_str());
                     -- dst->m_inhibited;
-                    if (fd->bg_effects[fd->tipi].count(divert))
+                    if (fd->bg_effects.count(divert))
                     {
                         SkillSpec diverted_ss = ss_protect;
                         diverted_ss.y = allfactions;
@@ -1754,7 +1779,7 @@ Results<uint64_t> play(Field* fd)
             }
         }
 
-        // Evaluate activation Battleground skills
+        // Evaluate activation BGE skills
         for (const auto & bg_skill: fd->bg_skills[fd->tapi])
         {
             _DEBUG_MSG(2, "Evaluating BG skill %s\n", skill_description(fd->cards, bg_skill).c_str());
