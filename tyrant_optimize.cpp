@@ -1235,6 +1235,7 @@ int main(int argc, char** argv)
     std::string opt_vip;
     std::string opt_allow_candidates;
     std::string opt_disallow_candidates;
+    std::string opt_disallow_recipes;
     std::string opt_quest;
     std::string opt_target_score;
     std::vector<std::string> fn_suffix_list{"",};
@@ -1456,6 +1457,11 @@ int main(int argc, char** argv)
         else if(strcmp(argv[argIndex], "disallow-candidates") == 0)
         {
             opt_disallow_candidates = argv[argIndex + 1];
+            argIndex += 1;
+        }
+        else if(strcmp(argv[argIndex], "disallow-recipes") == 0)
+        {
+            opt_disallow_recipes = argv[argIndex + 1];
             argIndex += 1;
         }
         else if(strcmp(argv[argIndex], "hand") == 0)  // set initial hand for test
@@ -1727,6 +1733,20 @@ int main(int argc, char** argv)
     catch(const std::runtime_error& e)
     {
         std::cerr << "Error: disallow-candidates " << opt_disallow_candidates << ": " << e.what() << std::endl;
+        return 0;
+    }
+
+    try
+    {
+        auto && id_dis_recipes = string_to_ids(all_cards, opt_disallow_recipes, "disallowed-recipes");
+        for (auto & cid : id_dis_recipes.first)
+        {
+            all_cards.cards_by_id[cid]->m_recipe_cards.clear();
+        }
+    }
+    catch(const std::runtime_error& e)
+    {
+        std::cerr << "Error: disallow-recipes " << opt_disallow_recipes << ": " << e.what() << std::endl;
         return 0;
     }
 
