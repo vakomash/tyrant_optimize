@@ -1251,6 +1251,13 @@ template<>
 inline void perform_skill<heal>(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s)
 {
     add_hp(fd, dst, s.x);
+    if (src->m_card->m_type == CardType::assault && fd->bg_effects.count(zealotspreservation))
+    {
+        unsigned bge_value = (s.x + 1) / 2;
+        _DEBUG_MSG(1, "Zealot's Preservation: %s Protect %u on %s\n",
+            status_description(src).c_str(), bge_value, status_description(dst).c_str());
+        dst->m_protected += bge_value;
+    }
 }
 
 template<>
