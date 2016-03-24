@@ -1167,7 +1167,7 @@ void print_available_effects()
         "  EnduringRage\n"
         "  Fortification\n"
         "  Heroism\n"
-        "  ZealotPreservation\n"
+        "  ZealotsPreservation\n"
         "  Metamorphosis\n"
         "  Revenge X\n"
         "  TurningTides\n"
