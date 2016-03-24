@@ -1671,6 +1671,12 @@ void perform_targetted_hostile_fast(Field* fd, CardStatus* src, const SkillSpec&
     prepend_on_death(fd);  // skills
     for (CardStatus * pb_status: paybackers)
     {
+        if (src->m_hp == 0)
+        {
+            _DEBUG_MSG(1, "(CANCELLED: src unit dead) %s Payback %s on %s\n",
+                status_description(pb_status).c_str(), skill_short_description(s).c_str(), status_description(src).c_str());
+            continue;
+        }
         ++ pb_status->m_paybacked;
         _DEBUG_MSG(1, "%s Payback %s on %s\n", status_description(pb_status).c_str(), skill_short_description(s).c_str(), status_description(src).c_str());
         perform_skill<skill_id>(fd, pb_status, src, s);
