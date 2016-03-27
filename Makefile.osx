@@ -4,7 +4,7 @@ OBJS := $(patsubst %.cpp,obj/%.o,$(SRCS))
 INCS := $(wildcard *.h)
 
 CPPFLAGS := -Wall -Wno-unused-local-typedefs -Werror -std=c++11 -stdlib=libc++ -O3 -I/usr/local/include -Wno-deprecated-register -DNDEBUG
-LDFLAGS := lib/libboost_system-mt.a lib/libboost_thread-mt.a lib/libboost_filesystem-mt.a lib/libboost_regex-mt.a -L/usr/local/lib -Bstatic
+LDFLAGS := -Llib -L/usr/local/lib -lsystem-mt -lboost_thread-mt -lboost_filesystem-mt -lboost_regex-mt  -Bstatic
 
 all: $(MAIN)
 
