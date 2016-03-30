@@ -1057,21 +1057,6 @@ bool attack_phase(Field* fd)
 
     if (attack_power(att_status) == 0)
     {
-        { // Bizarre behavior: Swipe activates if attack is corroded to 0
-            CardStatus * def_status = &fd->tip->assaults[fd->current_ci];
-            unsigned swipe_value = att_status->skill(swipe);
-            if (alive_assault(def_assaults, fd->current_ci) && att_status->m_attack + att_status->m_rallied > att_status->m_weakened && swipe_value > 0)
-            {
-                for (auto && adj_status: fd->adjacent_assaults(def_status))
-                {
-                    unsigned swipe_dmg = safe_minus(swipe_value + def_status->m_enfeebled, def_status->protected_value());
-                    _DEBUG_MSG(1, "%s swipes %s for %u damage\n", status_description(att_status).c_str(), status_description(adj_status).c_str(), swipe_dmg);
-                    remove_hp(fd, adj_status, swipe_dmg);
-                }
-                prepend_on_death(fd);
-                resolve_skill(fd);
-            }
-        }
         return false;
     }
 
