@@ -116,6 +116,7 @@ inline void CardStatus::set(const Card& card)
     m_poisoned = 0;
     m_protected = 0;
     m_rallied = 0;
+    m_derallied = 0;
     m_rush_attempted = false;
     m_sundered = false;
     m_weakened = 0;
@@ -128,7 +129,7 @@ inline void CardStatus::set(const Card& card)
 //------------------------------------------------------------------------------
 inline unsigned attack_power(const CardStatus* att)
 {
-    return(safe_minus(att->m_attack, att->m_weakened + att->m_corroded_weakened) + att->m_rallied);
+    return safe_minus(safe_minus(att->m_attack, att->m_weakened + att->m_corroded_weakened) + att->m_rallied, att->m_derallied);
 }
 //------------------------------------------------------------------------------
 std::string skill_description(const Cards& cards, const SkillSpec& s)
@@ -196,6 +197,7 @@ std::string CardStatus::description() const
             if(m_corroded_weakened > 0) { att_desc += "-" + to_string(m_corroded_weakened) + "(corroded)"; }
             att_desc += "]";
             if(m_rallied > 0) { att_desc += "+" + to_string(m_rallied) + "(rallied)"; }
+            if(m_derallied > 0) { att_desc += "-" + to_string(m_derallied) + "(derallied)"; }
             if(!att_desc.empty()) { desc += att_desc + "=" + to_string(attack_power(this)); }
         }
     case CardType::structure:
@@ -742,6 +744,7 @@ void turn_end_phase(Field* fd)
             // end of the opponent's next turn for enemy units
             status.m_jammed = false;
             status.m_rallied = 0;
+            status.m_derallied = 0;
             status.m_sundered = false;
             status.m_weakened = 0;
             status.m_inhibited = 0;
@@ -1315,16 +1318,23 @@ inline void perform_skill<strike>(Field* fd, CardStatus* src, CardStatus* dst, c
 }
 
 template<>
-inline void perform_skill<sunder>(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s)
+inline void perform_skill<weaken>(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s)
 {
-    dst->m_sundered = true;
-    dst->m_weakened += std::min(s.x, attack_power(dst));
+    auto weaken_value = s.x;
+    if (dst->m_rallied > dst->m_derallied)
+    {
+        auto derally_value = std::min(weaken_value, dst->m_rallied - dst->m_derallied);
+        dst->m_derallied += derally_value;
+        weaken_value -= derally_value;
+    }
+    if (weaken_value > 0) { dst->m_weakened += std::min(weaken_value, attack_power(dst)); }
 }
 
 template<>
-inline void perform_skill<weaken>(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s)
+inline void perform_skill<sunder>(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s)
 {
-    dst->m_weakened += std::min(s.x, attack_power(dst));
+    dst->m_sundered = true;
+    perform_skill<weaken>(fd, src, dst, s);
 }
 
 template<unsigned skill_id>
