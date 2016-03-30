@@ -1057,6 +1057,7 @@ bool attack_phase(Field* fd)
 
     if (attack_power(att_status) == 0)
     {
+        _DEBUG_MSG(1, "%s cannot take attack (zeroed)\n", status_description(att_status).c_str());
         return false;
     }
 
