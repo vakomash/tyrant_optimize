@@ -128,7 +128,7 @@ inline void CardStatus::set(const Card& card)
 //------------------------------------------------------------------------------
 inline unsigned attack_power(const CardStatus* att)
 {
-    return(safe_minus(att->m_attack + att->m_rallied, att->m_weakened + att->m_corroded_weakened));
+    return(safe_minus(att->m_attack, att->m_weakened + att->m_corroded_weakened) + att->m_rallied);
 }
 //------------------------------------------------------------------------------
 std::string skill_description(const Cards& cards, const SkillSpec& s)
@@ -189,12 +189,13 @@ std::string CardStatus::description() const
     switch(m_card->m_type)
     {
     case CardType::assault:
-        desc += " att:" + to_string(m_attack);
+        desc += " att:[" + to_string(m_attack);
         {
             std::string att_desc;
-            if(m_rallied > 0) { att_desc += "+" + to_string(m_rallied) + "(rallied)"; }
             if(m_weakened > 0) { att_desc += "-" + to_string(m_weakened) + "(weakened)"; }
             if(m_corroded_weakened > 0) { att_desc += "-" + to_string(m_corroded_weakened) + "(corroded)"; }
+            att_desc += "]";
+            if(m_rallied > 0) { att_desc += "+" + to_string(m_rallied) + "(rallied)"; }
             if(!att_desc.empty()) { desc += att_desc + "=" + to_string(attack_power(this)); }
         }
     case CardType::structure:
