@@ -66,7 +66,8 @@ inline void Field::print_selection_array()
 //------------------------------------------------------------------------------
 inline unsigned CardStatus::skill_base_value(Skill skill_id) const
 {
-    return m_card->m_skill_value[skill_id + m_primary_skill_offset[skill_id]];
+    return m_card->m_skill_value[skill_id + m_primary_skill_offset[skill_id]]
+            + (skill_id == berserk ? m_enraged : 0);
 }
 //------------------------------------------------------------------------------
 inline unsigned CardStatus::skill(Skill skill_id) const
@@ -116,6 +117,7 @@ inline void CardStatus::set(const Card& card)
     m_poisoned = 0;
     m_protected = 0;
     m_rallied = 0;
+    m_enraged = 0;
     m_derallied = 0;
     m_rush_attempted = false;
     m_sundered = false;
@@ -221,6 +223,7 @@ std::string CardStatus::description() const
     if(m_inhibited > 0) { desc += ", inhibited " + to_string(m_inhibited); }
     if(m_poisoned > 0) { desc += ", poisoned " + to_string(m_poisoned); }
     if(m_protected > 0) { desc += ", protected " + to_string(m_protected); }
+    if(m_enraged > 0) { desc += ", enraged " + to_string(m_enraged); }
 //    if(m_step != CardStep::none) { desc += ", Step " + to_string(static_cast<int>(m_step)); }
     for (const auto & ss: m_card->m_skills)
     {
@@ -751,6 +754,7 @@ void turn_end_phase(Field* fd)
             // end of the opponent's next turn for enemy units
             status.m_jammed = false;
             status.m_rallied = 0;
+            status.m_enraged = 0;
             status.m_derallied = 0;
             status.m_sundered = false;
             status.m_weakened = 0;
@@ -1218,6 +1222,12 @@ inline bool skill_predicate<rally>(Field* fd, CardStatus* src, CardStatus* dst, 
 }
 
 template<>
+inline bool skill_predicate<enrage>(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s)
+{
+    return is_active(dst) && dst->m_step == CardStep::none && attack_power(dst) > 0;
+}
+
+template<>
 inline bool skill_predicate<rush>(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s)
 {
     return ! src->m_rush_attempted && dst->m_delay >= (src->m_card->m_type == CardType::assault && dst->m_index < src->m_index ? 2u : 1u);
@@ -1317,6 +1327,12 @@ template<>
 inline void perform_skill<rally>(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s)
 {
     dst->m_rallied += s.x;
+}
+
+template<>
+inline void perform_skill<enrage>(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s)
+{
+    dst->m_enraged += s.x;
 }
 
 template<>
@@ -1441,6 +1457,9 @@ template<> std::vector<CardStatus*>& skill_targets<protect>(Field* fd, CardStatu
 { return(skill_targets_allied_assault(fd, src)); }
 
 template<> std::vector<CardStatus*>& skill_targets<rally>(Field* fd, CardStatus* src)
+{ return(skill_targets_allied_assault(fd, src)); }
+
+template<> std::vector<CardStatus*>& skill_targets<enrage>(Field* fd, CardStatus* src)
 { return(skill_targets_allied_assault(fd, src)); }
 
 template<> std::vector<CardStatus*>& skill_targets<rush>(Field* fd, CardStatus* src)
@@ -1857,6 +1876,7 @@ Results<uint64_t> play(Field* fd)
             else
             {
                 fd->assault_bloodlusted = false;
+                current_status->m_step = CardStep::attacking;
                 evaluate_skills<CardType::assault>(fd, current_status, current_status->m_card->m_skills, &attacked);
                 if (__builtin_expect(fd->end, false)) { break; }
             }
@@ -1977,6 +1997,7 @@ void fill_skill_table()
     skill_table[overload] = perform_targetted_allied_fast<overload>;
     skill_table[protect] = perform_targetted_allied_fast<protect>;
     skill_table[rally] = perform_targetted_allied_fast<rally>;
+    skill_table[enrage] = perform_targetted_allied_fast<enrage>;
     skill_table[rush] = perform_targetted_allied_fast_rush;
     skill_table[siege] = perform_targetted_hostile_fast<siege>;
     skill_table[strike] = perform_targetted_hostile_fast<strike>;

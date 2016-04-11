@@ -157,6 +157,7 @@ struct CardStatus
     unsigned m_protected;
     unsigned m_rallied;
     unsigned m_derallied;
+    unsigned m_enraged;
     bool m_rush_attempted;
     bool m_sundered;
     unsigned m_weakened;

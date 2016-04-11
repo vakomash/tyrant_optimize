@@ -16,7 +16,7 @@ std::string skill_names[Skill::num_skills] =
     "Enfeeble", "Jam", "Mortar", "Siege", "Strike", "Sunder", "Weaken",
     "<Error>",
     "<Error>",
-    "Enhance", "Evolve", "Heal", "Mend", "Overload", "Protect", "Rally", "Rush",
+    "Enhance", "Evolve", "Heal", "Mend", "Overload", "Protect", "Rally", "Enrage", "Rush",
     "<Error>", "<Error>",
     // Defensive:
     "<Error>",
