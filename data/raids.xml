@@ -412,6 +412,29 @@
 		</deck>
 	</raid>
 
+	<raid>
+		<id>19</id>
+		<name>Golmaw Rog Raid</name>
+		<commander>25070</commander>
+		<levels>26</levels>
+		<deck>
+			<always_include>
+				<card>17308</card>
+				<card>38660</card>
+				<card>38660</card>
+				<card>38670</card>
+				<card>38670</card>
+				<card>38680</card>
+				<card>38680</card>
+				<card>38690</card>
+				<card>38690</card>
+				<card>38700</card>
+				<card>38700</card>
+				<card>38700</card>
+			</always_include>
+		</deck>
+	</raid>
+
 <!-- END of Raids -->
 
 
