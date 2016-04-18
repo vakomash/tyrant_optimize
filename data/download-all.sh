@@ -9,7 +9,7 @@ FILES=(
    fusion_recipes_cj2.xml
    missions.xml
    skills_set.xml
-   cards_section_{1..9}.xml
+   cards_section_{1..10}.xml
 )
 
 TMP_PREFIX="."
@@ -24,6 +24,8 @@ function etag_extract_hash() {
     etag="${etag%%\"}"
     echo "${etag##[0-9a-zA-Z]*-}"
 }
+
+[[ -d $olds_dir ]] || mkdir -p "$olds_dir"
 
 for f in "${FILES[@]}"; do
     tmp_file="${curr_dir}/${TMP_PREFIX}${f}${TMP_SUFFIX}"
