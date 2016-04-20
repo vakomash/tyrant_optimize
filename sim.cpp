@@ -437,8 +437,8 @@ void evaluate_skills(Field* fd, CardStatus* status, const std::vector<SkillSpec>
             {
                 fd->inc_counter(QuestType::skill_use, flurry);
             }
-            _DEBUG_MSG(1, "%s activates Flurry\n", status_description(status).c_str());
-            num_actions = 2;
+            _DEBUG_MSG(1, "%s activates Flurry x %d\n", status_description(status).c_str(), status->skill_base_value(flurry));
+            num_actions += status->skill_base_value(flurry);
             for (const auto & ss : skills)
             {
                 Skill evolved_skill_id = static_cast<Skill>(ss.id + status->m_evolved_skill_offset[ss.id]);
