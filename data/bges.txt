@@ -3,14 +3,15 @@ Inspired: Rally all 3
 Blightblast: Enfeeble all 3
 Bombing Run: Strike all 3
 Triage: Heal all 4
-Charged Up: Overload 3
 Combined Arms: Rally+Enfeeble+Strike all 1
 Blitzkrieg: Rush
 Paladin's Presence: Protect all 3
-Viral Warfare: Enhance all Poison 3
 Progenitor Tech: Heal+Protect+Rally+Enfeeble+Strike all 1
 Diminisher: Sunder all 2
 Divine Blessing: Heal+Rally all 2
+Opalescence: Heal+Protect all 2
+Ferocity: Enrage 3
+Power Source: Overload 1
 
 // Some other BGEs
 Soothing Chant: Heal all 2
