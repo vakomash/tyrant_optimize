@@ -4,21 +4,21 @@ declare -i FUND=000
 declare -i ENDGAME=1
 
 # phase 1
-#gbge="Virulence"
+#gbge="ZealotsPreservation"
 
 # phase 2
-#gbge="Soothing Chant"
+gbge="Empowered Phalanx"
 
 # phase 3
-gbge="Resounding Roar"
+#gbge="Metamorphosis"
 
 
 ybges=(
-    ""
+    #""
     #"Inspired"
     #"Blightblast"
     #"Bombing Run"
-    #"Triage"
+    "Triage"
     #"Charged Up"
     #"Combined Arms"
     #"Blitzkrieg"
@@ -27,6 +27,8 @@ ybges=(
     #"Progenitor Tech"
     #"Diminisher"
     #"Divine Blessing"
+    #"Opalescence"
+    #"Power Source"
 )
 
 
@@ -39,11 +41,14 @@ ebges=(
     #"Charged Up"
     #"Combined Arms"
     #"Blitzkrieg"
-    #"Paladin's Presence"
+    "Paladin's Presence"
     #"Viral Warfare"
-    "Progenitor Tech"
+    #"Progenitor Tech"
     #"Diminisher"
     #"Divine Blessing"
+    #"Opalescence"
+    #"Power Source"
+    #"Ferocity"
 )
 
 
@@ -54,13 +59,15 @@ if [[ $1 == "defense" ]]; then
 fi
 
 declare -A atk_yforts=(
+    [ia_ia]="Inspiring Altar #2"
+
     #[cs_lc]="Corrosive Spore, Lightning Cannon"
     #[lc_lc]="Lightning Cannon #2"
     #[lc_ia]="Lightning Cannon, Inspiring Altar"
     #[df_df]="Death Factory #2"
     #[lc_df]="Lightning Cannon, Death Factory"
     
-    [cs_cs]="Corrosive Spore #2"
+    #[cs_cs]="Corrosive Spore #2"
     #[cs_mt]="Corrosive Spore, Mortar Tower"
 
     #[mt_mt]="Mortar Tower #2"
@@ -68,7 +75,6 @@ declare -A atk_yforts=(
     #[sf_lc3]="Sky Fortress, Lightning Cannon-3"
     #[df3_df3]="Death Factory-3(2)"
     #[cs_cs]="Corrosive Spore #2"
-    #[ia_ia]="Inspiring Altar #2"
     #[cs_df]="Corrosive Spore, Death Factory"
     #[cs_ia]="Corrosive Spore, Inspiring Altar"
 
@@ -76,8 +82,8 @@ declare -A atk_yforts=(
 )
 
 declare -A def_yforts=(
-    [tc_xx]="Tesla Coil"
-    #[mf_xx]="Minefield"
+    [mf_xx]="Minefield"
+    #[tc_xx]="Tesla Coil"
     #[fa_xx]="Foreboding Archway"
     #[ib_xx]="Illuminary Blockade"
     #[ff_xx]="Forcefield"
@@ -97,9 +103,10 @@ declare -A def_yforts=(
 )
 
 declare -A atk_eforts=(
-    #[df_df]="Death Factory, Death Factory"
-    #[lc_lc]="Lightning Cannon, Lightning Cannon"
-    [ia_ia]="Inspiring Altar, Inspiring Altar"
+    [ia_ia]="Inspiring Altar #2"
+    #[df_df]="Death Factory #2"
+    #[lc_lc]="Lightning Cannon #2"
+    #[sf_sf]="Sky Fortress #2"
 
     #[ia_xx]="Inspiring Altar"
     #[lc_xx]="Lightning Cannon"
@@ -108,7 +115,6 @@ declare -A atk_eforts=(
     #[ia_lc]="Inspiring Altar, Lightning Cannon"
     #[df_lc]="Death Factory, Lightning Cannon"
     #[cs_df]="Corrosive Spore, Death Factory"
-    #[sf_sf]="Sky Fortress #2"
     #[df3_df]="Death Factory-3, Death Factory"
     #[df_lc]="Death Factory, Lightning Cannon"
     #[sf3_sf3]="Sky Fortress-3(2)"
@@ -118,9 +124,9 @@ declare -A atk_eforts=(
 )
 
 declare -A def_eforts=(
+    [mf_xx]="Minefield"
     #[tc_xx]="Tesla Coil"
     #[fa_xx]="Foreboding Archway"
-    [mf_xx]="Minefield"
     #[ib_xx]="Illuminary Blockade"
     #[ff_xx]="Forcefield"
 
@@ -143,8 +149,10 @@ declare -A def_eforts=(
 )
 
 commanders=(
-    silus
-    typhon
+    silus_gw
+    typhon_gw
+    #ded
+    #malort
     any
 )
 
@@ -162,6 +170,8 @@ elif [[ $TUO_LOGIN == "pryyf" ]]; then
     commanders=(
         krellus
         dracorex
+        malort
+        ded
         any
     )
 elif [[ $TUO_LOGIN == "prokop" ]]; then
@@ -184,7 +194,14 @@ elif [[ $TUO_LOGIN == "kapturov" ]]; then
         krellus
         any
     )
+elif [[ $TUO_LOGIN == "777stas777" ]]; then
+    commanders=(
+        silus
+        ded
+        any
+    )
 fi
+
 
 declare -A yforts eforts
 declare -a opts
@@ -197,9 +214,10 @@ if (( $defense )); then
         eforts[$x]="${atk_eforts[$x]}"
     done
 
-    enemy="arena_p2w;Core+"
-    #enemy="Core+"
-    opts=(-d -f _ham -f _comp_20160213 -i 25${TUO_DECK:+00} -I 250 -t 4)
+    enemy_alias="comp_strong"
+    enemy="arena_p2w:3;arena_mix:2;Core+:2"
+    #enemy="arena_p2w:3;Core+:2"
+    opts=(-d -f _ham -f _arena -i 25${TUO_DECK:+00} -I 250 -t 2)
 else
     for x in "${!atk_yforts[@]}"; do
         yforts[$x]="${atk_yforts[$x]}"
@@ -208,16 +226,17 @@ else
         eforts[$x]="${def_eforts[$x]}"
     done
 
-    enemy="arena_p2w;Core+"
-    #enemy="Core+"
-    opts=(-f _ham -f _comp_20160213 -i 10${TUO_DECK:+00} -I 100 -t 4)
+    enemy_alias="comp_strong"
+    enemy="arena_p2w:3;arena_mix:2;Core+:2"
+    #enemy="arena_p2w:3;Core+:2"
+    opts=(-f _ham -f _arena -i 10${TUO_DECK:+00} -I 100 -t 2)
 fi
 
-## append [dis]allowed candidates
+## append allowed candidates cards
 opts+=(
-    -f "allow-candidates" -f "Loathe Gravewing, Stronghold, Griller, Quicksilver, Living Dam, Surn of the Shadows, Ozone Contender, Harsh Symbiotic, Cobalt Scutter, Junk Hauler, Erebus Outpost, Raider Observatory, Sidewinder Cobra, Chasmwyrm, Ditch Digger, Inquisitor, Hatred, Psycher, Vrost, Dion, Dionys"
-    #-f "disallow-recipes" -f "Dune Runner, Ternary Dreadshot, Kor Ragetrooper, Shock Disruptor"
-    #-f "disallow-recipes" -f "Ternary Dreadshot, Kor Ragetrooper, Shock Disruptor"
+    #-f "allow-candidates" -f "Loathe Gravewing, Stronghold, Griller, Quicksilver, Living Dam, Surn of the Shadows, Ozone Contender, Harsh Symbiotic, Cobalt Scutter, Junk Hauler, Erebus Outpost, Raider Observatory, Sidewinder Cobra, Chasmwyrm, Ditch Digger, Inquisitor, Hatred, Psycher, Vrost, Dion, Dionys"
+    -f "allow-candidates" -f "Loathe Gravewing, Griller"
+    -f "disallow-recipes" -f "Wastes Ark, Dune Runner, Ternary Dreadshot, Kor Ragetrooper, Shock Disruptor"
 )
 
 if [[ -n $TUO_DECK ]]; then
@@ -238,7 +257,7 @@ for yfort in "${!yforts[@]}"; do
                         -L 5 -U 10 \
                         ${TUO_DECK:+-s -D "$TUO_DECK"} \
                         "${opts[@]}" \
-                        "${enemy}" "${enemy,,}.${yfort}.${efort}"
+                        "${enemy}" "${enemy_alias}.${yfort}.${efort}"
                 done
             done
         done

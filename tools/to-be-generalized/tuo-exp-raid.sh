@@ -155,7 +155,7 @@ options=(
     "${flags[@]}" raid "$order" "$todo" "$iters" ${eiters:+"$eiters"}
 )
 
-[[ $commander != "any" ]] && options+=("keep-commander")
+[[ $commander =~ ^any(_|$) ]] || opts+=("keep-commander")
 
 command=(tuo.sh "$deck" "$enemy_target" "${options[@]}")
 

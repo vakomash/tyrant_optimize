@@ -26,7 +26,7 @@ declare -A TUO_INITIAL_DECKS
 TUO_EXP_SETTINGS="$HOME/.tuo-exp${TUO_LOGIN:+.$TUO_LOGIN}"
 
 if ! source "$TUO_EXP_SETTINGS"; then
-    echo "No such file (TUO-EXP SETTINGS): $TUO_EXP_SETTINGS" 2>&1
+    echo "No such file (TUO-EXP SETTINGS): $TUO_EXP_SETTINGS" >&2
     exit 255
 fi
 
@@ -160,9 +160,12 @@ fi
 
 # log file
 log="tuo-exp-gw.${game_type}.${commander}-vs-${target}.e[${gbge}:${ybge}:${ebge}].${todo}.${order}.log"
-rm -rf $log
+if [[ -f $log ]]; then
+    echo "log already exists: $log" >&2
+    exit 2
+fi
 
-[[ $commander != "any" ]] && opts+=("keep-commander")
+[[ $commander =~ ^any(_|$) ]] || opts+=("keep-commander")
 
 command=(
     tuo.sh "$deck" "$enemy_target" \
