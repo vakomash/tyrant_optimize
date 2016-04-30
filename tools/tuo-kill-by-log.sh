@@ -14,7 +14,7 @@ check_tuo_pid() {
 
 for i in "$@"; do
     xname=$(basename "$i")
-    pid=$(head -n1 "$i" | grep -P -o '(?<=^pid: )\d+')
+    pid=$(head -n10 "$i" | grep -P -o '(?<=^pid: )\d+')
     if ! check_tuo_pid "$pid"; then
         echo "$xname => $pid (dead)" 1>&2
         continue
