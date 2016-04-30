@@ -11,7 +11,7 @@ file_names = sys.argv[1:]
 FNAME_FORMAT = re.compile(
     r'^tuo-exp-gw'
     r'.(?P<ad>attack|defense)'
-    r'.(?P<commander>\w+)-vs-(?P<enemy>[\w;+-]+)'
+    r'.(?P<commander>\w+)-vs-(?P<enemy>[\w:;+-]+)'
     r'.(?P<yfort>\w+).(?P<efort>\w+)'
      '.e\[(?P<bges>[a-zA-Z0-9:\' -]+)\]'
     r'.(?P<algo>\w+).(?:(?P<order>ordered|random)\.)?log$'
