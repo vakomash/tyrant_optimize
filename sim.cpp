@@ -1937,6 +1937,16 @@ Results<uint64_t> play(Field* fd)
         {
         case OptimizationMode::raid: return {0, 0, 1, raid_damage};
         case OptimizationMode::brawl: return {0, 0, 1, 5};
+        case OptimizationMode::brawl_defense:
+            {
+                unsigned enemy_brawl_score = 57
+                    - (10 * (p[1]->commander.m_max_hp - p[1]->commander.m_hp) / p[1]->commander.m_max_hp)
+                    + (p[1]->assaults.size() + p[1]->structures.size() + p[1]->deck->shuffled_cards.size())
+                    - (p[0]->assaults.size() + p[0]->structures.size() + p[0]->deck->shuffled_cards.size())
+                    - fd->turn / 4;
+                unsigned max_score = max_possible_score[(size_t)OptimizationMode::brawl_defense];
+                return {0, 0, 1, max_score - enemy_brawl_score};
+            }
         case OptimizationMode::quest: return {0, 0, 1, fd->quest.must_win ? 0 : quest_score};
         default: return {0, 0, 1, 0};
         }
@@ -1955,6 +1965,12 @@ Results<uint64_t> play(Field* fd)
                     - (p[1]->assaults.size() + p[1]->structures.size() + p[1]->deck->shuffled_cards.size())
                     - fd->turn / 4;
                 return {1, 0, 0, brawl_score};
+            }
+        case OptimizationMode::brawl_defense:
+            {
+                unsigned max_score = max_possible_score[(size_t)OptimizationMode::brawl_defense];
+                unsigned min_score = min_possible_score[(size_t)OptimizationMode::brawl_defense];
+                return {1, 0, 0, max_score - min_score};
             }
         case OptimizationMode::campaign:
             {

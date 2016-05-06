@@ -685,6 +685,7 @@ void print_score_info(const EvaluatedResults& results, std::vector<long double>&
             case OptimizationMode::raid:
             case OptimizationMode::campaign:
             case OptimizationMode::brawl:
+            case OptimizationMode::brawl_defense:
             case OptimizationMode::war:
             case OptimizationMode::quest:
                 std::cout << val.points << " ";
@@ -733,6 +734,7 @@ void print_results(const EvaluatedResults& results, std::vector<long double>& fa
         case OptimizationMode::raid:
         case OptimizationMode::campaign:
         case OptimizationMode::brawl:
+        case OptimizationMode::brawl_defense:
         case OptimizationMode::war:
         case OptimizationMode::quest:
             std::cout << "score: " << final.points << " (";
@@ -763,6 +765,7 @@ void print_deck_inline(const unsigned deck_cost, const FinalResults<long double>
         case OptimizationMode::raid:
         case OptimizationMode::campaign:
         case OptimizationMode::brawl:
+        case OptimizationMode::brawl_defense:
         case OptimizationMode::war:
         case OptimizationMode::quest:
             std::cout << "(" << score.wins * 100 << "% win";
@@ -1314,7 +1317,7 @@ int main(int argc, char** argv)
         else if (strcmp(argv[argIndex], "brawl-defense") == 0)
         {
             gamemode = fight;
-            optimization_mode = OptimizationMode::brawl;
+            optimization_mode = OptimizationMode::brawl_defense;
         }
         else if (strcmp(argv[argIndex], "gw") == 0)
         {

@@ -67,8 +67,8 @@ extern std::string cardtype_names[CardType::num_cardtypes];
 
 extern std::string rarity_names[];
 
-extern unsigned upgrade_cost[];
-extern unsigned salvaging_income[][7];
+extern unsigned const upgrade_cost[];
+extern unsigned const salvaging_income[][7];
 
 namespace DeckType {
 enum DeckType {
@@ -112,14 +112,15 @@ enum class OptimizationMode
     defense,
     war,
     brawl,
+    brawl_defense,
     raid,
     campaign,
     quest,
     num_optimization_mode
 };
 
-extern signed min_possible_score[(size_t)OptimizationMode::num_optimization_mode];
-extern signed max_possible_score[(size_t)OptimizationMode::num_optimization_mode];
+extern unsigned min_possible_score[(size_t)OptimizationMode::num_optimization_mode];
+extern unsigned max_possible_score[(size_t)OptimizationMode::num_optimization_mode];
 
 struct true_ {};
 
