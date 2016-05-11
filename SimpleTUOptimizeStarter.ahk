@@ -175,6 +175,12 @@ if ErrorLevel
     MsgBox, Error downloading raids.xml.
     had_error := true
 }
+UrlDownloadToFile, *0 https://raw.githubusercontent.com/dsuchka/tyrant_optimize/merged/data/bges.txt, data\bges.txt
+if ErrorLevel
+{
+    MsgBox, Error downloading bges.txt.
+    had_error := true
+}
 if !had_error
     MsgBox, 0, Update finished, xml files successfully updated.`nThis Window will auto close in 2 seconds., 2
 Gui, Show
