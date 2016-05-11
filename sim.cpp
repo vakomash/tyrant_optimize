@@ -1968,9 +1968,9 @@ Results<uint64_t> play(Field* fd)
             }
         case OptimizationMode::brawl_defense:
             {
-                unsigned max_score = max_possible_score[(size_t)OptimizationMode::brawl_defense];
-                unsigned min_score = min_possible_score[(size_t)OptimizationMode::brawl_defense];
-                return {1, 0, 0, max_score - min_score};
+                //unsigned max_score = max_possible_score[(size_t)OptimizationMode::brawl_defense];
+                //unsigned min_score = min_possible_score[(size_t)OptimizationMode::brawl_defense];
+                return {1, 0, 0, /* max_score - min_score */ 67 - 5};
             }
         case OptimizationMode::campaign:
             {
@@ -1990,6 +1990,12 @@ Results<uint64_t> play(Field* fd)
         case OptimizationMode::defense: return {0, 1, 0, 100};
         case OptimizationMode::raid: return {0, 1, 0, raid_damage};
         case OptimizationMode::brawl: return {0, 1, 0, 5};
+        case OptimizationMode::brawl_defense:
+            {
+                //unsigned max_score = max_possible_score[(size_t)OptimizationMode::brawl_defense];
+                //unsigned min_score = min_possible_score[(size_t)OptimizationMode::brawl_defense];
+                return {1, 0, 0, /* max_score - min_score */ 67 - 5};
+            }
         case OptimizationMode::quest: return {0, 1, 0, fd->quest.must_win ? 0 : quest_score};
         default: return {0, 1, 0, 0};
         }
