@@ -36,6 +36,8 @@ Seismic Beacon: Enhance all Inhibit 3
 SkyCom Complex: Weaken all 3
 The Spire: Heal all 3
 Tyrolian Outpost: Enhance all Armor 3
+Colonial Relay: Enhance all Swipe 3
+Ashrock Redoubt: Counterflux
 
 // Activation Skills
 Haunting Miasma: Enhance all Enfeeble 1
