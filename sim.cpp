@@ -1868,10 +1868,21 @@ Results<uint64_t> play(Field* fd)
         {
             // ca: current assault
             CardStatus* current_status(&fd->tap->assaults[fd->current_ci]);
+            // aa: across assault
+            CardStatus* across_status(fd->current_ci < fd->tip->assaults.size() ? &fd->tip->assaults[fd->current_ci] : NULL);
             bool attacked = false;
             if (!is_active(current_status))
             {
                 _DEBUG_MSG(2, "%s cannot take action.\n", status_description(current_status).c_str());
+                // evals Halted Orders BGE
+                unsigned inhibit_value;
+                if (fd->bg_effects.count(haltedorders) && (current_status->m_delay > 0) && across_status && is_alive(across_status)
+                    && (inhibit_value = current_status->skill(inhibit)) > across_status->m_inhibited)
+                {
+                    _DEBUG_MSG(1, "Halted Orders: %s inhibits %s by %u\n",
+                        status_description(current_status).c_str(), status_description(across_status).c_str(), inhibit_value);
+                    across_status->m_inhibited = inhibit_value;
+                }
             }
             else
             {

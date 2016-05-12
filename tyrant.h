@@ -48,7 +48,7 @@ enum Skill
     // Pseudo-Skill for BGE:
     BEGIN_BGE_SKILL,
     bloodlust, brigade, counterflux, divert, enduringrage, fortification, heroism,
-    zealotspreservation, metamorphosis, revenge, turningtides, virulence,
+    zealotspreservation, metamorphosis, revenge, turningtides, virulence, haltedorders,
     END_BGE_SKILL,
     num_skills
 };
