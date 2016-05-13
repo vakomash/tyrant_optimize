@@ -1136,7 +1136,7 @@ template<>
 inline bool skill_predicate<enhance>(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s)
 {
     return dst->has_skill(s.s) && (
-        (!(BEGIN_ACTIVATION < s.s && s.s < END_ACTIVATION) || is_active(dst))
+        (!is_activation_skill(s.s) || is_active(dst))
 
         /* Strange Transmission [Gilians]: strange gillian's behavior implementation:
          * The Gillian commander and assaults can enhance any skills on any assaults
@@ -1155,7 +1155,7 @@ template<>
 inline bool skill_predicate<evolve>(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s)
 {
     return dst->has_skill(s.s) && (
-        (!dst->has_skill(s.s2) && (!(BEGIN_ACTIVATION < s.s2 && s.s2 < END_ACTIVATION) || is_active(dst)))
+        (!dst->has_skill(s.s2) && (!is_activation_skill(s.s2) || is_active(dst)))
 
         /* Strange Transmission [Gilians]: strange gillian's behavior implementation:
          * The Gillian commander and assaults can evolve any skills on any assaults
@@ -1190,7 +1190,7 @@ inline bool skill_predicate<overload>(Field* fd, CardStatus* src, CardStatus* ds
     bool has_inhibited_unit = false;
     for (const auto & c: fd->players[dst->m_player]->assaults.m_indirect)
     {
-        if (c->m_hp > 0 && c->m_inhibited)
+        if (is_alive(c) && c->m_inhibited)
         {
             has_inhibited_unit = true;
             break;
@@ -1203,11 +1203,11 @@ inline bool skill_predicate<overload>(Field* fd, CardStatus* src, CardStatus* ds
             continue;
         }
         Skill evolved_skill_id = static_cast<Skill>(ss.id + dst->m_evolved_skill_offset[ss.id]);
-        if (BEGIN_ACTIVATION_HARMFUL < evolved_skill_id && evolved_skill_id < END_ACTIVATION_HARMFUL)
+        if (is_activation_harmful_skill(evolved_skill_id))
         {
             return true;
         }
-        if (has_inhibited_unit && (evolved_skill_id == heal || evolved_skill_id == protect || evolved_skill_id == rally))
+        if (has_inhibited_unit && (evolved_skill_id != mend) && is_activation_helpful_skill(evolved_skill_id))
         {
             return true;
         }

@@ -1,7 +1,7 @@
 #ifndef TYRANT_H_INCLUDED
 #define TYRANT_H_INCLUDED
 
-#define TYRANT_OPTIMIZER_VERSION "2.24.0"
+#define TYRANT_OPTIMIZER_VERSION "2.24.1"
 
 #include <string>
 #include <sstream>
@@ -26,33 +26,163 @@ enum Skill
 {
     // Placeholder for no-skill:
     no_skill,
+
     // Attack:
     attack,
-    // Activation:
-    BEGIN_ACTIVATION, BEGIN_ACTIVATION_HARMFUL, // TODO skill traits
+
+    // Activation (harmful):
     enfeeble, jam, mortar, siege, strike, sunder, weaken,
-    END_ACTIVATION_HARMFUL,
-    BEGIN_ACTIVATION_HELPFUL,
+
+    // Activation (helpful):
     enhance, evolve, heal, mend, overload, protect, rally, enrage, rush,
-    END_ACTIVATION_HELPFUL, END_ACTIVATION,
+
     // Defensive:
-    BEGIN_DEFENSIVE,
     armor, avenge, corrosive, counter, evade, payback, refresh, wall,
-    END_DEFENSIVE,
+
     // Combat-Modifier:
     legion, pierce, rupture, swipe, venom,
+
     // Damage-Dependent:
     berserk, inhibit, leech, poison,
+
     // Triggered:
     allegiance, flurry, valor,
+
     // Pseudo-Skill for BGE:
-    BEGIN_BGE_SKILL,
     bloodlust, brigade, counterflux, divert, enduringrage, fortification, heroism,
     zealotspreservation, metamorphosis, revenge, turningtides, virulence, haltedorders,
-    END_BGE_SKILL,
+
+    // End of skills
     num_skills
 };
 extern std::string skill_names[num_skills];
+
+inline bool is_activation_harmful_skill(Skill skill_id)
+{
+    switch(skill_id)
+    {
+    /* harmful */
+    case enfeeble:
+    case jam:
+    case mortar:
+    case siege:
+    case strike:
+    case sunder:
+    case weaken:
+        return true;
+    default:
+        return false;
+    }
+}
+
+inline bool is_activation_helpful_skill(Skill skill_id)
+{
+    switch(skill_id)
+    {
+    case enhance:
+    case evolve:
+    case heal:
+    case mend:
+    case overload:
+    case protect:
+    case rally:
+    case enrage:
+    case rush:
+        return true;
+    default:
+        return false;
+    }
+}
+
+inline bool is_activation_skill(Skill skill_id)
+{
+    return is_activation_harmful_skill(skill_id)
+        || is_activation_helpful_skill(skill_id);
+}
+
+inline bool is_defensive_skill(Skill skill_id)
+{
+    switch(skill_id)
+    {
+    case armor:
+    case avenge:
+    case corrosive:
+    case counter:
+    case evade:
+    case payback:
+    case refresh:
+    case wall:
+        return true;
+    default:
+        return false;
+    }
+}
+
+inline bool is_combat_modifier_skill(Skill skill_id)
+{
+    switch(skill_id)
+    {
+    case legion:
+    case pierce:
+    case rupture:
+    case swipe:
+    case venom:
+        return true;
+    default:
+        return false;
+    }
+}
+
+inline bool is_damage_dependent_skill(Skill skill_id)
+{
+    switch(skill_id)
+    {
+    case berserk:
+    case inhibit:
+    case leech:
+    case poison:
+        return true;
+    default:
+        return false;
+    }
+}
+
+inline bool is_triggered_skill(Skill skill_id)
+{
+    switch(skill_id)
+    {
+    case allegiance:
+    case flurry:
+    case valor:
+        return true;
+    default:
+        return false;
+    }
+}
+
+inline bool is_bge_pseudo_skill(Skill skill_id)
+{
+    switch(skill_id)
+    {
+    case bloodlust:
+    case brigade:
+    case counterflux:
+    case divert:
+    case enduringrage:
+    case fortification:
+    case heroism:
+    case zealotspreservation:
+    case metamorphosis:
+    case revenge:
+    case turningtides:
+    case virulence:
+    case haltedorders:
+        return true;
+    default:
+        return false;
+    }
+}
+
 
 namespace CardType {
 enum CardType {

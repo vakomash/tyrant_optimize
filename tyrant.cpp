@@ -9,30 +9,31 @@ std::string skill_names[Skill::num_skills] =
 {
     // Placeholder for no-skill:
     "<Error>",
+
     // Attack:
     "0",
-    // Activation:
-    "<Error>", "<Error>",
+
+    // Activation (harmful):
     "Enfeeble", "Jam", "Mortar", "Siege", "Strike", "Sunder", "Weaken",
-    "<Error>",
-    "<Error>",
+
+    // Activation (helpful):
     "Enhance", "Evolve", "Heal", "Mend", "Overload", "Protect", "Rally", "Enrage", "Rush",
-    "<Error>", "<Error>",
+
     // Defensive:
-    "<Error>",
     "Armor", "Avenge", "Corrosive", "Counter", "Evade", "Payback", "Refresh", "Wall",
-    "<Error>",
+
     // Combat-Modifier:
     "Legion", "Pierce", "Rupture", "Swipe", "Venom",
+
     // Damage-Dependant:
     "Berserk", "Inhibit", "Leech", "Poison",
+
     // Triggered:
     "Allegiance", "Flurry", "Valor",
+
     // Pseudo-skill for passive BGEs:
-    "<Error>",
     "Bloodlust", "Brigade", "Counterflux", "Divert", "EnduringRage", "Fortification", "Heroism",
     "ZealotsPreservation", "Metamorphosis", "Revenge", "TurningTides", "Virulence", "HaltedOrders",
-    "<Error>",
 };
 
 std::string cardtype_names[CardType::num_cardtypes]{"Commander", "Assault", "Structure", };

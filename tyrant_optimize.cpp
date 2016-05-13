@@ -1607,7 +1607,7 @@ int main(int argc, char** argv)
                 {
                     Skill skill_id = skill_name_to_id(skill_name);
                     unsigned skill_index = 1;
-                    if (BEGIN_BGE_SKILL < skill_id && skill_id < END_BGE_SKILL)
+                    if (is_bge_pseudo_skill(skill_id))
                     {
                         // passive BGE (must be global)
                         if (player != 2)
