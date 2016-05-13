@@ -1602,7 +1602,7 @@ void perform_targetted_allied_fast(Field* fd, CardStatus* src, const SkillSpec& 
     bool has_counted_quest = false;
     for (CardStatus * dst: fd->selection_array)
     {
-        if (dst->m_inhibited > 0 && !src->m_overloaded)
+        if (dst->m_inhibited > 0 && (!src->m_overloaded || s.id == mend))
         {
             _DEBUG_MSG(1, "%s %s on %s but it is inhibited\n", status_description(src).c_str(), skill_short_description(s).c_str(), status_description(dst).c_str());
             -- dst->m_inhibited;
