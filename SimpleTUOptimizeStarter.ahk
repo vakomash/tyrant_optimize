@@ -3,7 +3,7 @@
 SendMode Input  ; Recommended for new scripts due to its superior speed and reliability.
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 
-BGEffects := "none|ZealotsPreservation|Virulence|Heal all 2|Enhance all Rally 2|Enfeeble all X|Enhance all S X|Evolve n S1 S2|Heal all X|Mortar X|Protect all X|Rally all X|Siege all X|Strike all X|Weaken all X|Brigade|Bloodlust X|Counterflux|Divert|EnduringRage|Fortification|Heroism|Metamorphosis|Revenge X|TurningTides"
+BGEffects := "none|HaltedOrders|ZealotsPreservation|Virulence|Heal all 2|Enhance all Rally 2|Enfeeble all X|Enhance all S X|Evolve n S1 S2|Heal all X|Mortar X|Protect all X|Rally all X|Siege all X|Strike all X|Weaken all X|Brigade|Bloodlust X|Counterflux|Divert|EnduringRage|Fortification|Heroism|Metamorphosis|Revenge X|TurningTides"
 IniFileName := "data\SimpleTUOptimizeStarter.ini"
 IniSection := "onLoad"
 
@@ -70,7 +70,7 @@ if (IniEffectNum = 0) {
 }
 
 Gui, Add, ComboBox, vEffect xs Choose%IniEffectNum% section, %BGEffects%
-Gui, Add, DDL, altsubmit vMode Choose%IniMode%, Battle / Mission|Battle (defense)|GW / CQ / Surge|GW (defense)|Brawl|Raid|Campaign
+Gui, Add, DDL, altsubmit vMode Choose%IniMode%, Battle / Mission|Battle (defense)|GW / CQ / Surge|GW (defense)|Brawl|Brawl (defense)|Raid|Campaign
 Gui, Add, DDL, altsubmit vOperation Group Choose%IniOperation% xs, Climb|Sim|Reorder
 
 Gui, Add, Text, ys, Endgame:
@@ -93,13 +93,13 @@ Gui, Add, Edit, vSimOptions r1 xs w600, %IniSimOptions%
 Gui, Add, Button, default r2 w100 x100 y+15 section, Simulate
 Gui, Add, Checkbox, vx86 Checked%Inix86%, x86 (32-bit)
 Gui, Add, Button, r2 w100 ys xs+200, Exit
-Gui, Show,, Simple Tyrant Unleashed Optimize Starter v2.23.0
+Gui, Show,, Simple Tyrant Unleashed Optimize Starter v2.24.1
 return  
 
 ButtonSimulate:
 Gui, Submit
 selTUO := (x86 ? "tuo-x86" : "tuo")
-selMode := (Mode == 1 ? "pvp" : Mode == 2 ? "pvp-defense" : Mode == 3 ? "gw" : Mode == 4 ? "gw-defense" :Mode == 5 ? "brawl" : Mode == 6 ? "raid" : "campaign")
+selMode := (Mode == 1 ? "pvp" : Mode == 2 ? "pvp-defense" : Mode == 3 ? "gw" : Mode == 4 ? "gw-defense" :Mode == 5 ? "brawl" : Mode == 6 ? "brawl-defense" : Mode == 7 ? "raid" : "campaign")
 selOrder := (Order == 1 ? "random" : "ordered")
 selOperation :=  (Operation == 1 ? "climb" : Operation == 2 ? "sim" : "reorder")
 selMySiege := (MySiege == "" ? "" : "yf """ MySiege """ ")
