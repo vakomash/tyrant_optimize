@@ -1100,7 +1100,7 @@ bool attack_phase(Field* fd)
         CardStatus * def_status = &fd->tip->assaults[fd->current_ci];
         att_dmg = PerformAttack{fd, att_status, def_status}.op<CardType::assault>();
         unsigned swipe_value = att_status->skill(swipe);
-        if (att_dmg > 0 && swipe_value > 0)
+        if (swipe_value > 0)
         {
             for (auto && adj_status: fd->adjacent_assaults(def_status))
             {
