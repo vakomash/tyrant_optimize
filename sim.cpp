@@ -14,6 +14,20 @@
 #include "deck.h"
 
 //------------------------------------------------------------------------------
+inline bool has_attacked(CardStatus* c) { return(c->m_step == CardStep::attacked); }
+inline bool is_alive(CardStatus* c) { return(c->m_hp > 0); }
+inline bool can_act(CardStatus* c) { return(is_alive(c) && !c->m_jammed); }
+inline bool is_active(CardStatus* c) { return(can_act(c) && c->m_delay == 0); }
+inline bool is_active_next_turn(CardStatus* c) { return(can_act(c) && c->m_delay <= 1); }
+// Can be healed / repaired
+inline bool can_be_healed(CardStatus* c) { return(is_alive(c) && c->m_hp < c->m_max_hp); }
+// Strange Transmission [Gilians] features
+inline bool is_gilian(CardStatus* c) { return(
+        (c->m_card->m_id >= 25054 && c->m_card->m_id <= 25063) // Gilian Commander
+    ||  (c->m_card->m_id >= 38348 && c->m_card->m_id <= 38388) // Gilian assaults plus the Gil's Shard
+); }
+inline bool is_alive_gilian(CardStatus* c) { return(is_alive(c) && is_gilian(c)); }
+//------------------------------------------------------------------------------
 inline std::string status_description(const CardStatus* status)
 {
     return status->description();
@@ -39,7 +53,7 @@ inline const std::vector<CardStatus *> Field::adjacent_assaults(const CardStatus
     if (status->m_index > 0)
     {
         auto left_status = &assaults[status->m_index - 1];
-        if (left_status->m_hp > 0)
+        if (is_alive(left_status))
         {
             res.push_back(left_status);
         }
@@ -47,7 +61,7 @@ inline const std::vector<CardStatus *> Field::adjacent_assaults(const CardStatus
     if (status->m_index + 1 < assaults.size())
     {
         auto right_status = &assaults[status->m_index + 1];
-        if (right_status->m_hp > 0)
+        if (is_alive(right_status))
         {
             res.push_back(right_status);
         }
@@ -306,7 +320,7 @@ void prepend_on_death(Field* fd)
                     if (status->m_index > 0)
                     {
                         auto left_status = &assaults[status->m_index - 1];
-                        if (left_status->m_hp > 0)
+                        if (is_alive(left_status))
                         {
                             left_virulence_victim = left_status;
                         }
@@ -325,7 +339,7 @@ void prepend_on_death(Field* fd)
                 if (status->m_index + 1 < assaults.size())
                 {
                     auto right_status = &assaults[status->m_index + 1];
-                    if (right_status->m_hp > 0)
+                    if (is_alive(right_status))
                     {
                         _DEBUG_MSG(1, "Virulence: spreads stacked poison +%u to %s\n", stacked_poison_value, status_description(right_status).c_str());
                         right_status->m_poisoned += stacked_poison_value;
@@ -372,20 +386,6 @@ void resolve_skill(Field* fd)
     }
 }
 //------------------------------------------------------------------------------
-inline bool has_attacked(CardStatus* c) { return(c->m_step == CardStep::attacked); }
-inline bool is_alive(CardStatus* c) { return(c->m_hp > 0); }
-inline bool can_act(CardStatus* c) { return(is_alive(c) && !c->m_jammed); }
-inline bool is_active(CardStatus* c) { return(can_act(c) && c->m_delay == 0); }
-inline bool is_active_next_turn(CardStatus* c) { return(can_act(c) && c->m_delay <= 1); }
-// Can be healed / repaired
-inline bool can_be_healed(CardStatus* c) { return(c->m_hp > 0 && c->m_hp < c->m_max_hp); }
-// Strange Transmission [Gilians] features
-inline bool is_gilian(CardStatus* c) { return(
-        (c->m_card->m_id >= 25054 && c->m_card->m_id <= 25063) // Gilian Commander
-    ||  (c->m_card->m_id >= 38348 && c->m_card->m_id <= 38388) // Gilian assaults plus the Gil's Shard
-); }
-inline bool is_alive_gilian(CardStatus* c) { return(is_alive(c) && is_gilian(c)); }
-//------------------------------------------------------------------------------
 bool attack_phase(Field* fd);
 template<Skill skill_id>
 bool check_and_perform_skill(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s, bool is_evadable, bool & has_counted_quest);
@@ -431,7 +431,7 @@ void evaluate_skills(Field* fd, CardStatus* status, const std::vector<SkillSpec>
             }
         }
         // Flurry
-        if (can_act(status) && fd->tip->commander.m_hp > 0 && status->has_skill(flurry) && status->m_skill_cd[flurry] == 0)
+        if (can_act(status) && is_alive(&fd->tip->commander) && status->has_skill(flurry) && status->m_skill_cd[flurry] == 0)
         {
             if (status->m_player == 0)
             {
@@ -539,7 +539,7 @@ inline bool skill_check<legion>(Field* fd, CardStatus* c, CardStatus* ref)
 template<>
 inline bool skill_check<payback>(Field* fd, CardStatus* c, CardStatus* ref)
 {
-    return(ref->m_card->m_type == CardType::assault && ref->m_hp > 0);
+    return(ref->m_card->m_type == CardType::assault && is_alive(ref));
 }
 
 template<>
@@ -550,7 +550,7 @@ inline bool skill_check<refresh>(Field* fd, CardStatus* c, CardStatus* ref)
 
 void remove_hp(Field* fd, CardStatus* status, unsigned dmg)
 {
-    assert(status->m_hp > 0);
+    assert(is_alive(status));
     _DEBUG_MSG(2, "%s takes %u damage\n", status_description(status).c_str(), dmg);
     status->m_hp = safe_minus(status->m_hp, dmg);
     if(status->m_hp == 0)
@@ -786,7 +786,7 @@ inline CardStatus* select_first_enemy_wall(Field* fd)
     for(unsigned i(0); i < fd->tip->structures.size(); ++i)
     {
         CardStatus& c(fd->tip->structures[i]);
-        if(c.has_skill(wall) && c.m_hp > 0 && skill_check<wall>(fd, &c, nullptr))
+        if(c.has_skill(wall) && is_alive(&c) && skill_check<wall>(fd, &c, nullptr))
         {
             return(&c);
         }
@@ -796,7 +796,7 @@ inline CardStatus* select_first_enemy_wall(Field* fd)
 
 inline bool alive_assault(Storage<CardStatus>& assaults, unsigned index)
 {
-    return(assaults.size() > index && assaults[index].m_hp > 0);
+    return(assaults.size() > index && is_alive(&assaults[index]));
 }
 
 void remove_commander_hp(Field* fd, CardStatus& status, unsigned dmg, bool count_points)
@@ -844,7 +844,7 @@ struct PerformAttack
         if(__builtin_expect(fd->end, false)) { return att_dmg; }
         damage_dependant_pre_oa<def_cardtype>();
 
-        if (att_status->m_hp > 0 && def_status->has_skill(counter) && skill_check<counter>(fd, def_status, att_status))
+        if (is_alive(att_status) && def_status->has_skill(counter) && skill_check<counter>(fd, def_status, att_status))
         {
             // perform_skill_counter
             unsigned counter_dmg(counter_damage(fd, att_status, def_status));
@@ -857,7 +857,7 @@ struct PerformAttack
             remove_hp(fd, att_status, counter_dmg);
             prepend_on_death(fd);
             resolve_skill(fd);
-            if (def_cardtype == CardType::assault && def_status->m_hp > 0 && fd->bg_effects.count(counterflux))
+            if (def_cardtype == CardType::assault && is_alive(def_status) && fd->bg_effects.count(counterflux))
             {
                 unsigned flux_denominator = fd->bg_effects.at(counterflux) ? fd->bg_effects.at(counterflux) : 4;
                 unsigned flux_value = (def_status->skill(counter) - 1) / flux_denominator + 1;
@@ -868,14 +868,14 @@ struct PerformAttack
             }
         }
         unsigned corrosive_value = def_status->skill(corrosive);
-        if (att_status->m_hp > 0 && corrosive_value > att_status->m_corroded_rate && skill_check<corrosive>(fd, def_status, att_status))
+        if (is_alive(att_status) && corrosive_value > att_status->m_corroded_rate && skill_check<corrosive>(fd, def_status, att_status))
         {
             // perform_skill_corrosive
             _DEBUG_MSG(1, "%s corrodes %s by %u\n", status_description(def_status).c_str(), status_description(att_status).c_str(), corrosive_value);
             att_status->m_corroded_rate = corrosive_value;
         }
         unsigned berserk_value = att_status->skill(berserk);
-        if (att_status->m_hp > 0 && ! att_status->m_sundered && berserk_value > 0 && skill_check<berserk>(fd, att_status, nullptr))
+        if (is_alive(att_status) && ! att_status->m_sundered && berserk_value > 0 && skill_check<berserk>(fd, att_status, nullptr))
         {
             // perform_skill_berserk
             att_status->m_attack += berserk_value;
@@ -918,8 +918,8 @@ struct PerformAttack
             if (legion_base > 0)
             {
                 auto & assaults = fd->tap->assaults;
-                legion_value += att_status->m_index > 0 && assaults[att_status->m_index - 1].m_hp > 0 && assaults[att_status->m_index - 1].m_faction == att_status->m_faction;
-                legion_value += att_status->m_index + 1 < assaults.size() && assaults[att_status->m_index + 1].m_hp > 0 && assaults[att_status->m_index + 1].m_faction == att_status->m_faction;
+                legion_value += att_status->m_index > 0 && is_alive(&assaults[att_status->m_index - 1]) && assaults[att_status->m_index - 1].m_faction == att_status->m_faction;
+                legion_value += att_status->m_index + 1 < assaults.size() && is_alive(&assaults[att_status->m_index + 1]) && assaults[att_status->m_index + 1].m_faction == att_status->m_faction;
                 if (legion_value > 0 && skill_check<legion>(fd, att_status, nullptr))
                 {
                     legion_value *= legion_base;
@@ -1130,7 +1130,7 @@ struct if_<false,T1,T2>
 
 template<unsigned skill_id>
 inline bool skill_predicate(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s)
-{ return dst->m_hp > 0; }
+{ return is_alive(dst); }
 
 template<>
 inline bool skill_predicate<enhance>(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s)
@@ -1712,7 +1712,7 @@ void perform_targetted_hostile_fast(Field* fd, CardStatus* src, const SkillSpec&
     prepend_on_death(fd);  // skills
     for (CardStatus * pb_status: paybackers)
     {
-        if (src->m_hp == 0)
+        if (!is_alive(src))
         {
             _DEBUG_MSG(1, "(CANCELLED: src unit dead) %s Payback %s on %s\n",
                 status_description(pb_status).c_str(), skill_short_description(s).c_str(), status_description(src).c_str());
@@ -1764,7 +1764,7 @@ Results<uint64_t> play(Field* fd)
             {
                 unsigned allegiance_value = status->skill(allegiance);
                 assert(status->m_card);
-                if (allegiance_value > 0 && status->m_hp > 0 && status->m_card->m_faction == played_card->m_faction)
+                if (allegiance_value > 0 && is_alive(status) && status->m_card->m_faction == played_card->m_faction)
                 {
                     _DEBUG_MSG(1, "%s activates Allegiance %u\n", status_description(status).c_str(), allegiance_value);
                     if (! status->m_sundered)
@@ -1941,7 +1941,7 @@ Results<uint64_t> play(Field* fd)
             break;
     }
     // you lose
-    if(fd->players[0]->commander.m_hp == 0)
+    if(!is_alive(&fd->players[0]->commander))
     {
         _DEBUG_MSG(1, "You lose.\n");
         switch (fd->optimization_mode)
@@ -1963,7 +1963,7 @@ Results<uint64_t> play(Field* fd)
         }
     }
     // you win
-    if(fd->players[1]->commander.m_hp == 0)
+    if(!is_alive(&fd->players[1]->commander))
     {
         _DEBUG_MSG(1, "You win.\n");
         switch (fd->optimization_mode)
