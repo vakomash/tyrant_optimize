@@ -8,6 +8,7 @@
 #include <unordered_set>
 #include <unordered_map>
 #include <tuple>
+#include <boost/algorithm/string.hpp>
 
 enum Faction
 {
@@ -27,9 +28,6 @@ enum Skill
     // Placeholder for no-skill:
     no_skill,
 
-    // Attack:
-    attack,
-
     // Activation (harmful):
     enfeeble, jam, mortar, siege, strike, sunder, weaken,
 
@@ -48,20 +46,29 @@ enum Skill
     // Triggered:
     allegiance, flurry, valor,
 
-    // Pseudo-Skill for BGE:
-    bloodlust, brigade, counterflux, divert, enduringrage, fortification, heroism,
-    zealotspreservation, metamorphosis, revenge, turningtides, virulence, haltedorders,
-
     // End of skills
     num_skills
 };
-extern std::string skill_names[num_skills];
+extern const std::string skill_names[num_skills];
+
+enum PassiveBGE
+{
+    // Placeholder for no-bge:
+    no_bge,
+
+    // Passive BGEs
+    bloodlust, brigade, counterflux, divert, enduringrage, fortification, heroism,
+    zealotspreservation, metamorphosis, revenge, turningtides, virulence, haltedorders,
+
+    // End of BGEs
+    num_passive_bges
+};
+extern const std::string passive_bge_names[num_passive_bges];
 
 inline bool is_activation_harmful_skill(Skill skill_id)
 {
     switch(skill_id)
     {
-    /* harmful */
     case enfeeble:
     case jam:
     case mortar:
@@ -160,27 +167,16 @@ inline bool is_triggered_skill(Skill skill_id)
     }
 }
 
-inline bool is_bge_pseudo_skill(Skill skill_id)
+inline PassiveBGE passive_bge_name_to_id(const std::string & name)
 {
-    switch(skill_id)
+    for (unsigned i(PassiveBGE::no_bge); i < PassiveBGE::num_passive_bges; ++i)
     {
-    case bloodlust:
-    case brigade:
-    case counterflux:
-    case divert:
-    case enduringrage:
-    case fortification:
-    case heroism:
-    case zealotspreservation:
-    case metamorphosis:
-    case revenge:
-    case turningtides:
-    case virulence:
-    case haltedorders:
-        return true;
-    default:
-        return false;
+        if (boost::iequals(passive_bge_names[i], name))
+        {
+            return static_cast<PassiveBGE>(i);
+        }
     }
+    return PassiveBGE::no_bge;
 }
 
 
@@ -193,9 +189,9 @@ enum CardType {
 };
 }
 
-extern std::string cardtype_names[CardType::num_cardtypes];
+extern const std::string cardtype_names[CardType::num_cardtypes];
 
-extern std::string rarity_names[];
+extern const std::string rarity_names[];
 
 extern unsigned const upgrade_cost[];
 extern unsigned const salvaging_income[][7];

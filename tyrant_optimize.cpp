@@ -1605,26 +1605,18 @@ int main(int argc, char** argv)
                 boost::split(skill_name_list, tokens[0], boost::is_any_of("+"));
                 for (auto && skill_name: skill_name_list)
                 {
+                    PassiveBGE passive_bge_id = passive_bge_name_to_id(skill_name);
                     Skill skill_id = skill_name_to_id(skill_name);
-                    unsigned skill_index = 1;
-                    if (is_bge_pseudo_skill(skill_id))
+                    if (passive_bge_id != PassiveBGE::no_bge)
                     {
                         // passive BGE (must be global)
-                        if (player != 2)
-                        {
-                            throw std::runtime_error("must be global");
-                        }
-                        if (skill_index < tokens.size())
-                        {
-                            opt_bg_effects[skill_id] = boost::lexical_cast<unsigned>(tokens[skill_index]);
-                        }
-                        else
-                        {
-                            opt_bg_effects[skill_id] = 0;
-                        }
+                        if (player != 2) { throw std::runtime_error("must be global"); }
+                        // map bge id to its value (if present otherwise zero)
+                        opt_bg_effects[passive_bge_id] = (tokens.size() > 1) ? boost::lexical_cast<unsigned>(tokens[1]) : 0;
                     }
                     else if (skill_table[skill_id] != nullptr)
                     {
+                        unsigned skill_index = 1;
                         // activation BG skill
                         SkillSpec bg_skill{skill_id, 0, allfactions, 0, 0, no_skill, no_skill, false};
                         if (skill_index < tokens.size() && boost::to_lower_copy(tokens[skill_index]) == "all")
@@ -2052,11 +2044,11 @@ int main(int argc, char** argv)
         {
             if (bg_effect.second == 0)
             {
-                std::cout << "BG Effect: " << skill_names[bg_effect.first] << std::endl;
+                std::cout << "BG Effect: " << passive_bge_names[bg_effect.first] << std::endl;
             }
             else
             {
-                std::cout << "BG Effect: " << skill_names[bg_effect.first] << " " << bg_effect.second << std::endl;
+                std::cout << "BG Effect: " << passive_bge_names[bg_effect.first] << " " << bg_effect.second << std::endl;
             }
         }
     }

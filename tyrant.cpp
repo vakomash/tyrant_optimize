@@ -5,13 +5,10 @@
 const std::string faction_names[Faction::num_factions] =
 { "", "imperial", "raider", "bloodthirsty", "xeno", "righteous", "progenitor" };
 
-std::string skill_names[Skill::num_skills] =
+const std::string skill_names[Skill::num_skills] =
 {
     // Placeholder for no-skill:
     "<Error>",
-
-    // Attack:
-    "0",
 
     // Activation (harmful):
     "Enfeeble", "Jam", "Mortar", "Siege", "Strike", "Sunder", "Weaken",
@@ -30,15 +27,21 @@ std::string skill_names[Skill::num_skills] =
 
     // Triggered:
     "Allegiance", "Flurry", "Valor",
+};
 
-    // Pseudo-skill for passive BGEs:
+const std::string passive_bge_names[PassiveBGE::num_passive_bges] =
+{
+    // Placeholder for no-bge:
+    "<Error>",
+
+    // Passive BGEs
     "Bloodlust", "Brigade", "Counterflux", "Divert", "EnduringRage", "Fortification", "Heroism",
     "ZealotsPreservation", "Metamorphosis", "Revenge", "TurningTides", "Virulence", "HaltedOrders",
 };
 
-std::string cardtype_names[CardType::num_cardtypes]{"Commander", "Assault", "Structure", };
+const std::string cardtype_names[CardType::num_cardtypes]{"Commander", "Assault", "Structure", };
 
-std::string rarity_names[6]{"", "common", "rare", "epic", "legend", "vindi", };
+const std::string rarity_names[6]{"", "common", "rare", "epic", "legend", "vindi", };
 
 unsigned const upgrade_cost[]{0, 5, 15, 30, 75, 150};
 unsigned const salvaging_income[][7]{{}, {0, 1, 2, 5}, {0, 5, 10, 15, 20}, {0, 20, 25, 30, 40, 50, 65}, {0, 40, 45, 60, 75, 100, 125}, {0, 80, 85, 100, 125, 175, 250}};
