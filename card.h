@@ -21,7 +21,7 @@ public:
     unsigned m_rarity;
     unsigned m_set;
     std::vector<SkillSpec> m_skills;
-    unsigned m_skill_value[num_skills];
+    unsigned m_skill_value[Skill::num_skills];
     CardType::CardType m_type;
     const Card* m_top_level_card; // [TU] corresponding full-level card
     unsigned m_recipe_cost;
@@ -51,7 +51,7 @@ public:
         std::memset(m_skill_value, 0, sizeof m_skill_value);
     }
 
-    void add_skill(Skill id, unsigned x, Faction y, unsigned n, unsigned c, Skill s, Skill s2, bool all);
+    void add_skill(Skill::Skill id, unsigned x, Faction y, unsigned n, unsigned c, Skill::Skill s, Skill::Skill s2, bool all);
     const Card* upgraded() const { return this == m_top_level_card ? this : m_used_for_cards.begin()->first; }
 };
 

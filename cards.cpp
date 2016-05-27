@@ -157,7 +157,7 @@ void Cards::add_card(Card * card, const std::string & name)
 }
 
 // class Card
-void Card::add_skill(Skill id, unsigned x, Faction y, unsigned n, unsigned c, Skill s, Skill s2, bool all)
+void Card::add_skill(Skill::Skill id, unsigned x, Faction y, unsigned n, unsigned c, Skill::Skill s, Skill::Skill s2, bool all)
 {
     for(auto it = m_skills.begin(); it != m_skills.end(); ++ it)
     {

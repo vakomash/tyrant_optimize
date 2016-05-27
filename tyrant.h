@@ -23,6 +23,7 @@ enum Faction
 };
 extern const std::string faction_names[num_factions];
 
+namespace Skill {
 enum Skill
 {
     // Placeholder for no-skill:
@@ -49,8 +50,10 @@ enum Skill
     // End of skills
     num_skills
 };
-extern const std::string skill_names[num_skills];
+}
+extern const std::string skill_names[Skill::num_skills];
 
+namespace PassiveBGE {
 enum PassiveBGE
 {
     // Placeholder for no-bge:
@@ -63,117 +66,118 @@ enum PassiveBGE
     // End of BGEs
     num_passive_bges
 };
-extern const std::string passive_bge_names[num_passive_bges];
+}
+extern const std::string passive_bge_names[PassiveBGE::num_passive_bges];
 
-inline bool is_activation_harmful_skill(Skill skill_id)
+inline bool is_activation_harmful_skill(Skill::Skill skill_id)
 {
     switch(skill_id)
     {
-    case enfeeble:
-    case jam:
-    case mortar:
-    case siege:
-    case strike:
-    case sunder:
-    case weaken:
+    case Skill::enfeeble:
+    case Skill::jam:
+    case Skill::mortar:
+    case Skill::siege:
+    case Skill::strike:
+    case Skill::sunder:
+    case Skill::weaken:
         return true;
     default:
         return false;
     }
 }
 
-inline bool is_activation_helpful_skill(Skill skill_id)
+inline bool is_activation_helpful_skill(Skill::Skill skill_id)
 {
     switch(skill_id)
     {
-    case enhance:
-    case evolve:
-    case heal:
-    case mend:
-    case overload:
-    case protect:
-    case rally:
-    case enrage:
-    case rush:
+    case Skill::enhance:
+    case Skill::evolve:
+    case Skill::heal:
+    case Skill::mend:
+    case Skill::overload:
+    case Skill::protect:
+    case Skill::rally:
+    case Skill::enrage:
+    case Skill::rush:
         return true;
     default:
         return false;
     }
 }
 
-inline bool is_activation_skill(Skill skill_id)
+inline bool is_activation_skill(Skill::Skill skill_id)
 {
     return is_activation_harmful_skill(skill_id)
         || is_activation_helpful_skill(skill_id);
 }
 
-inline bool is_defensive_skill(Skill skill_id)
+inline bool is_defensive_skill(Skill::Skill skill_id)
 {
     switch(skill_id)
     {
-    case armor:
-    case avenge:
-    case corrosive:
-    case counter:
-    case evade:
-    case payback:
-    case refresh:
-    case wall:
+    case Skill::armor:
+    case Skill::avenge:
+    case Skill::corrosive:
+    case Skill::counter:
+    case Skill::evade:
+    case Skill::payback:
+    case Skill::refresh:
+    case Skill::wall:
         return true;
     default:
         return false;
     }
 }
 
-inline bool is_combat_modifier_skill(Skill skill_id)
+inline bool is_combat_modifier_skill(Skill::Skill skill_id)
 {
     switch(skill_id)
     {
-    case legion:
-    case pierce:
-    case rupture:
-    case swipe:
-    case venom:
+    case Skill::legion:
+    case Skill::pierce:
+    case Skill::rupture:
+    case Skill::swipe:
+    case Skill::venom:
         return true;
     default:
         return false;
     }
 }
 
-inline bool is_damage_dependent_skill(Skill skill_id)
+inline bool is_damage_dependent_skill(Skill::Skill skill_id)
 {
     switch(skill_id)
     {
-    case berserk:
-    case inhibit:
-    case leech:
-    case poison:
+    case Skill::berserk:
+    case Skill::inhibit:
+    case Skill::leech:
+    case Skill::poison:
         return true;
     default:
         return false;
     }
 }
 
-inline bool is_triggered_skill(Skill skill_id)
+inline bool is_triggered_skill(Skill::Skill skill_id)
 {
     switch(skill_id)
     {
-    case allegiance:
-    case flurry:
-    case valor:
+    case Skill::allegiance:
+    case Skill::flurry:
+    case Skill::valor:
         return true;
     default:
         return false;
     }
 }
 
-inline PassiveBGE passive_bge_name_to_id(const std::string & name)
+inline PassiveBGE::PassiveBGE passive_bge_name_to_id(const std::string & name)
 {
     for (unsigned i(PassiveBGE::no_bge); i < PassiveBGE::num_passive_bges; ++i)
     {
         if (boost::iequals(passive_bge_names[i], name))
         {
-            return static_cast<PassiveBGE>(i);
+            return static_cast<PassiveBGE::PassiveBGE>(i);
         }
     }
     return PassiveBGE::no_bge;
@@ -248,37 +252,15 @@ enum class OptimizationMode
 extern unsigned min_possible_score[(size_t)OptimizationMode::num_optimization_mode];
 extern unsigned max_possible_score[(size_t)OptimizationMode::num_optimization_mode];
 
-struct true_ {};
-
-struct false_ {};
-
-template<unsigned>
-struct skillTriggersRegen { typedef false_ T; };
-
-template<>
-struct skillTriggersRegen<strike> { typedef true_ T; };
-
-template<>
-struct skillTriggersRegen<siege> { typedef true_ T; };
-
-enum SkillSourceType
-{
-    source_hostile,
-    source_allied,
-    source_global_hostile,
-    source_global_allied,
-    source_chaos
-};
-
 struct SkillSpec
 {
-    Skill id;
+    Skill::Skill id;
     unsigned x;
     Faction y;
     unsigned n;
     unsigned c;
-    Skill s;
-    Skill s2;
+    Skill::Skill s;
+    Skill::Skill s2;
     bool all;
 };
 

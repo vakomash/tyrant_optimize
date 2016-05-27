@@ -1159,7 +1159,7 @@ enum Operation {
     debuguntil,
 };
 //------------------------------------------------------------------------------
-extern void(*skill_table[num_skills])(Field*, CardStatus* src_status, const SkillSpec&);
+extern void(*skill_table[Skill::num_skills])(Field*, CardStatus* src_status, const SkillSpec&);
 void print_available_effects()
 {
     std::cout << "Available effects besides activation skills:\n"
@@ -1605,8 +1605,8 @@ int main(int argc, char** argv)
                 boost::split(skill_name_list, tokens[0], boost::is_any_of("+"));
                 for (auto && skill_name: skill_name_list)
                 {
-                    PassiveBGE passive_bge_id = passive_bge_name_to_id(skill_name);
-                    Skill skill_id = skill_name_to_id(skill_name);
+                    PassiveBGE::PassiveBGE passive_bge_id = passive_bge_name_to_id(skill_name);
+                    Skill::Skill skill_id = skill_name_to_id(skill_name);
                     if (passive_bge_id != PassiveBGE::no_bge)
                     {
                         // passive BGE (must be global)
@@ -1618,7 +1618,7 @@ int main(int argc, char** argv)
                     {
                         unsigned skill_index = 1;
                         // activation BG skill
-                        SkillSpec bg_skill{skill_id, 0, allfactions, 0, 0, no_skill, no_skill, false};
+                        SkillSpec bg_skill{skill_id, 0, allfactions, 0, 0, Skill::no_skill, Skill::no_skill, false};
                         if (skill_index < tokens.size() && boost::to_lower_copy(tokens[skill_index]) == "all")
                         {
                             bg_skill.all = true;
@@ -1632,7 +1632,7 @@ int main(int argc, char** argv)
                         if (skill_index < tokens.size())
                         {
                             bg_skill.s = skill_name_to_id(tokens[skill_index]);
-                            if (bg_skill.s != no_skill)
+                            if (bg_skill.s != Skill::no_skill)
                             {
                                 skill_index += 1;
                                 if (skill_index < tokens.size() && (boost::to_lower_copy(tokens[skill_index]) == "to" || boost::to_lower_copy(tokens[skill_index]) == "into"))
@@ -1642,7 +1642,7 @@ int main(int argc, char** argv)
                                 if (skill_index < tokens.size())
                                 {
                                     bg_skill.s2 = skill_name_to_id(tokens[skill_index]);
-                                    if (bg_skill.s2 != no_skill)
+                                    if (bg_skill.s2 != Skill::no_skill)
                                     {
                                         skill_index += 1;
                                     }
@@ -1651,7 +1651,7 @@ int main(int argc, char** argv)
                         }
                         if (skill_index < tokens.size())
                         {
-                            if (bg_skill.id == jam || bg_skill.id == overload)
+                            if (bg_skill.id == Skill::jam || bg_skill.id == Skill::overload)
                             {
                                 bg_skill.n = boost::lexical_cast<unsigned>(tokens[skill_index]);
                             }
@@ -1798,8 +1798,8 @@ int main(int argc, char** argv)
             unsigned quest_index = 3;
             if (type_str == "su" || type_str == "sd")
             {
-                Skill skill_id = skill_name_to_id(key_str);
-                if (skill_id == no_skill)
+                Skill::Skill skill_id = skill_name_to_id(key_str);
+                if (skill_id == Skill::no_skill)
                 {
                     std::cerr << "Error: Expect skill in quest \"" << opt_quest << "\".\n";
                     return 0;
@@ -1857,8 +1857,8 @@ int main(int argc, char** argv)
             }
             else if (type_str == "suoc" && tokens.size() >= 4)
             {
-                Skill skill_id = skill_name_to_id(key_str);
-                if (skill_id == no_skill)
+                Skill::Skill skill_id = skill_name_to_id(key_str);
+                if (skill_id == Skill::no_skill)
                 {
                     std::cerr << "Error: Expect skill in quest \"" << opt_quest << "\".\n";
                     return 0;

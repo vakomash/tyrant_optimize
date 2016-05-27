@@ -19,7 +19,7 @@
 // mission only and test cards have no set
 using namespace rapidxml;
 
-Skill skill_name_to_id(const std::string & name)
+Skill::Skill skill_name_to_id(const std::string & name)
 {
     static std::map<std::string, int> skill_map;
     if(skill_map.empty())
@@ -35,11 +35,11 @@ Skill skill_name_to_id(const std::string & name)
     auto x = skill_map.find(boost::to_lower_copy(name));
     if (x == skill_map.end())
     {
-        return no_skill;
+        return Skill::no_skill;
     }
     else
     {
-        return (Skill)x->second;
+        return (Skill::Skill)x->second;
     }
 }
 
@@ -59,9 +59,9 @@ unsigned node_value(xml_node<>* skill, const char* attribute, unsigned default_v
     return value_node ? atoi(value_node->value()) : default_value;
 }
 
-Skill skill_target_skill(xml_node<>* skill, const char* attribute)
+Skill::Skill skill_target_skill(xml_node<>* skill, const char* attribute)
 {
-    Skill s(no_skill);
+    Skill::Skill s(Skill::no_skill);
     xml_attribute<>* x(skill->first_attribute(attribute));
     if(x)
     {
@@ -183,8 +183,8 @@ void parse_card_node(Cards& all_cards, Card* card, xml_node<>* card_node)
             skill_node;
             skill_node = skill_node->next_sibling("skill"))
     {
-        Skill skill_id = skill_name_to_id(skill_node->first_attribute("id")->value());
-        if(skill_id == no_skill) { continue; }
+        Skill::Skill skill_id = skill_name_to_id(skill_node->first_attribute("id")->value());
+        if(skill_id == Skill::no_skill) { continue; }
         auto x = node_value(skill_node, "x", 0);
         auto y = skill_faction(skill_node);
         auto n = node_value(skill_node, "n", 0);
