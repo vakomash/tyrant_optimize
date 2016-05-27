@@ -1253,15 +1253,15 @@ inline bool skill_predicate<Skill::rush>(Field* fd, CardStatus* src, CardStatus*
 }
 
 template<>
-inline bool skill_predicate<Skill::sunder>(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s)
+inline bool skill_predicate<Skill::weaken>(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s)
 {
     return attack_power(dst) > 0 && is_active_next_turn(dst);
 }
 
 template<>
-inline bool skill_predicate<Skill::weaken>(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s)
+inline bool skill_predicate<Skill::sunder>(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s)
 {
-    return attack_power(dst) > 0 && is_active_next_turn(dst);
+    return skill_predicate<Skill::weaken>(fd, src, dst, s);
 }
 
 template<unsigned skill_id>
