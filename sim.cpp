@@ -393,7 +393,12 @@ void resolve_skill(Field* fd)
         fd->skill_queue.pop_front();
         if (status->m_jammed)
         {
-            _DEBUG_MSG(2, "%s failed to %s because it is Jammed.", status_description(status).c_str(), skill_description(fd->cards, ss).c_str());
+            _DEBUG_MSG(2, "%s failed to %s because it is Jammed.\n", status_description(status).c_str(), skill_description(fd->cards, ss).c_str());
+            continue;
+        }
+        if (!is_alive(status))
+        {
+            _DEBUG_MSG(2, "%s failed to %s because it is dead.\n", status_description(status).c_str(), skill_description(fd->cards, ss).c_str());
             continue;
         }
         signed evolved_offset = status->m_evolved_skill_offset[ss.id];
