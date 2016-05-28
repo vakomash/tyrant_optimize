@@ -36,7 +36,7 @@ enum Skill
     enhance, evolve, heal, mend, overload, protect, rally, enrage, rush,
 
     // Defensive:
-    armor, avenge, corrosive, counter, evade, payback, refresh, wall,
+    armor, avenge, corrosive, counter, evade, payback, revenge, refresh, wall,
 
     // Combat-Modifier:
     legion, pierce, rupture, swipe, venom,
@@ -121,6 +121,7 @@ inline bool is_defensive_skill(Skill::Skill skill_id)
     case Skill::counter:
     case Skill::evade:
     case Skill::payback:
+    case Skill::revenge:
     case Skill::refresh:
     case Skill::wall:
         return true;

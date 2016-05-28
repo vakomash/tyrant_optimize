@@ -567,6 +567,12 @@ inline bool skill_check<Skill::payback>(Field* fd, CardStatus* c, CardStatus* re
 }
 
 template<>
+inline bool skill_check<Skill::revenge>(Field* fd, CardStatus* c, CardStatus* ref)
+{
+    return skill_check<Skill::payback>(fd, c, ref);
+}
+
+template<>
 inline bool skill_check<Skill::refresh>(Field* fd, CardStatus* c, CardStatus* ref)
 {
     return(can_be_healed(c));
@@ -1680,72 +1686,185 @@ template<Skill::Skill skill_id>
 void perform_targetted_hostile_fast(Field* fd, CardStatus* src, const SkillSpec& s)
 {
     select_targets<skill_id>(fd, src, s);
-    bool has_counted_quest = false;
     std::vector<CardStatus *> paybackers;
-    if (fd->bg_effects.count(PassiveBGE::turningtides) && skill_id == Skill::weaken)
-    {
-        unsigned turningtides_value = 0;
-        for (CardStatus * dst: fd->selection_array)
-        {
-            unsigned old_attack = attack_power(dst);
-            if (check_and_perform_skill<skill_id>(fd, src, dst, s, ! src->m_overloaded, has_counted_quest))
-            {
-                turningtides_value = std::max(turningtides_value, safe_minus(old_attack, attack_power(dst)));
-                // Payback
-                if(dst->m_paybacked < dst->skill(Skill::payback) && skill_check<Skill::payback>(fd, dst, src) &&
-                        skill_predicate<skill_id>(fd, src, src, s) && skill_check<skill_id>(fd, src, dst))
-                {
-                    paybackers.push_back(dst);
-                }
-            }
-        }
-        if (turningtides_value > 0)
-        {
-            SkillSpec ss_rally{Skill::rally, turningtides_value, allfactions, 0, 0, Skill::no_skill, Skill::no_skill, s.all,};
-            _DEBUG_MSG(1, "TurningTides %u!\n", turningtides_value);
-            perform_targetted_allied_fast<Skill::rally>(fd, &fd->players[src->m_player]->commander, ss_rally);
-        }
-        for (CardStatus * pb_status: paybackers)
-        {
-            ++ pb_status->m_paybacked;
-            unsigned old_attack = attack_power(src);
-            _DEBUG_MSG(1, "%s Payback %s on %s\n", status_description(pb_status).c_str(), skill_short_description(s).c_str(), status_description(src).c_str());
-            perform_skill<skill_id>(fd, pb_status, src, s);
-            turningtides_value = std::max(turningtides_value, safe_minus(old_attack, attack_power(src)));
-            if (turningtides_value > 0)
-            {
-                SkillSpec ss_rally{Skill::rally, turningtides_value, allfactions, 0, 0, Skill::no_skill, Skill::no_skill, false,};
-                _DEBUG_MSG(1, "Paybacked TurningTides %u!\n", turningtides_value);
-                perform_targetted_allied_fast<Skill::rally>(fd, &fd->players[pb_status->m_player]->commander, ss_rally);
-            }
-        }
-        return;
-    }
+    bool has_counted_quest = false;
+    const bool has_turningtides = (fd->bg_effects.count(PassiveBGE::turningtides) && (skill_id == Skill::weaken || skill_id == Skill::sunder));
+    unsigned turningtides_value(0), old_attack(0);
+
+    // apply skill to each target(dst)
     for (CardStatus * dst: fd->selection_array)
     {
+        // TurningTides
+        if (has_turningtides)
+        {
+            old_attack = attack_power(dst);
+        }
+
+        // check & apply skill to target(dst)
         if (check_and_perform_skill<skill_id>(fd, src, dst, s, ! src->m_overloaded, has_counted_quest))
         {
-            // Payback
-            if(dst->m_paybacked < dst->skill(Skill::payback) && skill_check<Skill::payback>(fd, dst, src) &&
-                    skill_predicate<skill_id>(fd, src, src, s) && skill_check<skill_id>(fd, src, dst))
+            // TurningTides: get max attack decreasing
+            if (has_turningtides)
+            {
+                turningtides_value = std::max(turningtides_value, safe_minus(old_attack, attack_power(dst)));
+            }
+
+            // Payback/Revenge: collect paybackers/revengers
+            unsigned payback_value = dst->skill(Skill::payback) + dst->skill(Skill::revenge);
+            if (dst->m_paybacked < payback_value && skill_check<Skill::payback>(fd, dst, src))
             {
                 paybackers.push_back(dst);
             }
         }
     }
+
+    // apply TurningTides
+    if (has_turningtides && turningtides_value > 0)
+    {
+        SkillSpec ss_rally{Skill::rally, turningtides_value, allfactions, 0, 0, Skill::no_skill, Skill::no_skill, s.all,};
+        _DEBUG_MSG(1, "TurningTides %u!\n", turningtides_value);
+        perform_targetted_allied_fast<Skill::rally>(fd, &fd->players[src->m_player]->commander, ss_rally);
+    }
+
     prepend_on_death(fd);  // skills
+
+    // Payback/Revenge
     for (CardStatus * pb_status: paybackers)
     {
-        if (!is_alive(src))
+        if (has_turningtides)
         {
-            _DEBUG_MSG(1, "(CANCELLED: src unit dead) %s Payback %s on %s\n",
-                status_description(pb_status).c_str(), skill_short_description(s).c_str(), status_description(src).c_str());
-            continue;
+            turningtides_value = 0;
         }
-        ++ pb_status->m_paybacked;
-        _DEBUG_MSG(1, "%s Payback %s on %s\n", status_description(pb_status).c_str(), skill_short_description(s).c_str(), status_description(src).c_str());
-        perform_skill<skill_id>(fd, pb_status, src, s);
+
+        // apply Revenge
+        if (pb_status->skill(Skill::revenge))
+        {
+            unsigned revenged_count(0);
+            for (unsigned case_index(0); case_index < 3; ++ case_index)
+            {
+                CardStatus * target_status;
+#ifndef NDEBUG
+                const char * target_desc;
+#endif
+                switch (case_index)
+                {
+                // revenge to left
+                case 0:
+                    if (!(target_status = fd->left_assault(src))) { continue; }
+#ifndef NDEBUG
+                    target_desc = "left";
+#endif
+                    break;
+
+                // revenge to core
+                case 1:
+                    target_status = src;
+#ifndef NDEBUG
+                    target_desc = "core";
+#endif
+                    break;
+
+                // revenge to right
+                case 2:
+                    if (!(target_status = fd->right_assault(src))) { continue; }
+#ifndef NDEBUG
+                    target_desc = "right";
+#endif
+                    break;
+                }
+
+                // skip illegal target
+                if (!skill_predicate<skill_id>(fd, target_status, target_status, s))
+                {
+                    continue;
+                }
+
+                // skip dead target
+                if (!is_alive(target_status))
+                {
+                    _DEBUG_MSG(1, "(CANCELLED: target unit dead) %s Revenge (to %s) %s on %s\n",
+                        status_description(pb_status).c_str(), target_desc,
+                        skill_short_description(s).c_str(), status_description(target_status).c_str());
+                    continue;
+                }
+
+                // TurningTides
+                if (has_turningtides)
+                {
+                    old_attack = attack_power(target_status);
+                }
+
+                // apply revenged skill
+                _DEBUG_MSG(1, "%s Revenge (to %s) %s on %s\n",
+                    status_description(pb_status).c_str(), target_desc,
+                    skill_short_description(s).c_str(), status_description(target_status).c_str());
+                perform_skill<skill_id>(fd, pb_status, target_status, s);
+                ++ revenged_count;
+
+                // revenged TurningTides: get max attack decreasing
+                if (has_turningtides)
+                {
+                    turningtides_value = std::max(turningtides_value, safe_minus(old_attack, attack_power(target_status)));
+                }
+            }
+            if (revenged_count)
+            {
+                // consume remaining payback/revenge
+                ++ pb_status->m_paybacked;
+
+                // apply TurningTides
+                if (has_turningtides && turningtides_value > 0)
+                {
+                    SkillSpec ss_rally{Skill::rally, turningtides_value, allfactions, 0, 0, Skill::no_skill, Skill::no_skill, false,};
+                    _DEBUG_MSG(1, "Paybacked TurningTides %u!\n", turningtides_value);
+                    perform_targetted_allied_fast<Skill::rally>(fd, &fd->players[pb_status->m_player]->commander, ss_rally);
+                }
+            }
+        }
+        // apply Payback
+        else
+        {
+            // skip illegal target(src)
+            if (!skill_predicate<skill_id>(fd, src, src, s))
+            {
+                continue;
+            }
+
+            // skip dead target(src)
+            if (!is_alive(src))
+            {
+                _DEBUG_MSG(1, "(CANCELLED: src unit dead) %s Payback %s on %s\n",
+                    status_description(pb_status).c_str(), skill_short_description(s).c_str(),
+                    status_description(src).c_str());
+                continue;
+            }
+
+            // TurningTides
+            if (has_turningtides)
+            {
+                old_attack = attack_power(src);
+            }
+
+            // apply paybacked skill
+            _DEBUG_MSG(1, "%s Payback %s on %s\n",
+                status_description(pb_status).c_str(), skill_short_description(s).c_str(), status_description(src).c_str());
+            perform_skill<skill_id>(fd, pb_status, src, s);
+            ++ pb_status->m_paybacked;
+
+            // handle paybacked TurningTides
+            if (has_turningtides)
+            {
+                turningtides_value = std::max(turningtides_value, safe_minus(old_attack, attack_power(src)));
+                if (turningtides_value > 0)
+                {
+                    SkillSpec ss_rally{Skill::rally, turningtides_value, allfactions, 0, 0, Skill::no_skill, Skill::no_skill, false,};
+                    _DEBUG_MSG(1, "Paybacked TurningTides %u!\n", turningtides_value);
+                    perform_targetted_allied_fast<Skill::rally>(fd, &fd->players[pb_status->m_player]->commander, ss_rally);
+                }
+            }
+        }
     }
+
     prepend_on_death(fd);  // paybacked skills
 }
 

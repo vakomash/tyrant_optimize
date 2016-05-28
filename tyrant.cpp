@@ -17,7 +17,7 @@ const std::string skill_names[Skill::num_skills] =
     "Enhance", "Evolve", "Heal", "Mend", "Overload", "Protect", "Rally", "Enrage", "Rush",
 
     // Defensive:
-    "Armor", "Avenge", "Corrosive", "Counter", "Evade", "Payback", "Refresh", "Wall",
+    "Armor", "Avenge", "Corrosive", "Counter", "Evade", "Payback", "Revenge", "Refresh", "Wall",
 
     // Combat-Modifier:
     "Legion", "Pierce", "Rupture", "Swipe", "Venom",
