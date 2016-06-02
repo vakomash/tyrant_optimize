@@ -433,6 +433,28 @@
 		</deck>
 	</raid>
 
+	<raid>
+		<id>20</id>
+		<name>Syndicate Raid</name>
+		<commander>25114</commander>
+		<levels>26</levels>
+		<deck>
+			<always_include>
+				<card>17432</card>
+				<card>17442</card>
+				<card>39786</card>
+				<card>39786</card>
+				<card>39786</card>
+				<card>39786</card>
+				<card>39796</card>
+				<card>39796</card>
+				<card>39796</card>
+				<card>39806</card>
+				<card>39806</card>
+				<card>39806</card>
+			</always_include>
+		</deck>
+	</raid>
 <!-- END of Raids -->
 
 
