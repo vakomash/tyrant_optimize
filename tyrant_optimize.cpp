@@ -1551,10 +1551,9 @@ int main(int argc, char** argv)
     Decks decks;
     std::unordered_map<std::string, std::string> bge_aliases;
     load_skills_set_xml(all_cards, "data/skills_set.xml", true);
-    for (unsigned section = 0; section <= 10; ++ section)
-    {
-        load_cards_xml(all_cards, "data/cards_section_" + to_string(section) + ".xml", false);
-    }
+    for (unsigned section = 1;
+            load_cards_xml(all_cards, "data/cards_section_" + to_string(section) + ".xml", false);
+            ++ section);
     all_cards.organize();
     for (const auto & suffix: fn_suffix_list)
     {

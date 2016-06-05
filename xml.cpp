@@ -92,7 +92,7 @@ void load_decks_xml(Decks& decks, const Cards& all_cards, const std::string & mi
 }
 
 //------------------------------------------------------------------------------
-void parse_file(const std::string & filename, std::vector<char>& buffer, xml_document<>& doc, bool do_warn_on_missing=true)
+bool parse_file(const std::string & filename, std::vector<char>& buffer, xml_document<>& doc, bool do_warn_on_missing=true)
 {
     std::ifstream cards_stream(filename, std::ios::binary);
     if (!cards_stream.good())
@@ -104,7 +104,7 @@ void parse_file(const std::string & filename, std::vector<char>& buffer, xml_doc
         buffer.resize(1);
         buffer[0] = 0;
         doc.parse<0>(&buffer[0]);
-        return;
+        return false;
     }
     // Get the size of the file
     cards_stream.seekg(0,std::ios::end);
@@ -117,6 +117,7 @@ void parse_file(const std::string & filename, std::vector<char>& buffer, xml_doc
     try
     {
         doc.parse<0>(&buffer[0]);
+        return true;
     }
     catch(rapidxml::parse_error& e)
     {
@@ -220,17 +221,14 @@ void parse_card_node(Cards& all_cards, Card* card, xml_node<>* card_node)
     card->m_top_level_card = top_card;
 }
 
-void load_cards_xml(Cards & all_cards, const std::string & filename, bool do_warn_on_missing)
+bool load_cards_xml(Cards & all_cards, const std::string & filename, bool do_warn_on_missing)
 {
     std::vector<char> buffer;
     xml_document<> doc;
-    parse_file(filename, buffer, doc, do_warn_on_missing);
+    if (!parse_file(filename, buffer, doc, do_warn_on_missing)) { return false; }
     xml_node<>* root = doc.first_node();
+    if (!root) { return false; }
 
-    if(!root)
-    {
-        return;
-    }
     for (xml_node<>* card_node = root->first_node("unit");
         card_node;
         card_node = card_node->next_sibling("unit"))
@@ -238,6 +236,8 @@ void load_cards_xml(Cards & all_cards, const std::string & filename, bool do_war
         auto card = new Card();
         parse_card_node(all_cards, card, card_node);
     }
+
+    return true;
 }
 
 void load_skills_set_xml(Cards & all_cards, const std::string & filename, bool do_warn_on_missing)
