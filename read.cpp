@@ -17,20 +17,29 @@
 #include "deck.h"
 
 // trim from start
-static inline std::string &ltrim(std::string &s) {
-        s.erase(s.begin(), std::find_if(s.begin(), s.end(), std::not1(std::ptr_fun<int, int>(std::isspace))));
-        return s;
+static inline std::string &ltrim(std::string &s)
+{
+    s.erase(s.begin(), std::find_if(s.begin(), s.end(), std::not1(std::ptr_fun<int, int>(std::isspace))));
+    return s;
 }
 
 // trim from end
-static inline std::string &rtrim(std::string &s) {
-        s.erase(std::find_if(s.rbegin(), s.rend(), std::not1(std::ptr_fun<int, int>(std::isspace))).base(), s.end());
-        return s;
+static inline std::string &rtrim(std::string &s)
+{
+    s.erase(std::find_if(s.rbegin(), s.rend(), std::not1(std::ptr_fun<int, int>(std::isspace))).base(), s.end());
+    return s;
 }
 
 // trim from both ends
-static inline std::string &trim(std::string &s) {
-        return ltrim(rtrim(s));
+static inline std::string &trim(std::string &s)
+{
+    return ltrim(rtrim(s));
+}
+
+// is line should be skipped?
+static inline bool is_line_empty_or_commented(std::string &s)
+{
+    return (s.size() == 0) || (strncmp(s.c_str(), "//", 2) == 0);
 }
 
 template<typename Iterator, typename Functor> Iterator advance_until(Iterator it, Iterator it_end, Functor f)
@@ -329,10 +338,8 @@ unsigned read_card_abbrs(Cards& all_cards, const std::string& filename)
             getline(abbr_file, abbr_string);
             trim(abbr_string);
             ++num_line;
-            if(abbr_string.size() == 0 || strncmp(abbr_string.c_str(), "//", 2) == 0)
-            {
-                continue;
-            }
+            if (is_line_empty_or_commented(abbr_string))
+            { continue; }
             std::string abbr_name;
             auto abbr_string_iter = read_token(abbr_string.begin(), abbr_string.end(), [](char c){return(c == ':');}, abbr_name);
             if(abbr_string_iter == abbr_string.end() || abbr_name.empty())
@@ -390,10 +397,8 @@ unsigned load_custom_decks(Decks& decks, Cards& all_cards, const std::string & f
             getline(decks_file, deck_string);
             trim(deck_string);
             ++num_line;
-            if(deck_string.size() == 0 || strncmp(deck_string.c_str(), "//", 2) == 0)
-            {
-                continue;
-            }
+            if (is_line_empty_or_commented(deck_string))
+            { continue; }
             std::string deck_name;
             auto deck_string_iter = read_token(deck_string.begin(), deck_string.end(), [](char c){return(strchr(":,", c));}, deck_name);
             if(deck_string_iter == deck_string.end() || deck_name.empty())
@@ -477,16 +482,14 @@ void read_owned_cards(Cards& all_cards, std::map<unsigned, unsigned>& owned_card
         return;
     }
     unsigned num_line(0);
-    while(owned_file && !owned_file.eof())
+    while (owned_file && !owned_file.eof())
     {
         std::string card_spec;
         getline(owned_file, card_spec);
         trim(card_spec);
         ++num_line;
-        if(card_spec.size() == 0 || strncmp(card_spec.c_str(), "//", 2) == 0)
-        {
-            continue;
-        }
+        if (is_line_empty_or_commented(card_spec))
+        { continue; }
         try
         {
             add_owned_card(all_cards, owned_cards, card_spec);
@@ -519,10 +522,8 @@ unsigned read_bge_aliases(std::unordered_map<std::string, std::string> & bge_ali
             std::string bge_string;
             getline(bgefile, bge_string);
             ++num_line;
-            if(bge_string.size() == 0 || strncmp(bge_string.c_str(), "//", 2) == 0)
-            {
-                continue;
-            }
+            if (is_line_empty_or_commented(bge_string))
+            { continue; }
             std::string bge_name;
             auto bge_string_iter = read_token(bge_string.begin(), bge_string.end(), [](char c){return(c == ':');}, bge_name);
             if(bge_string_iter == bge_string.end() || bge_name.empty())
