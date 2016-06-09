@@ -2,6 +2,9 @@
 #define READ_H_INCLUDED
 
 #include <map>
+#include <set>
+#include <unordered_map>
+#include <unordered_set>
 #include <string>
 
 #include "deck.h"
@@ -17,5 +20,6 @@ unsigned load_custom_decks(Decks& decks, Cards& cards, const std::string & filen
 void read_owned_cards(Cards& cards, std::map<unsigned, unsigned>& owned_cards, const std::string & filename);
 unsigned read_card_abbrs(Cards& cards, const std::string& filename);
 unsigned read_bge_aliases(std::unordered_map<std::string, std::string> & bge_aliases, const std::string & filename);
+std::unordered_map<unsigned, unsigned> read_custom_cards(Cards& all_cards, const std::string& filename, bool abort_on_missing);
 
 #endif

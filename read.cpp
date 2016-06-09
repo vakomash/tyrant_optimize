@@ -371,6 +371,61 @@ unsigned read_card_abbrs(Cards& all_cards, const std::string& filename)
     return(0);
 }
 
+std::unordered_map<unsigned, unsigned> read_custom_cards(Cards& all_cards, const std::string& filename, bool abort_on_missing=true)
+{
+    std::unordered_map<unsigned, unsigned> cards;
+    if (!boost::filesystem::exists(filename))
+    {
+        if (abort_on_missing)
+        { throw std::runtime_error("Custom cards file " + filename + " does not exist"); }
+        return cards;
+    }
+    std::ifstream cards_file(filename);
+    if (!cards_file.is_open())
+    {
+        if (abort_on_missing)
+        { throw std::runtime_error("Custom cards file " + filename + " could not be opened"); }
+        return cards;
+    }
+    unsigned num_line(0);
+    cards_file.exceptions(std::ifstream::badbit);
+    try
+    {
+        while(cards_file && !cards_file.eof())
+        {
+            std::string card_spec;
+            getline(cards_file, card_spec);
+            trim(card_spec);
+            ++num_line;
+            if (is_line_empty_or_commented(card_spec))
+            { continue; }
+            unsigned card_id{0};
+            unsigned card_num{1};
+            char num_sign{0};
+            char mark{0};
+            parse_card_spec(all_cards, card_spec, card_id, card_num, num_sign, mark);
+            cards[card_id] = card_num;
+        }
+    }
+    catch (std::exception& e)
+    {
+        if (abort_on_missing)
+        {
+            throw e;
+        }
+        else
+        {
+            std::cerr << "Exception while parsing the custom cards file " << filename;
+            if (num_line > 0)
+            {
+                std::cerr << " at line " << num_line;
+            }
+            std::cerr << ": " << e.what() << ".\n";
+        }
+    }
+    return cards;
+}
+
 
 // Error codes:
 // 2 -> file not readable
