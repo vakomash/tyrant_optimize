@@ -1253,6 +1253,9 @@ int main(int argc, char** argv)
     std::vector<std::string> opt_effects[3];  // 0-you; 1-enemy; 2-global
     std::unordered_map<unsigned, unsigned> opt_bg_effects;
     std::vector<SkillSpec> opt_bg_skills[2];
+    std::unordered_set<unsigned> allowed_candidates;
+    std::unordered_set<unsigned> disallowed_candidates;
+    std::unordered_set<unsigned> disallowed_recipes;
 
     for(int argIndex = 3; argIndex < argc; ++argIndex)
     {
@@ -1564,7 +1567,11 @@ int main(int argc, char** argv)
     for (const auto & suffix: fn_suffix_list)
     {
         load_custom_decks(decks, all_cards, "data/customdecks" + suffix + ".txt");
+        map_keys_to_set(read_custom_cards(all_cards, "data/allowed_candidates" + suffix + ".txt", false), allowed_candidates);
+        map_keys_to_set(read_custom_cards(all_cards, "data/disallowed_candidates" + suffix + ".txt", false), disallowed_candidates);
+        map_keys_to_set(read_custom_cards(all_cards, "data/disallowed_recipes" + suffix + ".txt", false), disallowed_recipes);
     }
+
     read_bge_aliases(bge_aliases, "data/bges.txt");
 
     fill_skill_table();
@@ -1755,6 +1762,10 @@ int main(int argc, char** argv)
         std::cerr << "Error: allow-candidates " << opt_allow_candidates << ": " << e.what() << std::endl;
         return 0;
     }
+    for (auto cid : allowed_candidates)
+    {
+        your_deck->allowed_candidates.insert(cid);
+    }
 
     try
     {
@@ -1764,6 +1775,10 @@ int main(int argc, char** argv)
     {
         std::cerr << "Error: disallow-candidates " << opt_disallow_candidates << ": " << e.what() << std::endl;
         return 0;
+    }
+    for (auto cid : disallowed_candidates)
+    {
+        your_deck->disallowed_candidates.insert(cid);
     }
 
     try
@@ -1778,6 +1793,10 @@ int main(int argc, char** argv)
     {
         std::cerr << "Error: disallow-recipes " << opt_disallow_recipes << ": " << e.what() << std::endl;
         return 0;
+    }
+    for (auto cid : disallowed_recipes)
+    {
+        all_cards.cards_by_id[cid]->m_recipe_cards.clear();
     }
 
     if (!opt_quest.empty())

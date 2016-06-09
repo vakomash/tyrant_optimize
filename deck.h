@@ -66,9 +66,9 @@ public:
     unsigned mission_req;
 
     std::string deck_string;
-    std::set<unsigned> vip_cards;
-    std::set<unsigned> allowed_candidates;
-    std::set<unsigned> disallowed_candidates;
+    std::unordered_set<unsigned> vip_cards;
+    std::unordered_set<unsigned> allowed_candidates;
+    std::unordered_set<unsigned> disallowed_candidates;
     std::vector<unsigned> given_hand;
     std::vector<const Card*> fort_cards;
 

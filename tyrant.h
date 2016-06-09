@@ -184,6 +184,14 @@ inline PassiveBGE::PassiveBGE passive_bge_name_to_id(const std::string & name)
     return PassiveBGE::no_bge;
 }
 
+inline void map_keys_to_set(const std::unordered_map<unsigned, unsigned>& m, std::unordered_set<unsigned>& s)
+{
+    for (auto it = m.begin(); it != m.end(); ++it)
+    {
+        s.insert(it->first);
+    }
+}
+
 
 namespace CardType {
 enum CardType {
