@@ -12,6 +12,8 @@ Divine Blessing: Heal+Rally all 2
 Opalescence: Heal+Protect all 2
 Ferocity: Enrage 3
 Power Source: Overload 1
+Artillery: Mortar all 4
+Tartarian Gift: Rally+Enrage all 2
 
 // Some other BGEs
 Soothing Chant: Heal all 2
