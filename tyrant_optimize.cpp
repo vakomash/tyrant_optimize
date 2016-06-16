@@ -1595,7 +1595,7 @@ int main(int argc, char** argv)
         }
     }
 
-    for (int player = 0; player <= 2; ++ player)
+    for (int player = 2; player >= 0; -- player)
     {
         for (auto && opt_effect: opt_effects[player])
         {
