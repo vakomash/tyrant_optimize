@@ -874,6 +874,7 @@ struct PerformAttack
         if(__builtin_expect(fd->end, false)) { return att_dmg; }
         damage_dependant_pre_oa<def_cardtype>();
 
+        // Enemy Skill: Counter
         if (is_alive(att_status) && def_status->has_skill(Skill::counter) && skill_check<Skill::counter>(fd, def_status, att_status))
         {
             // perform_skill_counter
@@ -887,6 +888,8 @@ struct PerformAttack
             remove_hp(fd, att_status, counter_dmg);
             prepend_on_death(fd);
             resolve_skill(fd);
+
+            // BGE: Counterflux
             if (def_cardtype == CardType::assault && is_alive(def_status) && fd->bg_effects.count(PassiveBGE::counterflux))
             {
                 unsigned flux_denominator = fd->bg_effects.at(PassiveBGE::counterflux) ? fd->bg_effects.at(PassiveBGE::counterflux) : 4;
@@ -897,6 +900,8 @@ struct PerformAttack
                 { def_status->m_attack += flux_value; }
             }
         }
+
+        // State: Corroded
         unsigned corrosive_value = def_status->skill(Skill::corrosive);
         if (is_alive(att_status) && corrosive_value > att_status->m_corroded_rate && skill_check<Skill::corrosive>(fd, def_status, att_status))
         {
@@ -904,6 +909,8 @@ struct PerformAttack
             _DEBUG_MSG(1, "%s corrodes %s by %u\n", status_description(def_status).c_str(), status_description(att_status).c_str(), corrosive_value);
             att_status->m_corroded_rate = corrosive_value;
         }
+
+        // Skill: Berserk
         unsigned berserk_value = att_status->skill(Skill::berserk);
         if (is_alive(att_status) && ! att_status->m_sundered && berserk_value > 0 && skill_check<Skill::berserk>(fd, att_status, nullptr))
         {
@@ -913,6 +920,8 @@ struct PerformAttack
             {
                 fd->inc_counter(QuestType::skill_use, Skill::berserk);
             }
+
+            // BGE: EnduringRage
             if (fd->bg_effects.count(PassiveBGE::enduringrage))
             {
                 unsigned bge_denominator = fd->bg_effects.at(PassiveBGE::enduringrage) ? fd->bg_effects.at(PassiveBGE::enduringrage) : 2;
@@ -922,13 +931,34 @@ struct PerformAttack
                 att_status->m_protected += bge_value;
             }
         }
+
+        // Skill: Leech
         do_leech<def_cardtype>();
+
+        // BGE: Heroism
         unsigned valor_value = att_status->skill(Skill::valor);
         if (valor_value > 0 && ! att_status->m_sundered && fd->bg_effects.count(PassiveBGE::heroism) && def_cardtype == CardType::assault && def_status->m_hp <= 0)
         {
             _DEBUG_MSG(1, "Heroism: %s gain %u attack\n", status_description(att_status).c_str(), valor_value);
             att_status->m_attack += valor_value;
         }
+
+        // BGE: Devour
+        unsigned leech_value = att_status->skill(Skill::leech) + att_status->skill(Skill::refresh);
+        if (fd->bg_effects.count(PassiveBGE::devour) && def_cardtype == CardType::assault && leech_value)
+        {
+            unsigned bge_denominator = fd->bg_effects.at(PassiveBGE::devour) ? fd->bg_effects.at(PassiveBGE::devour) : 4;
+            unsigned bge_value = (leech_value - 1) / bge_denominator + 1;
+            if (! att_status->m_sundered)
+            {
+                _DEBUG_MSG(1, "Devour: %s gain %u attack\n", status_description(att_status).c_str(), bge_value);
+                att_status->m_attack += bge_value;
+            }
+            _DEBUG_MSG(1, "Devour: %s extends max hp / heals for %u\n", status_description(att_status).c_str(), bge_value);
+            att_status->m_max_hp += bge_value;
+            att_status->m_hp += bge_value;
+        }
+
         return att_dmg;
     }
 

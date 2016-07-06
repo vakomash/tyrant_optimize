@@ -1176,6 +1176,7 @@ void print_available_effects()
         "  TurningTides\n"
         "  Virulence\n"
         "  HaltedOrders\n"
+        "  Devour X\n"
         ;
 }
 void usage(int argc, char** argv)
