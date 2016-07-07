@@ -957,7 +957,7 @@ struct PerformAttack
                 _DEBUG_MSG(1, "Devour: %s gain %u attack\n", status_description(att_status).c_str(), bge_value);
                 att_status->m_attack += bge_value;
             }
-            _DEBUG_MSG(1, "Devour: %s extends max hp / heals for %u\n", status_description(att_status).c_str(), bge_value);
+            _DEBUG_MSG(1, "Devour: %s extends max hp / heals itself for %u\n", status_description(att_status).c_str(), bge_value);
             att_status->m_max_hp += bge_value;
             att_status->m_hp += bge_value;
         }
