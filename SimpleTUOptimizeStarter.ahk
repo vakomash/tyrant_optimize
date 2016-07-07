@@ -82,19 +82,19 @@ Gui, Add, DDL, altsubmit vOrder Group Choose%IniOrder%, Random|Ordered (honor 3-
 Gui, Add, Edit, vIterations w100 r1, %IniIterations%
 
 Gui, Add, Text, ys, Fund:
-Gui, Add, Text, r1, 
+Gui, Add, Text, r1,
 Gui, Add, Text, , Threads:
 
 Gui, Add, Edit, vFund number r1 ys w50, %IniFund%
-Gui, Add, Text, r1, 
+Gui, Add, Text, r1,
 Gui, Add, Edit, vThreads number w20, %IniThreads%
 
 Gui, Add, Edit, vSimOptions r1 xs w600, %IniSimOptions%
 Gui, Add, Button, default r2 w100 x100 y+15 section, Simulate
 Gui, Add, Checkbox, vx86 Checked%Inix86%, x86 (32-bit)
 Gui, Add, Button, r2 w100 ys xs+200, Exit
-Gui, Show,, Simple Tyrant Unleashed Optimize Starter v2.27.0
-return  
+Gui, Show,, Simple Tyrant Unleashed Optimize Starter v2.27.1
+return
 
 ButtonSimulate:
 Gui, Submit
@@ -121,7 +121,7 @@ selSimOptions := ( SimOptions == "" ? "" : SimOptions " ")
 EndgameVal := Endgame -2
 selEndgame := (Endgame <= 1 ? "" : "endgame " EndgameVal " ")
 selFund := (Fund == "" ? "" : "fund " Fund " ")
-execString = %selTUO% "%MyDeck%" "%EnemiesDeck%" %selMode% %selOrder% %selMySiege%%selEnemySiege%%selVIP%%selQuest%%selEffect%%selThreads%%selEndgame%%selFund%%selSimOptions%%selOperation% %Iterations% 
+execString = %selTUO% "%MyDeck%" "%EnemiesDeck%" %selMode% %selOrder% %selMySiege%%selEnemySiege%%selVIP%%selQuest%%selEffect%%selThreads%%selEndgame%%selFund%%selSimOptions%%selOperation% %Iterations%
 Run, cmd.exe /c title TUOptimizeOutput && echo %execString% && %execString% & pause
 Gui, Show
 return

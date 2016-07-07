@@ -875,7 +875,7 @@ struct PerformAttack
         damage_dependant_pre_oa<def_cardtype>();
 
         // Enemy Skill: Counter
-        if (is_alive(att_status) && def_status->has_skill(Skill::counter) && skill_check<Skill::counter>(fd, def_status, att_status))
+        if (def_status->has_skill(Skill::counter) && skill_check<Skill::counter>(fd, def_status, att_status))
         {
             // perform_skill_counter
             unsigned counter_dmg(counter_damage(fd, att_status, def_status));
@@ -899,11 +899,14 @@ struct PerformAttack
                 if (! def_status->m_sundered)
                 { def_status->m_attack += flux_value; }
             }
+
+            // is attacker dead?
+            if (!is_alive(att_status)) { return att_dmg; }
         }
 
         // State: Corroded
         unsigned corrosive_value = def_status->skill(Skill::corrosive);
-        if (is_alive(att_status) && corrosive_value > att_status->m_corroded_rate && skill_check<Skill::corrosive>(fd, def_status, att_status))
+        if (corrosive_value > att_status->m_corroded_rate && skill_check<Skill::corrosive>(fd, def_status, att_status))
         {
             // perform_skill_corrosive
             _DEBUG_MSG(1, "%s corrodes %s by %u\n", status_description(def_status).c_str(), status_description(att_status).c_str(), corrosive_value);
@@ -912,7 +915,7 @@ struct PerformAttack
 
         // Skill: Berserk
         unsigned berserk_value = att_status->skill(Skill::berserk);
-        if (is_alive(att_status) && ! att_status->m_sundered && berserk_value > 0 && skill_check<Skill::berserk>(fd, att_status, nullptr))
+        if (! att_status->m_sundered && berserk_value > 0 && skill_check<Skill::berserk>(fd, att_status, nullptr))
         {
             // perform_skill_berserk
             att_status->m_attack += berserk_value;
