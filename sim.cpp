@@ -1402,7 +1402,7 @@ inline void perform_skill<Skill::enrage>(Field* fd, CardStatus* src, CardStatus*
 template<>
 inline void perform_skill<Skill::rush>(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s)
 {
-    dst->m_delay -= 1;
+    dst->m_delay -= std::min(std::max(s.x, 1u), dst->m_delay);
     if (dst->m_delay == 0)
     {
         check_and_perform_valor(fd, dst);
