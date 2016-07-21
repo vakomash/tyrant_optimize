@@ -200,6 +200,7 @@ public:
     Storage<CardStatus> structures;
 };
 
+#ifndef NQUEST
 struct Quest
 {
     QuestType::QuestType quest_type;
@@ -220,6 +221,7 @@ struct Quest
         must_win(false)
     {}
 };
+#endif
 
 //------------------------------------------------------------------------------
 // struct Field is the data model of a battle:
@@ -240,7 +242,9 @@ public:
     unsigned turn;
     gamemode_t gamemode;
     OptimizationMode optimization_mode;
+#ifndef NQUEST
     const Quest quest;
+#endif
     std::unordered_map<unsigned, unsigned> bg_effects; // passive BGE
     std::vector<SkillSpec> bg_skills[2]; // active BGE, casted every turn
     // With the introduction of on death skills, a single skill can trigger arbitrary many skills.
@@ -265,9 +269,14 @@ public:
 
     bool assault_bloodlusted;
     unsigned bloodlust_value;
+#ifndef NQUEST
     unsigned quest_counter;
+#endif
 
-    Field(std::mt19937& re_, const Cards& cards_, Hand& hand1, Hand& hand2, gamemode_t gamemode_, OptimizationMode optimization_mode_, const Quest & quest_,
+    Field(std::mt19937& re_, const Cards& cards_, Hand& hand1, Hand& hand2, gamemode_t gamemode_, OptimizationMode optimization_mode_,
+#ifndef NQUEST
+            const Quest & quest_,
+#endif
             std::unordered_map<unsigned, unsigned>& bg_effects_, std::vector<SkillSpec>& your_bg_skills_, std::vector<SkillSpec>& enemy_bg_skills_) :
         end{false},
         re(re_),
@@ -276,12 +285,16 @@ public:
         turn(1),
         gamemode(gamemode_),
         optimization_mode(optimization_mode_),
+#ifndef NQUEST
         quest(quest_),
+#endif
         bg_effects{bg_effects_},
         bg_skills{your_bg_skills_, enemy_bg_skills_},
         assault_bloodlusted(false),
-        bloodlust_value(0),
-        quest_counter(0)
+        bloodlust_value(0)
+#ifndef NQUEST
+        , quest_counter(0)
+#endif
     {
     }
 
@@ -309,6 +322,7 @@ public:
     inline const std::vector<CardStatus *> adjacent_assaults(const CardStatus * status);
     inline void print_selection_array();
 
+#ifndef NQUEST
     inline void inc_counter(QuestType::QuestType quest_type, unsigned quest_key, unsigned quest_2nd_key = 0, unsigned value = 1)
     {
         if (quest.quest_type == quest_type && quest.quest_key == quest_key && (quest.quest_2nd_key == 0 || quest.quest_2nd_key == quest_2nd_key))
@@ -316,6 +330,7 @@ public:
             quest_counter += value;
         }
     }
+#endif
 };
 
 #endif

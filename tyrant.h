@@ -229,6 +229,7 @@ enum gamemode_t
     surge,
 };
 
+#ifndef NQUEST
 namespace QuestType
 {
 enum QuestType
@@ -244,6 +245,7 @@ enum QuestType
     num_objective_types
 };
 }
+#endif
 
 enum class OptimizationMode
 {
@@ -255,7 +257,9 @@ enum class OptimizationMode
     brawl_defense,
     raid,
     campaign,
+#ifndef NQUEST
     quest,
+#endif
     num_optimization_mode
 };
 

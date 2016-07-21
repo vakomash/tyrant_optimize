@@ -412,7 +412,11 @@ void resolve_skill(Field* fd)
 //------------------------------------------------------------------------------
 bool attack_phase(Field* fd);
 template<Skill::Skill skill_id>
-bool check_and_perform_skill(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s, bool is_evadable, bool & has_counted_quest);
+bool check_and_perform_skill(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s, bool is_evadable
+#ifndef NQUEST
+    , bool & has_counted_quest
+#endif
+);
 bool check_and_perform_valor(Field* fd, CardStatus* src);
 template <enum CardType::CardType type>
 void evaluate_skills(Field* fd, CardStatus* status, const std::vector<SkillSpec>& skills, bool* attacked=nullptr)
@@ -457,10 +461,12 @@ void evaluate_skills(Field* fd, CardStatus* status, const std::vector<SkillSpec>
         // Flurry
         if (can_act(status) && is_alive(&fd->tip->commander) && status->has_skill(Skill::flurry) && status->m_skill_cd[Skill::flurry] == 0)
         {
+#ifndef NQUEST
             if (status->m_player == 0)
             {
                 fd->inc_counter(QuestType::skill_use, Skill::flurry);
             }
+#endif
             _DEBUG_MSG(1, "%s activates Flurry x %d\n", status_description(status).c_str(), status->skill_base_value(Skill::flurry));
             num_actions += status->skill_base_value(Skill::flurry);
             for (const auto & ss : skills)
@@ -509,6 +515,7 @@ struct PlayCard
         status->set(card);
         status->m_index = storage->size() - 1;
         status->m_player = fd->tapi;
+#ifndef NQUEST
         if (status->m_player == 0)
         {
             if (status->m_card->m_type == CardType::assault)
@@ -517,6 +524,7 @@ struct PlayCard
             }
             fd->inc_counter(QuestType::type_card_use, type);
         }
+#endif
         _DEBUG_MSG(1, "%s plays %s %u [%s]\n", status_description(&fd->tap->commander).c_str(), cardtype_names[type].c_str(), static_cast<unsigned>(storage->size() - 1), card_description(fd->cards, card).c_str());
         if (status->m_delay == 0)
         {
@@ -585,6 +593,7 @@ void remove_hp(Field* fd, CardStatus* status, unsigned dmg)
     status->m_hp = safe_minus(status->m_hp, dmg);
     if(status->m_hp == 0)
     {
+#ifndef NQUEST
         if (status->m_player == 1)
         {
             if (status->m_card->m_type == CardType::assault)
@@ -593,6 +602,7 @@ void remove_hp(Field* fd, CardStatus* status, unsigned dmg)
             }
             fd->inc_counter(QuestType::type_card_kill, status->m_card->m_type);
         }
+#endif
         _DEBUG_MSG(1, "%s dies\n", status_description(status).c_str());
         if(status->m_card->m_type != CardType::commander)
         {
@@ -773,10 +783,12 @@ void turn_end_phase(Field* fd)
                 unsigned poison_dmg = safe_minus(status.m_poisoned + status.m_enfeebled, status.protected_value());
                 if (poison_dmg > 0)
                 {
+#ifndef NQUEST
                     if (status.m_player == 1)
                     {
                         fd->inc_counter(QuestType::skill_damage, Skill::poison, 0, poison_dmg);
                     }
+#endif
                     _DEBUG_MSG(1, "%s takes poison damage %u\n", status_description(&status).c_str(), poison_dmg);
                     remove_hp(fd, &status, poison_dmg);  // simultaneous
                 }
@@ -879,11 +891,13 @@ struct PerformAttack
         {
             // perform_skill_counter
             unsigned counter_dmg(counter_damage(fd, att_status, def_status));
+#ifndef NQUEST
             if (def_status->m_player == 0)
             {
                 fd->inc_counter(QuestType::skill_use, Skill::counter);
                 fd->inc_counter(QuestType::skill_damage, Skill::counter, 0, counter_dmg);
             }
+#endif
             _DEBUG_MSG(1, "%s takes %u counter damage from %s\n", status_description(att_status).c_str(), counter_dmg, status_description(def_status).c_str());
             remove_hp(fd, att_status, counter_dmg);
             prepend_on_death(fd);
@@ -919,10 +933,12 @@ struct PerformAttack
         {
             // perform_skill_berserk
             att_status->m_attack += berserk_value;
+#ifndef NQUEST
             if (att_status->m_player == 0)
             {
                 fd->inc_counter(QuestType::skill_use, Skill::berserk);
             }
+#endif
 
             // BGE: EnduringRage
             if (fd->bg_effects.count(PassiveBGE::enduringrage))
@@ -1082,10 +1098,12 @@ void PerformAttack::damage_dependant_pre_oa<CardType::assault>()
     if (poison_value > def_status->m_poisoned && skill_check<Skill::poison>(fd, att_status, def_status))
     {
         // perform_skill_poison
+#ifndef NQUEST
         if (att_status->m_player == 0)
         {
             fd->inc_counter(QuestType::skill_use, Skill::poison);
         }
+#endif
         _DEBUG_MSG(1, "%s poisons %s by %u\n", status_description(att_status).c_str(), status_description(def_status).c_str(), poison_value);
         def_status->m_poisoned = poison_value;
     }
@@ -1104,10 +1122,12 @@ void PerformAttack::do_leech<CardType::assault>()
     unsigned leech_value = std::min(att_dmg, att_status->skill(Skill::leech));
     if(leech_value > 0 && skill_check<Skill::leech>(fd, att_status, nullptr))
     {
+#ifndef NQUEST
         if (att_status->m_player == 0)
         {
             fd->inc_counter(QuestType::skill_use, Skill::leech);
         }
+#endif
         _DEBUG_MSG(1, "%s leeches %u health\n", status_description(att_status).c_str(), leech_value);
         add_hp(fd, att_status, leech_value);
     }
@@ -1542,15 +1562,21 @@ template<> std::vector<CardStatus*>& skill_targets<Skill::weaken>(Field* fd, Car
 { return(skill_targets_hostile_assault(fd, src)); }
 
 template<Skill::Skill skill_id>
-bool check_and_perform_skill(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s, bool is_evadable, bool & has_counted_quest)
+bool check_and_perform_skill(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s, bool is_evadable
+#ifndef NQUEST
+    , bool & has_counted_quest
+#endif
+)
 {
     if(skill_check<skill_id>(fd, src, dst))
     {
+#ifndef NQUEST
         if (src->m_player == 0 && ! has_counted_quest)
         {
             fd->inc_counter(QuestType::skill_use, skill_id, dst->m_card->m_id);
             has_counted_quest = true;
         }
+#endif
         if (is_evadable &&
                 dst->m_evaded < dst->skill(Skill::evade) &&
                 skill_check<Skill::evade>(fd, dst, src))
@@ -1590,10 +1616,12 @@ bool check_and_perform_valor(Field* fd, CardStatus* src)
             _DEBUG_MSG(1, "%s loses Valor (weak blocker %s)\n", status_description(src).c_str(), status_description(dst).c_str());
             return false;
         }
+#ifndef NQUEST
         if (src->m_player == 0)
         {
             fd->inc_counter(QuestType::skill_use, Skill::valor);
         }
+#endif
         _DEBUG_MSG(1, "%s activates Valor %u\n", status_description(src).c_str(), valor_value);
         src->m_attack += valor_value;
         return true;
@@ -1663,7 +1691,9 @@ void perform_targetted_allied_fast(Field* fd, CardStatus* src, const SkillSpec& 
 {
     select_targets<skill_id>(fd, src, s);
     unsigned num_inhibited = 0;
+#ifndef NQUEST
     bool has_counted_quest = false;
+#endif
     for (CardStatus * dst: fd->selection_array)
     {
         if (dst->m_inhibited > 0 && (!src->m_overloaded || s.id == Skill::mend))
@@ -1673,7 +1703,11 @@ void perform_targetted_allied_fast(Field* fd, CardStatus* src, const SkillSpec& 
             ++ num_inhibited;
             continue;
         }
-        check_and_perform_skill<skill_id>(fd, src, dst, s, false, has_counted_quest);
+        check_and_perform_skill<skill_id>(fd, src, dst, s, false
+#ifndef NQUEST
+            , has_counted_quest
+#endif
+        );
     }
     if (num_inhibited > 0 && fd->bg_effects.count(PassiveBGE::divert))
     {
@@ -1721,7 +1755,9 @@ void perform_targetted_hostile_fast(Field* fd, CardStatus* src, const SkillSpec&
 {
     select_targets<skill_id>(fd, src, s);
     std::vector<CardStatus *> paybackers;
+#ifndef NQUEST
     bool has_counted_quest = false;
+#endif
     const bool has_turningtides = (fd->bg_effects.count(PassiveBGE::turningtides) && (skill_id == Skill::weaken || skill_id == Skill::sunder));
     unsigned turningtides_value(0), old_attack(0);
 
@@ -1735,7 +1771,11 @@ void perform_targetted_hostile_fast(Field* fd, CardStatus* src, const SkillSpec&
         }
 
         // check & apply skill to target(dst)
-        if (check_and_perform_skill<skill_id>(fd, src, dst, s, ! src->m_overloaded, has_counted_quest))
+        if (check_and_perform_skill<skill_id>(fd, src, dst, s, ! src->m_overloaded
+#ifndef NQUEST
+            , has_counted_quest
+#endif
+        ))
         {
             // TurningTides: get max attack decreasing
             if (has_turningtides)
@@ -2005,8 +2045,14 @@ Results<uint64_t> play(Field* fd)
                     }
                     continue;
                 }
+#ifndef NQUEST
                 bool has_counted_quest = false;
-                check_and_perform_skill<Skill::protect>(fd, &fd->tap->commander, dst, ss_protect, false, has_counted_quest);
+#endif
+                check_and_perform_skill<Skill::protect>(fd, &fd->tap->commander, dst, ss_protect, false
+#ifndef NQUEST
+                    , has_counted_quest
+#endif
+                );
             }
         }
 
@@ -2095,12 +2141,15 @@ Results<uint64_t> play(Field* fd)
     }
     const auto & p = fd->players;
     unsigned raid_damage = 0;
+#ifndef NQUEST
     unsigned quest_score = 0;
+#endif
     switch (fd->optimization_mode)
     {
         case OptimizationMode::raid:
             raid_damage = 15 + (std::min<unsigned>(p[1]->deck->deck_size, (fd->turn + 1) / 2) - p[1]->assaults.size() - p[1]->structures.size()) - (10 * p[1]->commander.m_hp / p[1]->commander.m_max_hp);
             break;
+#ifndef NQUEST
         case OptimizationMode::quest:
             if (fd->quest.quest_type == QuestType::card_survival)
             {
@@ -2114,6 +2163,7 @@ Results<uint64_t> play(Field* fd)
             quest_score = fd->quest.must_fulfill ? (fd->quest_counter >= fd->quest.quest_value ? fd->quest.quest_score : 0) : std::min<unsigned>(fd->quest.quest_score, fd->quest.quest_score * fd->quest_counter / fd->quest.quest_value);
             _DEBUG_MSG(1, "Quest: %u / %u = %u%%.\n", fd->quest_counter, fd->quest.quest_value, quest_score);
             break;
+#endif
         default:
             break;
     }
@@ -2135,7 +2185,9 @@ Results<uint64_t> play(Field* fd)
                 unsigned max_score = max_possible_score[(size_t)OptimizationMode::brawl_defense];
                 return {0, 0, 1, max_score - enemy_brawl_score};
             }
+#ifndef NQUEST
         case OptimizationMode::quest: return {0, 0, 1, fd->quest.must_win ? 0 : quest_score};
+#endif
         default: return {0, 0, 1, 0};
         }
     }
@@ -2165,7 +2217,9 @@ Results<uint64_t> play(Field* fd)
                 unsigned campaign_score = 100 - 10 * (std::min<unsigned>(p[0]->deck->cards.size(), (fd->turn + 1) / 2) - p[0]->assaults.size() - p[0]->structures.size());
                 return {1, 0, 0, campaign_score};
             }
+#ifndef NQUEST
         case OptimizationMode::quest: return {1, 0, 0, fd->quest.win_score + quest_score};
+#endif
         default:
             return {1, 0, 0, 100};
         }
@@ -2184,7 +2238,9 @@ Results<uint64_t> play(Field* fd)
                 //unsigned min_score = min_possible_score[(size_t)OptimizationMode::brawl_defense];
                 return {1, 0, 0, /* max_score - min_score */ 67 - 5};
             }
+#ifndef NQUEST
         case OptimizationMode::quest: return {0, 1, 0, fd->quest.must_win ? 0 : quest_score};
+#endif
         default: return {0, 1, 0, 0};
         }
     }
