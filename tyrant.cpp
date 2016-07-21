@@ -26,7 +26,7 @@ const std::string skill_names[Skill::num_skills] =
     "Berserk", "Inhibit", "Leech", "Poison",
 
     // Triggered:
-    "Allegiance", "Flurry", "Valor",
+    "Allegiance", "Flurry", "Valor", "Stasis",
 };
 
 const std::string passive_bge_names[PassiveBGE::num_passive_bges] =

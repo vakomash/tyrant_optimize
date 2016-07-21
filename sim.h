@@ -155,6 +155,7 @@ struct CardStatus
     unsigned m_paybacked;
     unsigned m_poisoned;
     unsigned m_protected;
+    unsigned m_protected_stasis;
     unsigned m_rallied;
     unsigned m_derallied;
     unsigned m_enraged;

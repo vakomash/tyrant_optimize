@@ -1,7 +1,7 @@
 #ifndef TYRANT_H_INCLUDED
 #define TYRANT_H_INCLUDED
 
-#define TYRANT_OPTIMIZER_VERSION "2.28.0"
+#define TYRANT_OPTIMIZER_VERSION "2.29.0"
 
 #include <string>
 #include <sstream>
@@ -45,7 +45,7 @@ enum Skill
     berserk, inhibit, leech, poison,
 
     // Triggered:
-    allegiance, flurry, valor,
+    allegiance, flurry, valor, stasis,
 
     // End of skills
     num_skills

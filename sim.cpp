@@ -120,7 +120,7 @@ inline unsigned CardStatus::enhanced(Skill::Skill skill_id) const
 //------------------------------------------------------------------------------
 inline unsigned CardStatus::protected_value() const
 {
-    return m_protected;
+    return m_protected + m_protected_stasis;
 }
 //------------------------------------------------------------------------------
 inline void CardStatus::set(const Card* card)
@@ -149,6 +149,7 @@ inline void CardStatus::set(const Card& card)
     m_paybacked = 0;
     m_poisoned = 0;
     m_protected = 0;
+    m_protected_stasis = 0;
     m_rallied = 0;
     m_enraged = 0;
     m_derallied = 0;
@@ -256,6 +257,7 @@ std::string CardStatus::description() const
     if(m_inhibited > 0) { desc += ", inhibited " + to_string(m_inhibited); }
     if(m_poisoned > 0) { desc += ", poisoned " + to_string(m_poisoned); }
     if(m_protected > 0) { desc += ", protected " + to_string(m_protected); }
+    if(m_protected_stasis > 0) { desc += ", stasis " + to_string(m_protected_stasis); }
     if(m_enraged > 0) { desc += ", enraged " + to_string(m_enraged); }
 //    if(m_step != CardStep::none) { desc += ", Step " + to_string(static_cast<int>(m_step)); }
     for (const auto & ss: m_card->m_skills)
@@ -505,11 +507,11 @@ struct PlayCard
     {}
 
     template <enum CardType::CardType type>
-    bool op()
+    CardStatus* op()
     {
         setStorage<type>();
         placeCard<type>();
-        return(true);
+        return(status);
     }
 
     template <enum CardType::CardType>
@@ -677,6 +679,16 @@ void turn_start_phase(Field* fd)
                 -- status->m_delay;
                 if (status->m_delay == 0)
                 {
+                    if (! status->m_jammed)
+                    {
+#ifndef NDEBUG
+                        if (status->m_protected_stasis > 0)
+                        {
+                            _DEBUG_MSG(1, "%s loses Stasis protection (delay elapsed)\n", status_description(status).c_str());
+                        }
+#endif
+                        status->m_protected_stasis = 0;
+                    }
                     check_and_perform_valor(fd, status);
                 }
             }
@@ -806,6 +818,16 @@ void turn_end_phase(Field* fd)
                 }
             }
             // end of the opponent's next turn for enemy units
+            if (status.m_jammed)
+            {
+#ifndef NDEBUG
+                if (status.m_protected_stasis > 0)
+                {
+                    _DEBUG_MSG(1, "%s loses Stasis protection (unjammed)\n", status_description(&status).c_str());
+                }
+#endif
+                status.m_protected_stasis = 0;
+            }
             status.m_jammed = false;
             status.m_rallied = 0;
             status.m_enraged = 0;
@@ -1457,6 +1479,14 @@ inline void perform_skill<Skill::rush>(Field* fd, CardStatus* src, CardStatus* d
     dst->m_delay -= std::min(std::max(s.x, 1u), dst->m_delay);
     if (dst->m_delay == 0)
     {
+        // Unit can't be jammed when it targeted for Rush
+#ifndef NDEBUG
+        if (dst->m_protected_stasis > 0)
+        {
+            _DEBUG_MSG(1, "%s loses Stasis protection (rushed)\n", status_description(dst).c_str());
+        }
+#endif
+        dst->m_protected_stasis = 0;
         check_and_perform_valor(fd, dst);
     }
 }
@@ -2036,14 +2066,16 @@ Results<uint64_t> play(Field* fd)
                     status->m_hp += allegiance_value;
                 }
             }
-            // End Evaluate skill Allegiance
+
+            // Play selected card
+            CardStatus * played_status = nullptr;
             switch(played_card->m_type)
             {
             case CardType::assault:
-                PlayCard(played_card, fd).op<CardType::assault>();
+                played_status = PlayCard(played_card, fd).op<CardType::assault>();
                 break;
             case CardType::structure:
-                PlayCard(played_card, fd).op<CardType::structure>();
+                played_status = PlayCard(played_card, fd).op<CardType::structure>();
                 break;
             case CardType::commander:
             case CardType::num_cardtypes:
@@ -2051,6 +2083,60 @@ Results<uint64_t> play(Field* fd)
                     played_card->m_id, card_description(fd->cards, played_card).c_str(), played_card->m_type);
                 assert(false);
                 break;
+            }
+
+            // Evaluate skill Stasis
+            if (played_status && played_card->m_delay > 0 && played_card->m_type == CardType::assault)
+            {
+                unsigned stacked_stasis = (fd->tap->commander.m_faction == played_status->m_faction)
+                    ? fd->tap->commander.skill(Skill::stasis)
+                    : 0u;
+#ifndef NDEBUG
+                if (stacked_stasis > 0)
+                {
+                    _DEBUG_MSG(2, "+ Stasis [%s]: stacks +%u stasis protection from %s (total stacked: %u)\n",
+                        faction_names[played_status->m_faction].c_str(), stacked_stasis,
+                        status_description(&fd->tap->commander).c_str(), stacked_stasis);
+                }
+#endif
+                for (CardStatus * status : fd->tap->structures.m_indirect)
+                {
+                    if (status->m_faction == played_status->m_faction)
+                    {
+                        stacked_stasis += status->skill(Skill::stasis);
+#ifndef NDEBUG
+                        if (status->skill(Skill::stasis) > 0)
+                        {
+                            _DEBUG_MSG(2, "+ Stasis [%s]: stacks +%u stasis protection from %s (total stacked: %u)\n",
+                                faction_names[played_status->m_faction].c_str(), status->skill(Skill::stasis),
+                                status_description(played_status).c_str(), stacked_stasis);
+                        }
+#endif
+                    }
+                }
+                for (CardStatus * status : fd->tap->assaults.m_indirect)
+                {
+                    if (status->m_faction == played_status->m_faction)
+                    {
+                        stacked_stasis += status->skill(Skill::stasis);
+#ifndef NDEBUG
+                        if (status->skill(Skill::stasis) > 0)
+                        {
+                            _DEBUG_MSG(2, "+ Stasis [%s]: stacks +%u stasis protection from %s (total stacked: %u)\n",
+                                faction_names[played_status->m_faction].c_str(), status->skill(Skill::stasis),
+                                status_description(played_status).c_str(), stacked_stasis);
+                        }
+#endif
+                    }
+                }
+                played_status->m_protected_stasis = stacked_stasis;
+#ifndef NDEBUG
+                if (stacked_stasis > 0)
+                {
+                    _DEBUG_MSG(1, "%s gains %u stasis protection\n",
+                        status_description(played_status).c_str(), stacked_stasis);
+                }
+#endif
             }
         }
         if(__builtin_expect(fd->end, false)) { break; }
