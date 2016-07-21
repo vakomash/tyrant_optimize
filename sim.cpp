@@ -818,16 +818,6 @@ void turn_end_phase(Field* fd)
                 }
             }
             // end of the opponent's next turn for enemy units
-            if (status.m_jammed)
-            {
-#ifndef NDEBUG
-                if (status.m_protected_stasis > 0)
-                {
-                    _DEBUG_MSG(1, "%s loses Stasis protection (unjammed)\n", status_description(&status).c_str());
-                }
-#endif
-                status.m_protected_stasis = 0;
-            }
             status.m_jammed = false;
             status.m_rallied = 0;
             status.m_enraged = 0;
@@ -2245,6 +2235,14 @@ Results<uint64_t> play(Field* fd)
             }
             else
             {
+#ifndef NDEBUG
+                if (current_status->m_protected_stasis > 0)
+                {
+                    _DEBUG_MSG(1, "%s loses Stasis protection (activated)\n",
+                        status_description(current_status).c_str());
+                }
+#endif
+                current_status->m_protected_stasis = 0;
                 fd->assault_bloodlusted = false;
                 current_status->m_step = CardStep::attacking;
                 evaluate_skills<CardType::assault>(fd, current_status, current_status->m_card->m_skills, &attacked);
