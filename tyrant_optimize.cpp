@@ -805,18 +805,20 @@ void print_deck_inline(const unsigned deck_cost, const FinalResults<long double>
         case OptimizationMode::war:
 #ifndef NQUEST
         case OptimizationMode::quest:
+#endif
             std::cout << "(" << score.wins * 100 << "% win";
+#ifndef NQUEST
             if (optimization_mode == OptimizationMode::quest)
             {
                 std::cout << ", " << (score.points - score.wins * quest.win_score) / (quest.must_win ? score.wins : 1) / quest.quest_score * 100 << "% quest";
             }
+#endif
             if (show_ci)
             {
                 std::cout << ", " << score.points_lower_bound << "-" << score.points_upper_bound;
             }
             std::cout << ") ";
             break;
-#endif
         case OptimizationMode::defense:
             std::cout << "(" << score.draws * 100.0 << "% stall) ";
             break;
