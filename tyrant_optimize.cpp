@@ -772,6 +772,7 @@ void print_results(const EvaluatedResults& results, std::vector<long double>& fa
         case OptimizationMode::war:
 #ifndef NQUEST
         case OptimizationMode::quest:
+#endif
             std::cout << "score: " << final.points << " (";
             for(const auto & val: results.first)
             {
@@ -783,7 +784,6 @@ void print_results(const EvaluatedResults& results, std::vector<long double>& fa
                 std::cout << "ci: " << final.points_lower_bound << " - " << final.points_upper_bound << std::endl;
             }
             break;
-#endif
         default:
             break;
     }
