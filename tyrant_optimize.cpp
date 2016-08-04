@@ -65,7 +65,9 @@ namespace {
     bool use_harmonic_mean{false};
     unsigned sim_seed{0};
     Requirement requirement;
+#ifndef NQUEST
     Quest quest;
+#endif
 }
 
 using namespace std::placeholders;
@@ -289,7 +291,11 @@ bool adjust_deck(Deck * deck, const signed from_slot, const signed to_slot, cons
     return !cards_in.empty() || !cards_out.empty();
 }
 
-unsigned check_requirement(const Deck* deck, const Requirement & requirement, const Quest & quest)
+unsigned check_requirement(const Deck* deck, const Requirement & requirement
+#ifndef NQUEST
+    , const Quest & quest
+#endif
+)
 {
     unsigned gap = 0;
     if (!requirement.num_cards.empty())
@@ -305,6 +311,7 @@ unsigned check_requirement(const Deck* deck, const Requirement & requirement, co
             gap += safe_minus(it.second, num_cards[it.first]);
         }
     }
+#ifndef NQUEST
     if (quest.quest_type != QuestType::none)
     {
         unsigned potential_value = 0;
@@ -359,6 +366,7 @@ unsigned check_requirement(const Deck* deck, const Requirement & requirement, co
         }
         gap += safe_minus(quest.must_fulfill ? quest.quest_value : 1, potential_value);
     }
+#endif
     return gap;
 }
 
@@ -446,11 +454,16 @@ struct SimulationData
     std::vector<Hand*> enemy_hands;
     std::vector<long double> factors;
     gamemode_t gamemode;
+#ifndef NQUEST
     Quest quest;
+#endif
     std::unordered_map<unsigned, unsigned> bg_effects;
     std::vector<SkillSpec> your_bg_skills, enemy_bg_skills;
 
-    SimulationData(unsigned seed, const Cards& cards_, const Decks& decks_, unsigned num_enemy_decks_, std::vector<long double> factors_, gamemode_t gamemode_, Quest & quest_,
+    SimulationData(unsigned seed, const Cards& cards_, const Decks& decks_, unsigned num_enemy_decks_, std::vector<long double> factors_, gamemode_t gamemode_,
+#ifndef NQUEST
+            Quest & quest_,
+#endif
             std::unordered_map<unsigned, unsigned>& bg_effects_, std::vector<SkillSpec>& your_bg_skills_, std::vector<SkillSpec>& enemy_bg_skills_) :
         re(seed),
         cards(cards_),
@@ -460,7 +473,9 @@ struct SimulationData
         enemy_decks(num_enemy_decks_),
         factors(factors_),
         gamemode(gamemode_),
+#ifndef NQUEST
         quest(quest_),
+#endif
         bg_effects(bg_effects_),
         your_bg_skills(your_bg_skills_),
         enemy_bg_skills(enemy_bg_skills_)
@@ -494,7 +509,11 @@ struct SimulationData
         {
             your_hand.reset(re);
             enemy_hand->reset(re);
-            Field fd(re, cards, your_hand, *enemy_hand, gamemode, optimization_mode, quest, bg_effects, your_bg_skills, enemy_bg_skills);
+            Field fd(re, cards, your_hand, *enemy_hand, gamemode, optimization_mode,
+#ifndef NQUEST
+                quest,
+#endif
+                bg_effects, your_bg_skills, enemy_bg_skills);
             Results<uint64_t> result(play(&fd));
             res.emplace_back(result);
         }
@@ -523,11 +542,16 @@ public:
     const std::vector<Deck*> enemy_decks;
     std::vector<long double> factors;
     gamemode_t gamemode;
+#ifndef NQUEST
     Quest quest;
+#endif
     std::unordered_map<unsigned, unsigned> bg_effects;
     std::vector<SkillSpec> your_bg_skills, enemy_bg_skills;
 
-    Process(unsigned num_threads_, const Cards& cards_, const Decks& decks_, Deck* your_deck_, std::vector<Deck*> enemy_decks_, std::vector<long double> factors_, gamemode_t gamemode_, Quest & quest_,
+    Process(unsigned num_threads_, const Cards& cards_, const Decks& decks_, Deck* your_deck_, std::vector<Deck*> enemy_decks_, std::vector<long double> factors_, gamemode_t gamemode_,
+#ifndef NQUEST
+            Quest & quest_,
+#endif
             std::unordered_map<unsigned, unsigned>& bg_effects_, std::vector<SkillSpec>& your_bg_skills_, std::vector<SkillSpec>& enemy_bg_skills_) :
         num_threads(num_threads_),
         main_barrier(num_threads+1),
@@ -537,7 +561,9 @@ public:
         enemy_decks(enemy_decks_),
         factors(factors_),
         gamemode(gamemode_),
+#ifndef NQUEST
         quest(quest_),
+#endif
         bg_effects(bg_effects_),
         your_bg_skills(your_bg_skills_),
         enemy_bg_skills(enemy_bg_skills_)
@@ -550,7 +576,11 @@ public:
         }
         for(unsigned i(0); i < num_threads; ++i)
         {
-            threads_data.push_back(new SimulationData(seed + i, cards, decks, enemy_decks.size(), factors, gamemode, quest, bg_effects, your_bg_skills, enemy_bg_skills));
+            threads_data.push_back(new SimulationData(seed + i, cards, decks, enemy_decks.size(), factors, gamemode,
+#ifndef NQUEST
+                quest,
+#endif
+                bg_effects, your_bg_skills, enemy_bg_skills));
             threads.push_back(new boost::thread(thread_evaluate, std::ref(main_barrier), std::ref(shared_mutex), std::ref(*threads_data.back()), std::ref(*this), i));
         }
     }
@@ -687,9 +717,11 @@ void print_score_info(const EvaluatedResults& results, std::vector<long double>&
             case OptimizationMode::brawl:
             case OptimizationMode::brawl_defense:
             case OptimizationMode::war:
+#ifndef NQUEST
             case OptimizationMode::quest:
                 std::cout << val.points << " ";
                 break;
+#endif
             default:
                 std::cout << val.points / 100 << " ";
                 break;
@@ -722,12 +754,14 @@ void print_results(const EvaluatedResults& results, std::vector<long double>& fa
     }
     std::cout << "/ " << results.second << ")" << std::endl;
 
+#ifndef NQUEST
     if (optimization_mode == OptimizationMode::quest)
     {
         // points = win% * win_score + (must_win ? win% : 100%) * quest% * quest_score
         // quest% = (points - win% * win_score) / (must_win ? win% : 100%) / quest_score
         std::cout << "quest%: " << (final.points - final.wins * quest.win_score) / (quest.must_win ? final.wins : 1) / quest.quest_score * 100 << std::endl;
     }
+#endif
 
     switch(optimization_mode)
     {
@@ -736,7 +770,9 @@ void print_results(const EvaluatedResults& results, std::vector<long double>& fa
         case OptimizationMode::brawl:
         case OptimizationMode::brawl_defense:
         case OptimizationMode::war:
+#ifndef NQUEST
         case OptimizationMode::quest:
+#endif
             std::cout << "score: " << final.points << " (";
             for(const auto & val: results.first)
             {
@@ -767,12 +803,16 @@ void print_deck_inline(const unsigned deck_cost, const FinalResults<long double>
         case OptimizationMode::brawl:
         case OptimizationMode::brawl_defense:
         case OptimizationMode::war:
+#ifndef NQUEST
         case OptimizationMode::quest:
+#endif
             std::cout << "(" << score.wins * 100 << "% win";
+#ifndef NQUEST
             if (optimization_mode == OptimizationMode::quest)
             {
                 std::cout << ", " << (score.points - score.wins * quest.win_score) / (quest.must_win ? score.wins : 1) / quest.quest_score * 100 << "% quest";
             }
+#endif
             if (show_ci)
             {
                 std::cout << ", " << score.points_lower_bound << "-" << score.points_upper_bound;
@@ -781,7 +821,7 @@ void print_deck_inline(const unsigned deck_cost, const FinalResults<long double>
             break;
         case OptimizationMode::defense:
             std::cout << "(" << score.draws * 100.0 << "% stall) ";
-            break;			
+            break;
         default:
             break;
     }
@@ -816,7 +856,11 @@ void print_deck_inline(const unsigned deck_cost, const FinalResults<long double>
     std::cout << std::endl;
 }
 //------------------------------------------------------------------------------
-void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d1, Process& proc, Requirement & requirement, Quest & quest)
+void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d1, Process& proc, Requirement & requirement
+#ifndef NQUEST
+    , Quest & quest
+#endif
+)
 {
 	EvaluatedResults zero_results = { EvaluatedResults::first_type(proc.enemy_decks.size()), 0 };
     auto best_deck = d1->hash();
@@ -835,7 +879,11 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
     fund = std::max(fund, deck_cost);
     print_deck_inline(deck_cost, best_score, d1);
     std::mt19937 & re = proc.threads_data[0]->re;
-    unsigned best_gap = check_requirement(d1, requirement, quest);
+    unsigned best_gap = check_requirement(d1, requirement
+#ifndef NQUEST
+        , quest
+#endif
+    );
     bool deck_has_been_improved = true;
     unsigned long skipped_simulations = 0;
     std::vector<std::pair<signed, const Card *>> cards_out, cards_in;
@@ -881,7 +929,11 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
                 d1->commander = commander_candidate;
                 if (! adjust_deck(d1, -1, -1, nullptr, fund, re, deck_cost, cards_out, cards_in))
                 { continue; }
-                unsigned new_gap = check_requirement(d1, requirement, quest);
+                unsigned new_gap = check_requirement(d1, requirement
+#ifndef NQUEST
+                    , quest
+#endif
+                );
                 if (new_gap > 0 && new_gap >= best_gap)
                 { continue; }
                 auto && cur_deck = d1->hash();
@@ -937,7 +989,11 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
             if (! adjust_deck(d1, slot_i, slot_i, card_candidate, fund, re, deck_cost, cards_out, cards_in) ||
                     d1->cards.size() < min_deck_len)
             { continue; }
-            unsigned new_gap = check_requirement(d1, requirement, quest);
+            unsigned new_gap = check_requirement(d1, requirement
+#ifndef NQUEST
+                , quest
+#endif
+            );
             if (new_gap > 0 && new_gap >= best_gap)
             { continue; }
             auto && cur_deck = d1->hash();
@@ -978,7 +1034,11 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
     print_deck_inline(get_deck_cost(d1), best_score, d1);
 }
 //------------------------------------------------------------------------------
-void hill_climbing_ordered(unsigned num_min_iterations, unsigned num_iterations, Deck* d1, Process& proc, Requirement & requirement, Quest & quest)
+void hill_climbing_ordered(unsigned num_min_iterations, unsigned num_iterations, Deck* d1, Process& proc, Requirement & requirement
+#ifndef NQUEST
+    , Quest & quest
+#endif
+)
 {
 	EvaluatedResults zero_results = { EvaluatedResults::first_type(proc.enemy_decks.size()), 0 };
     auto best_deck = d1->hash();
@@ -997,7 +1057,11 @@ void hill_climbing_ordered(unsigned num_min_iterations, unsigned num_iterations,
     fund = std::max(fund, deck_cost);
     print_deck_inline(deck_cost, best_score, d1);
     std::mt19937 & re = proc.threads_data[0]->re;
-    unsigned best_gap = check_requirement(d1, requirement, quest);
+    unsigned best_gap = check_requirement(d1, requirement
+#ifndef NQUEST
+        , quest
+#endif
+    );
     bool deck_has_been_improved = true;
     unsigned long skipped_simulations = 0;
     std::vector<std::pair<signed, const Card *>> cards_out, cards_in;
@@ -1048,7 +1112,11 @@ void hill_climbing_ordered(unsigned num_min_iterations, unsigned num_iterations,
                 d1->commander = commander_candidate;
                 if (! adjust_deck(d1, -1, -1, nullptr, fund, re, deck_cost, cards_out, cards_in))
                 { continue; }
-                unsigned new_gap = check_requirement(d1, requirement, quest);
+                unsigned new_gap = check_requirement(d1, requirement
+#ifndef NQUEST
+                    , quest
+#endif
+                );
                 if (new_gap > 0 && new_gap >= best_gap)
                 { continue; }
                 auto && cur_deck = d1->hash();
@@ -1108,7 +1176,11 @@ void hill_climbing_ordered(unsigned num_min_iterations, unsigned num_iterations,
                 if (! adjust_deck(d1, from_slot, to_slot, card_candidate, fund, re, deck_cost, cards_out, cards_in) ||
                         d1->cards.size() < min_deck_len)
                 { continue; }
-                unsigned new_gap = check_requirement(d1, requirement, quest);
+                unsigned new_gap = check_requirement(d1, requirement
+#ifndef NQUEST
+                    , quest
+#endif
+                );
                 if (new_gap > 0 && new_gap >= best_gap)
                 { continue; }
                 auto && cur_deck = d1->hash();
@@ -1244,7 +1316,9 @@ int main(int argc, char** argv)
     std::string opt_allow_candidates;
     std::string opt_disallow_candidates;
     std::string opt_disallow_recipes;
+#ifndef NQUEST
     std::string opt_quest;
+#endif
     std::string opt_target_score;
     std::vector<std::string> fn_suffix_list{"",};
     std::vector<std::string> opt_owned_cards_str_list;
@@ -1414,11 +1488,13 @@ int main(int argc, char** argv)
             use_fused_card_level = atoi(argv[argIndex+1]);
             argIndex += 1;
         }
+#ifndef NQUEST
         else if (strcmp(argv[argIndex], "quest") == 0)
         {
             opt_quest = argv[argIndex+1];
             argIndex += 1;
         }
+#endif
         else if(strcmp(argv[argIndex], "threads") == 0 || strcmp(argv[argIndex], "-t") == 0)
         {
             opt_num_threads = atoi(argv[argIndex+1]);
@@ -1800,6 +1876,7 @@ int main(int argc, char** argv)
         all_cards.cards_by_id[cid]->m_recipe_cards.clear();
     }
 
+#ifndef NQUEST
     if (!opt_quest.empty())
     {
         try
@@ -1935,6 +2012,7 @@ int main(int argc, char** argv)
             return 0;
         }
     }
+#endif
 
     try
     {
@@ -2072,7 +2150,11 @@ int main(int argc, char** argv)
         }
     }
 
-    Process p(opt_num_threads, all_cards, decks, your_deck, enemy_decks, enemy_decks_factors, gamemode, quest, opt_bg_effects, opt_bg_skills[0], opt_bg_skills[1]);
+    Process p(opt_num_threads, all_cards, decks, your_deck, enemy_decks, enemy_decks_factors, gamemode,
+#ifndef NQUEST
+        quest,
+#endif
+        opt_bg_effects, opt_bg_skills[0], opt_bg_skills[1]);
 
     for(auto op: opt_todo)
     {
@@ -2090,12 +2172,20 @@ int main(int argc, char** argv)
             switch (opt_your_strategy)
             {
             case DeckStrategy::random:
-                hill_climbing(std::get<0>(op), std::get<1>(op), your_deck, p, requirement, quest);
+                hill_climbing(std::get<0>(op), std::get<1>(op), your_deck, p, requirement
+#ifndef NQUEST
+                    , quest
+#endif
+                );
                 break;
 //                case DeckStrategy::ordered:
 //                case DeckStrategy::exact_ordered:
             default:
-                hill_climbing_ordered(std::get<0>(op), std::get<1>(op), your_deck, p, requirement, quest);
+                hill_climbing_ordered(std::get<0>(op), std::get<1>(op), your_deck, p, requirement
+#ifndef NQUEST
+                    , quest
+#endif
+                );
                 break;
             }
             break;
@@ -2112,7 +2202,11 @@ int main(int argc, char** argv)
             owned_cards.clear();
             claim_cards({your_deck->commander});
             claim_cards(your_deck->cards);
-            hill_climbing_ordered(std::get<0>(op), std::get<1>(op), your_deck, p, requirement, quest);
+            hill_climbing_ordered(std::get<0>(op), std::get<1>(op), your_deck, p, requirement
+#ifndef NQUEST
+                , quest
+#endif
+            );
             break;
         }
         case debug: {

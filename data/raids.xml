@@ -455,6 +455,22 @@
 			</always_include>
 		</deck>
 	</raid>
+
+	<raid>
+		<id>21</id>
+		<name>Conqueror Krellus Raid</name>
+		<commander>25160</commander>
+		<levels>26</levels>
+		<deck>
+			<always_include>
+				<card replicates="2">40882</card>
+				<card replicates="2">40892</card>
+				<card replicates="2">40902</card>
+				<card replicates="2">40912</card>
+				<card replicates="2">40922</card>
+			</always_include>
+		</deck>
+	</raid>
 <!-- END of Raids -->
 
 

@@ -26,7 +26,7 @@ const std::string skill_names[Skill::num_skills] =
     "Berserk", "Inhibit", "Leech", "Poison",
 
     // Triggered:
-    "Allegiance", "Flurry", "Valor",
+    "Allegiance", "Flurry", "Valor", "Stasis",
 };
 
 const std::string passive_bge_names[PassiveBGE::num_passive_bges] =
@@ -47,8 +47,16 @@ const std::string rarity_names[6]{"", "common", "rare", "epic", "legend", "vindi
 unsigned const upgrade_cost[]{0, 5, 15, 30, 75, 150};
 unsigned const salvaging_income[][7]{{}, {0, 1, 2, 5}, {0, 5, 10, 15, 20}, {0, 20, 25, 30, 40, 50, 65}, {0, 40, 45, 60, 75, 100, 125}, {0, 80, 85, 100, 125, 175, 250}};
 
-unsigned min_possible_score[]{0, 0, 0, 10, 5, 5, 5, 0, 0};
-unsigned max_possible_score[]{100, 100, 100, 100, 67, 67, 100, 100, 100};
+unsigned min_possible_score[]{0, 0, 0, 10, 5, 5, 5, 0
+#ifndef NQUEST
+, 0
+#endif
+};
+unsigned max_possible_score[]{100, 100, 100, 100, 67, 67, 100, 100
+#ifndef NQUEST
+, 100
+#endif
+};
 
 std::string decktype_names[DeckType::num_decktypes]{"Deck", "Mission", "Raid", "Campaign", "Custom Deck", };
 

@@ -292,8 +292,12 @@ Deck* read_deck(Decks& decks, const Cards& all_cards, xml_node<>* node, DeckType
             card_node = card_node->next_sibling("card"))
     {
         card = all_cards.by_id(atoi(card_node->value()));
-        always_cards.push_back(card);
-        upgrade_opportunities += card->m_top_level_card->m_level - card->m_level;
+        unsigned replicates(card_node->first_attribute("replicates") ? atoi(card_node->first_attribute("replicates")->value()) : 1);
+        while (replicates --)
+        {
+            always_cards.push_back(card);
+            upgrade_opportunities += card->m_top_level_card->m_level - card->m_level;
+        }
     }
     for(xml_node<>* pool_node = deck_node->first_node("card_pool");
             pool_node;

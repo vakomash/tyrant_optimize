@@ -1,7 +1,7 @@
 #ifndef TYRANT_H_INCLUDED
 #define TYRANT_H_INCLUDED
 
-#define TYRANT_OPTIMIZER_VERSION "2.27.1"
+#define TYRANT_OPTIMIZER_VERSION "2.29.2"
 
 #include <string>
 #include <sstream>
@@ -45,7 +45,7 @@ enum Skill
     berserk, inhibit, leech, poison,
 
     // Triggered:
-    allegiance, flurry, valor,
+    allegiance, flurry, valor, stasis,
 
     // End of skills
     num_skills
@@ -229,6 +229,7 @@ enum gamemode_t
     surge,
 };
 
+#ifndef NQUEST
 namespace QuestType
 {
 enum QuestType
@@ -244,6 +245,7 @@ enum QuestType
     num_objective_types
 };
 }
+#endif
 
 enum class OptimizationMode
 {
@@ -255,7 +257,9 @@ enum class OptimizationMode
     brawl_defense,
     raid,
     campaign,
+#ifndef NQUEST
     quest,
+#endif
     num_optimization_mode
 };
 
