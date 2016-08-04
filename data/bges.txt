@@ -3,17 +3,20 @@ Inspired: Rally all 3
 Blightblast: Enfeeble all 3
 Bombing Run: Strike all 3
 Triage: Heal all 4
-Combined Arms: Rally+Enfeeble+Strike all 1
+Combined Arms: Rally+Enfeeble+Strike all 2
 Blitzkrieg: Rush
 Paladin's Presence: Protect all 3
 Progenitor Tech: Heal+Protect+Rally+Enfeeble+Strike all 1
 Diminisher: Sunder all 2
 Divine Blessing: Heal+Rally all 2
 Opalescence: Heal+Protect all 2
-Ferocity: Enrage 3
+Ferocity: Enrage 6
 Power Source: Overload 1
 Artillery: Mortar all 4
-Tartarian Gift: Rally+Enrage all 2
+Tartarian Gift: Rally+Enrage all 3
+Bloodthirst: Enhance All Leech 6
+Orbital Cannon: Strike All 10
+Charged Up: Overload 3
 
 // Some other BGEs
 Soothing Chant: Heal all 2
