@@ -369,7 +369,9 @@ def doGrabLastDeck(http):
                     pvp_points = int(rewards['pvp_points'])
                     game_type = 'Brawl'
                     break
-        # TODO: GW, CQ
+                if 'war_points' in rewards:
+                    game_type = 'GW'
+        # TODO: CQ
 
     # deck header
     enemy_guild_name = enemy_udb_entry and enemy_udb_entry.guild_name or '__UNKNOWN__'
