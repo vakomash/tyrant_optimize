@@ -15,7 +15,7 @@ Power Source: Overload 1
 Artillery: Mortar all 4
 Tartarian Gift: Rally+Enrage all 3
 Bloodthirst: Enhance All Leech 6
-Orbital Cannon: Strike All 10
+Orbital Cannon: Strike 10
 Charged Up: Overload 3
 
 // Some other BGEs
