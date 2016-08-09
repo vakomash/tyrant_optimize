@@ -20,6 +20,7 @@ Charged Up: Overload 3
 
 // Some other BGEs
 Soothing Chant: Heal all 2
+Noxious Arena: Enfeeble all 2
 
 // Conquest Zones
 Andar Quarantine: Evolve 2 Pierce Rupture
