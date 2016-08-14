@@ -398,15 +398,15 @@ void resolve_skill(Field* fd)
         auto& status(std::get<0>(skill_instance));
         const auto& ss(std::get<1>(skill_instance));
         fd->skill_queue.pop_front();
-        if (status->m_jammed)
-        {
-            _DEBUG_MSG(2, "%s failed to %s because it is Jammed.\n",
-                status_description(status).c_str(), skill_description(ss).c_str());
-            continue;
-        }
         if (!is_alive(status))
         {
             _DEBUG_MSG(2, "%s failed to %s because it is dead.\n",
+                status_description(status).c_str(), skill_description(ss).c_str());
+            continue;
+        }
+        if (status->m_jammed)
+        {
+            _DEBUG_MSG(2, "%s failed to %s because it is Jammed.\n",
                 status_description(status).c_str(), skill_description(ss).c_str());
             continue;
         }
