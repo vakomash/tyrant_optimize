@@ -1,7 +1,7 @@
 #ifndef TYRANT_H_INCLUDED
 #define TYRANT_H_INCLUDED
 
-#define TYRANT_OPTIMIZER_VERSION "2.29.2"
+#define TYRANT_OPTIMIZER_VERSION "2.30.0"
 
 #include <string>
 #include <sstream>
@@ -34,6 +34,9 @@ enum Skill
 
     // Activation (helpful):
     enhance, evolve, heal, mend, overload, protect, rally, enrage, rush,
+
+    // Activation (unclassified/polymorphic):
+    mimic,
 
     // Defensive:
     armor, avenge, corrosive, counter, evade, payback, revenge, refresh, wall,
@@ -87,6 +90,17 @@ inline bool is_activation_harmful_skill(Skill::Skill skill_id)
     }
 }
 
+inline bool is_activation_hostile_skill(Skill::Skill skill_id)
+{
+    switch(skill_id)
+    {
+    case Skill::mimic:
+        return true;
+    default:
+        return is_activation_harmful_skill(skill_id);
+    }
+}
+
 inline bool is_activation_helpful_skill(Skill::Skill skill_id)
 {
     switch(skill_id)
@@ -106,10 +120,16 @@ inline bool is_activation_helpful_skill(Skill::Skill skill_id)
     }
 }
 
+inline bool is_activation_allied_skill(Skill::Skill skill_id)
+{
+    return is_activation_helpful_skill(skill_id);
+}
+
 inline bool is_activation_skill(Skill::Skill skill_id)
 {
-    return is_activation_harmful_skill(skill_id)
-        || is_activation_helpful_skill(skill_id);
+    return is_activation_hostile_skill(skill_id)
+        || is_activation_allied_skill(skill_id)
+    ;
 }
 
 inline bool is_defensive_skill(Skill::Skill skill_id)

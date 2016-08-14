@@ -1308,6 +1308,34 @@ inline bool skill_predicate<Skill::jam>(Field* fd, CardStatus* src, CardStatus* 
 }
 
 template<>
+inline bool skill_predicate<Skill::mimic>(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s)
+{
+    // skip dead units
+    if (!is_alive(dst)) return false;
+
+    // scan all enemy skills until first activation
+    for (const auto & ss: dst->m_card->m_skills)
+    {
+        // get evolved skill
+        Skill::Skill evolved_skill_id = static_cast<Skill::Skill>(ss.id + dst->m_evolved_skill_offset[ss.id]);
+
+        // skip non-activation skills and Mimic (Mimic can't be mimicked)
+        if (!is_activation_skill(evolved_skill_id) || (evolved_skill_id == Skill::mimic))
+        { continue; }
+
+        // skip mend for non-assault mimickers
+        if ((evolved_skill_id == Skill::mend) && (src->m_card->m_type != CardType::assault))
+        { continue; }
+
+        // enemy has at least one activation skill that can be mimicked, so enemy is eligible target for Mimic
+        return true;
+    }
+
+    // found nothing (enemy has no skills to be mimicked, so enemy isn't eligible target for Mimic)
+    return false;
+}
+
+template<>
 inline bool skill_predicate<Skill::overload>(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s)
 {
     if (dst->m_overloaded || has_attacked(dst) || !is_active(dst))
@@ -1330,7 +1358,7 @@ inline bool skill_predicate<Skill::overload>(Field* fd, CardStatus* src, CardSta
             continue;
         }
         Skill::Skill evolved_skill_id = static_cast<Skill::Skill>(ss.id + dst->m_evolved_skill_offset[ss.id]);
-        if (is_activation_harmful_skill(evolved_skill_id))
+        if (is_activation_hostile_skill(evolved_skill_id))
         {
             return true;
         }
@@ -1514,6 +1542,48 @@ inline void perform_skill<Skill::sunder>(Field* fd, CardStatus* src, CardStatus*
     perform_skill<Skill::weaken>(fd, src, dst, s);
 }
 
+template<>
+inline void perform_skill<Skill::mimic>(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s)
+{
+    // collect all mimickable enemy skills
+    std::vector<std::tuple<const SkillSpec *, Skill::Skill>> mimickable_skills;
+    _DEBUG_MSG(2, " * Mimickable skills of %s\n", status_description(dst).c_str());
+    for (const auto & ss: dst->m_card->m_skills)
+    {
+        // get evolved skill
+        Skill::Skill evolved_skill_id = static_cast<Skill::Skill>(ss.id + dst->m_evolved_skill_offset[ss.id]);
+
+        // skip non-activation skills and Mimic (Mimic can't be mimicked)
+        if (!is_activation_skill(evolved_skill_id) || (evolved_skill_id == Skill::mimic))
+        { continue; }
+
+        // skip mend for non-assault mimickers
+        if ((evolved_skill_id == Skill::mend) && (src->m_card->m_type != CardType::assault))
+        { continue; }
+
+        mimickable_skills.emplace_back(&ss, evolved_skill_id);
+        _DEBUG_MSG(2, "  + %s (ev -> %s)\n",
+            skill_description(ss).c_str(),
+            skill_names[evolved_skill_id].c_str());
+    }
+
+    // select skill
+    unsigned mim_idx = 0;
+    switch (mimickable_skills.size())
+    {
+    case 0: assert(false); break;
+    case 1: break;
+    default: mim_idx = (fd->re() % mimickable_skills.size()); break;
+    }
+
+    // prepare & perform selected skill
+    const SkillSpec & mim_ss = *std::get<0>(mimickable_skills[mim_idx]);
+    Skill::Skill mim_skill_id = std::get<1>(mimickable_skills[mim_idx]);
+    SkillSpec mimicked_ss{mim_skill_id, s.x, allfactions, mim_ss.n, 0, mim_ss.s, mim_ss.s2, mim_ss.all};
+    _DEBUG_MSG(1, " * Mimicked skill: %s\n", skill_description(mimicked_ss).c_str());
+    skill_table[mim_skill_id](fd, src, mimicked_ss);
+}
+
 template<unsigned skill_id>
 inline unsigned select_fast(Field* fd, CardStatus* src, const std::vector<CardStatus*>& cards, const SkillSpec& s)
 {
@@ -1611,6 +1681,9 @@ template<> std::vector<CardStatus*>& skill_targets<Skill::sunder>(Field* fd, Car
 { return(skill_targets_hostile_assault(fd, src)); }
 
 template<> std::vector<CardStatus*>& skill_targets<Skill::weaken>(Field* fd, CardStatus* src)
+{ return(skill_targets_hostile_assault(fd, src)); }
+
+template<> std::vector<CardStatus*>& skill_targets<Skill::mimic>(Field* fd, CardStatus* src)
 { return(skill_targets_hostile_assault(fd, src)); }
 
 template<Skill::Skill skill_id>
@@ -1851,7 +1924,7 @@ void perform_targetted_hostile_fast(Field* fd, CardStatus* src, const SkillSpec&
 
             // Payback/Revenge: collect paybackers/revengers
             unsigned payback_value = dst->skill(Skill::payback) + dst->skill(Skill::revenge);
-            if (dst->m_paybacked < payback_value && skill_check<Skill::payback>(fd, dst, src))
+            if ((s.id != Skill::mimic) && (dst->m_paybacked < payback_value) && skill_check<Skill::payback>(fd, dst, src))
             {
                 paybackers.push_back(dst);
             }
@@ -2405,4 +2478,5 @@ void fill_skill_table()
     skill_table[Skill::strike] = perform_targetted_hostile_fast<Skill::strike>;
     skill_table[Skill::sunder] = perform_targetted_hostile_fast<Skill::sunder>;
     skill_table[Skill::weaken] = perform_targetted_hostile_fast<Skill::weaken>;
+    skill_table[Skill::mimic] = perform_targetted_hostile_fast<Skill::mimic>;
 }
