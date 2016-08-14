@@ -1292,7 +1292,7 @@ void usage(int argc, char** argv)
         ;
 }
 
-std::string skill_description(const Cards& cards, const SkillSpec& s);
+std::string skill_description(const SkillSpec& s);
 
 int main(int argc, char** argv)
 {
@@ -2126,7 +2126,7 @@ int main(int argc, char** argv)
         std::cout << "Your Deck: " << (debug_print > 0 ? your_deck->long_description() : your_deck->medium_description()) << std::endl;
         for (const auto & bg_skill: opt_bg_skills[0])
         {
-            std::cout << "Your BG Skill: " << skill_description(all_cards, bg_skill) << std::endl;
+            std::cout << "Your BG Skill: " << skill_description(bg_skill) << std::endl;
         }
 
         for (unsigned i(0); i < enemy_decks.size(); ++i)
@@ -2135,7 +2135,7 @@ int main(int argc, char** argv)
         }
         for (const auto & bg_skill: opt_bg_skills[1])
         {
-            std::cout << "Enemy's BG Skill: " << skill_description(all_cards, bg_skill) << std::endl;
+            std::cout << "Enemy's BG Skill: " << skill_description(bg_skill) << std::endl;
         }
         for (const auto & bg_effect: opt_bg_effects)
         {

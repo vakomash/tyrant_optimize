@@ -168,7 +168,7 @@ inline unsigned attack_power(const CardStatus* att)
     return safe_minus(safe_minus(att->m_attack, att->m_weakened + att->m_corroded_weakened) + att->m_rallied, att->m_derallied);
 }
 //------------------------------------------------------------------------------
-std::string skill_description(const Cards& cards, const SkillSpec& s)
+std::string skill_description(const SkillSpec& s)
 {
     return skill_names[s.id] +
        (s.all ? " all" : s.n == 0 ? "" : std::string(" ") + to_string(s.n)) +
@@ -208,7 +208,7 @@ std::string card_description(const Cards& cards, const Card* c)
     }
     if(c->m_rarity >= 4) { desc += " " + rarity_names[c->m_rarity]; }
     if(c->m_faction != allfactions) { desc += " " + faction_names[c->m_faction]; }
-    for(auto& skill: c->m_skills) { desc += ", " + skill_description(cards, skill); }
+    for(auto& skill: c->m_skills) { desc += ", " + skill_description(skill); }
     return(desc);
 }
 //------------------------------------------------------------------------------
@@ -380,7 +380,7 @@ void prepend_on_death(Field* fd)
             SkillSpec ss_rally{Skill::rally, fd->bg_effects.at(PassiveBGE::revenge), allfactions, 0, 0, Skill::no_skill, Skill::no_skill, true,};
             CardStatus * commander = &fd->players[status->m_player]->commander;
             _DEBUG_MSG(2, "Revenge: Preparing skill %s and %s\n",
-                skill_description(fd->cards, ss_heal).c_str(), skill_description(fd->cards, ss_rally).c_str());
+                skill_description(ss_heal).c_str(), skill_description(ss_rally).c_str());
             od_skills.emplace_back(commander, ss_heal);
             od_skills.emplace_back(commander, ss_rally);
         }
@@ -401,13 +401,13 @@ void resolve_skill(Field* fd)
         if (status->m_jammed)
         {
             _DEBUG_MSG(2, "%s failed to %s because it is Jammed.\n",
-                status_description(status).c_str(), skill_description(fd->cards, ss).c_str());
+                status_description(status).c_str(), skill_description(ss).c_str());
             continue;
         }
         if (!is_alive(status))
         {
             _DEBUG_MSG(2, "%s failed to %s because it is dead.\n",
-                status_description(status).c_str(), skill_description(fd->cards, ss).c_str());
+                status_description(status).c_str(), skill_description(ss).c_str());
             continue;
         }
         signed evolved_offset = status->m_evolved_skill_offset[ss.id];
@@ -447,7 +447,7 @@ void evaluate_skills(Field* fd, CardStatus* status, const std::vector<SkillSpec>
                 continue;
             }
             _DEBUG_MSG(2, "Evaluating %s skill %s\n",
-                status_description(status).c_str(), skill_description(fd->cards, ss).c_str());
+                status_description(status).c_str(), skill_description(ss).c_str());
             fd->skill_queue.emplace_back(status, ss);
             resolve_skill(fd);
             if(__builtin_expect(fd->end, false)) { break; }
@@ -2185,7 +2185,7 @@ Results<uint64_t> play(Field* fd)
         // Evaluate activation BGE skills
         for (const auto & bg_skill: fd->bg_skills[fd->tapi])
         {
-            _DEBUG_MSG(2, "Evaluating BG skill %s\n", skill_description(fd->cards, bg_skill).c_str());
+            _DEBUG_MSG(2, "Evaluating BG skill %s\n", skill_description(bg_skill).c_str());
             fd->skill_queue.emplace_back(&fd->tap->commander, bg_skill);
             resolve_skill(fd);
         }
