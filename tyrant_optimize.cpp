@@ -2032,7 +2032,7 @@ int main(int argc, char** argv)
     {
         auto && card = card_mark.first < 0 ? your_deck->commander : your_deck->cards[card_mark.first];
         auto mark = card_mark.second;
-        if (mark == '!')
+        if ((mark == '!') && ((card_mark.first >= 0) || !opt_keep_commander))
         {
             requirement.num_cards[card] += 1;
         }
