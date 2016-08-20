@@ -576,6 +576,12 @@ inline bool skill_check<Skill::leech>(Field* fd, CardStatus* c, CardStatus* ref)
 }
 
 template<>
+inline bool skill_check<Skill::coalition>(Field* fd, CardStatus* c, CardStatus* ref)
+{
+    return(is_active(c));
+}
+
+template<>
 inline bool skill_check<Skill::legion>(Field* fd, CardStatus* c, CardStatus* ref)
 {
     return(is_active(c));
@@ -1024,9 +1030,11 @@ struct PerformAttack
         { return; }
         std::string desc;
         unsigned legion_value = 0;
+
+        // Enhance damage (if additional damage isn't prevented)
         if (! att_status->m_sundered)
         {
-            // enhance damage
+            // Skill: Legion
             unsigned legion_base = att_status->skill(Skill::legion);
             if (legion_base > 0)
             {
@@ -1040,23 +1048,48 @@ struct PerformAttack
                     att_dmg += legion_value;
                 }
             }
+
+            // Skill: Coalition
+            unsigned coalition_base = att_status->skill(Skill::coalition);
+            if (coalition_base > 0)
+            {
+                uint8_t factions_bitmap = 0;
+                for (CardStatus * status : fd->tap->assaults.m_indirect)
+                {
+                    if (! is_alive(status)) { continue; }
+                    factions_bitmap |= (1 << (status->m_card->m_faction));
+                }
+                assert(factions_bitmap);
+                unsigned uniq_factions = byte_bits_count(factions_bitmap);
+                unsigned coalition_value = coalition_base * uniq_factions;
+                if (debug_print > 0) { desc += "+" + to_string(coalition_value) + "(coalition/x" + to_string(uniq_factions) + ")"; }
+                att_dmg += coalition_value;
+            }
+
+            // Skill: Rupture
             unsigned rupture_value = att_status->skill(Skill::rupture);
             if (rupture_value > 0)
             {
                 if (debug_print > 0) { desc += "+" + to_string(rupture_value) + "(rupture)"; }
                 att_dmg += rupture_value;
             }
+
+            // Skill: Venom
             unsigned venom_value = att_status->skill(Skill::venom);
             if (venom_value > 0 && def_status->m_poisoned > 0)
             {
                 if (debug_print > 0) { desc += "+" + to_string(venom_value) + "(venom)"; }
                 att_dmg += venom_value;
             }
+
+            // BGE: Bloodlust
             if (fd->bloodlust_value > 0)
             {
                 if (debug_print > 0) { desc += "+" + to_string(fd->bloodlust_value) + "(bloodlust)"; }
                 att_dmg += fd->bloodlust_value;
             }
+
+            // State: Enfeebled
             if(def_status->m_enfeebled > 0)
             {
                 if(debug_print > 0) { desc += "+" + to_string(def_status->m_enfeebled) + "(enfeebled)"; }

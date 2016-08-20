@@ -1,7 +1,7 @@
 #ifndef TYRANT_H_INCLUDED
 #define TYRANT_H_INCLUDED
 
-#define TYRANT_OPTIMIZER_VERSION "2.30.0"
+#define TYRANT_OPTIMIZER_VERSION "2.31.0"
 
 #include <string>
 #include <sstream>
@@ -42,7 +42,7 @@ enum Skill
     armor, avenge, corrosive, counter, evade, payback, revenge, refresh, wall,
 
     // Combat-Modifier:
-    legion, pierce, rupture, swipe, venom,
+    coalition, legion, pierce, rupture, swipe, venom,
 
     // Damage-Dependent:
     berserk, inhibit, leech, poison,
@@ -306,6 +306,13 @@ std::string to_string(const T val)
     std::stringstream s;
     s << val;
     return s.str();
+}
+
+inline uint8_t byte_bits_count(register uint8_t i)
+{
+    i = i - ((i >> 1) & 0x55);
+    i = (i & 0x33) + ((i >> 2) & 0x33);
+    return (i + (i >> 4)) & 0x0F;
 }
 
 //---------------------- Debugging stuff ---------------------------------------
