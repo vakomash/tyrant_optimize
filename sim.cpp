@@ -1349,15 +1349,15 @@ inline bool skill_predicate<Skill::mimic>(Field* fd, CardStatus* src, CardStatus
     // scan all enemy skills until first activation
     for (const auto & ss: dst->m_card->m_skills)
     {
-        // get evolved skill
-        Skill::Skill evolved_skill_id = static_cast<Skill::Skill>(ss.id + dst->m_evolved_skill_offset[ss.id]);
+        // get skill
+        Skill::Skill skill_id = static_cast<Skill::Skill>(ss.id);
 
         // skip non-activation skills and Mimic (Mimic can't be mimicked)
-        if (!is_activation_skill(evolved_skill_id) || (evolved_skill_id == Skill::mimic))
+        if (!is_activation_skill(skill_id) || (skill_id == Skill::mimic))
         { continue; }
 
         // skip mend for non-assault mimickers
-        if ((evolved_skill_id == Skill::mend) && (src->m_card->m_type != CardType::assault))
+        if ((skill_id == Skill::mend) && (src->m_card->m_type != CardType::assault))
         { continue; }
 
         // enemy has at least one activation skill that can be mimicked, so enemy is eligible target for Mimic
@@ -1579,25 +1579,23 @@ template<>
 inline void perform_skill<Skill::mimic>(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s)
 {
     // collect all mimickable enemy skills
-    std::vector<std::tuple<const SkillSpec *, Skill::Skill>> mimickable_skills;
+    std::vector<const SkillSpec *> mimickable_skills;
     _DEBUG_MSG(2, " * Mimickable skills of %s\n", status_description(dst).c_str());
     for (const auto & ss: dst->m_card->m_skills)
     {
-        // get evolved skill
-        Skill::Skill evolved_skill_id = static_cast<Skill::Skill>(ss.id + dst->m_evolved_skill_offset[ss.id]);
+        // get skill
+        Skill::Skill skill_id = static_cast<Skill::Skill>(ss.id);
 
         // skip non-activation skills and Mimic (Mimic can't be mimicked)
-        if (!is_activation_skill(evolved_skill_id) || (evolved_skill_id == Skill::mimic))
+        if (!is_activation_skill(skill_id) || (skill_id == Skill::mimic))
         { continue; }
 
         // skip mend for non-assault mimickers
-        if ((evolved_skill_id == Skill::mend) && (src->m_card->m_type != CardType::assault))
+        if ((skill_id == Skill::mend) && (src->m_card->m_type != CardType::assault))
         { continue; }
 
-        mimickable_skills.emplace_back(&ss, evolved_skill_id);
-        _DEBUG_MSG(2, "  + %s (ev -> %s)\n",
-            skill_description(ss).c_str(),
-            skill_names[evolved_skill_id].c_str());
+        mimickable_skills.emplace_back(&ss);
+        _DEBUG_MSG(2, "  + %s\n", skill_description(ss).c_str());
     }
 
     // select skill
@@ -1610,8 +1608,8 @@ inline void perform_skill<Skill::mimic>(Field* fd, CardStatus* src, CardStatus* 
     }
 
     // prepare & perform selected skill
-    const SkillSpec & mim_ss = *std::get<0>(mimickable_skills[mim_idx]);
-    Skill::Skill mim_skill_id = std::get<1>(mimickable_skills[mim_idx]);
+    const SkillSpec & mim_ss = *mimickable_skills[mim_idx];
+    Skill::Skill mim_skill_id = static_cast<Skill::Skill>(mim_ss.id);
     SkillSpec mimicked_ss{mim_skill_id, s.x, allfactions, mim_ss.n, 0, mim_ss.s, mim_ss.s2, mim_ss.all};
     _DEBUG_MSG(1, " * Mimicked skill: %s\n", skill_description(mimicked_ss).c_str());
     skill_table[mim_skill_id](fd, src, mimicked_ss);
