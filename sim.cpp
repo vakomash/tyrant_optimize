@@ -1610,7 +1610,8 @@ inline void perform_skill<Skill::mimic>(Field* fd, CardStatus* src, CardStatus* 
     // prepare & perform selected skill
     const SkillSpec & mim_ss = *mimickable_skills[mim_idx];
     Skill::Skill mim_skill_id = static_cast<Skill::Skill>(mim_ss.id);
-    SkillSpec mimicked_ss{mim_skill_id, s.x, allfactions, mim_ss.n, 0, mim_ss.s, mim_ss.s2, mim_ss.all};
+    auto skill_value = s.x + src->enhanced(mim_skill_id);
+    SkillSpec mimicked_ss{mim_skill_id, skill_value, allfactions, mim_ss.n, 0, mim_ss.s, mim_ss.s2, mim_ss.all};
     _DEBUG_MSG(1, " * Mimicked skill: %s\n", skill_description(mimicked_ss).c_str());
     skill_table[mim_skill_id](fd, src, mimicked_ss);
 }
