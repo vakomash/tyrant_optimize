@@ -1,0 +1,19 @@
+MAIN := tuodebug
+SRCS := $(wildcard *.cpp)
+OBJS := $(patsubst %.cpp,obj-debug/%.o,$(SRCS))
+INCS := $(wildcard *.h)
+
+CPPFLAGS := -Wall -Werror -std=gnu++11 -O3
+LDFLAGS := -lboost_system -lboost_thread -lboost_filesystem -lboost_regex
+
+all: $(MAIN)
+
+obj-debug/%.o: %.cpp $(INCS)
+	mkdir -p obj-debug
+	$(CXX) $(CPPFLAGS) -o $@ -c $<
+
+$(MAIN): $(OBJS)
+	$(CXX) -o $@ $(OBJS) $(LDFLAGS)
+
+clean:
+	rm -rf $(MAIN) obj-debug/*.o
