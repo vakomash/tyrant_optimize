@@ -48,10 +48,14 @@ inline unsigned Field::make_selection_array(CardsIter first, CardsIter last, Fun
 }
 inline CardStatus * Field::left_assault(const CardStatus * status)
 {
+    return left_assault(status, 1);
+}
+inline CardStatus * Field::left_assault(const CardStatus * status, const unsigned n)
+{
     auto & assaults = this->players[status->m_player]->assaults;
-    if (status->m_index > 0)
+    if (status->m_index >= n)
     {
-        auto left_status = &assaults[status->m_index - 1];
+        auto left_status = &assaults[status->m_index - n];
         if (is_alive(left_status))
         {
             return left_status;
@@ -61,10 +65,14 @@ inline CardStatus * Field::left_assault(const CardStatus * status)
 }
 inline CardStatus * Field::right_assault(const CardStatus * status)
 {
+    return right_assault(status, 1);
+}
+inline CardStatus * Field::right_assault(const CardStatus * status, const unsigned n)
+{
     auto & assaults = this->players[status->m_player]->assaults;
-    if (status->m_index + 1 < assaults.size())
+    if ((status->m_index + n) < assaults.size())
     {
-        auto right_status = &assaults[status->m_index + 1];
+        auto right_status = &assaults[status->m_index + n];
         if (is_alive(right_status))
         {
             return right_status;
@@ -74,16 +82,22 @@ inline CardStatus * Field::right_assault(const CardStatus * status)
 }
 inline const std::vector<CardStatus *> Field::adjacent_assaults(const CardStatus * status)
 {
+    return adjacent_assaults(status, 1);
+}
+inline const std::vector<CardStatus *> Field::adjacent_assaults(const CardStatus * status, const unsigned n)
+{
     std::vector<CardStatus *> res;
-    auto left_status = left_assault(status);
-    auto right_status = right_assault(status);
-    if (left_status)
+    for (unsigned i(n); i > 0; -- i)
     {
-        res.push_back(left_status);
+        auto left_status = left_assault(status, i);
+        if (left_status)
+        { res.push_back(left_status); }
     }
-    if (right_status)
+    for (unsigned i(1); i <= n; ++ i)
     {
-        res.push_back(right_status);
+        auto right_status = right_assault(status, i);
+        if (right_status)
+        { res.push_back(right_status); }
     }
     return res;
 }
@@ -1240,7 +1254,8 @@ bool attack_phase(Field* fd)
         unsigned swipe_value = att_status->skill(Skill::swipe);
         if (swipe_value > 0)
         {
-            for (auto && adj_status: fd->adjacent_assaults(def_status))
+            bool critical_reach = fd->bg_effects.count(PassiveBGE::criticalreach);
+            for (auto && adj_status: fd->adjacent_assaults(def_status, critical_reach ? 2 : 1))
             {
                 unsigned swipe_dmg = safe_minus(swipe_value + def_status->m_enfeebled, def_status->protected_value());
                 _DEBUG_MSG(1, "%s swipes %s for %u damage\n",
@@ -1633,7 +1648,8 @@ template<>
 inline unsigned select_fast<Skill::mend>(Field* fd, CardStatus* src, const std::vector<CardStatus*>& cards, const SkillSpec& s)
 {
     fd->selection_array.clear();
-    for (auto && adj_status: fd->adjacent_assaults(src))
+    bool critical_reach = fd->bg_effects.count(PassiveBGE::criticalreach);
+    for (auto && adj_status: fd->adjacent_assaults(src, critical_reach ? 2 : 1))
     {
         if (skill_predicate<Skill::mend>(fd, src, adj_status, s))
         {

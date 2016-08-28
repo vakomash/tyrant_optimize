@@ -1,7 +1,7 @@
 #ifndef TYRANT_H_INCLUDED
 #define TYRANT_H_INCLUDED
 
-#define TYRANT_OPTIMIZER_VERSION "2.31.2"
+#define TYRANT_OPTIMIZER_VERSION "2.32.0"
 
 #include <string>
 #include <sstream>
@@ -65,7 +65,7 @@ enum PassiveBGE
     // Passive BGEs
     bloodlust, brigade, counterflux, divert, enduringrage, fortification, heroism,
     zealotspreservation, metamorphosis, revenge, turningtides, virulence, haltedorders,
-    devour,
+    devour, criticalreach,
 
     // End of BGEs
     num_passive_bges

@@ -319,8 +319,11 @@ public:
     template <typename CardsIter, typename Functor>
     inline unsigned make_selection_array(CardsIter first, CardsIter last, Functor f);
     inline CardStatus * left_assault(const CardStatus * status);
+    inline CardStatus * left_assault(const CardStatus * status, const unsigned n);
     inline CardStatus * right_assault(const CardStatus * status);
+    inline CardStatus * right_assault(const CardStatus * status, const unsigned n);
     inline const std::vector<CardStatus *> adjacent_assaults(const CardStatus * status);
+    inline const std::vector<CardStatus *> adjacent_assaults(const CardStatus * status, const unsigned n);
     inline void print_selection_array();
 
 #ifndef NQUEST
