@@ -9,7 +9,7 @@ FILES=(
    fusion_recipes_cj2.xml
    missions.xml
    skills_set.xml
-   cards_section_{1..10}.xml
+   cards_section_{1..11}.xml
 )
 
 TMP_PREFIX="."
@@ -52,7 +52,7 @@ for f in "${FILES[@]}"; do
         old_file="${olds_dir}/${f}"
         echo "$new_etag" > "${etg_tmp_file}"
         wget -O "${tmp_file}" "${BASE_URL}${f}" \
-            && mv "${out_file}" "${old_file}" \
+            && (test -f "${out_file}" && mv "${out_file}" "${old_file}" || true) \
             && mv "${tmp_file}" "${out_file}" \
             && mv "${etg_tmp_file}" "${etg_file}" \
         ;
