@@ -1858,20 +1858,6 @@ size_t select_targets(Field* fd, CardStatus* src, const SkillSpec& s)
 
     } while (false); // (end)
 
-    // Overload N (N > 1) when unit targets itself: move itself to the last position to avoid
-    // false overloaded state sharing
-    if (skill_id == Skill::overload && n_selected > 1)
-    {
-        for (unsigned i = 0; i < n_selected - 1; i++)
-        {
-            if (fd->selection_array[i] == src)
-            {
-                std::swap(fd->selection_array[i], fd->selection_array[n_selected - 1]);
-                break;
-            }
-        }
-    }
-
     return n_selected;
 }
 
@@ -1883,9 +1869,10 @@ void perform_targetted_allied_fast(Field* fd, CardStatus* src, const SkillSpec& 
 #ifndef NQUEST
     bool has_counted_quest = false;
 #endif
+    bool src_overloaded = src->m_overloaded;
     for (CardStatus * dst: fd->selection_array)
     {
-        if (dst->m_inhibited > 0 && !src->m_overloaded)
+        if (dst->m_inhibited > 0 && !src_overloaded)
         {
             _DEBUG_MSG(1, "%s %s on %s but it is inhibited\n",
                 status_description(src).c_str(), skill_short_description(s).c_str(),
