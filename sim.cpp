@@ -1811,60 +1811,54 @@ bool check_and_perform_valor(Field* fd, CardStatus* src)
 template<Skill::Skill skill_id>
 size_t select_targets(Field* fd, CardStatus* src, const SkillSpec& s)
 {
-    std::vector<CardStatus*>& cards(skill_targets<skill_id>(fd, src));
-    size_t n_candidates = select_fast<skill_id>(fd, src, cards, s);
-    if (n_candidates == 0)
+    size_t n_candidates;
+    switch (skill_id)
     {
-        return n_candidates;
-    }
-    _DEBUG_SELECTION("%s", skill_names[skill_id].c_str());
-    unsigned n_targets = s.n > 0 ? s.n : 1;
-    if (s.all || n_targets >= n_candidates || skill_id == Skill::mend)  // target all or mend
-    {
-        return n_candidates;
-    }
-    for (unsigned i = 0; i < n_targets; ++i)
-    {
-        std::swap(fd->selection_array[i], fd->selection_array[fd->rand(i, n_candidates - 1)]);
-    }
-    fd->selection_array.resize(n_targets);
-    if (n_targets > 1)
-    {
-        std::sort(fd->selection_array.begin(), fd->selection_array.end(),
-            [](const CardStatus * a, const CardStatus * b) { return a->m_index < b->m_index; });
-    }
-    return n_targets;
-}
-
-template<>
-size_t select_targets<Skill::mortar>(Field* fd, CardStatus* src, const SkillSpec& s)
-{
-    size_t n_candidates = select_fast<Skill::siege>(fd, src, skill_targets<Skill::siege>(fd, src), s);
-    if (n_candidates == 0)
-    {
-        n_candidates = select_fast<Skill::strike>(fd, src, skill_targets<Skill::strike>(fd, src), s);
+    case Skill::mortar:
+        n_candidates = select_fast<Skill::siege>(fd, src, skill_targets<Skill::siege>(fd, src), s);
         if (n_candidates == 0)
         {
-            return n_candidates;
+            n_candidates = select_fast<Skill::strike>(fd, src, skill_targets<Skill::strike>(fd, src), s);
         }
+        break;
+
+    default:
+        n_candidates = select_fast<skill_id>(fd, src, skill_targets<skill_id>(fd, src), s);
+        break;
     }
-    _DEBUG_SELECTION("%s", skill_names[Skill::mortar].c_str());
-    unsigned n_targets = s.n > 0 ? s.n : 1;
-    if (s.all || n_targets >= n_candidates)
+
+    // (false-loop)
+    unsigned n_selected = n_candidates;
+    do
     {
-        return n_candidates;
-    }
-    for (unsigned i = 0; i < n_targets; ++i)
-    {
-        std::swap(fd->selection_array[i], fd->selection_array[fd->rand(i, n_candidates - 1)]);
-    }
-    fd->selection_array.resize(n_targets);
-    if (n_targets > 1)
-    {
-        std::sort(fd->selection_array.begin(), fd->selection_array.end(),
-            [](const CardStatus * a, const CardStatus * b) { return a->m_index < b->m_index; });
-    }
-    return n_targets;
+        // no candidates
+        if (n_candidates == 0)
+        { break; }
+
+        // show candidates (debug)
+        _DEBUG_SELECTION("%s", skill_names[skill_id].c_str());
+
+        // analyze targets count / skill
+        unsigned n_targets = s.n > 0 ? s.n : 1;
+        if (s.all || n_targets >= n_candidates || skill_id == Skill::mend)  // target all or mend
+        { break; }
+
+        // shuffle & trim
+        for (unsigned i = 0; i < n_targets; ++i)
+        {
+            std::swap(fd->selection_array[i], fd->selection_array[fd->rand(i, n_candidates - 1)]);
+        }
+        fd->selection_array.resize(n_targets);
+        if (n_targets > 1)
+        {
+            std::sort(fd->selection_array.begin(), fd->selection_array.end(),
+                [](const CardStatus * a, const CardStatus * b) { return a->m_index < b->m_index; });
+        }
+        n_selected = n_targets;
+
+    } while (false); // (end)
+
+    return n_selected;
 }
 
 template<Skill::Skill skill_id>
