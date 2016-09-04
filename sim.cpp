@@ -1867,6 +1867,7 @@ size_t select_targets(Field* fd, CardStatus* src, const SkillSpec& s)
             if (fd->selection_array[i] == src)
             {
                 std::swap(fd->selection_array[i], fd->selection_array[n_selected - 1]);
+                break;
             }
         }
     }
