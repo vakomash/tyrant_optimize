@@ -1251,10 +1251,11 @@ bool attack_phase(Field* fd)
     {
         CardStatus * def_status = &fd->tip->assaults[fd->current_ci];
         att_dmg = PerformAttack{fd, att_status, def_status}.op<CardType::assault>();
-        unsigned swipe_value = att_status->skill(Skill::swipe);
+        unsigned swipe_value = att_status->skill(Skill::swipe) + att_status->skill(Skill::drain);
         if (swipe_value > 0)
         {
             bool critical_reach = fd->bg_effects.count(PassiveBGE::criticalreach);
+            auto drain_total_dmg = att_dmg;
             for (auto && adj_status: fd->adjacent_assaults(def_status, critical_reach ? 2 : 1))
             {
                 unsigned swipe_dmg = safe_minus(swipe_value + def_status->m_enfeebled, def_status->protected_value());
@@ -1262,6 +1263,13 @@ bool attack_phase(Field* fd)
                     status_description(att_status).c_str(),
                     status_description(adj_status).c_str(), swipe_dmg);
                 remove_hp(fd, adj_status, swipe_dmg);
+                drain_total_dmg += swipe_dmg;
+            }
+            if (att_status->skill(Skill::drain))
+            {
+                _DEBUG_MSG(1, "%s drains %u hp\n",
+                    status_description(att_status).c_str(), drain_total_dmg);
+                add_hp(fd, att_status, drain_total_dmg);
             }
             prepend_on_death(fd);
             resolve_skill(fd);

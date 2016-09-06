@@ -1,7 +1,7 @@
 #ifndef TYRANT_H_INCLUDED
 #define TYRANT_H_INCLUDED
 
-#define TYRANT_OPTIMIZER_VERSION "2.32.2"
+#define TYRANT_OPTIMIZER_VERSION "2.33.0"
 
 #include <string>
 #include <sstream>
@@ -42,7 +42,7 @@ enum Skill
     armor, avenge, corrosive, counter, evade, payback, revenge, refresh, wall,
 
     // Combat-Modifier:
-    coalition, legion, pierce, rupture, swipe, venom,
+    coalition, legion, pierce, rupture, swipe, drain, venom,
 
     // Damage-Dependent:
     berserk, inhibit, leech, poison,
@@ -159,6 +159,7 @@ inline bool is_combat_modifier_skill(Skill::Skill skill_id)
     case Skill::pierce:
     case Skill::rupture:
     case Skill::swipe:
+    case Skill::drain:
     case Skill::venom:
         return true;
     default:

@@ -23,7 +23,7 @@ const std::string skill_names[Skill::num_skills] =
     "Armor", "Avenge", "Corrosive", "Counter", "Evade", "Payback", "Revenge", "Refresh", "Wall",
 
     // Combat-Modifier:
-    "Coalition", "Legion", "Pierce", "Rupture", "Swipe", "Venom",
+    "Coalition", "Legion", "Pierce", "Rupture", "Swipe", "Drain", "Venom",
 
     // Damage-Dependant:
     "Berserk", "Inhibit", "Leech", "Poison",
