@@ -619,6 +619,12 @@ inline bool skill_check<Skill::refresh>(Field* fd, CardStatus* c, CardStatus* re
     return(can_be_healed(c));
 }
 
+template<>
+inline bool skill_check<Skill::drain>(Field* fd, CardStatus* c, CardStatus* ref)
+{
+    return(can_be_healed(c));
+}
+
 void remove_hp(Field* fd, CardStatus* status, unsigned dmg)
 {
     assert(is_alive(status));
@@ -1251,21 +1257,24 @@ bool attack_phase(Field* fd)
     {
         CardStatus * def_status = &fd->tip->assaults[fd->current_ci];
         att_dmg = PerformAttack{fd, att_status, def_status}.op<CardType::assault>();
-        unsigned swipe_value = att_status->skill(Skill::swipe) + att_status->skill(Skill::drain);
-        if (swipe_value > 0)
+        unsigned swipe_value = att_status->skill(Skill::swipe);
+        unsigned drain_value = att_status->skill(Skill::drain);
+        if (swipe_value || drain_value)
         {
             bool critical_reach = fd->bg_effects.count(PassiveBGE::criticalreach);
             auto drain_total_dmg = att_dmg;
             for (auto && adj_status: fd->adjacent_assaults(def_status, critical_reach ? 2 : 1))
             {
-                unsigned swipe_dmg = safe_minus(swipe_value + def_status->m_enfeebled, def_status->protected_value());
+                unsigned swipe_dmg = safe_minus(
+                    swipe_value + drain_value + def_status->m_enfeebled,
+                    def_status->protected_value());
                 _DEBUG_MSG(1, "%s swipes %s for %u damage\n",
                     status_description(att_status).c_str(),
                     status_description(adj_status).c_str(), swipe_dmg);
                 remove_hp(fd, adj_status, swipe_dmg);
                 drain_total_dmg += swipe_dmg;
             }
-            if (att_status->skill(Skill::drain))
+            if (drain_value && skill_check<Skill::drain>(fd, att_status, nullptr))
             {
                 _DEBUG_MSG(1, "%s drains %u hp\n",
                     status_description(att_status).c_str(), drain_total_dmg);
