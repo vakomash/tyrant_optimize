@@ -1339,23 +1339,21 @@ inline bool skill_predicate<Skill::enhance>(Field* fd, CardStatus* src, CardStat
     return is_alive_gilian(src);
 }
 
-/*
- * Target active units: Activation (Mortar)
- * Target everything: Defensive (Refresh), Combat-Modifier (Rupture, Venom)
- */
 template<>
 inline bool skill_predicate<Skill::evolve>(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s)
 {
-    return dst->has_skill(s.s) && (
-        (!dst->has_skill(s.s2) && (!is_activation_skill(s.s2) || is_active(dst)))
+    if (!is_alive(dst)) return false;
+    if (!dst->has_skill(s.s)) return false;
+    if (dst->has_skill(s.s2)) return false;
+    if (is_active(dst)) return true;
+    if (is_defensive_skill(s.s2)) return true;
 
-        /* Strange Transmission [Gilians]: strange gillian's behavior implementation:
-         * The Gillian commander and assaults can evolve any skills on any assaults
-         * regardless of jammed/delayed states. But what kind of behavior is in the case
-         * when gilians are played among standard assaults, I don't know. :)
-         */
-        || (is_alive_gilian(src) && is_alive(dst))
-    );
+    /* Strange Transmission [Gilians]: strange gillian's behavior implementation:
+     * The Gillian commander and assaults can enhance any skills on any assaults
+     * regardless of jammed/delayed states. But what kind of behavior is in the case
+     * when gilians are played among standard assaults, I don't know. :)
+     */
+    return is_alive_gilian(src);
 }
 
 template<>
