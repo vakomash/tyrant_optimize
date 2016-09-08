@@ -189,7 +189,8 @@ public:
     Hand(Deck* deck_) :
         deck(deck_),
         assaults(15),
-        structures(15)
+        structures(15),
+        stasis_faction_bitmap(0)
     {
     }
 
@@ -199,6 +200,7 @@ public:
     CardStatus commander;
     Storage<CardStatus> assaults;
     Storage<CardStatus> structures;
+    unsigned stasis_faction_bitmap;
 };
 
 #ifndef NQUEST

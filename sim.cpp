@@ -291,6 +291,10 @@ void Hand::reset(std::mt19937& re)
     structures.reset();
     deck->shuffle(re);
     commander.set(deck->shuffled_commander);
+    if (commander.skill(Skill::stasis))
+    {
+        stasis_faction_bitmap |= (1u << commander.m_faction);
+    }
 }
 //---------------------- $40 Game rules implementation -------------------------
 // Everything about how a battle plays out, except the following:
@@ -2188,8 +2192,22 @@ Results<uint64_t> play(Field* fd)
                 break;
             }
 
-            // Evaluate skill Stasis
-            if (played_status && played_card->m_delay > 0 && played_card->m_type == CardType::assault)
+            // Evaluate skill Stasis (if card is played)
+            unsigned played_faction_mask = 0;
+            if (played_status)
+            {
+                played_faction_mask = (1u << played_status->m_faction);
+
+                // do played card have stasis? mark this faction for stasis check
+                if (played_status->skill(Skill::stasis))
+                {
+                    fd->tap->stasis_faction_bitmap |= played_faction_mask;
+                }
+            }
+
+            // summarize stasis only if current faction is marked for it
+            if (played_status && (played_card->m_delay > 0) && (played_card->m_type == CardType::assault)
+                && (fd->tap->stasis_faction_bitmap & played_faction_mask))
             {
                 unsigned stacked_stasis = (fd->tap->commander.m_faction == played_status->m_faction)
                     ? fd->tap->commander.skill(Skill::stasis)
@@ -2240,6 +2258,13 @@ Results<uint64_t> play(Field* fd)
                         status_description(played_status).c_str(), stacked_stasis);
                 }
 #endif
+                // no more stasis for current faction: do unmark
+                if (! stacked_stasis)
+                {
+                    fd->tap->stasis_faction_bitmap &= ~played_faction_mask;
+                    _DEBUG_MSG(1, "- Stasis [%s]: no more units with stasis\n",
+                        faction_names[played_status->m_faction].c_str());
+                }
             }
         }
         if(__builtin_expect(fd->end, false)) { break; }
