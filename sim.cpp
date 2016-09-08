@@ -705,16 +705,6 @@ void turn_start_phase(Field* fd)
                 -- status->m_delay;
                 if (status->m_delay == 0)
                 {
-                    if (! status->m_jammed)
-                    {
-#ifndef NDEBUG
-                        if (status->m_protected_stasis > 0)
-                        {
-                            _DEBUG_MSG(1, "%s loses Stasis protection (delay elapsed)\n", status_description(status).c_str());
-                        }
-#endif
-                        status->m_protected_stasis = 0;
-                    }
                     check_and_perform_valor(fd, status);
                 }
             }
@@ -1560,14 +1550,6 @@ inline void perform_skill<Skill::rush>(Field* fd, CardStatus* src, CardStatus* d
     dst->m_delay -= std::min(std::max(s.x, 1u), dst->m_delay);
     if (dst->m_delay == 0)
     {
-        // Unit can't be jammed when it targeted for Rush
-#ifndef NDEBUG
-        if (dst->m_protected_stasis > 0)
-        {
-            _DEBUG_MSG(1, "%s loses Stasis protection (rushed)\n", status_description(dst).c_str());
-        }
-#endif
-        dst->m_protected_stasis = 0;
         check_and_perform_valor(fd, dst);
     }
 }
