@@ -825,7 +825,13 @@ void print_deck_inline(const unsigned deck_cost, const FinalResults<long double>
         default:
             break;
     }
-    std::cout << score.points << ": " << deck->commander->m_name;
+    std::cout << score.points;
+    if (optimization_mode == OptimizationMode::brawl)
+    {
+        std::cout << " [" << ((score.points - 5.0 * (1.0 - score.wins)) / score.wins) << " per win]";
+    }
+    std::cout << ": " << deck->commander->m_name;
+
     if (deck->strategy == DeckStrategy::random)
     {
         std::sort(deck->cards.begin(), deck->cards.end(), [](const Card* a, const Card* b) { return a->m_id < b->m_id; });
