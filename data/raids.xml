@@ -476,12 +476,12 @@
 		<id>22</id>
 		<name>Twins Raid</name>
 		<commander>25200</commander>
+		<fortress_card id="17758"/>
 		<levels>26</levels>
 		<deck>
 			<always_include>
-				<card replicates="1">17758</card>
 				<card replicates="3">42156</card>
-				<card replicates="3">42166</card>
+				<card replicates="4">42166</card>
 				<card replicates="3">42176</card>
 			</always_include>
 		</deck>
