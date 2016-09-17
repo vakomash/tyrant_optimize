@@ -346,7 +346,9 @@ def doGrabLastDeck(http):
     is_attacker_fort = lambda x: 51 <= x < 100
     is_defender_card = lambda x: 101 <= x <= 150
     is_defender_fort = lambda x: 151 <= x < 200
-    enemy_card_predicate = is_defender_card if host_is_attacker else is_attacker_card
+    is_attacker_both = lambda x: is_attacker_card(x) or is_attacker_fort(x)
+    is_defender_both = lambda x: is_defender_card(x) or is_defender_fort(x)
+    enemy_card_predicate = is_defender_both if host_is_attacker else is_attacker_both
     enemy_card_id_to_count = {}
     enemy_played_cards_count = 0
     for (card_uid, card_id) in card_map.items():
