@@ -559,15 +559,51 @@ void Deck::shuffle(std::mt19937& re)
     {
         unsigned remaining_upgrade_points = upgrade_points;
         unsigned remaining_upgrade_opportunities = upgrade_opportunities;
+        std::vector<std::pair<std::deque<const Card*>*, unsigned>> reup_cards;
         shuffled_commander = upgrade_card(commander, commander_max_level, re, remaining_upgrade_points, remaining_upgrade_opportunities);
+        std::deque<const Card*> commander_storage;
+        commander_storage.emplace_back(shuffled_commander);
+        reup_cards.emplace_back(&commander_storage, 0);
+        unsigned index(0);
         for (auto && card: shuffled_forts)
         {
             card = upgrade_card(card, card->m_top_level_card->m_level, re, remaining_upgrade_points, remaining_upgrade_opportunities);
+            reup_cards.emplace_back(&shuffled_forts, index ++);
         }
+        index = 0;
         for (auto && card: shuffled_cards)
         {
             card = upgrade_card(card, card->m_top_level_card->m_level, re, remaining_upgrade_points, remaining_upgrade_opportunities);
+            reup_cards.emplace_back(&shuffled_cards, index ++);
         }
+        std::shuffle(reup_cards.begin(), reup_cards.end(), re);
+        for (auto reup_iter1 = reup_cards.begin(); reup_iter1 != std::prev(reup_cards.end()); ++ reup_iter1)
+        {
+            for (auto reup_iter2 = std::next(reup_iter1); reup_iter2 != reup_cards.end(); ++ reup_iter2)
+            {
+                std::deque<const Card*> * card_storage1 = reup_iter1->first;
+                std::deque<const Card*> * card_storage2 = reup_iter2->first;
+                unsigned index1 = reup_iter1->second;
+                unsigned index2 = reup_iter2->second;
+                if (re() % 2)
+                {
+                    std::swap(index1, index2);
+                    std::swap(card_storage1, card_storage2);
+                }
+                const Card* card1 = card_storage1 ? (*card_storage1)[index1] : shuffled_commander;
+                const Card* card2 = card_storage2 ? (*card_storage2)[index2] : shuffled_commander;
+                if ((card1 != card1->upgraded()) && (card2 != card2->downgraded()) && (card1->upgraded() != card2))
+                {
+                    _DEBUG_MSG(2, " >> reup: (%s -> %s) / (%s -> %s)\n",
+                        card1->m_name.c_str(), card1->upgraded()->m_name.c_str(),
+                        card2->m_name.c_str(), card2->downgraded()->m_name.c_str());
+                    (*card_storage1)[index1] = card1->upgraded();
+                    (*card_storage2)[index2] = card2->downgraded();
+                }
+                else { break; }
+            }
+        }
+        shuffled_commander = commander_storage[0];
     }
     if(strategy == DeckStrategy::ordered)
     {

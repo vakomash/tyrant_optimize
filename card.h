@@ -53,6 +53,7 @@ public:
 
     void add_skill(Skill::Skill id, unsigned x, Faction y, unsigned n, unsigned c, Skill::Skill s, Skill::Skill s2, bool all);
     const Card* upgraded() const { return this == m_top_level_card ? this : m_used_for_cards.begin()->first; }
+    const Card* downgraded() const { return m_level == 1 ? this : m_recipe_cards.begin()->first; }
 };
 
 #endif
