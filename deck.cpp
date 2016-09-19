@@ -600,7 +600,6 @@ void Deck::shuffle(std::mt19937& re)
                     (*card_storage1)[index1] = card1->upgraded();
                     (*card_storage2)[index2] = card2->downgraded();
                 }
-                else { break; }
             }
         }
         shuffled_commander = commander_storage[0];
