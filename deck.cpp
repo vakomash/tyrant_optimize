@@ -603,6 +603,18 @@ void Deck::shuffle(std::mt19937& re)
             }
         }
         shuffled_commander = commander_storage[0];
+#ifndef NDEBUG
+        _DEBUG_MSG(2, " ** reupgraded cards:\n");
+        _DEBUG_MSG(2, " >> Commander: %s\n", shuffled_commander->m_name.c_str());
+        for (auto * card: shuffled_forts)
+        {
+            _DEBUG_MSG(2, " >> Fortress: %s\n", card->m_name.c_str());
+        }
+        for (auto * card: shuffled_cards)
+        {
+            _DEBUG_MSG(2, " >> Card from pool: %s\n", card->m_name.c_str());
+        }
+#endif
     }
     if(strategy == DeckStrategy::ordered)
     {
