@@ -4,6 +4,7 @@ LC: Lightning Cannon
 DF: Death Factory
 IA: Inspiring Altar
 MT: Mortar Tower
+SF: Sky Fortress
 
 // Defense forts
 TC: Tesla Coil
