@@ -24,6 +24,7 @@ Extended Reach: Enhance All Swipe 5
 Soothing Chant: Heal all 2
 Noxious Arena: Enfeeble all 2
 Bathe in Blood: Bloodlust 2
+Fervorous Revenge: Revenge 3
 
 // Conquest Zones
 Andar Quarantine: Evolve 2 Pierce Rupture
