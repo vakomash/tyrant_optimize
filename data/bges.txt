@@ -17,6 +17,8 @@ Tartarian Gift: Rally+Enrage all 3
 Bloodthirst: Enhance All Leech 6
 Orbital Cannon: Strike 10
 Charged Up: Overload 3
+Emergency Aid: Heal 12
+Extended Reach: Enhance All Swipe 5
 
 // Some other BGEs
 Soothing Chant: Heal all 2
