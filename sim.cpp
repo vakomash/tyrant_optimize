@@ -2199,7 +2199,8 @@ Results<uint64_t> play(Field* fd)
                 played_faction_mask = (1u << played_status->m_faction);
 
                 // do played card have stasis? mark this faction for stasis check
-                if (played_status->skill(Skill::stasis))
+                if (played_status->skill(Skill::stasis)
+                    || (fd->bg_effects.count(PassiveBGE::temporalbacklash) && played_status->skill(Skill::counter)))
                 {
                     fd->tap->stasis_faction_bitmap |= played_faction_mask;
                 }
@@ -2248,6 +2249,15 @@ Results<uint64_t> play(Field* fd)
                                 status_description(played_status).c_str(), stacked_stasis);
                         }
 #endif
+                        if (fd->bg_effects.count(PassiveBGE::temporalbacklash) && status->skill(Skill::counter))
+                        {
+                            stacked_stasis += (status->skill(Skill::counter) + 1) / 2;
+#ifndef NDEBUG
+                            _DEBUG_MSG(2, "Temporal Backlash: + Stasis [%s]: stacks +%u stasis protection from %s (total stacked: %u)\n",
+                                faction_names[played_status->m_faction].c_str(), (status->skill(Skill::counter) + 1) / 2,
+                                status_description(played_status).c_str(), stacked_stasis);
+#endif
+                        }
                     }
                 }
                 played_status->m_protected_stasis = stacked_stasis;
