@@ -1,7 +1,7 @@
 #ifndef TYRANT_H_INCLUDED
 #define TYRANT_H_INCLUDED
 
-#define TYRANT_OPTIMIZER_VERSION "2.34.1"
+#define TYRANT_OPTIMIZER_VERSION "2.35.0"
 
 #include <string>
 #include <sstream>
@@ -45,7 +45,7 @@ enum Skill
     coalition, legion, pierce, rupture, swipe, drain, venom,
 
     // Damage-Dependent:
-    berserk, inhibit, leech, poison,
+    berserk, inhibit, sabotage, leech, poison,
 
     // Triggered:
     allegiance, flurry, valor, stasis,
@@ -132,6 +132,30 @@ inline bool is_activation_skill(Skill::Skill skill_id)
     ;
 }
 
+inline bool is_activation_skill_with_x(Skill::Skill skill_id)
+{
+    switch(skill_id)
+    {
+    case Skill::enfeeble:
+    case Skill::mortar:
+    case Skill::siege:
+    case Skill::strike:
+    case Skill::sunder:
+    case Skill::weaken:
+    case Skill::enhance:
+    case Skill::mimic:
+    case Skill::heal:
+    case Skill::mend:
+    case Skill::protect:
+    case Skill::rally:
+    case Skill::enrage:
+    case Skill::rush:
+        return true;
+    default:
+        return false;
+    }
+}
+
 inline bool is_defensive_skill(Skill::Skill skill_id)
 {
     switch(skill_id)
@@ -173,6 +197,7 @@ inline bool is_damage_dependent_skill(Skill::Skill skill_id)
     {
     case Skill::berserk:
     case Skill::inhibit:
+    case Skill::sabotage:
     case Skill::leech:
     case Skill::poison:
         return true;

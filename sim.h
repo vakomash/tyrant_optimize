@@ -150,6 +150,7 @@ struct CardStatus
     unsigned m_enfeebled;
     unsigned m_evaded;
     unsigned m_inhibited;
+    unsigned m_sabotaged;
     bool m_jammed;
     bool m_overloaded;
     unsigned m_paybacked;

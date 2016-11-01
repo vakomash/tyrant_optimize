@@ -119,7 +119,10 @@ inline unsigned CardStatus::skill_base_value(Skill::Skill skill_id) const
 //------------------------------------------------------------------------------
 inline unsigned CardStatus::skill(Skill::Skill skill_id) const
 {
-    return skill_base_value(skill_id) + enhanced(skill_id);
+    return is_activation_skill_with_x(skill_id)
+            ? safe_minus(skill_base_value(skill_id), m_sabotaged)
+            : skill_base_value(skill_id)
+        + enhanced(skill_id);
 }
 //------------------------------------------------------------------------------
 inline bool CardStatus::has_skill(Skill::Skill skill_id) const
@@ -158,6 +161,7 @@ inline void CardStatus::set(const Card& card)
     m_enfeebled = 0;
     m_evaded = 0;
     m_inhibited = 0;
+    m_sabotaged = 0;
     m_jammed = false;
     m_overloaded = false;
     m_paybacked = 0;
@@ -269,6 +273,7 @@ std::string CardStatus::description() const
     if(m_corroded_rate > 0) { desc += ", corroded " + to_string(m_corroded_rate); }
     if(m_enfeebled > 0) { desc += ", enfeebled " + to_string(m_enfeebled); }
     if(m_inhibited > 0) { desc += ", inhibited " + to_string(m_inhibited); }
+    if(m_sabotaged > 0) { desc += ", sabotaged " + to_string(m_sabotaged); }
     if(m_poisoned > 0) { desc += ", poisoned " + to_string(m_poisoned); }
     if(m_protected > 0) { desc += ", protected " + to_string(m_protected); }
     if(m_protected_stasis > 0) { desc += ", stasis " + to_string(m_protected_stasis); }
@@ -319,6 +324,13 @@ SkillSpec apply_enhance(const SkillSpec& s, unsigned enhanced_value)
     SkillSpec enahnced_s = s;
     enahnced_s.x += enhanced_value;
     return(enahnced_s);
+}
+//------------------------------------------------------------------------------
+SkillSpec apply_sabotage(const SkillSpec& s, unsigned sabotaged_value)
+{
+    SkillSpec sabotaged_s = s;
+    sabotaged_s.x -= std::min(sabotaged_s.x, sabotaged_value);
+    return(sabotaged_s);
 }
 //------------------------------------------------------------------------------
 void prepend_on_death(Field* fd)
@@ -428,12 +440,31 @@ void resolve_skill(Field* fd)
                 status_description(status).c_str(), skill_description(ss).c_str());
             continue;
         }
-        signed evolved_offset = status->m_evolved_skill_offset[ss.id];
-        auto& evolved_s = evolved_offset != 0 ? apply_evolve(ss, evolved_offset) : ss;
-        unsigned enhanced_value = status->enhanced(evolved_s.id);
-        auto& enhanced_s = enhanced_value > 0 ? apply_enhance(evolved_s, enhanced_value) : evolved_s;
-        auto& modified_s = enhanced_s;
-        skill_table[modified_s.id](fd, status, modified_s);
+        SkillSpec modified_s = ss;
+
+        // apply evolve
+        signed evolved_offset = status->m_evolved_skill_offset[modified_s.id];
+        if (evolved_offset != 0)
+        { modified_s = apply_evolve(modified_s, evolved_offset); }
+
+        // apply sabotage (only for X-based activation skills)
+        unsigned sabotaged_value = status->m_sabotaged;
+        if ((sabotaged_value > 0) && is_activation_skill_with_x(modified_s.id))
+        { modified_s = apply_sabotage(modified_s, sabotaged_value); }
+
+        // apply enhance
+        unsigned enhanced_value = status->enhanced(modified_s.id);
+        if (enhanced_value > 0)
+        { modified_s = apply_enhance(modified_s, enhanced_value); }
+
+        // perform skill (if it is still applicable)
+        if (is_activation_skill_with_x(modified_s.id) && !modified_s.x)
+        {
+            _DEBUG_MSG(2, "%s failed to %s because its X value is zeroed (sabotaged).\n",
+                status_description(status).c_str(), skill_description(ss).c_str());
+            continue;
+        }
+        else { skill_table[modified_s.id](fd, status, modified_s); }
     }
 }
 //------------------------------------------------------------------------------
@@ -845,6 +876,7 @@ void turn_end_phase(Field* fd)
             status.m_sundered = false;
             status.m_weakened = 0;
             status.m_inhibited = 0;
+            status.m_sabotaged = 0;
             status.m_overloaded = false;
             status.m_step = CardStep::none;
         }
@@ -1193,14 +1225,25 @@ void PerformAttack::damage_dependant_pre_oa<CardType::assault>()
             status_description(def_status).c_str(), poison_value);
         def_status->m_poisoned = poison_value;
     }
+
+    // Damage-Dependent skill: Inhibit
     unsigned inhibit_value = att_status->skill(Skill::inhibit);
     if (inhibit_value > def_status->m_inhibited && skill_check<Skill::inhibit>(fd, att_status, def_status))
     {
-        // perform_skill_inhibit
         _DEBUG_MSG(1, "%s inhibits %s by %u\n",
             status_description(att_status).c_str(),
             status_description(def_status).c_str(), inhibit_value);
         def_status->m_inhibited = inhibit_value;
+    }
+
+    // Damage-Dependent skill: Sabotage
+    unsigned sabotage_value = att_status->skill(Skill::sabotage);
+    if (sabotage_value > def_status->m_sabotaged && skill_check<Skill::sabotage>(fd, att_status, def_status))
+    {
+        _DEBUG_MSG(1, "%s sabotages %s by %u\n",
+            status_description(att_status).c_str(),
+            status_description(def_status).c_str(), sabotage_value);
+        def_status->m_sabotaged = sabotage_value;
     }
 }
 
