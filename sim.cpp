@@ -119,9 +119,9 @@ inline unsigned CardStatus::skill_base_value(Skill::Skill skill_id) const
 //------------------------------------------------------------------------------
 inline unsigned CardStatus::skill(Skill::Skill skill_id) const
 {
-    return is_activation_skill_with_x(skill_id)
+    return (is_activation_skill_with_x(skill_id)
             ? safe_minus(skill_base_value(skill_id), m_sabotaged)
-            : skill_base_value(skill_id)
+            : skill_base_value(skill_id))
         + enhanced(skill_id);
 }
 //------------------------------------------------------------------------------
