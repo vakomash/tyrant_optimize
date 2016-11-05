@@ -486,6 +486,23 @@
 			</always_include>
 		</deck>
 	</raid>
+	<raid>
+		<id>23</id>
+		<name>Mesmerize Raid</name>
+		<commander>25336</commander>
+		<fortress_card id="17858"/>
+		<fortress_card id="17848"/>
+		<levels>26</levels>
+		<deck>
+			<always_include>
+				<card replicates="2">43238</card>
+				<card replicates="2">43248</card>
+				<card replicates="2">43258</card>
+				<card replicates="2">43268</card>
+				<card replicates="2">43278</card>
+			</always_include>
+		</deck>
+	</raid>
 <!-- END of Raids -->
 
 
