@@ -168,6 +168,10 @@ void parse_card_node(Cards& all_cards, Card* card, xml_node<>* card_node)
         { card->m_type = CardType::structure; }
         else if (card->m_id < 30000)
         { card->m_type = CardType::commander; }
+        else if (card->m_id < 50001)
+        { card->m_type = CardType::assault; }
+        else if (card->m_id < 55001)
+        { card->m_type = CardType::structure; }
         else
         { card->m_type = CardType::assault; }
     }
