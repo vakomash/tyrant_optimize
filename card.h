@@ -23,6 +23,7 @@ public:
     std::vector<SkillSpec> m_skills;
     unsigned m_skill_value[Skill::num_skills];
     CardType::CardType m_type;
+    CardCategory::CardCategory m_category;
     const Card* m_top_level_card; // [TU] corresponding full-level card
     unsigned m_recipe_cost;
     std::map<const Card*, unsigned> m_recipe_cards;
@@ -43,6 +44,7 @@ public:
         m_set(0),
         m_skills(),
         m_type(CardType::assault),
+        m_category(CardCategory::normal),
         m_top_level_card(this),
         m_recipe_cost(0),
         m_recipe_cards(),

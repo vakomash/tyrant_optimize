@@ -56,6 +56,7 @@ public:
     std::map<signed, char> card_marks;  // <positions of card, prefix mark>: -1 indicating the commander. E.g, used as a mark to be kept in attacking deck when optimizing.
 
     const Card* shuffled_commander;
+    std::deque<const Card*> shuffled_dominions;
     std::deque<const Card*> shuffled_forts;
     std::deque<const Card*> shuffled_cards;
 
@@ -70,7 +71,8 @@ public:
     std::unordered_set<unsigned> allowed_candidates;
     std::unordered_set<unsigned> disallowed_candidates;
     std::vector<unsigned> given_hand;
-    std::vector<const Card*> fort_cards;
+    std::vector<const Card*> dominion_cards;
+    std::vector<const Card*> fortress_cards;
 
     Deck(
         const Cards& all_cards_,

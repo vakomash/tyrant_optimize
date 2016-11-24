@@ -232,7 +232,7 @@ void Deck::set(const std::vector<unsigned>& ids, const std::map<signed, char> &m
     for(auto id: ids)
     {
         const Card* card{all_cards.by_id(id)};
-        if(card->m_type == CardType::commander)
+        if (card->m_type == CardType::commander)
         {
             if (commander == nullptr)
             {
@@ -242,6 +242,14 @@ void Deck::set(const std::vector<unsigned>& ids, const std::map<signed, char> &m
             {
                 std::cerr << "WARNING: Ignoring additional commander " << card->m_name << " (" << commander->m_name << " already in deck)\n";
             }
+        }
+        else if (card->m_category == CardCategory::dominion)
+        {
+            dominion_cards.emplace_back(card);
+        }
+        else if (card->m_category == CardCategory::fortress_defense || card->m_category == CardCategory::fortress_siege)
+        {
+            fortress_cards.emplace_back(card);
         }
         else
         {
@@ -316,10 +324,10 @@ void Deck::set_given_hand(const std::string& deck_string)
 
 void Deck::add_forts(const std::string& deck_string)
 {
-    auto && id_marks = string_to_ids(all_cards, deck_string, "fort_cards");
+    auto && id_marks = string_to_ids(all_cards, deck_string, "fortress_cards");
     for (auto id: id_marks.first)
     {
-       fort_cards.push_back(all_cards.by_id(id));
+       fortress_cards.push_back(all_cards.by_id(id));
     }
 }
 
@@ -368,7 +376,7 @@ std::string Deck::medium_description() const
     {
         ios << "No commander";
     }
-    for (const Card * card: fort_cards)
+    for (const Card * card: fortress_cards)
     {
         ios << ", " << card->m_name;
     }
@@ -406,7 +414,7 @@ std::string Deck::long_description() const
     {
         ios << "No commander\n";
     }
-    for (const Card * card: fort_cards)
+    for (const Card * card: fortress_cards)
     {
         show_upgrades(ios, card, card->m_top_level_card->m_level, "");
     }
@@ -532,8 +540,10 @@ const Card* Deck::upgrade_card(const Card* card, unsigned card_max_level, std::m
 void Deck::shuffle(std::mt19937& re)
 {
     shuffled_commander = commander;
+    shuffled_dominions.clear();
+    boost::insert(shuffled_dominions, shuffled_dominions.end(), dominion_cards);
     shuffled_forts.clear();
-    boost::insert(shuffled_forts, shuffled_forts.end(), fort_cards);
+    boost::insert(shuffled_forts, shuffled_forts.end(), fortress_cards);
     shuffled_cards.clear();
     boost::insert(shuffled_cards, shuffled_cards.end(), cards);
     if(!variable_cards.empty())

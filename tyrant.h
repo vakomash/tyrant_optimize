@@ -1,7 +1,7 @@
 #ifndef TYRANT_H_INCLUDED
 #define TYRANT_H_INCLUDED
 
-#define TYRANT_OPTIMIZER_VERSION "2.36.0"
+#define TYRANT_OPTIMIZER_VERSION "2.37.0"
 
 #include <string>
 #include <sstream>
@@ -246,6 +246,17 @@ enum CardType {
     assault,
     structure,
     num_cardtypes
+};
+}
+
+namespace CardCategory {
+enum CardCategory {
+    normal,
+    special,
+    fortress_defense,
+    fortress_siege,
+    dominion,
+    num_cardcategories
 };
 }
 
