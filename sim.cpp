@@ -296,6 +296,7 @@ void Hand::reset(std::mt19937& re)
     structures.reset();
     deck->shuffle(re);
     commander.set(deck->shuffled_commander);
+    total_cards_destroyed = 0;
     if (commander.skill(Skill::stasis))
     {
         stasis_faction_bitmap |= (1u << commander.m_faction);
@@ -681,6 +682,7 @@ void remove_hp(Field* fd, CardStatus* status, unsigned dmg)
         if(status->m_card->m_type != CardType::commander)
         {
             fd->killed_units.push_back(status);
+            ++ fd->players[status->m_player]->total_cards_destroyed;
         }
         if (status->m_player == 0 && fd->players[0]->deck->vip_cards.count(status->m_card->m_id))
         {
@@ -2508,11 +2510,11 @@ Results<uint64_t> play(Field* fd)
         case OptimizationMode::brawl: return {0, 0, 1, 5};
         case OptimizationMode::brawl_defense:
             {
-                unsigned enemy_brawl_score = 57
-                    - (10 * (p[1]->commander.m_max_hp - p[1]->commander.m_hp) / p[1]->commander.m_max_hp)
-                    + (p[1]->assaults.size() + p[1]->structures.size() + p[1]->deck->shuffled_cards.size())
-                    - (p[0]->assaults.size() + p[0]->structures.size() + p[0]->deck->shuffled_cards.size())
-                    - fd->turn / 4;
+                unsigned enemy_brawl_score = 56
+                    - (10 - p[1]->deck->cards.size())
+                    + (10 - p[0]->deck->cards.size())
+                    + p[0]->total_cards_destroyed
+                    - (unsigned)std::sqrt(fd->turn/2);
                 unsigned max_score = max_possible_score[(size_t)OptimizationMode::brawl_defense];
                 return {0, 0, 1, max_score - enemy_brawl_score};
             }
@@ -2530,18 +2532,18 @@ Results<uint64_t> play(Field* fd)
         {
         case OptimizationMode::brawl:
             {
-                unsigned brawl_score = 57
-                    - (10 * (p[0]->commander.m_max_hp - p[0]->commander.m_hp) / p[0]->commander.m_max_hp)
-                    + (p[0]->assaults.size() + p[0]->structures.size() + p[0]->deck->shuffled_cards.size())
-                    - (p[1]->assaults.size() + p[1]->structures.size() + p[1]->deck->shuffled_cards.size())
-                    - fd->turn / 4;
+                unsigned brawl_score = 56
+                    - (10 - p[0]->deck->cards.size())
+                    + (10 - p[1]->deck->cards.size())
+                    + p[1]->total_cards_destroyed
+                    - (unsigned)std::sqrt(fd->turn/2);
                 return {1, 0, 0, brawl_score};
             }
         case OptimizationMode::brawl_defense:
             {
-                //unsigned max_score = max_possible_score[(size_t)OptimizationMode::brawl_defense];
-                //unsigned min_score = min_possible_score[(size_t)OptimizationMode::brawl_defense];
-                return {1, 0, 0, /* max_score - min_score */ 67 - 5};
+                unsigned max_score = max_possible_score[(size_t)OptimizationMode::brawl_defense];
+                unsigned min_score = min_possible_score[(size_t)OptimizationMode::brawl_defense];
+                return {1, 0, 0, (max_score - min_score)};
             }
         case OptimizationMode::campaign:
             {

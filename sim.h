@@ -191,7 +191,8 @@ public:
         deck(deck_),
         assaults(15),
         structures(15),
-        stasis_faction_bitmap(0)
+        stasis_faction_bitmap(0),
+        total_cards_destroyed(0)
     {
     }
 
@@ -202,6 +203,7 @@ public:
     Storage<CardStatus> assaults;
     Storage<CardStatus> structures;
     unsigned stasis_faction_bitmap;
+    unsigned total_cards_destroyed;
 };
 
 #ifndef NQUEST

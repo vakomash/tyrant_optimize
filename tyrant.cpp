@@ -55,7 +55,7 @@ unsigned min_possible_score[]{0, 0, 0, 10, 5, 5, 5, 0
 , 0
 #endif
 };
-unsigned max_possible_score[]{100, 100, 100, 100, 67, 67, 100, 100
+unsigned max_possible_score[]{100, 100, 100, 100, 66, 66, 100, 100
 #ifndef NQUEST
 , 100
 #endif
