@@ -2171,6 +2171,17 @@ void perform_targetted_hostile_fast(Field* fd, CardStatus* src, const SkillSpec&
 }
 
 //------------------------------------------------------------------------------
+inline unsigned evaluate_brawl_score(Field* fd, unsigned player)
+{
+    const auto & p = fd->players;
+    return 56
+        - (10 - p[player]->deck->cards.size())
+        + (10 - p[opponent(player)]->deck->cards.size())
+        + p[opponent(player)]->total_cards_destroyed
+        - (unsigned)((fd->turn+7)/8);
+}
+
+//------------------------------------------------------------------------------
 Results<uint64_t> play(Field* fd)
 {
     fd->players[0]->commander.m_player = 0;
@@ -2510,11 +2521,7 @@ Results<uint64_t> play(Field* fd)
         case OptimizationMode::brawl: return {0, 0, 1, 5};
         case OptimizationMode::brawl_defense:
             {
-                unsigned enemy_brawl_score = 56
-                    - (10 - p[1]->deck->cards.size())
-                    + (10 - p[0]->deck->cards.size())
-                    + p[0]->total_cards_destroyed
-                    - (unsigned)std::sqrt(fd->turn/2);
+                unsigned enemy_brawl_score = evaluate_brawl_score(fd, 1);
                 unsigned max_score = max_possible_score[(size_t)OptimizationMode::brawl_defense];
                 return {0, 0, 1, max_score - enemy_brawl_score};
             }
@@ -2532,11 +2539,7 @@ Results<uint64_t> play(Field* fd)
         {
         case OptimizationMode::brawl:
             {
-                unsigned brawl_score = 56
-                    - (10 - p[0]->deck->cards.size())
-                    + (10 - p[1]->deck->cards.size())
-                    + p[1]->total_cards_destroyed
-                    - (unsigned)std::sqrt(fd->turn/2);
+                unsigned brawl_score = evaluate_brawl_score(fd, 0);
                 return {1, 0, 0, brawl_score};
             }
         case OptimizationMode::brawl_defense:
