@@ -46,7 +46,7 @@ STATIC_HEADERS = {
 
 BASIC_BODY_PARAMS = {
     "unity": "Unity4_6_6",
-    "client_version": "60",
+    "client_version": "68",
     "device_type": "Intel(R)+Pentium(R)+4+CPU+2.40GHz+(7830+MB)",
     "os_version": "Windows+XP+Service+Pack+3+(5.1.2600)",
     "platform": "Web",
@@ -348,17 +348,27 @@ def doGrabLastDeck(http):
     is_defender_fort = lambda x: 151 <= x < 200
     is_attacker_both = lambda x: is_attacker_card(x) or is_attacker_fort(x)
     is_defender_both = lambda x: is_defender_card(x) or is_defender_fort(x)
-    enemy_card_predicate = is_defender_both if host_is_attacker else is_attacker_both
+    enemy_predicate = is_defender_both if host_is_attacker else is_attacker_both
+    enemy_card_predicate = is_defender_card if host_is_attacker else is_attacker_card
+    enemy_fort_predicate = is_defender_fort if host_is_attacker else is_attacker_fort
     enemy_card_id_to_count = {}
+    enemy_forts = []
     enemy_played_cards_count = 0
     for (card_uid, card_id) in card_map.items():
-        if not enemy_card_predicate(card_uid):
+        if not enemy_predicate(card_uid):
             continue
-        if card_id in enemy_card_id_to_count:
-            enemy_card_id_to_count[card_id] += 1
+        if enemy_card_predicate(card_uid):
+            if card_id in enemy_card_id_to_count:
+                enemy_card_id_to_count[card_id] += 1
+            else:
+                enemy_card_id_to_count[card_id] = 1
+        elif enemy_fort_predicate(card_uid):
+            enemy_forts.append(card_id)
         else:
-            enemy_card_id_to_count[card_id] = 1
-        enemy_played_cards_count += 1
+            pass # TODO notice?
+
+        if not enemy_fort_predicate(card_uid):
+            enemy_played_cards_count += 1
 
     # determine game type
     game_type = 'Arena'
@@ -401,6 +411,10 @@ def doGrabLastDeck(http):
 
     # append commander
     out += getCardNameById(enemy_commander_id)
+
+    # append forts
+    for card_id in enemy_forts:
+        out += ", " + getCardNameById(card_id)
 
     # append cards
     card_ids_ordered = list(enemy_card_id_to_count.keys())
