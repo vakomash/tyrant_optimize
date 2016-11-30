@@ -26,27 +26,55 @@ Noxious Arena: Enfeeble all 2
 Bathe in Blood: Bloodlust 2
 Fervorous Revenge: Revenge 3
 
+
 // Conquest Zones
-Andar Quarantine: Evolve 2 Pierce Rupture
-Baron's Claw Labs: Enhance all Poison 3
+// --
+Phobos Station: Orbital Bombardment
+Orbital Bombardment: Strike all 3; Siege all 3
+// --
+The Spire: Imperial Domain
+Imperial Domain: Heal all 5
+// --
+SkyCom Complex: Network Interference
+Network Interference: Weaken all 4
+// --
+Mech Graveyard: Scrap Field
+Scrap Field: Evolve 2 Pierce to Rupture
+// --
+Seismic Beacon: HaltedOrders
+// --
+Enclave Landing: Bolstered Beachfront
+Bolstered Beachfront: Enhance all Legion 3
+// --
+Andar Quarantine: Andar Isolation
+Andar Isolation: Evolve Weaken to Sunder
+// --
+Baron's Claw Labs: Virulence
+// --
+Colonial Relay: CriticalReach
+// --
 Borean Forges: Fortification
+// --
 Brood Nest: Enfeeble all 3
+// --
 Cleave Rock: Enhance all Berserk 3
+// --
 Elder Port: Evolve 2 Siege Mortar
-Enclave Landing: Enhance all Legion 2
+// --
 Infested Depot: Enhance all Leech 3
+// --
 Jotun's Pantheon: Protect all 3
+// --
 Magma Foundry: Strike all 3
+// --
 Malort's Den: Evolve 2 Poison Venom
-Mech Graveyard: Enhance all Counter 3
+// --
 Norhaven: Enhance all Evade 3
-Phobos Station: Strike+Siege all 2
+// --
 Red Maw Base: Rally all 3
-Seismic Beacon: Enhance all Inhibit 3
-SkyCom Complex: Weaken all 3
-The Spire: Heal all 3
+// --
 Tyrolian Outpost: Enhance all Armor 3
-Colonial Relay: Enhance all Swipe 3
+// --
 Ashrock Redoubt: Counterflux
 
 // Activation Skills
