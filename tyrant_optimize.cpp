@@ -1300,6 +1300,139 @@ void usage(int argc, char** argv)
 
 std::string skill_description(const SkillSpec& s);
 
+bool parse_bge(
+    std::string bge_name,
+    unsigned player,
+    const std::unordered_map<std::string, std::string>& bge_aliases,
+    std::unordered_map<unsigned, unsigned>& bg_effects,
+    std::vector<SkillSpec>& your_bg_skills,
+    std::vector<SkillSpec>& enemy_bg_skills,
+    std::unordered_set<std::string> used_bge_aliases
+)
+{
+    // skip empty
+    trim(bge_name);
+    if (bge_name.empty()) { return true; }
+
+    // is effect combined?
+    if (bge_name.find_first_of(";|") != std::string::npos)
+    {
+        std::vector<std::string> bges;
+        boost::split(bges, bge_name, boost::is_any_of(";|"));
+        for (auto && next_bge: bges)
+        {
+            if (!parse_bge(next_bge, player, bge_aliases, bg_effects, your_bg_skills, enemy_bg_skills, used_bge_aliases))
+            { return false; }
+        }
+        return true;
+    }
+
+    // try to resolve bge name as alias
+    std::string simple_bge_name = simplify_name(bge_name);
+    const auto bge_alias_itr = bge_aliases.find(simple_bge_name);
+    if (bge_alias_itr != bge_aliases.end())
+    {
+        if (!used_bge_aliases.insert(simple_bge_name).second)
+        {
+            throw std::runtime_error("BGE alias: " + bge_name + ": Circular reference");
+        }
+        return parse_bge(bge_alias_itr->second, player, bge_aliases, bg_effects, your_bg_skills, enemy_bg_skills, used_bge_aliases);
+    }
+
+    // parse as passive or skill based BGE
+    std::vector<std::string> tokens, skill_name_list;
+    boost::split(tokens, bge_name, boost::is_any_of(" -"));
+    boost::split(skill_name_list, tokens[0], boost::is_any_of("+"));
+    try
+    {
+        for (auto && skill_name: skill_name_list)
+        {
+            PassiveBGE::PassiveBGE passive_bge_id = passive_bge_name_to_id(skill_name);
+            Skill::Skill skill_id = skill_name_to_id(skill_name);
+            if (passive_bge_id != PassiveBGE::no_bge)
+            {
+                // passive BGE (must be global)
+                if (player != 2) { throw std::runtime_error("must be global"); }
+                // map bge id to its value (if present otherwise zero)
+                bg_effects[passive_bge_id] = (tokens.size() > 1) ? boost::lexical_cast<unsigned>(tokens[1]) : 0;
+            }
+            else if (skill_table[skill_id] != nullptr)
+            {
+                unsigned skill_index = 1;
+                // activation BG skill
+                SkillSpec bg_skill{skill_id, 0, allfactions, 0, 0, Skill::no_skill, Skill::no_skill, false};
+                if (skill_index < tokens.size() && boost::to_lower_copy(tokens[skill_index]) == "all")
+                {
+                    bg_skill.all = true;
+                    skill_index += 1;
+                }
+                else if (skill_index + 1 < tokens.size() && isdigit(*tokens[skill_index].c_str()))
+                {
+                    bg_skill.n = boost::lexical_cast<unsigned>(tokens[skill_index]);
+                    skill_index += 1;
+                }
+                if (skill_index < tokens.size())
+                {
+                    bg_skill.s = skill_name_to_id(tokens[skill_index]);
+                    if (bg_skill.s != Skill::no_skill)
+                    {
+                        skill_index += 1;
+                        if (skill_index < tokens.size() && (boost::to_lower_copy(tokens[skill_index]) == "to" || boost::to_lower_copy(tokens[skill_index]) == "into"))
+                        {
+                            skill_index += 1;
+                        }
+                        if (skill_index < tokens.size())
+                        {
+                            bg_skill.s2 = skill_name_to_id(tokens[skill_index]);
+                            if (bg_skill.s2 != Skill::no_skill)
+                            {
+                                skill_index += 1;
+                            }
+                        }
+                    }
+                }
+                if (skill_index < tokens.size())
+                {
+                    if (bg_skill.id == Skill::jam || bg_skill.id == Skill::overload)
+                    {
+                        bg_skill.n = boost::lexical_cast<unsigned>(tokens[skill_index]);
+                    }
+                    else
+                    {
+                        bg_skill.x = boost::lexical_cast<unsigned>(tokens[skill_index]);
+                    }
+                }
+                switch (player)
+                {
+                case 0:
+                    your_bg_skills.push_back(bg_skill);
+                    break;
+                case 1:
+                    enemy_bg_skills.push_back(bg_skill);
+                    break;
+                case 2:
+                    your_bg_skills.push_back(bg_skill);
+                    enemy_bg_skills.push_back(bg_skill);
+                    break;
+                default:
+                    throw std::runtime_error("Bad player number: " + player);
+                }
+            }
+            else
+            {
+                std::cerr << "Error: unrecognized effect \"" << bge_name << "\".\n";
+                print_available_effects();
+                return false;
+            }
+        }
+    }
+    catch (const boost::bad_lexical_cast & e)
+    {
+        throw std::runtime_error("Expect a number in effect \"" + bge_name + "\"");
+    }
+    return true;
+}
+
 int main(int argc, char** argv)
 {
     if (argc == 2 && strcmp(argv[1], "-version") == 0)
@@ -1682,100 +1815,10 @@ int main(int argc, char** argv)
     {
         for (auto && opt_effect: opt_effects[player])
         {
-            if (opt_effect.empty())
+            std::unordered_set<std::string> used_bge_aliases;
+            if (!parse_bge(opt_effect, player, bge_aliases, opt_bg_effects, opt_bg_skills[0], opt_bg_skills[1], used_bge_aliases))
             {
-                continue;
-            }
-            try
-            {
-                std::vector<std::string> tokens, skill_name_list;
-                const auto bge_itr = bge_aliases.find(simplify_name(opt_effect));
-                boost::split(tokens, bge_itr == bge_aliases.end() ? opt_effect : bge_itr->second, boost::is_any_of(" -"));
-                boost::split(skill_name_list, tokens[0], boost::is_any_of("+"));
-                for (auto && skill_name: skill_name_list)
-                {
-                    PassiveBGE::PassiveBGE passive_bge_id = passive_bge_name_to_id(skill_name);
-                    Skill::Skill skill_id = skill_name_to_id(skill_name);
-                    if (passive_bge_id != PassiveBGE::no_bge)
-                    {
-                        // passive BGE (must be global)
-                        if (player != 2) { throw std::runtime_error("must be global"); }
-                        // map bge id to its value (if present otherwise zero)
-                        opt_bg_effects[passive_bge_id] = (tokens.size() > 1) ? boost::lexical_cast<unsigned>(tokens[1]) : 0;
-                    }
-                    else if (skill_table[skill_id] != nullptr)
-                    {
-                        unsigned skill_index = 1;
-                        // activation BG skill
-                        SkillSpec bg_skill{skill_id, 0, allfactions, 0, 0, Skill::no_skill, Skill::no_skill, false};
-                        if (skill_index < tokens.size() && boost::to_lower_copy(tokens[skill_index]) == "all")
-                        {
-                            bg_skill.all = true;
-                            skill_index += 1;
-                        }
-                        else if (skill_index + 1 < tokens.size() && isdigit(*tokens[skill_index].c_str()))
-                        {
-                            bg_skill.n = boost::lexical_cast<unsigned>(tokens[skill_index]);
-                            skill_index += 1;
-                        }
-                        if (skill_index < tokens.size())
-                        {
-                            bg_skill.s = skill_name_to_id(tokens[skill_index]);
-                            if (bg_skill.s != Skill::no_skill)
-                            {
-                                skill_index += 1;
-                                if (skill_index < tokens.size() && (boost::to_lower_copy(tokens[skill_index]) == "to" || boost::to_lower_copy(tokens[skill_index]) == "into"))
-                                {
-                                    skill_index += 1;
-                                }
-                                if (skill_index < tokens.size())
-                                {
-                                    bg_skill.s2 = skill_name_to_id(tokens[skill_index]);
-                                    if (bg_skill.s2 != Skill::no_skill)
-                                    {
-                                        skill_index += 1;
-                                    }
-                                }
-                            }
-                        }
-                        if (skill_index < tokens.size())
-                        {
-                            if (bg_skill.id == Skill::jam || bg_skill.id == Skill::overload)
-                            {
-                                bg_skill.n = boost::lexical_cast<unsigned>(tokens[skill_index]);
-                            }
-                            else
-                            {
-                                bg_skill.x = boost::lexical_cast<unsigned>(tokens[skill_index]);
-                            }
-                        }
-                        if (player == 2)
-                        {
-                            opt_bg_skills[0].push_back(bg_skill);
-                            opt_bg_skills[1].push_back(bg_skill);
-                        }
-                        else
-                        {
-                            opt_bg_skills[player].push_back(bg_skill);
-                        }
-                    }
-                    else
-                    {
-                        std::cerr << "Error: unrecognized effect \"" << opt_effect << "\".\n";
-                        print_available_effects();
-                        return 0;
-                    }
-                }
-            }
-            catch (const boost::bad_lexical_cast & e)
-            {
-                std::cerr << "Error: Expect a number in effect \"" << opt_effect << "\".\n";
-                return 0;
-            }
-            catch (std::exception & e)
-            {
-                std::cerr << "Error: effect \"" << opt_effect << "\": " << e.what() << ".\n";
-                return 0;
+                return 1;
             }
         }
     }
@@ -2248,3 +2291,4 @@ int main(int argc, char** argv)
     }
     return 0;
 }
+
