@@ -1415,7 +1415,7 @@ bool parse_bge(
                     enemy_bg_skills.push_back(bg_skill);
                     break;
                 default:
-                    throw std::runtime_error("Bad player number: " + player);
+                    throw std::runtime_error("Bad player number: " + boost::lexical_cast<std::string>(player));
                 }
             }
             else
