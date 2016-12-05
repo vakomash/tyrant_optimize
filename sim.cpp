@@ -1591,6 +1591,14 @@ template<>
 inline void perform_skill<Skill::enrage>(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s)
 {
     dst->m_enraged += s.x;
+    if (fd->bg_effects.count(PassiveBGE::furiosity) && can_be_healed(dst))
+    {
+        unsigned bge_value = s.x;
+        _DEBUG_MSG(1, "Furiosity: %s Heals %s for %u\n",
+            status_description(src).c_str(),
+            status_description(dst).c_str(), bge_value);
+        add_hp(fd, dst, bge_value);
+    }
 }
 
 template<>
