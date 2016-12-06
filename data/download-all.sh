@@ -10,6 +10,9 @@ FILES=(
    missions.xml
    skills_set.xml
    cards_section_{1..11}.xml
+   items.xml
+   levels.xml
+   codex.xml
 )
 
 TMP_PREFIX="."
