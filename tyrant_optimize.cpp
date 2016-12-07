@@ -63,6 +63,7 @@ namespace {
     unsigned use_fused_card_level{0};
     bool show_ci{false};
     bool use_harmonic_mean{false};
+    unsigned iterations_multiplier{10};
     unsigned sim_seed{0};
     Requirement requirement;
 #ifndef NQUEST
@@ -909,7 +910,7 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
             auto & prev_results = evaluated_decks[best_deck];
             skipped_simulations += prev_results.second;
             // Re-evaluate the best deck
-            auto evaluate_result = proc.evaluate(std::min(prev_results.second * 10, num_iterations), prev_results);
+            auto evaluate_result = proc.evaluate(std::min(prev_results.second * iterations_multiplier, num_iterations), prev_results);
             best_score = compute_score(evaluate_result, proc.factors);
             std::cout << "Results refined: ";
             print_score_info(evaluate_result, proc.factors);
@@ -1091,7 +1092,7 @@ void hill_climbing_ordered(unsigned num_min_iterations, unsigned num_iterations,
             auto & prev_results = evaluated_decks[best_deck];
             skipped_simulations += prev_results.second;
             // Re-evaluate the best deck
-            auto evaluate_result = proc.evaluate(std::min(prev_results.second * 10, num_iterations), prev_results);
+            auto evaluate_result = proc.evaluate(std::min(prev_results.second * iterations_multiplier, num_iterations), prev_results);
             best_score = compute_score(evaluate_result, proc.factors);
             std::cout << "Results refined: ";
             print_score_info(evaluate_result, proc.factors);
@@ -1758,6 +1759,11 @@ int main(int argc, char** argv)
             opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 2]), debuguntil));
             opt_num_threads = 1;
             argIndex += 2;
+        }
+        else if(strcmp(argv[argIndex], "iter-mul") == 0 || strcmp(argv[argIndex], "iterations-multiplier") == 0)
+        {
+            iterations_multiplier = atoi(argv[argIndex+1]);
+            argIndex += 1;
         }
         else
         {
