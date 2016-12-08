@@ -540,8 +540,6 @@ const Card* Deck::upgrade_card(const Card* card, unsigned card_max_level, std::m
 void Deck::shuffle(std::mt19937& re)
 {
     shuffled_commander = commander;
-    shuffled_dominions.clear();
-    boost::insert(shuffled_dominions, shuffled_dominions.end(), dominion_cards);
     shuffled_forts.clear();
     boost::insert(shuffled_forts, shuffled_forts.end(), fortress_cards);
     shuffled_cards.clear();
