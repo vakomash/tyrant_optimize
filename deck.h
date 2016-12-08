@@ -27,13 +27,13 @@ enum DeckStrategy
 };
 }
 typedef void (*DeckDecoder)(const char* hash, std::vector<unsigned>& ids);
-typedef void (*DeckEncoder)(std::stringstream &ios, const Card* commander, std::vector<const Card*> cards);
+typedef void (*DeckEncoder)(std::stringstream &ios, std::vector<const Card*> cards);
 void hash_to_ids_wmt_b64(const char* hash, std::vector<unsigned>& ids);
-void encode_deck_wmt_b64(std::stringstream &ios, const Card* commander, std::vector<const Card*> cards);
+void encode_deck_wmt_b64(std::stringstream &ios, std::vector<const Card*> cards);
 void hash_to_ids_ext_b64(const char* hash, std::vector<unsigned>& ids);
-void encode_deck_ext_b64(std::stringstream &ios, const Card* commander, std::vector<const Card*> cards);
+void encode_deck_ext_b64(std::stringstream &ios, std::vector<const Card*> cards);
 void hash_to_ids_ddd_b64(const char* hash, std::vector<unsigned>& ids);
-void encode_deck_ddd_b64(std::stringstream &ios, const Card* commander, std::vector<const Card*> cards);
+void encode_deck_ddd_b64(std::stringstream &ios, std::vector<const Card*> cards);
 extern DeckDecoder hash_to_ids;
 extern DeckEncoder encode_deck;
 

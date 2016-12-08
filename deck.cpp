@@ -93,12 +93,8 @@ void encode_id_wmt_b64(std::stringstream &ios, unsigned card_id)
     ios << base64_chars[card_id % 64];
 }
 
-void encode_deck_wmt_b64(std::stringstream &ios, const Card* commander, std::vector<const Card*> cards)
+void encode_deck_wmt_b64(std::stringstream &ios, std::vector<const Card*> cards)
 {
-    if (commander)
-    {
-        encode_id_wmt_b64(ios, commander->m_id);
-    }
     unsigned last_id = 0;
     unsigned num_repeat = 0;
     for(const Card* card: cards)
@@ -164,12 +160,8 @@ void encode_id_ext_b64(std::stringstream &ios, unsigned card_id)
     ios << base64_chars[card_id + 32];
 }
 
-void encode_deck_ext_b64(std::stringstream &ios, const Card* commander, std::vector<const Card*> cards)
+void encode_deck_ext_b64(std::stringstream &ios, std::vector<const Card*> cards)
 {
-    if (commander)
-    {
-        encode_id_ext_b64(ios, commander->m_id);
-    }
     for (const Card* card: cards)
     {
         encode_id_ext_b64(ios, card->m_id);
@@ -208,12 +200,8 @@ void encode_id_ddd_b64(std::stringstream &ios, unsigned card_id)
     ios << base64_chars[card_id % 64];
 }
 
-void encode_deck_ddd_b64(std::stringstream &ios, const Card* commander, std::vector<const Card*> cards)
+void encode_deck_ddd_b64(std::stringstream &ios, std::vector<const Card*> cards)
 {
-    if (commander)
-    {
-        encode_id_ddd_b64(ios, commander->m_id);
-    }
     for (const Card* card: cards)
     {
         encode_id_ddd_b64(ios, card->m_id);
@@ -334,16 +322,15 @@ void Deck::add_forts(const std::string& deck_string)
 std::string Deck::hash() const
 {
     std::stringstream ios;
+    std::vector<const Card*> deck_all_cards;
+    deck_all_cards.emplace_back(commander);
+    deck_all_cards.insert(deck_all_cards.end(), dominion_cards.begin(), dominion_cards.end());
+    deck_all_cards.insert(deck_all_cards.end(), cards.begin(), cards.end());
     if (strategy == DeckStrategy::random)
     {
-        auto sorted_cards = cards;
-        std::sort(sorted_cards.begin(), sorted_cards.end(), [](const Card* a, const Card* b) { return a->m_id < b->m_id; });
-        encode_deck(ios, commander, sorted_cards);
+        std::sort(deck_all_cards.end() - cards.size(), deck_all_cards.end(), [](const Card* a, const Card* b) { return a->m_id < b->m_id; });
     }
-    else
-    {
-        encode_deck(ios, commander, cards);
-    }
+    encode_deck(ios, deck_all_cards);
     return ios.str();
 }
 
