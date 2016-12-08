@@ -2,23 +2,26 @@
 Inspired: Rally all 3
 Blightblast: Enfeeble all 3
 Bombing Run: Strike all 3
-Triage: Heal all 4
+Triage: Heal all 6
+Charged Up: Overload 3
 Combined Arms: Rally+Enfeeble+Strike all 2
 Blitzkrieg: Rush
 Paladin's Presence: Protect all 3
+Viral Warfare: Enhance all Poison 3
 Progenitor Tech: Heal+Protect+Rally+Enfeeble+Strike all 1
 Diminisher: Sunder all 2
-Divine Blessing: Heal+Rally all 2
+Divine Blessing: Heal all 3; Rally all 2
 Opalescence: Heal+Protect all 2
-Ferocity: Enrage 6
 Power Source: Overload 1
-Artillery: Mortar all 4
+Ferocity: Enrage 6
 Tartarian Gift: Rally+Enrage all 3
-Bloodthirst: Enhance All Leech 6
+Artillery: Mortar all 4
 Orbital Cannon: Strike 10
-Charged Up: Overload 3
-Emergency Aid: Heal 12
+Bloodthirst: Enhance All Leech 6
+Emergency Aid: Heal 15
 Extended Reach: Enhance All Swipe 5
+Mirror Madness: Mimic 10
+Eternal Backlash: Enhance All Counter 6
 
 // Some other BGEs
 Soothing Chant: Heal all 2
@@ -39,7 +42,7 @@ SkyCom Complex: Network Interference
 Network Interference: Weaken all 4
 // --
 Mech Graveyard: Scrap Field
-Scrap Field: Evolve 2 Pierce to Rupture
+Scrap Field: Evolve 2 Pierce Rupture
 // --
 Seismic Beacon: HaltedOrders
 // --
@@ -47,7 +50,7 @@ Enclave Landing: Bolstered Beachfront
 Bolstered Beachfront: Enhance all Legion 3
 // --
 Andar Quarantine: Andar Isolation
-Andar Isolation: Evolve Weaken to Sunder
+Andar Isolation: Evolve Weaken Sunder
 // --
 Baron's Claw Labs: Virulence
 // --
@@ -55,25 +58,35 @@ Colonial Relay: CriticalReach
 // --
 Borean Forges: Fortification
 // --
-Brood Nest: Enfeeble all 3
+Brood Nest: Blighted Swamps
+Blighted Swamps: Enfeeble all 3
 // --
-Cleave Rock: Enhance all Berserk 3
+Cleave Rock: Splinter Legacy
+Splinter Legacy: Enhance all Berserk 3
 // --
-Elder Port: Evolve 2 Siege Mortar
+Elder Port: Ballistic Barrage
+Ballistic Barrage: Evolve 2 Siege Mortar
 // --
-Infested Depot: Enhance all Leech 3
+Infested Depot: Infested Supplies
+Infested Supplies: Enhance all Leech 3
 // --
-Jotun's Pantheon: Protect all 3
+Jotun's Pantheon: Jotun's Presence
+Jotun's Presence: Protect all 3
 // --
-Magma Foundry: Strike all 3
+Magma Foundry: Volcanic Rain
+Volcanic Rain: Strike all 3
 // --
-Malort's Den: Evolve 2 Poison Venom
+Malort's Den: Lethal Spores
+Lethal Spores: Evolve 2 Poison Venom
 // --
-Norhaven: Enhance all Evade 3
+Norhaven: Storm Shelters
+Storm Shelters: Enhance all Evade 3
 // --
-Red Maw Base: Rally all 3
+Red Maw Base: Red Maw Barracks
+Red Maw Barracks: Rally all 3
 // --
-Tyrolian Outpost: Enhance all Armor 3
+Tyrolian Outpost: Reforged Plating
+Reforged Plating: Enhance all Armor 3
 // --
 Ashrock Redoubt: Counterflux
 
