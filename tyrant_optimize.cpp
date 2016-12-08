@@ -792,11 +792,16 @@ void print_results(const EvaluatedResults& results, std::vector<long double>& fa
 //------------------------------------------------------------------------------
 void print_deck_inline(const unsigned deck_cost, const FinalResults<long double> score, Deck * deck)
 {
+    // print units count
     std::cout << deck->cards.size() << " units: ";
+
+    // print deck cost (if fund is enabled)
     if(fund > 0)
     {
         std::cout << "$" << deck_cost << " ";
     }
+
+    // print optimization result details
     switch(optimization_mode)
     {
         case OptimizationMode::raid:
@@ -831,8 +836,17 @@ void print_deck_inline(const unsigned deck_cost, const FinalResults<long double>
     {
         std::cout << " [" << ((score.points - 5.0 * (1.0 - score.wins)) / score.wins) << " per win]";
     }
+
+    // print commander
     std::cout << ": " << deck->commander->m_name;
 
+    // print dominions
+    for (const Card* card: deck->dominion_cards)
+    {
+        std::cout << ", " << card->m_name;
+    }
+
+    // print deck cards
     if (deck->strategy == DeckStrategy::random)
     {
         std::sort(deck->cards.begin(), deck->cards.end(), [](const Card* a, const Card* b) { return a->m_id < b->m_id; });

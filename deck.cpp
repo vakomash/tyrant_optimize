@@ -376,6 +376,10 @@ std::string Deck::medium_description() const
     {
         ios << "No commander";
     }
+    for (const Card * card: dominion_cards)
+    {
+        ios << ", " << card->m_name;
+    }
     for (const Card * card: fortress_cards)
     {
         ios << ", " << card->m_name;
