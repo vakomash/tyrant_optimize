@@ -331,6 +331,8 @@ public:
     inline const std::vector<CardStatus *> adjacent_assaults(const CardStatus * status);
     inline const std::vector<CardStatus *> adjacent_assaults(const CardStatus * status, const unsigned n);
     inline void print_selection_array();
+    inline void prepare_action();
+    inline void finalize_action();
 
 #ifndef NQUEST
     inline void inc_counter(QuestType::QuestType quest_type, unsigned quest_key, unsigned quest_2nd_key = 0, unsigned value = 1)

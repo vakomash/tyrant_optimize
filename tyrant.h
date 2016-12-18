@@ -1,7 +1,7 @@
 #ifndef TYRANT_H_INCLUDED
 #define TYRANT_H_INCLUDED
 
-#define TYRANT_OPTIMIZER_VERSION "2.40.0"
+#define TYRANT_OPTIMIZER_VERSION "2.41.0"
 
 #include <string>
 #include <sstream>
@@ -39,7 +39,7 @@ enum Skill
     mimic,
 
     // Defensive:
-    armor, avenge, corrosive, counter, evade, payback, revenge, refresh, wall,
+    armor, avenge, corrosive, counter, evade, payback, revenge, refresh, wall, barrier,
 
     // Combat-Modifier:
     coalition, legion, pierce, rupture, swipe, drain, venom,

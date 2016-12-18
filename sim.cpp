@@ -110,6 +110,34 @@ inline void Field::print_selection_array()
     }
 #endif
 }
+
+//------------------------------------------------------------------------------
+inline void Field::prepare_action()
+{
+    damaged_units_to_times.clear();
+}
+
+//------------------------------------------------------------------------------
+inline void Field::finalize_action()
+{
+    for (auto unit_it = damaged_units_to_times.begin(); unit_it != damaged_units_to_times.end(); ++ unit_it)
+    {
+        if (__builtin_expect(!unit_it->second, false))
+        { continue; }
+        CardStatus * dmg_status = unit_it->first;
+        if (__builtin_expect(!is_alive(dmg_status), false))
+        { continue; }
+        unsigned barrier_base = dmg_status->skill(Skill::barrier);
+        if (barrier_base)
+        {
+            unsigned protect_value = barrier_base * unit_it->second;
+            _DEBUG_MSG(1, "%s protect itself for %u (barrier %u x %u damage taken times)\n",
+                status_description(dmg_status).c_str(), protect_value, barrier_base, unit_it->second);
+            dmg_status->m_protected += protect_value;
+        }
+    }
+}
+
 //------------------------------------------------------------------------------
 inline unsigned CardStatus::skill_base_value(Skill::Skill skill_id) const
 {
@@ -484,6 +512,7 @@ void evaluate_skills(Field* fd, CardStatus* status, const std::vector<SkillSpec>
     unsigned num_actions(1);
     for (unsigned action_index(0); action_index < num_actions; ++ action_index)
     {
+        fd->prepare_action();
         assert(fd->skill_queue.size() == 0);
         for (auto & ss: skills)
         {
@@ -518,6 +547,7 @@ void evaluate_skills(Field* fd, CardStatus* status, const std::vector<SkillSpec>
                 _DEBUG_MSG(2, "%s cannot take attack.\n", status_description(status).c_str());
             }
         }
+        fd->finalize_action();
         // Flurry
         if (can_act(status) && is_alive(&fd->tip->commander) && status->has_skill(Skill::flurry) && status->m_skill_cd[Skill::flurry] == 0)
         {
@@ -663,9 +693,16 @@ inline bool skill_check<Skill::drain>(Field* fd, CardStatus* c, CardStatus* ref)
 
 void remove_hp(Field* fd, CardStatus* status, unsigned dmg)
 {
+    if (__builtin_expect(!dmg, false)) { return; }
     assert(is_alive(status));
     _DEBUG_MSG(2, "%s takes %u damage\n", status_description(status).c_str(), dmg);
     status->m_hp = safe_minus(status->m_hp, dmg);
+    if (fd->current_phase < Field::end_phase && status->has_skill(Skill::barrier))
+    {
+        ++ fd->damaged_units_to_times[status];
+        _DEBUG_MSG(2, "%s damaged %u times\n",
+            status_description(status).c_str(), fd->damaged_units_to_times[status]);
+    }
     if (status->m_hp == 0)
     {
 #ifndef NQUEST
@@ -2395,9 +2432,11 @@ Results<uint64_t> play(Field* fd)
         // Evaluate activation BGE skills
         for (const auto & bg_skill: fd->bg_skills[fd->tapi])
         {
+            fd->prepare_action();
             _DEBUG_MSG(2, "Evaluating BG skill %s\n", skill_description(bg_skill).c_str());
             fd->skill_queue.emplace_back(&fd->tap->commander, bg_skill);
             resolve_skill(fd);
+            fd->finalize_action();
         }
         if (__builtin_expect(fd->end, false)) { break; }
 
