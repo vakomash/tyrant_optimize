@@ -2213,10 +2213,11 @@ void perform_targetted_hostile_fast(Field* fd, CardStatus* src, const SkillSpec&
 inline unsigned evaluate_brawl_score(Field* fd, unsigned player)
 {
     const auto & p = fd->players;
-    return 56
-        - (10 - p[player]->deck->cards.size())
-        + (10 - p[opponent(player)]->deck->cards.size())
+    return 55
+        // - (10 - p[player]->deck->cards.size())
+        // + (10 - p[opponent(player)]->deck->cards.size())
         + p[opponent(player)]->total_cards_destroyed
+        + safe_minus(p[player]->deck->cards.size(), (unsigned)(fd->turn/2))
         - (unsigned)((fd->turn+7)/8);
 }
 
