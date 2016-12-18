@@ -257,10 +257,11 @@ public:
     // They are stored in this, and cleared after all have been performed.
     std::deque<std::tuple<CardStatus*, SkillSpec>> skill_queue;
     std::vector<CardStatus*> killed_units;
+    std::unordered_map<CardStatus*, unsigned> damaged_units_to_times;
+
     enum phase
     {
         playcard_phase,
-        legion_phase,
         commander_phase,
         structures_phase,
         assaults_phase,

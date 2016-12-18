@@ -666,7 +666,7 @@ void remove_hp(Field* fd, CardStatus* status, unsigned dmg)
     assert(is_alive(status));
     _DEBUG_MSG(2, "%s takes %u damage\n", status_description(status).c_str(), dmg);
     status->m_hp = safe_minus(status->m_hp, dmg);
-    if(status->m_hp == 0)
+    if (status->m_hp == 0)
     {
 #ifndef NQUEST
         if (status->m_player == 1)
@@ -803,9 +803,7 @@ void turn_end_phase(Field* fd)
     // Inactive player's assault cards:
     {
         auto& assaults(fd->tip->assaults);
-        for(unsigned index(0), end(assaults.size());
-            index < end;
-            ++index)
+        for(unsigned index(0), end(assaults.size()); index < end; ++ index)
         {
             CardStatus& status(assaults[index]);
             if (status.m_hp <= 0)
@@ -824,9 +822,7 @@ void turn_end_phase(Field* fd)
     // Inactive player's structure cards:
     {
         auto& structures(fd->tip->structures);
-        for(unsigned index(0), end(structures.size());
-            index < end;
-            ++index)
+        for(unsigned index(0), end(structures.size()); index < end; ++ index)
         {
             CardStatus& status(structures[index]);
             if (status.m_hp <= 0)
@@ -840,9 +836,7 @@ void turn_end_phase(Field* fd)
     // Active player's assault cards:
     {
         auto& assaults(fd->tap->assaults);
-        for(unsigned index(0), end(assaults.size());
-            index < end;
-            ++index)
+        for(unsigned index(0), end(assaults.size()); index < end; ++ index)
         {
             CardStatus& status(assaults[index]);
             if (status.m_hp <= 0)
