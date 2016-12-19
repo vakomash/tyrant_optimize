@@ -774,7 +774,12 @@ void print_results(const EvaluatedResults& results, std::vector<long double>& fa
 #ifndef NQUEST
         case OptimizationMode::quest:
 #endif
-            std::cout << "score: " << final.points << " (";
+            std::cout << "score: " << final.points;
+            if (optimization_mode == OptimizationMode::brawl)
+            {
+                std::cout << " [" << ((final.points - 5.0 * (1.0 - final.wins)) / final.wins) << " per win]";
+            }
+            std::cout << " (";
             for(const auto & val: results.first)
             {
                 std::cout << val.points << " ";
