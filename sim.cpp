@@ -2217,7 +2217,7 @@ inline unsigned evaluate_brawl_score(Field* fd, unsigned player)
         // - (10 - p[player]->deck->cards.size())
         // + (10 - p[opponent(player)]->deck->cards.size())
         + p[opponent(player)]->total_cards_destroyed
-        + safe_minus(p[player]->deck->cards.size(), (unsigned)(fd->turn/2))
+        + p[player]->deck->shuffled_cards.size()
         - (unsigned)((fd->turn+7)/8);
 }
 
