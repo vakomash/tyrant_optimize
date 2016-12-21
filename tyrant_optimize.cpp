@@ -764,6 +764,8 @@ void print_results(const EvaluatedResults& results, std::vector<long double>& fa
     }
 #endif
 
+    unsigned min_score = min_possible_score[(size_t)optimization_mode];
+    unsigned max_score = max_possible_score[(size_t)optimization_mode];
     switch(optimization_mode)
     {
         case OptimizationMode::raid:
@@ -777,7 +779,14 @@ void print_results(const EvaluatedResults& results, std::vector<long double>& fa
             std::cout << "score: " << final.points;
             if (optimization_mode == OptimizationMode::brawl)
             {
-                std::cout << " [" << ((final.points - 5.0 * (1.0 - final.wins)) / final.wins) << " per win]";
+                auto win_points = final.wins ? ((final.points - min_score * (1.0 - final.wins)) / final.wins) : final.points;
+                std::cout << " [" << win_points << " per win]";
+            }
+            else if (optimization_mode == OptimizationMode::brawl_defense)
+            {
+                auto opp_wins = 1.0 - final.wins;
+                auto lose_points = opp_wins ? max_score - ((final.points - (max_score - min_score) * final.wins) / opp_wins) : final.points;
+                std::cout << " [" << lose_points << " per opp win]";
             }
             std::cout << " (";
             for(const auto & val: results.first)
@@ -837,9 +846,18 @@ void print_deck_inline(const unsigned deck_cost, const FinalResults<long double>
             break;
     }
     std::cout << score.points;
+    unsigned min_score = min_possible_score[(size_t)optimization_mode];
+    unsigned max_score = max_possible_score[(size_t)optimization_mode];
     if (optimization_mode == OptimizationMode::brawl)
     {
-        std::cout << " [" << ((score.points - 5.0 * (1.0 - score.wins)) / score.wins) << " per win]";
+        auto win_points = score.wins ? ((score.points - min_score * (1.0 - score.wins)) / score.wins) : score.points;
+        std::cout << " [" << win_points << " per win]";
+    }
+    else if (optimization_mode == OptimizationMode::brawl_defense)
+    {
+        auto opp_wins = 1.0 - score.wins;
+        auto lose_points = opp_wins ? max_score - ((score.points - (max_score - min_score) * score.wins) / opp_wins) : score.points;
+        std::cout << " [" << lose_points << " per opp win]";
     }
 
     // print commander
