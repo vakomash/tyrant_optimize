@@ -335,6 +335,7 @@ def doGrabLastDeck(http):
     enemy_id = int(res['enemy_id'] or -1)
     enemy_name = res['enemy_name'] if ('enemy_name' in res) else '__UNNAMED__'
     enemy_size = int(res['eds'] or 1000)
+    host_size = int(res['hds'] or 1000)
     enemy_udb_entry = user_db.id2entry[enemy_id] if (enemy_id in user_db.id2entry) else None
     end_time = int(res['end_time']) if ('end_time' in res) else int(time.time())
     winner = int(res['winner']) if ('winner' in res) else None
@@ -390,6 +391,8 @@ def doGrabLastDeck(http):
     out = ""
     if config.getboolean('CORE', 'output_game_type'):
         out += game_type + '.'
+    if config.getboolean('CORE', 'output_timestamp'):
+        out += time.strftime('%Y%m%d', time.localtime(end_time)) + '.'
     if config.getboolean('CORE', 'output_winlose'):
         if winner is not None:
             out += 'Win.' if winner else 'Lose.'
@@ -398,8 +401,10 @@ def doGrabLastDeck(http):
     if config.getboolean('CORE', 'output_pvp_points'):
         if pvp_points is not None:
             out += 'pvp{:02d}.'.format(pvp_points)
-    if config.getboolean('CORE', 'output_timestamp'):
-        out += time.strftime('%Y%m%d', time.localtime(end_time)) + '.'
+    if config.getboolean('CORE', 'output_hds'):
+        out += "hds{:02d}.".format(host_size)
+    if config.getboolean('CORE', 'output_eds'):
+        out += "eds{:02d}.".format(enemy_size)
     if config.getboolean('CORE', 'output_guild'):
         out += re.sub('[^\w]', '_', enemy_guild_name) + '.'
     out += re.sub('[^\w]', '_', enemy_name)
