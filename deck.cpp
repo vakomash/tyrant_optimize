@@ -217,6 +217,8 @@ void Deck::set(const std::vector<unsigned>& ids, const std::map<signed, char> &m
 {
     commander = nullptr;
     strategy = DeckStrategy::random;
+
+    int non_deck_cards_seen = 0;
     for(auto id: ids)
     {
         const Card* card{all_cards.by_id(id)};
@@ -225,23 +227,33 @@ void Deck::set(const std::vector<unsigned>& ids, const std::map<signed, char> &m
             if (commander == nullptr)
             {
                 commander = card;
+                if (marks.find(-1) != marks.end())
+                    card_marks[-1] = marks.at(-1);
             }
             else
             {
+                non_deck_cards_seen++;
                 std::cerr << "WARNING: Ignoring additional commander " << card->m_name << " (" << commander->m_name << " already in deck)\n";
             }
         }
         else if (card->m_category == CardCategory::dominion)
         {
             dominion_cards.emplace_back(card);
+            non_deck_cards_seen++;
         }
         else if (card->m_category == CardCategory::fortress_defense || card->m_category == CardCategory::fortress_siege)
         {
             fortress_cards.emplace_back(card);
+            non_deck_cards_seen++;
         }
         else
         {
             cards.emplace_back(card);
+            int mark_dst = cards.size() - 1;
+            int mark_src = mark_dst + non_deck_cards_seen;
+
+            if (marks.find(mark_src) != marks.end())
+                card_marks[mark_dst] = marks.at(mark_src);
         }
     }
     if (commander == nullptr)
@@ -250,7 +262,6 @@ void Deck::set(const std::vector<unsigned>& ids, const std::map<signed, char> &m
     }
     commander_max_level = commander->m_top_level_card->m_level;
     deck_size = cards.size();
-    card_marks = marks;
 }
 
 void Deck::set(const std::string& deck_string_)
