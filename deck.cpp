@@ -232,6 +232,7 @@ void Deck::set(const std::vector<unsigned>& ids, const std::map<signed, char> &m
             }
             else
             {
+                non_deck_cards_seen++;
                 std::cerr << "WARNING: Ignoring additional commander " << card->m_name << " (" << commander->m_name << " already in deck)\n";
             }
         }
