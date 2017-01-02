@@ -59,8 +59,10 @@ namespace {
     long double target_score{100};
     long double min_increment_of_score{0};
     long double confidence_level{0.99};
-    bool use_top_level_card{false};
+    bool use_top_level_card{true};
+    bool use_top_level_commander{true};
     unsigned use_fused_card_level{0};
+    unsigned use_fused_commander_level{0};
     bool show_ci{false};
     bool use_harmonic_mean{false};
     unsigned iterations_multiplier{10};
@@ -69,6 +71,8 @@ namespace {
 #ifndef NQUEST
     Quest quest;
 #endif
+    std::unordered_set<unsigned> allowed_candidates;
+    std::unordered_set<unsigned> disallowed_candidates;
 }
 
 using namespace std::placeholders;
@@ -172,6 +176,24 @@ unsigned get_deck_cost(const Deck * deck)
     return deck_cost;
 }
 
+bool is_owned_or_can_be_fused(const Card * card)
+{
+    if (owned_cards[card->m_id])
+    { return true; }
+    if (!fund)
+    { return false; }
+    std::map<const Card *, unsigned> num_in_deck;
+    unsigned deck_cost = get_required_cards_before_upgrade({card}, num_in_deck);
+    if (deck_cost > fund)
+    { return false; }
+    for (auto it: num_in_deck)
+    {
+        if (it.second > owned_cards[it.first->m_id])
+        { return false; }
+    }
+    return true;
+}
+
 // remove val from oppo if found, otherwise append val to self
 template <typename C>
 void append_unless_remove(C & self, C & oppo, typename C::const_reference val)
@@ -192,21 +214,33 @@ void append_unless_remove(C & self, C & oppo, typename C::const_reference val)
 bool adjust_deck(Deck * deck, const signed from_slot, const signed to_slot, const Card * card, unsigned fund, std::mt19937 & re, unsigned & deck_cost,
         std::vector<std::pair<signed, const Card *>> & cards_out, std::vector<std::pair<signed, const Card *>> & cards_in)
 {
+    bool is_random = deck->strategy == DeckStrategy::random;
+    cards_out.clear();
     cards_in.clear();
-    if (card == nullptr)
-    { // change commander or remove card
-        if (to_slot < 0)
-        { // change commander
-            cards_in.emplace_back(-1, deck->commander);
-        }
+    if (from_slot < 0)
+    { // change commander
+        cards_out.emplace_back(-1, deck->commander);
+        deck->commander = card;
+        cards_in.emplace_back(-1, deck->commander);
         deck_cost = get_deck_cost(deck);
         return (deck_cost <= fund);
     }
-    bool is_random = deck->strategy == DeckStrategy::random;
+    if (from_slot < (signed)deck->cards.size())
+    { // remove card from the deck
+        cards_out.emplace_back(is_random ? -1 : from_slot, deck->cards[from_slot]);
+        deck->cards.erase(deck->cards.begin() + from_slot);
+    }
+    if (card == nullptr)
+    { // remove card (no new replacement for removed card)
+        deck_cost = get_deck_cost(deck);
+        return (deck_cost <= fund);
+    }
+
+    // backup deck cards
     std::vector<const Card *> cards = deck->cards;
-    card = card->m_top_level_card;
+
+    // try to add new card into the deck, unfuse/downgrade it if necessary
     {
-        // try to add new card into the deck, unfuse/downgrade it if necessary
         std::stack<const Card *> candidate_cards;
         candidate_cards.emplace(card);
         while (! candidate_cards.empty())
@@ -227,8 +261,9 @@ bool adjust_deck(Deck * deck, const signed from_slot, const signed to_slot, cons
         }
         cards_in.emplace_back(is_random ? -1 : to_slot, deck->cards[0]);
     }
+
+    // try to add commander into the deck, unfuse/downgrade it if necessary
     {
-        // try to add commander into the deck, unfuse/downgrade it if necessary
         std::stack<const Card *> candidate_cards;
         const Card * old_commander = deck->commander;
         candidate_cards.emplace(deck->commander);
@@ -238,7 +273,7 @@ bool adjust_deck(Deck * deck, const signed from_slot, const signed to_slot, cons
             candidate_cards.pop();
             deck->commander = card_in;
             deck_cost = get_deck_cost(deck);
-            if (deck_cost <= fund)
+            if (use_top_level_commander || deck_cost <= fund)
             { break; }
             for (auto recipe_it : card_in->m_recipe_cards)
             { candidate_cards.emplace(recipe_it.first); }
@@ -911,10 +946,6 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
     print_score_info(results, proc.factors);
     auto current_score = compute_score(results, proc.factors);
     auto best_score = current_score;
-    // Non-commander cards
-    auto non_commander_cards = proc.cards.player_assaults;
-    non_commander_cards.insert(non_commander_cards.end(), proc.cards.player_structures.begin(), proc.cards.player_structures.end());
-    non_commander_cards.insert(non_commander_cards.end(), std::initializer_list<Card*>{NULL,});
     const Card* best_commander = d1->commander;
     std::vector<const Card*> best_cards = d1->cards;
     unsigned deck_cost = get_deck_cost(d1);
@@ -929,7 +960,52 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
     bool is_random = d1->strategy == DeckStrategy::random;
     bool deck_has_been_improved = true;
     unsigned long skipped_simulations = 0;
+    std::vector<const Card*> commander_candidates;
+    std::vector<const Card*> card_candidates;
     std::vector<std::pair<signed, const Card *>> cards_out, cards_in;
+
+    // resolve available to player cards
+    auto player_assaults_and_structures = proc.cards.player_commanders;
+    player_assaults_and_structures.insert(player_assaults_and_structures.end(), proc.cards.player_structures.begin(), proc.cards.player_structures.end());
+    player_assaults_and_structures.insert(player_assaults_and_structures.end(), proc.cards.player_assaults.begin(), proc.cards.player_assaults.end());
+    for (auto card: player_assaults_and_structures)
+    {
+        // try to skip a card unless it's allowed
+        if (!allowed_candidates.count(card->m_id))
+        {
+            // skip non-top-level cards when they are disabled
+            bool use_top_level = (card->m_type == CardType::commander) ? use_top_level_commander : use_top_level_card;
+            if (use_top_level && !card->is_top_level_card())
+            { continue; }
+
+            // skip disallowed
+            if (disallowed_candidates.count(card->m_id))
+            { continue; }
+
+            // skip lowest fusion levels
+            unsigned use_fused_level = (card->m_type == CardType::commander) ? use_fused_card_level : use_fused_commander_level;
+            if (card->m_fusion_level < use_fused_level)
+            { continue; }
+        }
+
+        // skip unavailable cards anyway when ownedcards is used
+        if (use_owned_cards && !is_owned_or_can_be_fused(card))
+        { continue; }
+
+        // enqueue candidate
+        if (card->m_type == CardType::commander)
+        {
+            commander_candidates.emplace_back(card);
+        }
+        else
+        {
+            card_candidates.emplace_back(card);
+        }
+    }
+    // append NULL as void card as well
+    card_candidates.emplace_back(nullptr);
+
+    // << main climbing loop >>
     for (unsigned from_slot(freezed_cards), dead_slot(freezed_cards); ;
             from_slot = std::max(freezed_cards, (from_slot + 1) % std::min<unsigned>(max_deck_len, d1->cards.size() + 1)))
     {
@@ -959,7 +1035,8 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
         }
         if (requirement.num_cards.count(best_commander) == 0)
         {
-            for(const Card* commander_candidate: proc.cards.player_commanders)
+            // << commander candidate loop >>
+            for (const Card* commander_candidate: commander_candidates)
             {
                 if(best_score.points - target_score > -1e-9)
                 { break; }
@@ -972,7 +1049,7 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
                 cards_out.clear();
                 cards_out.emplace_back(-1, best_commander);
                 d1->commander = commander_candidate;
-                if (! adjust_deck(d1, -1, -1, nullptr, fund, re, deck_cost, cards_out, cards_in))
+                if (! adjust_deck(d1, -1, -1, commander_candidate, fund, re, deck_cost, cards_out, cards_in))
                 { continue; }
                 unsigned new_gap = check_requirement(d1, requirement
 #ifndef NQUEST
@@ -1010,14 +1087,13 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
             d1->commander = best_commander;
             d1->cards = best_cards;
         }
-        std::shuffle(non_commander_cards.begin(), non_commander_cards.end(), re);
-        for (const Card* card_candidate: non_commander_cards)
+
+        // shuffle candidates
+        std::shuffle(card_candidates.begin(), card_candidates.end(), re);
+
+        // << card candidate loop >>
+        for (const Card* card_candidate: card_candidates)
         {
-            if (card_candidate && (card_candidate->m_fusion_level < use_fused_card_level || (use_top_level_card && card_candidate->m_level < card_candidate->m_top_level_card->m_level))
-                    && ! d1->allowed_candidates.count(card_candidate->m_id))
-            { continue; }
-            if (card_candidate && d1->disallowed_candidates.count(card_candidate->m_id))
-            { continue; }
             // Various checks to check if the card is accepted
             assert(!card_candidate || card_candidate->m_type != CardType::commander);
             for (unsigned to_slot(is_random ? from_slot : card_candidate ? freezed_cards : (best_cards.size() - 1));
@@ -1031,12 +1107,6 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
                         :
                         (from_slot == best_cards.size())) // void -> void
                 { continue; }
-                cards_out.clear();
-                if (from_slot < d1->cards.size())
-                {
-                    cards_out.emplace_back(is_random ? -1 : from_slot, d1->cards[from_slot]);
-                    d1->cards.erase(d1->cards.begin() + from_slot);
-                }
                 if (! adjust_deck(d1, from_slot, to_slot, card_candidate, fund, re, deck_cost, cards_out, cards_in) ||
                         d1->cards.size() < min_deck_len)
                 { continue; }
@@ -1325,8 +1395,6 @@ int main(int argc, char** argv)
     std::vector<std::string> opt_effects[3];  // 0-you; 1-enemy; 2-global
     std::unordered_map<unsigned, unsigned> opt_bg_effects;
     std::vector<SkillSpec> opt_bg_skills[2];
-    std::unordered_set<unsigned> allowed_candidates;
-    std::unordered_set<unsigned> disallowed_candidates;
     std::unordered_set<unsigned> disallowed_recipes;
 
     for(int argIndex = 3; argIndex < argc; ++argIndex)
@@ -1481,7 +1549,6 @@ int main(int argc, char** argv)
         }
         else if (strcmp(argv[argIndex], "endgame") == 0)
         {
-            use_top_level_card = true;
             use_fused_card_level = atoi(argv[argIndex+1]);
             argIndex += 1;
         }
@@ -1742,34 +1809,37 @@ int main(int argc, char** argv)
         return 0;
     }
 
+    // parse allowed candidates from options
     try
     {
-        your_deck->set_allowed_candidates(opt_allow_candidates);
+        auto && id_marks = string_to_ids(all_cards, opt_allow_candidates, "allowed-candidates");
+        for (const auto & cid : id_marks.first)
+        {
+            allowed_candidates.insert(cid);
+        }
     }
     catch(const std::runtime_error& e)
     {
         std::cerr << "Error: allow-candidates " << opt_allow_candidates << ": " << e.what() << std::endl;
         return 0;
     }
-    for (auto cid : allowed_candidates)
-    {
-        your_deck->allowed_candidates.insert(cid);
-    }
 
+    // parse disallowed candidates from options
     try
     {
-        your_deck->set_disallowed_candidates(opt_disallow_candidates);
+        auto && id_marks = string_to_ids(all_cards, opt_disallow_candidates, "disallowed-candidates");
+        for (const auto & cid : id_marks.first)
+        {
+            disallowed_candidates.insert(cid);
+        }
     }
     catch(const std::runtime_error& e)
     {
         std::cerr << "Error: disallow-candidates " << opt_disallow_candidates << ": " << e.what() << std::endl;
         return 0;
     }
-    for (auto cid : disallowed_candidates)
-    {
-        your_deck->disallowed_candidates.insert(cid);
-    }
 
+    // parse & drop disallowed recipes
     try
     {
         auto && id_dis_recipes = string_to_ids(all_cards, opt_disallow_recipes, "disallowed-recipes");
@@ -2091,6 +2161,8 @@ int main(int argc, char** argv)
         case reorder: {
             your_deck->strategy = DeckStrategy::ordered;
             use_owned_cards = true;
+            use_top_level_card = false;
+            use_top_level_commander = false;
             if (min_deck_len == 1 && max_deck_len == 10)
             {
                 min_deck_len = max_deck_len = your_deck->cards.size();

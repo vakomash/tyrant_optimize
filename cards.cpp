@@ -130,9 +130,9 @@ void Cards::add_card(Card * card, const std::string & name)
     {
         ambiguous_names.erase(simple_name);
         cards_by_name[simple_name] = card;
-        if (new_visible)
+        if (new_visible && !player_cards.count(card))
         {
-            player_cards.push_back(card);
+            player_cards.emplace(card);
             switch(card->m_type)
             {
                 case CardType::commander: {

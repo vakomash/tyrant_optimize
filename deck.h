@@ -67,8 +67,6 @@ public:
 
     std::string deck_string;
     std::unordered_set<unsigned> vip_cards;
-    std::unordered_set<unsigned> allowed_candidates;
-    std::unordered_set<unsigned> disallowed_candidates;
     std::vector<unsigned> given_hand;
     std::vector<const Card*> dominion_cards;
     std::vector<const Card*> fortress_cards;
@@ -126,8 +124,6 @@ public:
     void resolve();
     void shrink(const unsigned deck_len);
     void set_vip_cards(const std::string& deck_string_);
-    void set_allowed_candidates(const std::string& deck_string_);
-    void set_disallowed_candidates(const std::string& deck_string_);
     void set_given_hand(const std::string& deck_string_);
     void add_forts(const std::string& deck_string_);
 
