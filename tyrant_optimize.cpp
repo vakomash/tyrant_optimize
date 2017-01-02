@@ -254,9 +254,7 @@ bool adjust_deck(Deck * deck, const signed from_slot, const signed to_slot, cons
             { candidate_cards.emplace(recipe_it.first); }
         }
         if (deck_cost > fund)
-        {
-            return false;
-        }
+        { return false; }
         cards_in.emplace_back(is_random ? -1 : to_slot, deck->cards[0]);
     }
 
@@ -1038,11 +1036,8 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
                 assert(commander_candidate->m_type == CardType::commander);
                 if (commander_candidate->m_name == best_commander->m_name)
                 { continue; }
+                d1->commander = best_commander;
                 d1->cards = best_cards;
-                // Place it in the deck
-                cards_out.clear();
-                cards_out.emplace_back(-1, best_commander);
-                d1->commander = commander_candidate;
                 if (!adjust_deck(d1, -1, -1, commander_candidate, fund, re, deck_cost, cards_out, cards_in))
                 { continue; }
                 unsigned new_gap = check_requirement(d1, requirement
