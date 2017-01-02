@@ -80,7 +80,7 @@ using namespace std::placeholders;
 std::string card_id_name(const Card* card)
 {
     std::stringstream ios;
-    if(card)
+    if (card)
     {
         ios << "[" << card->m_id << "] " << card->m_name;
     }
@@ -165,13 +165,11 @@ unsigned get_deck_cost(const Deck * deck)
     std::map<const Card *, unsigned> num_in_deck;
     unsigned deck_cost = get_required_cards_before_upgrade({deck->commander}, num_in_deck);
     deck_cost += get_required_cards_before_upgrade(deck->cards, num_in_deck);
-    for(auto it: num_in_deck)
+    for (auto it: num_in_deck)
     {
         unsigned card_id = it.first->m_id;
         if (it.second > owned_cards[card_id])
-        {
-            return UINT_MAX;
-        }
+        { return UINT_MAX; }
     }
     return deck_cost;
 }
@@ -243,7 +241,7 @@ bool adjust_deck(Deck * deck, const signed from_slot, const signed to_slot, cons
     {
         std::stack<const Card *> candidate_cards;
         candidate_cards.emplace(card);
-        while (! candidate_cards.empty())
+        while (!candidate_cards.empty())
         {
             const Card* card_in = candidate_cards.top();
             candidate_cards.pop();
@@ -267,7 +265,7 @@ bool adjust_deck(Deck * deck, const signed from_slot, const signed to_slot, cons
         std::stack<const Card *> candidate_cards;
         const Card * old_commander = deck->commander;
         candidate_cards.emplace(deck->commander);
-        while (! candidate_cards.empty())
+        while (!candidate_cards.empty())
         {
             const Card* card_in = candidate_cards.top();
             candidate_cards.pop();
@@ -299,7 +297,7 @@ bool adjust_deck(Deck * deck, const signed from_slot, const signed to_slot, cons
         in_it = deck->cards.insert(in_it, nullptr);
         std::stack<const Card *> candidate_cards;
         candidate_cards.emplace(cards[i]);
-        while (! candidate_cards.empty())
+        while (!candidate_cards.empty())
         {
             const Card* card_in = candidate_cards.top();
             candidate_cards.pop();
@@ -410,11 +408,11 @@ void claim_cards(const std::vector<const Card*> & card_list)
 {
     std::map<const Card *, unsigned> num_cards;
     get_required_cards_before_upgrade(card_list, num_cards);
-    for(const auto & it: num_cards)
+    for (const auto & it: num_cards)
     {
         const Card * card = it.first;
         unsigned num_to_claim = safe_minus(it.second, owned_cards[card->m_id]);
-        if(num_to_claim > 0)
+        if (num_to_claim > 0)
         {
             owned_cards[card->m_id] += num_to_claim;
             if (debug_print >= 0)
@@ -524,14 +522,14 @@ struct SimulationData
 
     ~SimulationData()
     {
-        for(auto hand: enemy_hands) { delete(hand); }
+        for (auto hand: enemy_hands) { delete(hand); }
     }
 
     void set_decks(const Deck* const your_deck_, std::vector<Deck*> const & enemy_decks_)
     {
         your_deck.reset(your_deck_->clone());
         your_hand.deck = your_deck.get();
-        for(unsigned i(0); i < enemy_decks_.size(); ++i)
+        for (unsigned i(0); i < enemy_decks_.size(); ++i)
         {
             enemy_decks[i].reset(enemy_decks_[i]->clone());
             enemy_hands[i]->deck = enemy_decks[i].get();
@@ -541,7 +539,7 @@ struct SimulationData
     inline std::vector<Results<uint64_t>> evaluate()
     {
         std::vector<Results<uint64_t>> res;
-        for(Hand* enemy_hand: enemy_hands)
+        for (Hand* enemy_hand: enemy_hands)
         {
             your_hand.reset(re);
             enemy_hand->reset(re);
@@ -610,7 +608,7 @@ public:
         {
             std::cout << "RNG seed " << seed << std::endl;
         }
-        for(unsigned i(0); i < num_threads; ++i)
+        for (unsigned i(0); i < num_threads; ++i)
         {
             threads_data.push_back(new SimulationData(seed + i, cards, decks, enemy_decks.size(), factors, gamemode,
 #ifndef NQUEST
@@ -625,8 +623,8 @@ public:
     {
         destroy_threads = true;
         main_barrier.wait();
-        for(auto thread: threads) { thread->join(); }
-        for(auto data: threads_data) { delete(data); }
+        for (auto thread: threads) { thread->join(); }
+        for (auto data: threads_data) { delete(data); }
     }
 
     EvaluatedResults & evaluate(unsigned num_iterations, EvaluatedResults & evaluated_results)
@@ -670,16 +668,16 @@ void thread_evaluate(boost::barrier& main_barrier,
                      const Process& p,
                      unsigned thread_id)
 {
-    while(true)
+    while (true)
     {
         main_barrier.wait();
         sim.set_decks(p.your_deck, p.enemy_decks);
-        if(destroy_threads)
+        if (destroy_threads)
         { return; }
-        while(true)
+        while (true)
         {
             shared_mutex.lock(); //<<<<
-            if(thread_num_iterations == 0 || (thread_compare && thread_compare_stop)) //!
+            if (thread_num_iterations == 0 || (thread_compare && thread_compare_stop)) //!
             {
                 shared_mutex.unlock(); //>>>>
                 main_barrier.wait();
@@ -692,7 +690,7 @@ void thread_evaluate(boost::barrier& main_barrier,
                 std::vector<Results<uint64_t>> result{sim.evaluate()};
                 shared_mutex.lock(); //<<<<
                 std::vector<uint64_t> thread_score_local(thread_results->first.size(), 0u); //!
-                for(unsigned index(0); index < result.size(); ++index)
+                for (unsigned index(0); index < result.size(); ++index)
                 {
                     thread_results->first[index] += result[index]; //!
                     thread_score_local[index] = thread_results->first[index].points; //!
@@ -700,14 +698,14 @@ void thread_evaluate(boost::barrier& main_barrier,
                 ++thread_results->second; //!
                 unsigned thread_total_local{thread_results->second}; //!
                 shared_mutex.unlock(); //>>>>
-                if(thread_compare && thread_id == 0 && thread_total_local > 1)
+                if (thread_compare && thread_id == 0 && thread_total_local > 1)
                 {
                     unsigned score_accum = 0;
                     // Multiple defense decks case: scaling by factors and approximation of a "discrete" number of events.
-                    if(result.size() > 1)
+                    if (result.size() > 1)
                     {
                         long double score_accum_d = 0.0;
-                        for(unsigned i = 0; i < thread_score_local.size(); ++i)
+                        for (unsigned i = 0; i < thread_score_local.size(); ++i)
                         {
                             score_accum_d += thread_score_local[i] * sim.factors[i];
                         }
@@ -723,7 +721,7 @@ void thread_evaluate(boost::barrier& main_barrier,
                     // Get a loose (better than no) upper bound. TODO: Improve it.
                     compare_stop = (boost::math::binomial_distribution<>::find_upper_bound_on_p(thread_total_local, score_accum / max_possible, 1 - confidence_level) * max_possible <
                             thread_best_results->points + min_increment_of_score);
-                    if(compare_stop)
+                    if (compare_stop)
                     {
                         shared_mutex.lock(); //<<<<
                         //std::cout << thread_total_local << "\n";
@@ -744,7 +742,7 @@ void print_score_info(const EvaluatedResults& results, std::vector<long double>&
     {
         std::cout << final.points_lower_bound << "-" << final.points_upper_bound << ", ";
     }
-    for(const auto & val: results.first)
+    for (const auto & val: results.first)
     {
         switch(optimization_mode)
         {
@@ -823,7 +821,7 @@ void print_results(const EvaluatedResults& results, std::vector<long double>& fa
                 std::cout << " [" << opp_win_points << " per opp win]";
             }
             std::cout << " (";
-            for(const auto & val: results.first)
+            for (const auto & val: results.first)
             {
                 std::cout << val.points << " ";
             }
@@ -844,7 +842,7 @@ void print_deck_inline(const unsigned deck_cost, const FinalResults<long double>
     std::cout << deck->cards.size() << " units: ";
 
     // print deck cost (if fund is enabled)
-    if(fund > 0)
+    if (fund > 0)
     {
         std::cout << "$" << deck_cost << " ";
     }
@@ -909,15 +907,15 @@ void print_deck_inline(const unsigned deck_cost, const FinalResults<long double>
     }
     std::string last_name;
     unsigned num_repeat(0);
-    for(const Card* card: deck->cards)
+    for (const Card* card: deck->cards)
     {
-        if(card->m_name == last_name)
+        if (card->m_name == last_name)
         {
             ++ num_repeat;
         }
         else
         {
-            if(num_repeat > 1)
+            if (num_repeat > 1)
             {
                 std::cout << " #" << num_repeat;
             }
@@ -926,7 +924,7 @@ void print_deck_inline(const unsigned deck_cost, const FinalResults<long double>
             num_repeat = 1;
         }
     }
-    if(num_repeat > 1)
+    if (num_repeat > 1)
     {
         std::cout << " #" << num_repeat;
     }
@@ -1017,9 +1015,7 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
         else if (from_slot == dead_slot || best_score.points - target_score > -1e-9)
         {
             if (best_score.n_sims >= num_iterations || best_gap > 0)
-            {
-                break;
-            }
+            { break; }
             auto & prev_results = evaluated_decks[best_deck];
             skipped_simulations += prev_results.second;
             // Re-evaluate the best deck
@@ -1030,15 +1026,13 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
             dead_slot = from_slot;
         }
         if (best_score.points - target_score > -1e-9)
-        {
-            continue;
-        }
+        { continue; }
         if (requirement.num_cards.count(best_commander) == 0)
         {
             // << commander candidate loop >>
             for (const Card* commander_candidate: commander_candidates)
             {
-                if(best_score.points - target_score > -1e-9)
+                if (best_score.points - target_score > -1e-9)
                 { break; }
                 // Various checks to check if the card is accepted
                 assert(commander_candidate->m_type == CardType::commander);
@@ -1049,7 +1043,7 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
                 cards_out.clear();
                 cards_out.emplace_back(-1, best_commander);
                 d1->commander = commander_candidate;
-                if (! adjust_deck(d1, -1, -1, commander_candidate, fund, re, deck_cost, cards_out, cards_in))
+                if (!adjust_deck(d1, -1, -1, commander_candidate, fund, re, deck_cost, cards_out, cards_in))
                 { continue; }
                 unsigned new_gap = check_requirement(d1, requirement
 #ifndef NQUEST
@@ -1107,7 +1101,7 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
                         :
                         (from_slot == best_cards.size())) // void -> void
                 { continue; }
-                if (! adjust_deck(d1, from_slot, to_slot, card_candidate, fund, re, deck_cost, cards_out, cards_in) ||
+                if (!adjust_deck(d1, from_slot, to_slot, card_candidate, fund, re, deck_cost, cards_out, cards_in) ||
                         d1->cards.size() < min_deck_len)
                 { continue; }
                 unsigned new_gap = check_requirement(d1, requirement
@@ -1142,14 +1136,14 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
                     print_deck_inline(deck_cost, best_score, d1);
                 }
             }
-            if(best_score.points - target_score > -1e-9)
+            if (best_score.points - target_score > -1e-9)
             { break; }
         }
         d1->commander = best_commander;
         d1->cards = best_cards;
     }
     unsigned simulations = 0;
-    for(auto evaluation: evaluated_decks)
+    for (auto evaluation: evaluated_decks)
     { simulations += evaluation.second.second; }
     std::cout << "Evaluated " << evaluated_decks.size() << " decks (" << simulations << " + " << skipped_simulations << " simulations)." << std::endl;
     std::cout << "Optimized Deck: ";
@@ -1397,7 +1391,7 @@ int main(int argc, char** argv)
     std::vector<SkillSpec> opt_bg_skills[2];
     std::unordered_set<unsigned> disallowed_recipes;
 
-    for(int argIndex = 3; argIndex < argc; ++argIndex)
+    for (int argIndex = 3; argIndex < argc; ++argIndex)
     {
         // Codec
         if (strcmp(argv[argIndex], "ext_b64") == 0)
@@ -1498,31 +1492,31 @@ int main(int argc, char** argv)
             freezed_cards = atoi(argv[argIndex + 1]);
             argIndex += 1;
         }
-        else if(strcmp(argv[argIndex], "-L") == 0)
+        else if (strcmp(argv[argIndex], "-L") == 0)
         {
             min_deck_len = atoi(argv[argIndex + 1]);
             max_deck_len = atoi(argv[argIndex + 2]);
             argIndex += 2;
         }
-        else if(strcmp(argv[argIndex], "-o-") == 0)
+        else if (strcmp(argv[argIndex], "-o-") == 0)
         {
             use_owned_cards = false;
         }
-        else if(strcmp(argv[argIndex], "-o") == 0)
+        else if (strcmp(argv[argIndex], "-o") == 0)
         {
             opt_owned_cards_str_list.push_back("data/ownedcards.txt");
             use_owned_cards = true;
         }
-        else if(strncmp(argv[argIndex], "-o=", 3) == 0)
+        else if (strncmp(argv[argIndex], "-o=", 3) == 0)
         {
             opt_owned_cards_str_list.push_back(argv[argIndex] + 3);
             use_owned_cards = true;
         }
-        else if(strncmp(argv[argIndex], "_", 1) == 0)
+        else if (strncmp(argv[argIndex], "_", 1) == 0)
         {
             fn_suffix_list.push_back(argv[argIndex]);
         }
-        else if(strcmp(argv[argIndex], "fund") == 0)
+        else if (strcmp(argv[argIndex], "fund") == 0)
         {
             fund = atoi(argv[argIndex+1]);
             argIndex += 1;
@@ -1531,19 +1525,19 @@ int main(int argc, char** argv)
         {
             opt_your_strategy = DeckStrategy::random;
         }
-        else if(strcmp(argv[argIndex], "-r") == 0 || strcmp(argv[argIndex], "ordered") == 0)
+        else if (strcmp(argv[argIndex], "-r") == 0 || strcmp(argv[argIndex], "ordered") == 0)
         {
             opt_your_strategy = DeckStrategy::ordered;
         }
-        else if(strcmp(argv[argIndex], "exact-ordered") == 0)
+        else if (strcmp(argv[argIndex], "exact-ordered") == 0)
         {
             opt_your_strategy = DeckStrategy::exact_ordered;
         }
-        else if(strcmp(argv[argIndex], "enemy:ordered") == 0)
+        else if (strcmp(argv[argIndex], "enemy:ordered") == 0)
         {
             opt_enemy_strategy = DeckStrategy::ordered;
         }
-        else if(strcmp(argv[argIndex], "enemy:exact-ordered") == 0)
+        else if (strcmp(argv[argIndex], "enemy:exact-ordered") == 0)
         {
             opt_enemy_strategy = DeckStrategy::exact_ordered;
         }
@@ -1559,78 +1553,78 @@ int main(int argc, char** argv)
             argIndex += 1;
         }
 #endif
-        else if(strcmp(argv[argIndex], "threads") == 0 || strcmp(argv[argIndex], "-t") == 0)
+        else if (strcmp(argv[argIndex], "threads") == 0 || strcmp(argv[argIndex], "-t") == 0)
         {
             opt_num_threads = atoi(argv[argIndex+1]);
             argIndex += 1;
         }
-        else if(strcmp(argv[argIndex], "target") == 0)
+        else if (strcmp(argv[argIndex], "target") == 0)
         {
             opt_target_score = argv[argIndex+1];
             argIndex += 1;
         }
-        else if(strcmp(argv[argIndex], "turnlimit") == 0)
+        else if (strcmp(argv[argIndex], "turnlimit") == 0)
         {
             turn_limit = atoi(argv[argIndex+1]);
             argIndex += 1;
         }
-        else if(strcmp(argv[argIndex], "mis") == 0)
+        else if (strcmp(argv[argIndex], "mis") == 0)
         {
             min_increment_of_score = atof(argv[argIndex+1]);
             argIndex += 1;
         }
-        else if(strcmp(argv[argIndex], "cl") == 0)
+        else if (strcmp(argv[argIndex], "cl") == 0)
         {
             confidence_level = atof(argv[argIndex+1]);
             argIndex += 1;
         }
-        else if(strcmp(argv[argIndex], "+ci") == 0)
+        else if (strcmp(argv[argIndex], "+ci") == 0)
         {
             show_ci = true;
         }
-        else if(strcmp(argv[argIndex], "+hm") == 0)
+        else if (strcmp(argv[argIndex], "+hm") == 0)
         {
             use_harmonic_mean = true;
         }
-        else if(strcmp(argv[argIndex], "seed") == 0)
+        else if (strcmp(argv[argIndex], "seed") == 0)
         {
             sim_seed = atoi(argv[argIndex+1]);
             argIndex += 1;
         }
-        else if(strcmp(argv[argIndex], "-v") == 0)
+        else if (strcmp(argv[argIndex], "-v") == 0)
         {
             -- debug_print;
         }
-        else if(strcmp(argv[argIndex], "+v") == 0)
+        else if (strcmp(argv[argIndex], "+v") == 0)
         {
             ++ debug_print;
         }
-        else if(strcmp(argv[argIndex], "vip") == 0)
+        else if (strcmp(argv[argIndex], "vip") == 0)
         {
             opt_vip = argv[argIndex + 1];
             argIndex += 1;
         }
-        else if(strcmp(argv[argIndex], "allow-candidates") == 0)
+        else if (strcmp(argv[argIndex], "allow-candidates") == 0)
         {
             opt_allow_candidates = argv[argIndex + 1];
             argIndex += 1;
         }
-        else if(strcmp(argv[argIndex], "disallow-candidates") == 0)
+        else if (strcmp(argv[argIndex], "disallow-candidates") == 0)
         {
             opt_disallow_candidates = argv[argIndex + 1];
             argIndex += 1;
         }
-        else if(strcmp(argv[argIndex], "disallow-recipes") == 0)
+        else if (strcmp(argv[argIndex], "disallow-recipes") == 0)
         {
             opt_disallow_recipes = argv[argIndex + 1];
             argIndex += 1;
         }
-        else if(strcmp(argv[argIndex], "hand") == 0)  // set initial hand for test
+        else if (strcmp(argv[argIndex], "hand") == 0)  // set initial hand for test
         {
             opt_hand = argv[argIndex + 1];
             argIndex += 1;
         }
-        else if(strcmp(argv[argIndex], "enemy:hand") == 0)  // set enemies' initial hand for test
+        else if (strcmp(argv[argIndex], "enemy:hand") == 0)  // set enemies' initial hand for test
         {
             opt_enemy_hand = argv[argIndex + 1];
             argIndex += 1;
@@ -1645,38 +1639,38 @@ int main(int argc, char** argv)
             opt_enemy_forts = std::string(argv[argIndex + 1]);
             argIndex += 1;
         }
-        else if(strcmp(argv[argIndex], "sim") == 0)
+        else if (strcmp(argv[argIndex], "sim") == 0)
         {
             opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), 0u, simulate));
             if (std::get<0>(opt_todo.back()) < 10) { opt_num_threads = 1; }
             argIndex += 1;
         }
-        else if(strcmp(argv[argIndex], "climbex") == 0)
+        else if (strcmp(argv[argIndex], "climbex") == 0)
         {
             opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 2]), climb));
             if (std::get<1>(opt_todo.back()) < 10) { opt_num_threads = 1; }
             opt_do_optimization = true;
             argIndex += 2;
         }
-        else if(strcmp(argv[argIndex], "climb") == 0)
+        else if (strcmp(argv[argIndex], "climb") == 0)
         {
             opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 1]), climb));
             if (std::get<1>(opt_todo.back()) < 10) { opt_num_threads = 1; }
             opt_do_optimization = true;
             argIndex += 1;
         }
-        else if(strcmp(argv[argIndex], "reorder") == 0)
+        else if (strcmp(argv[argIndex], "reorder") == 0)
         {
             opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 1]), reorder));
             if (std::get<1>(opt_todo.back()) < 10) { opt_num_threads = 1; }
             argIndex += 1;
         }
-        else if(strcmp(argv[argIndex], "debug") == 0)
+        else if (strcmp(argv[argIndex], "debug") == 0)
         {
             opt_todo.push_back(std::make_tuple(0u, 0u, debug));
             opt_num_threads = 1;
         }
-        else if(strcmp(argv[argIndex], "debuguntil") == 0)
+        else if (strcmp(argv[argIndex], "debuguntil") == 0)
         {
             // output the debug info for the first battle that min_score <= score <= max_score.
             // E.g., 0 0: lose; 100 100: win (non-raid); 20 100: at least 20 damage (raid).
@@ -1684,7 +1678,7 @@ int main(int argc, char** argv)
             opt_num_threads = 1;
             argIndex += 2;
         }
-        else if(strcmp(argv[argIndex], "iter-mul") == 0 || strcmp(argv[argIndex], "iterations-multiplier") == 0)
+        else if (strcmp(argv[argIndex], "iter-mul") == 0 || strcmp(argv[argIndex], "iterations-multiplier") == 0)
         {
             iterations_multiplier = atoi(argv[argIndex+1]);
             argIndex += 1;
@@ -1770,16 +1764,16 @@ int main(int argc, char** argv)
         std::cerr << "Error: Deck " << your_deck_name << ": " << e.what() << std::endl;
         return 0;
     }
-    if(your_deck == nullptr)
+    if (your_deck == nullptr)
     {
         std::cerr << "Error: Invalid attack deck name/hash " << your_deck_name << ".\n";
     }
-    else if(!your_deck->variable_cards.empty())
+    else if (!your_deck->variable_cards.empty())
     {
         std::cerr << "Error: Invalid attack deck " << your_deck_name << ": has optional cards.\n";
         your_deck = nullptr;
     }
-    if(your_deck == nullptr)
+    if (your_deck == nullptr)
     {
         usage(argc, argv);
         return 0;
@@ -2022,7 +2016,7 @@ int main(int argc, char** argv)
 
     target_score = opt_target_score.empty() ? max_possible_score[(size_t)optimization_mode] : boost::lexical_cast<long double>(opt_target_score);
 
-    for(auto deck_parsed: deck_list_parsed)
+    for (auto deck_parsed: deck_list_parsed)
     {
 		Deck* enemy_deck{nullptr};
         try
@@ -2034,7 +2028,7 @@ int main(int argc, char** argv)
             std::cerr << "Error: Deck " << deck_parsed.first << ": " << e.what() << std::endl;
             return 0;
         }
-        if(enemy_deck == nullptr)
+        if (enemy_deck == nullptr)
         {
             std::cerr << "Error: Invalid defense deck name/hash " << deck_parsed.first << ".\n";
             usage(argc, argv);
@@ -2138,7 +2132,7 @@ int main(int argc, char** argv)
 #endif
         opt_bg_effects, opt_bg_skills[0], opt_bg_skills[1]);
 
-    for(auto op: opt_todo)
+    for (auto op: opt_todo)
     {
         switch(std::get<2>(op))
         {
@@ -2191,13 +2185,13 @@ int main(int argc, char** argv)
         case debuguntil: {
             ++ debug_print;
             ++ debug_cached;
-            while(1)
+            while (true)
             {
                 debug_str.clear();
                 EvaluatedResults results{EvaluatedResults::first_type(enemy_decks.size()), 0};
                 results = p.evaluate(1, results);
                 auto score = compute_score(results, p.factors);
-                if(score.points >= std::get<0>(op) && score.points <= std::get<1>(op))
+                if (score.points >= std::get<0>(op) && score.points <= std::get<1>(op))
                 {
                     std::cout << debug_str << std::flush;
                     print_results(results, p.factors);
