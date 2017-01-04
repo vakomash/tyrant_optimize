@@ -503,6 +503,21 @@
 			</always_include>
 		</deck>
 	</raid>
+	<raid>
+		<id>24</id>
+		<name>Rhuthok Raid</name>
+		<commander>25370</commander>
+		<levels>26</levels>
+		<deck>
+			<always_include>
+				<card replicates="2">44640</card>
+				<card replicates="2">44650</card>
+				<card replicates="2">44660</card>
+				<card replicates="2">44670</card>
+				<card replicates="2">44680</card>
+			</always_include>
+		</deck>
+	</raid>
 <!-- END of Raids -->
 
 
