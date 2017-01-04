@@ -1672,18 +1672,29 @@ int main(int argc, char** argv)
                 const auto delim_pos = opt.find("=");
                 const bool has_value = (delim_pos != std::string::npos);
                 const std::string & opt_name = has_value ? opt.substr(0, delim_pos) : opt;
-                const std::string opt_value{has_value ? opt.substr(delim_pos + 1) : nullptr};
-                if ((opt_name == "iter-mul") or (opt_name == "iterations-multiplier"))
+                const std::string opt_value{has_value ? opt.substr(delim_pos + 1) : opt};
+                auto ensure_opt_value = [](const bool has_value, const std::string & opt_name)
                 {
                     if (!has_value)
                     { throw std::runtime_error("climb-opts:" + opt_name + " requires an argument"); }
+                };
+                if ((opt_name == "iter-mul") or (opt_name == "iterations-multiplier"))
+                {
+                    ensure_opt_value(has_value, opt_name);
                     iterations_multiplier = std::stoi(opt_value);
                 }
                 else if ((opt_name == "egc") or (opt_name == "endgame-commander") or (opt_name == "min-commander-fusion-level"))
                 {
-                    if (!has_value)
-                    { throw std::runtime_error("climb-opts:" + opt_name + " requires an argument"); }
+                    ensure_opt_value(has_value, opt_name);
                     use_fused_commander_level = std::stoi(opt_value);
+                }
+                else if (opt_name == "use-all-commander-levels")
+                {
+                    use_top_level_commander = false;
+                }
+                else if (opt_name == "use-all-card-levels")
+                {
+                    use_top_level_card = false;
                 }
                 else
                 {
