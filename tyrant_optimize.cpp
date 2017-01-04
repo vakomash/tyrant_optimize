@@ -980,7 +980,7 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
             { continue; }
 
             // skip lowest fusion levels
-            unsigned use_fused_level = (card->m_type == CardType::commander) ? use_fused_card_level : use_fused_commander_level;
+            unsigned use_fused_level = (card->m_type == CardType::commander) ? use_fused_commander_level : use_fused_card_level;
             if (card->m_fusion_level < use_fused_level)
             { continue; }
         }
