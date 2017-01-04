@@ -34,6 +34,7 @@
 #include <boost/thread/barrier.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/thread.hpp>
+#include <boost/tokenizer.hpp>
 #include "card.h"
 #include "cards.h"
 #include "deck.h"
@@ -1640,6 +1641,7 @@ int main(int argc, char** argv)
             if (std::get<0>(opt_todo.back()) < 10) { opt_num_threads = 1; }
             argIndex += 1;
         }
+        // climbing tasks
         else if (strcmp(argv[argIndex], "climbex") == 0)
         {
             opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 2]), climb));
@@ -1660,6 +1662,33 @@ int main(int argc, char** argv)
             if (std::get<1>(opt_todo.back()) < 10) { opt_num_threads = 1; }
             argIndex += 1;
         }
+        // climbing options
+        else if (strncmp(argv[argIndex], "climb-opts:", 11) == 0)
+        {
+            std::string climb_opts_str(argv[argIndex] + 11);
+            boost::tokenizer<boost::char_delimiters_separator<char>> climb_opts{climb_opts_str, boost::char_delimiters_separator<char>{false, ",", ""}};
+            for (const auto & opt : climb_opts)
+            {
+                const auto delim_pos = opt.find("=");
+                const bool has_value = (delim_pos != std::string::npos);
+                const std::string & opt_name = has_value ? opt.substr(0, delim_pos) : opt;
+                const std::string opt_value{has_value ? opt.substr(delim_pos + 1) : nullptr};
+                if ((opt_name == "iter-mul") or (opt_name == "iterations-multiplier"))
+                {
+                    if (!has_value)
+                    { throw std::runtime_error("climb-opts:" + opt_name + " requires an argument"); }
+                    iterations_multiplier = std::stoi(opt_value);
+                }
+                else
+                {
+                    std::cerr << "Error: Unknown climb option " << opt_name;
+                    if (has_value)
+                    { std::cerr << " (value is: " << opt_value << ")"; }
+                    std::cerr << std::endl;
+                    return 0;
+                }
+            }
+        }
         else if (strcmp(argv[argIndex], "debug") == 0)
         {
             opt_todo.push_back(std::make_tuple(0u, 0u, debug));
@@ -1672,11 +1701,6 @@ int main(int argc, char** argv)
             opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 2]), debuguntil));
             opt_num_threads = 1;
             argIndex += 2;
-        }
-        else if (strcmp(argv[argIndex], "iter-mul") == 0 || strcmp(argv[argIndex], "iterations-multiplier") == 0)
-        {
-            iterations_multiplier = atoi(argv[argIndex+1]);
-            argIndex += 1;
         }
         else
         {
