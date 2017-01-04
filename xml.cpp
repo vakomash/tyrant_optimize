@@ -227,6 +227,10 @@ void parse_card_node(Cards& all_cards, Card* card, xml_node<>* card_node)
         else if (card->m_id < 50001)
         {
             card->m_type = CardType::assault;
+            if (card->m_id == 43451)
+            {
+                card->m_category = CardCategory::dominion_material;
+            }
         }
 
         // [50001 .. 55000]
