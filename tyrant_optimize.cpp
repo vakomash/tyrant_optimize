@@ -1679,6 +1679,12 @@ int main(int argc, char** argv)
                     { throw std::runtime_error("climb-opts:" + opt_name + " requires an argument"); }
                     iterations_multiplier = std::stoi(opt_value);
                 }
+                else if ((opt_name == "egc") or (opt_name == "endgame-commander") or (opt_name == "min-commander-fusion-level"))
+                {
+                    if (!has_value)
+                    { throw std::runtime_error("climb-opts:" + opt_name + " requires an argument"); }
+                    use_fused_commander_level = std::stoi(opt_value);
+                }
                 else
                 {
                     std::cerr << "Error: Unknown climb option " << opt_name;
