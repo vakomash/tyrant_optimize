@@ -62,6 +62,9 @@ namespace {
     long double confidence_level{0.99};
     bool use_top_level_card{true};
     bool use_top_level_commander{true};
+#ifdef TUO_MODE_OPEN_THE_DECK
+    bool mode_open_the_deck{false};
+#endif
     unsigned use_fused_card_level{0};
     unsigned use_fused_commander_level{0};
     bool show_ci{false};
@@ -548,6 +551,15 @@ struct SimulationData
 #endif
                 bg_effects, your_bg_skills, enemy_bg_skills);
             Results<uint64_t> result(play(&fd));
+#ifdef TUO_MODE_OPEN_THE_DECK
+            if (mode_open_the_deck)
+            {
+                double //points_scale = 1.0;
+                points_scale = (fd.players[1]->deck->cards.size() - fd.players[1]->deck->shuffled_cards.size())
+                    / (float) fd.players[1]->deck->cards.size();
+                result.points *= points_scale;
+            }
+#endif
             res.emplace_back(result);
         }
         return(res);
@@ -1695,6 +1707,14 @@ int main(int argc, char** argv)
                 else if (opt_name == "use-all-card-levels")
                 {
                     use_top_level_card = false;
+                }
+                else if ((opt_name == "otd") or (opt_name == "open-the-deck"))
+                {
+#ifdef TUO_MODE_OPEN_THE_DECK
+                    mode_open_the_deck = true;
+#else
+                    throw std::runtime_error("Ooops! open-the-deck mode isn't supported (you need to rebuild tuo with -DTUO_MODE_OPEN_THE_DECK)");
+#endif
                 }
                 else
                 {

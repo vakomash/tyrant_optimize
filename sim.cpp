@@ -2231,6 +2231,11 @@ Results<uint64_t> play(Field* fd)
     fd->tap = fd->players[fd->tapi];
     fd->tip = fd->players[fd->tipi];
     fd->end = false;
+#ifdef TUO_MODE_OPEN_THE_DECK
+    typedef double points_score_type;
+#else
+    typedef unsigned points_score_type;
+#endif
 
     // Play fortresses
     for (unsigned _ = 0; _ < 2; ++ _)
@@ -2559,16 +2564,16 @@ Results<uint64_t> play(Field* fd)
         _DEBUG_MSG(1, "You lose.\n");
         switch (fd->optimization_mode)
         {
-        case OptimizationMode::raid: return {0, 0, 1, raid_damage};
+        case OptimizationMode::raid: return {0, 0, 1, (points_score_type)raid_damage};
         case OptimizationMode::brawl: return {0, 0, 1, 5};
         case OptimizationMode::brawl_defense:
             {
                 unsigned enemy_brawl_score = evaluate_brawl_score(fd, 1);
                 unsigned max_score = max_possible_score[(size_t)OptimizationMode::brawl_defense];
-                return {0, 0, 1, max_score - enemy_brawl_score};
+                return {0, 0, 1, (points_score_type)(max_score - enemy_brawl_score)};
             }
 #ifndef NQUEST
-        case OptimizationMode::quest: return {0, 0, 1, fd->quest.must_win ? 0 : quest_score};
+        case OptimizationMode::quest: return {0, 0, 1, (points_score_type)(fd->quest.must_win ? 0 : quest_score)};
 #endif
         default: return {0, 0, 1, 0};
         }
@@ -2582,21 +2587,21 @@ Results<uint64_t> play(Field* fd)
         case OptimizationMode::brawl:
             {
                 unsigned brawl_score = evaluate_brawl_score(fd, 0);
-                return {1, 0, 0, brawl_score};
+                return {1, 0, 0, (points_score_type)brawl_score};
             }
         case OptimizationMode::brawl_defense:
             {
                 unsigned max_score = max_possible_score[(size_t)OptimizationMode::brawl_defense];
                 unsigned min_score = min_possible_score[(size_t)OptimizationMode::brawl_defense];
-                return {1, 0, 0, (max_score - min_score)};
+                return {1, 0, 0, (points_score_type)(max_score - min_score)};
             }
         case OptimizationMode::campaign:
             {
                 unsigned campaign_score = 100 - 10 * (std::min<unsigned>(p[0]->deck->cards.size(), (fd->turn + 1) / 2) - p[0]->assaults.size() - p[0]->structures.size());
-                return {1, 0, 0, campaign_score};
+                return {1, 0, 0, (points_score_type)campaign_score};
             }
 #ifndef NQUEST
-        case OptimizationMode::quest: return {1, 0, 0, fd->quest.win_score + quest_score};
+        case OptimizationMode::quest: return {1, 0, 0, (points_score_type)(fd->quest.win_score + quest_score)};
 #endif
         default:
             return {1, 0, 0, 100};
@@ -2608,16 +2613,16 @@ Results<uint64_t> play(Field* fd)
         switch (fd->optimization_mode)
         {
         case OptimizationMode::defense: return {0, 1, 0, 100};
-        case OptimizationMode::raid: return {0, 1, 0, raid_damage};
+        case OptimizationMode::raid: return {0, 1, 0, (points_score_type)raid_damage};
         case OptimizationMode::brawl: return {0, 1, 0, 5};
         case OptimizationMode::brawl_defense:
             {
-                //unsigned max_score = max_possible_score[(size_t)OptimizationMode::brawl_defense];
-                //unsigned min_score = min_possible_score[(size_t)OptimizationMode::brawl_defense];
-                return {1, 0, 0, /* max_score - min_score */ 67 - 5};
+                unsigned max_score = max_possible_score[(size_t)OptimizationMode::brawl_defense];
+                unsigned min_score = min_possible_score[(size_t)OptimizationMode::brawl_defense];
+                return {1, 0, 0, (points_score_type)(max_score - min_score)};
             }
 #ifndef NQUEST
-        case OptimizationMode::quest: return {0, 1, 0, fd->quest.must_win ? 0 : quest_score};
+        case OptimizationMode::quest: return {0, 1, 0, (points_score_type)(fd->quest.must_win ? 0 : quest_score)};
 #endif
         default: return {0, 1, 0, 0};
         }
