@@ -399,7 +399,8 @@ Deck* read_deck(Decks& decks, const Cards& all_cards, xml_node<>* node, DeckType
     for (unsigned level = 1; level < max_level; ++ level)
     {
         std::string deck_name = base_deck_name + "-" + to_string(level);
-        decks.decks.push_back(Deck{all_cards, decktype, id, deck_name, (upgrade_opportunities + 1) * (level - 1) / (max_level - 1), upgrade_opportunities});
+        unsigned upgrade_points = ceil(upgrade_opportunities * (level - 1) / (double)(max_level - 1));
+        decks.decks.push_back(Deck{all_cards, decktype, id, deck_name, upgrade_points, upgrade_opportunities});
         Deck* deck = &decks.decks.back();
         deck->set(commander_card, commander_max_level, always_cards, some_cards, mission_req);
         deck->fortress_cards = fortress_cards;
