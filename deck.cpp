@@ -45,16 +45,16 @@ void hash_to_ids_wmt_b64(const char* hash, std::vector<unsigned>& ids)
     unsigned int last_id = 0;
     const char* pc = hash;
 
-    while(*pc)
+    while (*pc)
     {
         unsigned id_plus = 0;
         const char* pmagic = strchr(wmt_b64_magic_chars, *pc);
-        if(pmagic)
+        if (pmagic)
         {
             ++ pc;
             id_plus = 4000 * (pmagic - wmt_b64_magic_chars + 1);
         }
-        if(!*pc || !*(pc + 1))
+        if (!*pc || !*(pc + 1))
         {
             throw std::runtime_error("Invalid hash length");
         }
@@ -84,7 +84,7 @@ void hash_to_ids_wmt_b64(const char* hash, std::vector<unsigned>& ids)
 
 void encode_id_wmt_b64(std::stringstream &ios, unsigned card_id)
 {
-    if(card_id > 4000)
+    if (card_id > 4000)
     {
         ios << wmt_b64_magic_chars[(card_id - 1) / 4000 - 1];
         card_id = (card_id - 1) % 4000 + 1;
@@ -97,16 +97,16 @@ void encode_deck_wmt_b64(std::stringstream &ios, std::vector<const Card*> cards)
 {
     unsigned last_id = 0;
     unsigned num_repeat = 0;
-    for(const Card* card: cards)
+    for (const Card* card: cards)
     {
         auto card_id = card->m_id;
-        if(card_id == last_id)
+        if (card_id == last_id)
         {
             ++ num_repeat;
         }
         else
         {
-            if(num_repeat > 1)
+            if (num_repeat > 1)
             {
                 ios << base64_chars[(num_repeat + 4000) / 64];
                 ios << base64_chars[(num_repeat + 4000) % 64];
@@ -116,7 +116,7 @@ void encode_deck_wmt_b64(std::stringstream &ios, std::vector<const Card*> cards)
             encode_id_wmt_b64(ios, card_id);
         }
     }
-    if(num_repeat > 1)
+    if (num_repeat > 1)
     {
         ios << base64_chars[(num_repeat + 4000) / 64];
         ios << base64_chars[(num_repeat + 4000) % 64];
@@ -171,9 +171,9 @@ void encode_deck_ext_b64(std::stringstream &ios, std::vector<const Card*> cards)
 void hash_to_ids_ddd_b64(const char* hash, std::vector<unsigned>& ids)
 {
     const char* pc = hash;
-    while(*pc)
+    while (*pc)
     {
-        if(!*pc || !*(pc + 1) || !*(pc + 2))
+        if (!*pc || !*(pc + 1) || !*(pc + 2))
         {
             throw std::runtime_error("Invalid hash length");
         }
@@ -219,7 +219,7 @@ void Deck::set(const std::vector<unsigned>& ids, const std::map<signed, char> &m
     strategy = DeckStrategy::random;
 
     int non_deck_cards_seen = 0;
-    for(auto id: ids)
+    for (auto id: ids)
     {
         const Card* card{all_cards.by_id(id)};
         if (card->m_type == CardType::commander)
@@ -331,11 +331,11 @@ std::string Deck::short_description() const
 {
     std::stringstream ios;
     ios << decktype_names[decktype];
-    if(id > 0) { ios << " #" << id; }
-    if(!name.empty()) { ios << " \"" << name << "\""; }
-    if(deck_string.empty())
+    if (id > 0) { ios << " #" << id; }
+    if (!name.empty()) { ios << " \"" << name << "\""; }
+    if (deck_string.empty())
     {
-        if(variable_cards.empty()) { ios << ": " << hash(); }
+        if (variable_cards.empty()) { ios << ": " << hash(); }
     }
     else
     {
@@ -364,16 +364,16 @@ std::string Deck::medium_description() const
     {
         ios << ", " << card->m_name;
     }
-    for(const Card * card: cards)
+    for (const Card * card: cards)
     {
         ios << ", " << card->m_name;
     }
     unsigned num_pool_cards = 0;
-    for(auto& pool: variable_cards)
+    for (auto& pool: variable_cards)
     {
         num_pool_cards += std::get<0>(pool) * std::get<1>(pool);
     }
-    if(num_pool_cards > 0)
+    if (num_pool_cards > 0)
     {
         ios << ", and " << num_pool_cards << " cards from pool";
     }
@@ -402,18 +402,18 @@ std::string Deck::long_description() const
     {
         show_upgrades(ios, card, card->m_top_level_card->m_level, "");
     }
-    for(const Card* card: cards)
+    for (const Card* card: cards)
     {
         show_upgrades(ios, card, card->m_top_level_card->m_level, "  ");
     }
-    for(auto& pool: variable_cards)
+    for (auto& pool: variable_cards)
     {
 		if (std::get<1>(pool) > 1)
 		{
 			ios << std::get<1>(pool) << " copies of each of ";
 		}
         ios << std::get<0>(pool) << " in:\n";
-        for(auto& card: std::get<2>(pool))
+        for (auto& card: std::get<2>(pool))
         {
             show_upgrades(ios, card, card->m_top_level_card->m_level, "  ");
         }
@@ -458,25 +458,25 @@ Deck* Deck::clone() const
 
 const Card* Deck::next()
 {
-    if(shuffled_cards.empty())
+    if (shuffled_cards.empty())
     {
         return(nullptr);
     }
-    else if(strategy == DeckStrategy::random || strategy == DeckStrategy::exact_ordered)
+    else if (strategy == DeckStrategy::random || strategy == DeckStrategy::exact_ordered)
     {
         const Card* card = shuffled_cards.front();
         shuffled_cards.pop_front();
         return(card);
     }
-    else if(strategy == DeckStrategy::ordered)
+    else if (strategy == DeckStrategy::ordered)
     {
         auto cardIter = std::min_element(shuffled_cards.begin(), shuffled_cards.begin() + std::min<unsigned>(3u, shuffled_cards.size()), [this](const Card* card1, const Card* card2) -> bool
                                          {
                                              auto card1_order = order.find(card1->m_id);
-                                             if(!card1_order->second.empty())
+                                             if (!card1_order->second.empty())
                                              {
                                                  auto card2_order = order.find(card2->m_id);
-                                                 if(!card2_order->second.empty())
+                                                 if (!card2_order->second.empty())
                                                  {
                                                      return(*card1_order->second.begin() < *card2_order->second.begin());
                                                  }
@@ -493,7 +493,7 @@ const Card* Deck::next()
         auto card = *cardIter;
         shuffled_cards.erase(cardIter);
         auto card_order = order.find(card->m_id);
-        if(!card_order->second.empty())
+        if (!card_order->second.empty())
         {
             card_order->second.erase(card_order->second.begin());
         }
@@ -528,13 +528,13 @@ void Deck::shuffle(std::mt19937& re)
     boost::insert(shuffled_forts, shuffled_forts.end(), fortress_cards);
     shuffled_cards.clear();
     boost::insert(shuffled_cards, shuffled_cards.end(), cards);
-    if(!variable_cards.empty())
+    if (!variable_cards.empty())
     {
-        if(strategy != DeckStrategy::random)
+        if (strategy != DeckStrategy::random)
         {
             throw std::runtime_error("Support only random strategy for raid/quest deck.");
         }
-        for(auto& card_pool: variable_cards)
+        for (auto& card_pool: variable_cards)
         {
 			auto & amount = std::get<0>(card_pool);
 			auto & replicates = std::get<1>(card_pool);
@@ -596,23 +596,23 @@ void Deck::shuffle(std::mt19937& re)
         }
         shuffled_commander = commander_storage[0];
     }
-    if(strategy == DeckStrategy::ordered)
+    if (strategy == DeckStrategy::ordered)
     {
         unsigned i = 0;
         order.clear();
-        for(auto card: cards)
+        for (auto card: cards)
         {
             order[card->m_id].push_back(i);
             ++i;
         }
     }
-    if(strategy != DeckStrategy::exact_ordered)
+    if (strategy != DeckStrategy::exact_ordered)
     {
         auto shufflable_iter = shuffled_cards.begin();
-        for(auto hand_card_id: given_hand)
+        for (auto hand_card_id: given_hand)
         {
-            auto it = std::find_if(shufflable_iter, shuffled_cards.end(), [hand_card_id](const Card* card) -> bool { return card->m_id == hand_card_id; });
-            if(it != shuffled_cards.end())
+            auto it = std::find_if (shufflable_iter, shuffled_cards.end(), [hand_card_id](const Card* card) -> bool { return card->m_id == hand_card_id; });
+            if (it != shuffled_cards.end())
             {
                 std::swap(*shufflable_iter, *it);
                 ++ shufflable_iter;
@@ -620,12 +620,12 @@ void Deck::shuffle(std::mt19937& re)
         }
         std::shuffle(shufflable_iter, shuffled_cards.end(), re);
 #if 0
-        if(!given_hand.empty())
+        if (!given_hand.empty())
         {
-            for(auto card: cards) std::cout << ", " << card->m_name;
+            for (auto card: cards) std::cout << ", " << card->m_name;
             std::cout << std::endl;
             std::cout << strategy;
-            for(auto card: shuffled_cards) std::cout << ", " << card->m_name;
+            for (auto card: shuffled_cards) std::cout << ", " << card->m_name;
             std::cout << std::endl;
         }
 #endif

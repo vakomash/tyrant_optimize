@@ -22,9 +22,9 @@ using namespace rapidxml;
 Skill::Skill skill_name_to_id(const std::string & name)
 {
     static std::map<std::string, int> skill_map;
-    if(skill_map.empty())
+    if (skill_map.empty())
     {
-        for(unsigned i(0); i < Skill::num_skills; ++i)
+        for (unsigned i(0); i < Skill::num_skills; ++i)
         {
             std::string skill_id = boost::to_lower_copy(skill_names[i]);
             skill_map[skill_id] = i;
@@ -63,7 +63,7 @@ Skill::Skill skill_target_skill(xml_node<>* skill, const char* attribute)
 {
     Skill::Skill s(Skill::no_skill);
     xml_attribute<>* x(skill->first_attribute(attribute));
-    if(x)
+    if (x)
     {
        s = skill_name_to_id(x->value());
     }
@@ -246,8 +246,8 @@ void parse_card_node(Cards& all_cards, Card* card, xml_node<>* card_node)
             card->m_type = CardType::assault;
         }
     }
-    if(rarity_node) { card->m_rarity = atoi(rarity_node->value()); }
-    if(type_node) { card->m_faction = static_cast<Faction>(atoi(type_node->value())); }
+    if (rarity_node) { card->m_rarity = atoi(rarity_node->value()); }
+    if (type_node) { card->m_faction = static_cast<Faction>(atoi(type_node->value())); }
     card->m_set = set;
 
     if (card_node->first_node("skill"))
@@ -255,12 +255,12 @@ void parse_card_node(Cards& all_cards, Card* card, xml_node<>* card_node)
         card->m_skills.clear();
         memset(card->m_skill_value, 0, sizeof card->m_skill_value);
     }
-    for(xml_node<>* skill_node = card_node->first_node("skill");
+    for (xml_node<>* skill_node = card_node->first_node("skill");
             skill_node;
             skill_node = skill_node->next_sibling("skill"))
     {
         Skill::Skill skill_id = skill_name_to_id(skill_node->first_attribute("id")->value());
-        if(skill_id == Skill::no_skill) { continue; }
+        if (skill_id == Skill::no_skill) { continue; }
         auto x = node_value(skill_node, "x", 0);
         auto y = skill_faction(skill_node);
         auto n = node_value(skill_node, "n", 0);
@@ -272,7 +272,7 @@ void parse_card_node(Cards& all_cards, Card* card, xml_node<>* card_node)
     }
     all_cards.all_cards.push_back(card);
     Card * top_card = card;
-    for(xml_node<>* upgrade_node = card_node->first_node("upgrade");
+    for (xml_node<>* upgrade_node = card_node->first_node("upgrade");
             upgrade_node;
             upgrade_node = upgrade_node->next_sibling("upgrade"))
     {
@@ -322,7 +322,7 @@ void load_skills_set_xml(Cards & all_cards, const std::string & filename, bool d
     parse_file(filename, buffer, doc, do_warn_on_missing);
     xml_node<>* root = doc.first_node();
 
-    if(!root)
+    if (!root)
     {
         return;
     }
@@ -362,7 +362,7 @@ Deck* read_deck(Decks& decks, const Cards& all_cards, xml_node<>* node, DeckType
     xml_node<>* levels_node(node->first_node("levels"));
     unsigned max_level = levels_node ? atoi(levels_node->value()) : 10;
     xml_node<>* always_node{deck_node->first_node("always_include")};
-    for(xml_node<>* card_node = (always_node ? always_node : deck_node)->first_node("card");
+    for (xml_node<>* card_node = (always_node ? always_node : deck_node)->first_node("card");
             card_node;
             card_node = card_node->next_sibling("card"))
     {
@@ -374,7 +374,7 @@ Deck* read_deck(Decks& decks, const Cards& all_cards, xml_node<>* node, DeckType
             upgrade_opportunities += card->m_top_level_card->m_level - card->m_level;
         }
     }
-    for(xml_node<>* pool_node = deck_node->first_node("card_pool");
+    for (xml_node<>* pool_node = deck_node->first_node("card_pool");
             pool_node;
             pool_node = pool_node->next_sibling("card_pool"))
     {
@@ -382,7 +382,7 @@ Deck* read_deck(Decks& decks, const Cards& all_cards, xml_node<>* node, DeckType
         unsigned replicates(pool_node->first_attribute("replicates") ? atoi(pool_node->first_attribute("replicates")->value()) : 1);
         std::vector<const Card*> cards_from_pool;
         unsigned upgrade_points = 0;
-        for(xml_node<>* card_node = pool_node->first_node("card");
+        for (xml_node<>* card_node = pool_node->first_node("card");
                 card_node;
                 card_node = card_node->next_sibling("card"))
         {
@@ -443,12 +443,12 @@ void read_missions(Decks& decks, const Cards& all_cards, const std::string & fil
     parse_file(filename.c_str(), buffer, doc, do_warn_on_missing);
     xml_node<>* root = doc.first_node();
 
-    if(!root)
+    if (!root)
     {
         return;
     }
 
-    for(xml_node<>* mission_node = root->first_node("mission");
+    for (xml_node<>* mission_node = root->first_node("mission");
         mission_node;
         mission_node = mission_node->next_sibling("mission"))
     {
@@ -477,12 +477,12 @@ void read_raids(Decks& decks, const Cards& all_cards, const std::string & filena
     parse_file(filename.c_str(), buffer, doc, do_warn_on_missing);
     xml_node<>* root = doc.first_node();
 
-    if(!root)
+    if (!root)
     {
         return;
     }
 
-    for(xml_node<>* raid_node = root->first_node("raid");
+    for (xml_node<>* raid_node = root->first_node("raid");
         raid_node;
         raid_node = raid_node->next_sibling("raid"))
     {
@@ -502,7 +502,7 @@ void read_raids(Decks& decks, const Cards& all_cards, const std::string & filena
         }
     }
 
-    for(xml_node<>* campaign_node = root->first_node("campaign");
+    for (xml_node<>* campaign_node = root->first_node("campaign");
         campaign_node;
         campaign_node = campaign_node->next_sibling("campaign"))
     {
@@ -534,12 +534,12 @@ void load_recipes_xml(Cards& all_cards, const std::string & filename, bool do_wa
     parse_file(filename, buffer, doc, do_warn_on_missing);
     xml_node<>* root = doc.first_node();
 
-    if(!root)
+    if (!root)
     {
         return;
     }
 
-    for(xml_node<>* recipe_node = root->first_node("fusion_recipe");
+    for (xml_node<>* recipe_node = root->first_node("fusion_recipe");
         recipe_node;
         recipe_node = recipe_node->next_sibling("fusion_recipe"))
     {
@@ -552,7 +552,7 @@ void load_recipes_xml(Cards& all_cards, const std::string & filename, bool do_wa
             continue;
         }
 
-        for(xml_node<>* resource_node = recipe_node->first_node("resource");
+        for (xml_node<>* resource_node = recipe_node->first_node("resource");
                 resource_node;
                 resource_node = resource_node->next_sibling("resource"))
         {
