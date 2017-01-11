@@ -550,27 +550,29 @@ void Deck::shuffle(std::mt19937& re)
     if (upgrade_points > 0)
     {
         unsigned remaining_upgrade_points = upgrade_points;
-        std::vector<std::pair<std::deque<const Card*>&, unsigned>> up_cards;
+        std::vector<std::pair<std::deque<const Card*>*, unsigned>> up_cards;
         std::deque<const Card*> commander_storage;
         commander_storage.emplace_back(shuffled_commander);
-        up_cards.emplace_back(commander_storage, 0);
+        up_cards.emplace_back(&commander_storage, 0);
         for (unsigned index(0); index < shuffled_forts.size(); ++ index)
-        { up_cards.emplace_back(shuffled_forts, index); }
+        { up_cards.emplace_back(&shuffled_forts, index); }
         for (unsigned index(0); index < shuffled_cards.size(); ++ index)
-        { up_cards.emplace_back(shuffled_cards, index); }
+        { up_cards.emplace_back(&shuffled_cards, index); }
 
         // distribute upgrade points randomly (no gaussian/poisson distribution)
         while (remaining_upgrade_points && up_cards.size())
         {
             unsigned idx = re() % up_cards.size();
-            std::pair<std::deque<const Card*>&, unsigned> x_pair = up_cards.at(idx);
-            const Card* card = x_pair.first[x_pair.second];
+            std::pair<std::deque<const Card*>*, unsigned> x_pair = up_cards.at(idx);
+            std::deque<const Card*>* storage_ptr = x_pair.first;
+            unsigned storage_idx = x_pair.second;
+            const Card* card = storage_ptr->at(storage_idx);
             if (card->is_top_level_card())
             {
                 up_cards.erase(up_cards.begin() + idx);
                 continue;
             }
-            x_pair.first[x_pair.second] = card->upgraded();
+            (*storage_ptr)[storage_idx] = card->upgraded();
             -- remaining_upgrade_points;
         }
         shuffled_commander = commander_storage[0];
