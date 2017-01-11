@@ -1,27 +1,31 @@
 // Guild War BGEs
-Inspired: Rally all 3
-Blightblast: Enfeeble all 3
+Inspired: Rally all 4
+Blightblast: Enfeeble all 4
 Bombing Run: Strike all 3
-Triage: Heal all 6
+Triage: Heal all 8
 Charged Up: Overload 3
-Combined Arms: Rally+Enfeeble+Strike all 2
+Combined Arms: Enhance All Coalition 2;Rally+Enfeeble+Strike all 2
 Blitzkrieg: Rush
 Paladin's Presence: Protect all 3
 Viral Warfare: Enhance all Poison 3
-Progenitor Tech: Heal+Protect+Rally+Enfeeble+Strike all 1
+Progenitor Tech: Heal+Protect+Rally+Enfeeble+Strike+Weaken all 2
 Diminisher: Sunder all 2
-Divine Blessing: Heal all 3; Rally all 2
+Divine Blessing: Heal all 4; Rally all 3
 Opalescence: Heal+Protect all 2
 Power Source: Overload 1
 Ferocity: Enrage 6
 Tartarian Gift: Rally+Enrage all 3
-Artillery: Mortar all 4
+Artillery: Mortar all 6
 Orbital Cannon: Strike 10
 Bloodthirst: Enhance All Leech 6
-Emergency Aid: Heal 15
+Emergency Aid: Heal 18
 Extended Reach: Enhance All Swipe 5
 Mirror Madness: Mimic 10
 Eternal Backlash: Enhance All Counter 6
+Winter Tempest: Protect+Weaken All 4
+Sulfuris Essence: Evolve All Poison Venom; Enhance All Venom 6
+Way of the Forsaken: Enhance All Corrosive 8;Heal All Raider 7;Enfeeble 7
+
 
 // Some other BGEs
 Soothing Chant: Heal all 2
