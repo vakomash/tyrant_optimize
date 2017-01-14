@@ -88,6 +88,8 @@ with open(fname, 'r') as f:
             name = m.group('name')
             count = int(m.group('count') or 1)
             cards.append(NameCount(name, count))
+        if len(cards) <= 1:
+            continue
         decks[deck_name] = Deck(deck_name, cards, points)
 
 deck_names = list(decks.keys())
