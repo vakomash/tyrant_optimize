@@ -20,14 +20,25 @@ class NameCount:
 class Deck:
     def __init__(self, name, cards, points):
         self.name = name
-        self.cards = cards
+        self.cards = list(cards)
+        self.cards_commander = self.cards[0]
+        self.cards_dominion = None
+        self.cards_other = self.cards[1:]
+        if (self.cards[1].name.startswith("Alpha ")):
+            self.cards_dominion = self.cards[1]
+            self.cards_other = self.cards_other[1:]
+        self.cards_other.sort(key = lambda x: x.name)
         self.points = points
         self.name2card = dict([(c.name, c) for c in cards])
     def __str__(self):
+        cards = [self.cards_commander]
+        if self.cards_dominion is not None:
+            cards.append(self.cards_dominion)
+        cards.extend(self.cards_other)
         if self.points is None:
-            return "({}) {}".format(self.name, str(self.cards))
+            return "({}) {}".format(self.name, str(cards))
         else:
-            return "({}) [ {:^3.2f} ] {}".format(self.name, self.points, str(self.cards))
+            return "({}) [ {:^3.2f} ] {}".format(self.name, self.points, str(cards))
     def __repr__(self):
         return self.__str__()
     def cardsCount(self):
