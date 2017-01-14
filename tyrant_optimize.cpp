@@ -1298,6 +1298,8 @@ bool parse_bge(
                 unsigned skill_index = 1;
                 // activation BG skill
                 SkillSpec bg_skill{skill_id, 0, allfactions, 0, 0, Skill::no_skill, Skill::no_skill, false};
+
+                // skill [ ALL | N ] ...
                 if (skill_index < tokens.size() && boost::to_lower_copy(tokens[skill_index]) == "all")
                 {
                     bg_skill.all = true;
@@ -1308,6 +1310,21 @@ bool parse_bge(
                     bg_skill.n = boost::lexical_cast<unsigned>(tokens[skill_index]);
                     skill_index += 1;
                 }
+
+                // skill n [ FACTION ] ...
+                if ((skill_index + 1) < tokens.size())
+                {
+                    for (auto f = allfactions + 1; f < num_factions; ++f)
+                    {
+                        if (boost::to_lower_copy(tokens[skill_index]) == faction_names[f])
+                        {
+                            bg_skill.y = static_cast<Faction>(f);
+                            skill_index += 1;
+                            break;
+                        }
+                    }
+                }
+
                 if (skill_index < tokens.size())
                 {
                     bg_skill.s = skill_name_to_id(tokens[skill_index]);
