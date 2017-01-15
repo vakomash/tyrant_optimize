@@ -167,7 +167,9 @@ unsigned get_deck_cost(const Deck * deck)
     if (!use_owned_cards)
     { return 0; }
     std::map<const Card *, unsigned> num_in_deck;
-    unsigned deck_cost = get_required_cards_before_upgrade({deck->commander}, num_in_deck);
+    unsigned deck_cost = 0;
+    if (deck->commander)
+    { deck_cost += get_required_cards_before_upgrade({deck->commander}, num_in_deck); }
     deck_cost += get_required_cards_before_upgrade(deck->cards, num_in_deck);
     for (auto it: num_in_deck)
     {
@@ -187,7 +189,16 @@ bool is_owned_or_can_be_fused(const Card * card)
     std::map<const Card *, unsigned> num_in_deck;
     unsigned deck_cost = get_required_cards_before_upgrade({card}, num_in_deck);
     if (deck_cost > fund)
-    { return false; }
+    {
+        while (!card->is_low_level_card() && (deck_cost > fund))
+        {
+            card = card->downgraded();
+            num_in_deck.clear();
+            deck_cost = get_required_cards_before_upgrade({card}, num_in_deck);
+        }
+        if (deck_cost > fund)
+        { return false; }
+    }
     for (auto it: num_in_deck)
     {
         if (it.second > owned_cards[it.first->m_id])
@@ -239,91 +250,78 @@ bool adjust_deck(Deck * deck, const signed from_slot, const signed to_slot, cons
     }
 
     // backup deck cards
+    const Card * old_commander = deck->commander;
     std::vector<const Card *> cards = deck->cards;
 
-    // try to add new card into the deck, unfuse/downgrade it if necessary
+    // try to add new card into the deck, downgrade it if necessary
     {
-        std::stack<const Card *> candidate_cards;
-        candidate_cards.emplace(card);
-        while (!candidate_cards.empty())
+        const Card * candidate_card = card;
+        deck->commander = nullptr;
+        deck->cards.clear();
+        deck->cards.emplace_back(card);
+        deck_cost = get_deck_cost(deck);
+        if (!use_top_level_card && (deck_cost > fund))
         {
-            const Card* card_in = candidate_cards.top();
-            candidate_cards.pop();
-            deck->cards.clear();
-            deck->cards.emplace_back(card_in);
-            deck_cost = get_deck_cost(deck);
-            if (use_top_level_card || deck_cost <= fund)
-            { break; }
-            for (auto recipe_it : card_in->m_recipe_cards)
-            { candidate_cards.emplace(recipe_it.first); }
+            while ((deck_cost > fund) && !candidate_card->is_low_level_card())
+            {
+                candidate_card = candidate_card->downgraded();
+                deck->cards[0] = candidate_card;
+                deck_cost = get_deck_cost(deck);
+            }
         }
         if (deck_cost > fund)
         { return false; }
         cards_in.emplace_back(is_random ? -1 : to_slot, deck->cards[0]);
     }
 
-    // try to add commander into the deck, unfuse/downgrade it if necessary
+    // try to add commander into the deck, downgrade it if necessary
     {
-        std::stack<const Card *> candidate_cards;
-        const Card * old_commander = deck->commander;
-        candidate_cards.emplace(deck->commander);
-        while (!candidate_cards.empty())
+        const Card * candidate_card = old_commander;
+        deck->commander = candidate_card;
+        deck_cost = get_deck_cost(deck);
+        if (!use_top_level_commander && (deck_cost > fund))
         {
-            const Card* card_in = candidate_cards.top();
-            candidate_cards.pop();
-            deck->commander = card_in;
-            deck_cost = get_deck_cost(deck);
-            if (use_top_level_commander || deck_cost <= fund)
-            { break; }
-            for (auto recipe_it : card_in->m_recipe_cards)
-            { candidate_cards.emplace(recipe_it.first); }
+            while ((deck_cost > fund) && !candidate_card->is_low_level_card())
+            {
+                candidate_card = candidate_card->downgraded();
+                deck->commander = candidate_card;
+                deck_cost = get_deck_cost(deck);
+            }
         }
         if (deck_cost > fund)
-        {
-            deck->commander = old_commander;
-            return false;
-        }
-        else if (deck->commander != old_commander)
+        { return false; }
+        if (deck->commander != old_commander)
         {
             append_unless_remove(cards_out, cards_in, {-1, old_commander});
             append_unless_remove(cards_in, cards_out, {-1, deck->commander});
         }
     }
-    if (is_random)
-    { std::shuffle(cards.begin(), cards.end(), re); }
+
+    // added backuped deck cards back (place cards strictly before/after card inserted above according to slot index)
     for (signed i = 0; i < (signed)cards.size(); ++ i)
     {
-        // try to add cards[i] into the deck, unfuse/downgrade it if necessary
-        auto saved_cards = deck->cards;
-        auto in_it = deck->cards.end() - (i < to_slot);
-        in_it = deck->cards.insert(in_it, nullptr);
-        std::stack<const Card *> candidate_cards;
-        candidate_cards.emplace(cards[i]);
-        while (!candidate_cards.empty())
+        // try to add cards[i] into the deck, downgrade it if necessary
+        const Card * candidate_card = cards[i];
+        auto in_it = deck->cards.end() - (i < to_slot); // (before/after according to slot index)
+        in_it = deck->cards.insert(in_it, candidate_card);
+        deck_cost = get_deck_cost(deck);
+        if (!use_top_level_card && (deck_cost > fund))
         {
-            const Card* card_in = candidate_cards.top();
-            candidate_cards.pop();
-            *in_it = card_in;
-            deck_cost = get_deck_cost(deck);
-            if (use_top_level_card || deck_cost <= fund)
-            { break; }
-            if (i < (signed)freezed_cards)
-            { return false; }
-            for (auto recipe_it : card_in->m_recipe_cards)
-            { candidate_cards.emplace(recipe_it.first); }
+            while ((deck_cost > fund) && !candidate_card->is_low_level_card())
+            {
+                candidate_card = candidate_card->downgraded();
+                *in_it = candidate_card;
+                deck_cost = get_deck_cost(deck);
+            }
         }
         if (deck_cost > fund)
-        {
-            append_unless_remove(cards_out, cards_in, {is_random ? -1 : i + (i >= to_slot), cards[i]});
-            deck->cards = saved_cards;
-        }
-        else if (*in_it != cards[i])
+        { return false; }
+        if (*in_it != cards[i])
         {
             append_unless_remove(cards_out, cards_in, {is_random ? -1 : i + (i >= from_slot), cards[i]});
             append_unless_remove(cards_in, cards_out, {is_random ? -1 : i + (i >= to_slot), *in_it});
         }
     }
-    deck_cost = get_deck_cost(deck);
     return !cards_in.empty() || !cards_out.empty();
 }
 
@@ -986,9 +984,8 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
         // try to skip a card unless it's allowed
         if (!allowed_candidates.count(card->m_id))
         {
-            // skip non-top-level cards when they are disabled
-            bool use_top_level = (card->m_type == CardType::commander) ? use_top_level_commander : use_top_level_card;
-            if (use_top_level && !card->is_top_level_card())
+            // skip non-top-level cards always (adjust_deck() will try to downgrade them if necessary)
+            if (!card->is_top_level_card())
             { continue; }
 
             // skip disallowed
@@ -1020,7 +1017,7 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
 
     // << main climbing loop >>
     for (unsigned from_slot(freezed_cards), dead_slot(freezed_cards); ;
-            from_slot = std::max(freezed_cards, (from_slot + 1) % std::min<unsigned>(max_deck_len, d1->cards.size() + 1)))
+            from_slot = std::max(freezed_cards, (from_slot + 1) % std::min<unsigned>(max_deck_len, best_cards.size() + 1)))
     {
         if (deck_has_been_improved)
         {
@@ -1153,6 +1150,8 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
         d1->commander = best_commander;
         d1->cards = best_cards;
     }
+    d1->commander = best_commander;
+    d1->cards = best_cards;
     unsigned simulations = 0;
     for (auto evaluation: evaluated_decks)
     { simulations += evaluation.second.second; }
@@ -1940,9 +1939,7 @@ int main(int argc, char** argv)
     {
         auto && id_dis_recipes = string_to_ids(all_cards, opt_disallow_recipes, "disallowed-recipes");
         for (auto & cid : id_dis_recipes.first)
-        {
-            all_cards.cards_by_id[cid]->m_recipe_cards.clear();
-        }
+        { all_cards.erase_fusion_recipe(cid); }
     }
     catch(const std::runtime_error& e)
     {
@@ -1950,9 +1947,7 @@ int main(int argc, char** argv)
         return 1;
     }
     for (auto cid : disallowed_recipes)
-    {
-        all_cards.cards_by_id[cid]->m_recipe_cards.clear();
-    }
+    { all_cards.erase_fusion_recipe(cid); }
 
 #ifndef NQUEST
     if (!opt_quest.empty())

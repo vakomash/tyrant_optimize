@@ -156,6 +156,11 @@ void Cards::add_card(Card * card, const std::string & name)
     }
 }
 
+void Cards::erase_fusion_recipe(unsigned id)
+{
+    cards_by_id[by_id(id)->m_base_id]->m_recipe_cards.clear();
+}
+
 // class Card
 void Card::add_skill(Skill::Skill id, unsigned x, Faction y, unsigned n, unsigned c, Skill::Skill s, Skill::Skill s2, bool all)
 {
@@ -170,4 +175,3 @@ void Card::add_skill(Skill::Skill id, unsigned x, Faction y, unsigned n, unsigne
     m_skills.push_back({id, x, y, n, c, s, s2, all});
     m_skill_value[id] = x ? x : n ? n : 1;
 }
-

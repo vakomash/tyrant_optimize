@@ -26,6 +26,7 @@ public:
     const Card * by_id(unsigned id) const;
     void organize();
     void add_card(Card * card, const std::string & name);
+    void erase_fusion_recipe(unsigned card_id);
 };
 
 std::string simplify_name(const std::string& card_name);
