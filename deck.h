@@ -126,6 +126,7 @@ public:
     void set_vip_cards(const std::string& deck_string_);
     void set_given_hand(const std::string& deck_string_);
     void add_forts(const std::string& deck_string_);
+    void add_doms(const std::string& deck_string_);
 
     Deck* clone() const;
     std::string hash() const;

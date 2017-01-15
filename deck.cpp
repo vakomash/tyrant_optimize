@@ -308,7 +308,16 @@ void Deck::add_forts(const std::string& deck_string)
     auto && id_marks = string_to_ids(all_cards, deck_string, "fortress_cards");
     for (auto id: id_marks.first)
     {
-       fortress_cards.push_back(all_cards.by_id(id));
+        fortress_cards.push_back(all_cards.by_id(id));
+    }
+}
+
+void Deck::add_doms(const std::string& deck_string)
+{
+    auto && id_marks = string_to_ids(all_cards, deck_string, "dominion_cards");
+    for (auto id: id_marks.first)
+    {
+        dominion_cards.push_back(all_cards.by_id(id));
     }
 }
 

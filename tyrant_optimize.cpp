@@ -1396,13 +1396,14 @@ int main(int argc, char** argv)
     if (argc <= 2)
     {
         usage(argc, argv);
-        return 0;
+        return 255;
     }
 
     unsigned opt_num_threads(4);
     DeckStrategy::DeckStrategy opt_your_strategy(DeckStrategy::random);
     DeckStrategy::DeckStrategy opt_enemy_strategy(DeckStrategy::random);
 	std::string opt_forts, opt_enemy_forts;
+	std::string opt_doms, opt_enemy_doms;
     std::string opt_hand, opt_enemy_hand;
     std::string opt_vip;
     std::string opt_allow_candidates;
@@ -1670,6 +1671,16 @@ int main(int argc, char** argv)
             opt_enemy_forts = std::string(argv[argIndex + 1]);
             argIndex += 1;
         }
+        else if (strcmp(argv[argIndex], "yd") == 0 || strcmp(argv[argIndex], "ydom") == 0)  // set dominions
+        {
+            opt_doms = std::string(argv[argIndex + 1]);
+            argIndex += 1;
+        }
+        else if (strcmp(argv[argIndex], "ed") == 0 || strcmp(argv[argIndex], "edom") == 0)  // set enemies' dominions
+        {
+            opt_enemy_doms = std::string(argv[argIndex + 1]);
+            argIndex += 1;
+        }
         else if (strcmp(argv[argIndex], "sim") == 0)
         {
             opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), 0u, simulate));
@@ -1745,7 +1756,7 @@ int main(int argc, char** argv)
                     if (has_value)
                     { std::cerr << " (value is: " << opt_value << ")"; }
                     std::cerr << std::endl;
-                    return 0;
+                    return 1;
                 }
             }
         }
@@ -1765,7 +1776,7 @@ int main(int argc, char** argv)
         else
         {
             std::cerr << "Error: Unknown option " << argv[argIndex] << std::endl;
-            return 0;
+            return 1;
         }
     }
 
@@ -1841,7 +1852,7 @@ int main(int argc, char** argv)
     catch(const std::runtime_error& e)
     {
         std::cerr << "Error: Deck " << your_deck_name << ": " << e.what() << std::endl;
-        return 0;
+        return 1;
     }
     if (your_deck == nullptr)
     {
@@ -1855,7 +1866,7 @@ int main(int argc, char** argv)
     if (your_deck == nullptr)
     {
         usage(argc, argv);
-        return 0;
+        return 255;
     }
 
     your_deck->strategy = opt_your_strategy;
@@ -1867,8 +1878,20 @@ int main(int argc, char** argv)
         }
         catch(const std::runtime_error& e)
         {
-            std::cerr << "Error: yf " << opt_forts << ": " << e.what() << std::endl;
-            return 0;
+            std::cerr << "Error: yfort " << opt_forts << ": " << e.what() << std::endl;
+            return 1;
+        }
+    }
+    if (!opt_doms.empty())
+    {
+        try
+        {
+            your_deck->add_doms(opt_doms + ",");
+        }
+        catch(const std::runtime_error& e)
+        {
+            std::cerr << "Error: ydom " << opt_doms << ": " << e.what() << std::endl;
+            return 1;
         }
     }
 
@@ -1879,7 +1902,7 @@ int main(int argc, char** argv)
     catch(const std::runtime_error& e)
     {
         std::cerr << "Error: vip " << opt_vip << ": " << e.what() << std::endl;
-        return 0;
+        return 1;
     }
 
     // parse allowed candidates from options
@@ -1894,7 +1917,7 @@ int main(int argc, char** argv)
     catch(const std::runtime_error& e)
     {
         std::cerr << "Error: allow-candidates " << opt_allow_candidates << ": " << e.what() << std::endl;
-        return 0;
+        return 1;
     }
 
     // parse disallowed candidates from options
@@ -1909,7 +1932,7 @@ int main(int argc, char** argv)
     catch(const std::runtime_error& e)
     {
         std::cerr << "Error: disallow-candidates " << opt_disallow_candidates << ": " << e.what() << std::endl;
-        return 0;
+        return 1;
     }
 
     // parse & drop disallowed recipes
@@ -1924,7 +1947,7 @@ int main(int argc, char** argv)
     catch(const std::runtime_error& e)
     {
         std::cerr << "Error: disallow-recipes " << opt_disallow_recipes << ": " << e.what() << std::endl;
-        return 0;
+        return 1;
     }
     for (auto cid : disallowed_recipes)
     {
@@ -1953,7 +1976,7 @@ int main(int argc, char** argv)
                 if (skill_id == Skill::no_skill)
                 {
                     std::cerr << "Error: Expect skill in quest \"" << opt_quest << "\".\n";
-                    return 0;
+                    return 1;
                 }
                 quest.quest_type = type_str == "su" ? QuestType::skill_use : QuestType::skill_damage;
                 quest.quest_key = skill_id;
@@ -1984,7 +2007,7 @@ int main(int argc, char** argv)
                     if (quest.quest_key == 0)
                     {
                         std::cerr << "Error: Expect assault, structure or faction in quest \"" << opt_quest << "\".\n";
-                        return 0;
+                        return 1;
                     }
                 }
             }
@@ -2003,7 +2026,7 @@ int main(int argc, char** argv)
                 catch (const std::runtime_error& e)
                 {
                     std::cerr << "Error: Expect a card in quest \"" << opt_quest << "\".\n";
-                    return 0;
+                    return 1;
                 }
             }
             else if (type_str == "suoc" && tokens.size() >= 4)
@@ -2012,7 +2035,7 @@ int main(int argc, char** argv)
                 if (skill_id == Skill::no_skill)
                 {
                     std::cerr << "Error: Expect skill in quest \"" << opt_quest << "\".\n";
-                    return 0;
+                    return 1;
                 }
                 unsigned card_id;
                 unsigned card_num;
@@ -2029,7 +2052,7 @@ int main(int argc, char** argv)
                 catch (const std::runtime_error& e)
                 {
                     std::cerr << "Error: Expect a card in quest \"" << opt_quest << "\".\n";
-                    return 0;
+                    return 1;
                 }
             }
             else
@@ -2059,12 +2082,12 @@ int main(int argc, char** argv)
         catch (const boost::bad_lexical_cast & e)
         {
             std::cerr << "Error: Expect a number in quest \"" << opt_quest << "\".\n";
-            return 0;
+            return 1;
         }
         catch (const std::runtime_error& e)
         {
             std::cerr << "Error: quest " << opt_quest << ": " << e.what() << std::endl;
-            return 0;
+            return 1;
         }
     }
 #endif
@@ -2076,7 +2099,7 @@ int main(int argc, char** argv)
     catch(const std::runtime_error& e)
     {
         std::cerr << "Error: hand " << opt_hand << ": " << e.what() << std::endl;
-        return 0;
+        return 1;
     }
 
     if (opt_keep_commander)
@@ -2105,13 +2128,13 @@ int main(int argc, char** argv)
         catch(const std::runtime_error& e)
         {
             std::cerr << "Error: Deck " << deck_parsed.first << ": " << e.what() << std::endl;
-            return 0;
+            return 1;
         }
         if (enemy_deck == nullptr)
         {
             std::cerr << "Error: Invalid defense deck name/hash " << deck_parsed.first << ".\n";
             usage(argc, argv);
-            return 0;
+            return 1;
         }
         if (optimization_mode == OptimizationMode::notset)
         {
@@ -2130,6 +2153,18 @@ int main(int argc, char** argv)
             }
         }
         enemy_deck->strategy = opt_enemy_strategy;
+        if (!opt_enemy_doms.empty())
+        {
+            try
+            {
+                enemy_deck->add_doms(opt_enemy_doms + ",");
+            }
+            catch(const std::runtime_error& e)
+            {
+                std::cerr << "Error: edom " << opt_enemy_doms << ": " << e.what() << std::endl;
+                return 1;
+            }
+        }
         if (!opt_enemy_forts.empty())
         {
             try
@@ -2138,8 +2173,8 @@ int main(int argc, char** argv)
             }
             catch(const std::runtime_error& e)
             {
-                std::cerr << "Error: ef " << opt_enemy_forts << ": " << e.what() << std::endl;
-                return 0;
+                std::cerr << "Error: efort " << opt_enemy_forts << ": " << e.what() << std::endl;
+                return 1;
             }
         }
         try
@@ -2149,7 +2184,7 @@ int main(int argc, char** argv)
         catch(const std::runtime_error& e)
         {
             std::cerr << "Error: enemy:hand " << opt_enemy_hand << ": " << e.what() << std::endl;
-            return 0;
+            return 1;
         }
         enemy_decks.push_back(enemy_deck);
         enemy_decks_factors.push_back(deck_parsed.second);
@@ -2292,4 +2327,3 @@ int main(int argc, char** argv)
     }
     return 0;
 }
-
