@@ -541,6 +541,7 @@ struct SimulationData
     inline std::vector<Results<uint64_t>> evaluate()
     {
         std::vector<Results<uint64_t>> res;
+        res.reserve(enemy_hands.size());
         for (Hand* enemy_hand: enemy_hands)
         {
             your_hand.reset(re);

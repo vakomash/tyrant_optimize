@@ -87,6 +87,7 @@ inline const std::vector<CardStatus *> Field::adjacent_assaults(const CardStatus
 inline const std::vector<CardStatus *> Field::adjacent_assaults(const CardStatus * status, const unsigned n)
 {
     std::vector<CardStatus *> res;
+    res.reserve(n * 2);
     for (unsigned i(n); i > 0; -- i)
     {
         auto left_status = left_assault(status, i);
@@ -440,6 +441,7 @@ void prepend_on_death(Field* fd)
             CardStatus * commander = &fd->players[status->m_player]->commander;
             _DEBUG_MSG(2, "Revenge: Preparing skill %s and %s\n",
                 skill_description(ss_heal).c_str(), skill_description(ss_rally).c_str());
+            od_skills.reserve(fd->killed_units.size() * 2);
             od_skills.emplace_back(commander, ss_heal);
             od_skills.emplace_back(commander, ss_rally);
         }
@@ -1680,6 +1682,7 @@ inline void perform_skill<Skill::mimic>(Field* fd, CardStatus* src, CardStatus* 
 {
     // collect all mimickable enemy skills
     std::vector<const SkillSpec *> mimickable_skills;
+    mimickable_skills.reserve(dst->m_card->m_skills.size());
     _DEBUG_MSG(2, " * Mimickable skills of %s\n", status_description(dst).c_str());
     for (const auto & ss: dst->m_card->m_skills)
     {
@@ -1955,7 +1958,9 @@ void perform_targetted_allied_fast(Field* fd, CardStatus* src, const SkillSpec& 
     bool has_counted_quest = false;
 #endif
     bool src_overloaded = src->m_overloaded;
-    auto selection_array = fd->selection_array;
+    unsigned selection_array_len = fd->selection_array.size();
+    CardStatus * selection_array[selection_array_len];
+    std::memcpy(selection_array, &fd->selection_array[0], selection_array_len * sizeof(CardStatus *));
     for (CardStatus * dst: selection_array)
     {
         if (dst->m_inhibited > 0 && !src_overloaded)
@@ -1982,7 +1987,8 @@ void perform_targetted_allied_fast(Field* fd, CardStatus* src, const SkillSpec& 
         for (unsigned i = 0; i < num_inhibited; ++ i)
         {
             select_targets<skill_id>(fd, &fd->tip->commander, diverted_ss);
-            selection_array = fd->selection_array;
+            selection_array_len = fd->selection_array.size();
+            std::memcpy(selection_array, &fd->selection_array[0], selection_array_len * sizeof(CardStatus *));
             for (CardStatus * dst: selection_array)
             {
                 if (dst->m_inhibited > 0)
@@ -2031,7 +2037,9 @@ void perform_targetted_hostile_fast(Field* fd, CardStatus* src, const SkillSpec&
     unsigned turningtides_value(0), old_attack(0);
 
     // apply skill to each target(dst)
-    auto selection_array = fd->selection_array;
+    unsigned selection_array_len = fd->selection_array.size();
+    CardStatus * selection_array[selection_array_len];
+    std::memcpy(selection_array, &fd->selection_array[0], selection_array_len * sizeof(CardStatus *));
     for (CardStatus * dst: selection_array)
     {
         // TurningTides
@@ -2057,6 +2065,7 @@ void perform_targetted_hostile_fast(Field* fd, CardStatus* src, const SkillSpec&
             unsigned payback_value = dst->skill(Skill::payback) + dst->skill(Skill::revenge);
             if ((s.id != Skill::mimic) && (dst->m_paybacked < payback_value) && skill_check<Skill::payback>(fd, dst, src))
             {
+                paybackers.reserve(selection_array_len);
                 paybackers.push_back(dst);
             }
         }
@@ -2410,7 +2419,9 @@ Results<uint64_t> play(Field* fd)
                         // for (unsigned i = 0; i < num_inhibited; ++ i)
                         {
                             select_targets<Skill::protect>(fd, &fd->tip->commander, diverted_ss);
-                            auto selection_array = fd->selection_array;
+                            unsigned selection_array_len = fd->selection_array.size();
+                            CardStatus * selection_array[selection_array_len];
+                            std::memcpy(selection_array, &fd->selection_array[0], selection_array_len * sizeof(CardStatus *));
                             for (CardStatus * dst: selection_array)
                             {
                                 if (dst->m_inhibited > 0)
