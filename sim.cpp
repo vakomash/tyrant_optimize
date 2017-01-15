@@ -1955,7 +1955,8 @@ void perform_targetted_allied_fast(Field* fd, CardStatus* src, const SkillSpec& 
     bool has_counted_quest = false;
 #endif
     bool src_overloaded = src->m_overloaded;
-    for (CardStatus * dst: fd->selection_array)
+    auto selection_array = fd->selection_array;
+    for (CardStatus * dst: selection_array)
     {
         if (dst->m_inhibited > 0 && !src_overloaded)
         {
@@ -1981,7 +1982,8 @@ void perform_targetted_allied_fast(Field* fd, CardStatus* src, const SkillSpec& 
         for (unsigned i = 0; i < num_inhibited; ++ i)
         {
             select_targets<skill_id>(fd, &fd->tip->commander, diverted_ss);
-            for (CardStatus * dst: fd->selection_array)
+            selection_array = fd->selection_array;
+            for (CardStatus * dst: selection_array)
             {
                 if (dst->m_inhibited > 0)
                 {
@@ -2029,7 +2031,8 @@ void perform_targetted_hostile_fast(Field* fd, CardStatus* src, const SkillSpec&
     unsigned turningtides_value(0), old_attack(0);
 
     // apply skill to each target(dst)
-    for (CardStatus * dst: fd->selection_array)
+    auto selection_array = fd->selection_array;
+    for (CardStatus * dst: selection_array)
     {
         // TurningTides
         if (has_turningtides)
@@ -2407,7 +2410,8 @@ Results<uint64_t> play(Field* fd)
                         // for (unsigned i = 0; i < num_inhibited; ++ i)
                         {
                             select_targets<Skill::protect>(fd, &fd->tip->commander, diverted_ss);
-                            for (CardStatus * dst: fd->selection_array)
+                            auto selection_array = fd->selection_array;
+                            for (CardStatus * dst: selection_array)
                             {
                                 if (dst->m_inhibited > 0)
                                 {
