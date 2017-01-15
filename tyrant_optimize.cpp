@@ -333,7 +333,7 @@ unsigned check_requirement(const Deck* deck, const Requirement & requirement
 #endif
 )
 {
-    unsigned gap = 0;
+    unsigned gap = safe_minus(min_deck_len, deck->cards.size());
     if (!requirement.num_cards.empty())
     {
         std::unordered_map<const Card*, unsigned> num_cards;
@@ -1113,8 +1113,7 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
                         :
                         (from_slot == best_cards.size())) // void -> void
                 { continue; }
-                if (!adjust_deck(d1, from_slot, to_slot, card_candidate, fund, re, deck_cost, cards_out, cards_in) ||
-                        d1->cards.size() < min_deck_len)
+                if (!adjust_deck(d1, from_slot, to_slot, card_candidate, fund, re, deck_cost, cards_out, cards_in))
                 { continue; }
                 unsigned new_gap = check_requirement(d1, requirement
 #ifndef NQUEST
