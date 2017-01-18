@@ -81,13 +81,18 @@ with open(fname, 'r') as f:
         deck_name = m.group('deck_name')
         points = float(m.group('points')) if m.group('points') else None
         cards = []
+        n2c = {}
         for card in m.group('cards').split(', '):
             m = CARD_FMT.match(card)
             if not m:
                 raise Exception("bad card: " + card)
             name = m.group('name')
             count = int(m.group('count') or 1)
-            cards.append(NameCount(name, count))
+            if name in n2c:
+                n2c[name].count += count
+            else:
+                n2c[name] = NameCount(name, count)
+                cards.append(n2c[name])
         if len(cards) <= 1:
             continue
         decks[deck_name] = Deck(deck_name, cards, points)
