@@ -93,6 +93,24 @@ public:
     template<typename Pred>
     void remove(Pred p)
     {
+        /*
+         *  [a-z]       -   predicate unmatched cards (alive)
+         *  [X]         -   predicate matched cards (dead)
+         *
+         *  m_indirect:     [a][X][b][X][X][c]
+         *                   ^ head
+         *                   ^ current
+         *
+         *                   ... (loop logic: shift unmatched cards to left) ...
+         *
+         *                  [a][b][c][X][X][c]
+         *                           |-------> erase
+         *                           (allocated memory has been freed for matched cards)
+         *
+         *                            ^ head
+         *                                     ^ current
+         *  new m_indirect: [a][b][c]
+         */
         size_type head(0);
         for(size_type current(0); current < m_indirect.size(); ++current)
         {
