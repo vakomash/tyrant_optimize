@@ -130,6 +130,12 @@ public:
         m_indirect.erase(m_indirect.begin() + head, m_indirect.end());
     }
 
+    template<typename Pred>
+    unsigned count(Pred p)
+    {
+        return std::count_if(m_indirect.begin(), m_indirect.end(), p);
+    }
+
     void reset()
     {
         for(auto index: m_indirect)

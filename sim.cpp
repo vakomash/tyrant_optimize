@@ -740,6 +740,10 @@ inline bool is_it_dead(CardStatus& c)
     }
     else { return(false); } // nope still kickin'
 }
+inline bool is_it_dominion(CardStatus* c)
+{
+    return (c->m_card->m_category == CardCategory::dominion);
+}
 inline void remove_dead(Storage<CardStatus>& storage)
 {
     storage.remove(is_it_dead);
@@ -2612,7 +2616,8 @@ Results<uint64_t> play(Field* fd)
             }
         case OptimizationMode::campaign:
             {
-                unsigned campaign_score = 100 - 10 * (std::min<unsigned>(p[0]->deck->cards.size(), (fd->turn + 1) / 2) - p[0]->assaults.size() - p[0]->structures.size());
+                unsigned total_dominions_destroyed = p[0]->deck->dominion_cards.size() - p[0]->structures.count(is_it_dominion);
+                unsigned campaign_score = 100 - 10 * (p[0]->total_cards_destroyed - total_dominions_destroyed);
                 return {1, 0, 0, (points_score_type)campaign_score};
             }
 #ifndef NQUEST
