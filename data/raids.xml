@@ -4986,5 +4986,930 @@
 			</always_include>
 		</deck>
 	</campaign>
+    
+    <campaign>
+        <id>1211</id>
+        <name>ConKrell101</name>
+        <name>Conduit Krellus Normal 1</name>
+        <commander>1015</commander>
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>36648</card><!-- Skixer-3-->
+                <card>6640</card><!-- Eclipse Rider-4-->
+                <card>6640</card><!-- Eclipse Rider-4-->
+                <card>31032</card><!-- Portal Hopper-3-->
+                <card>43226</card><!-- Conduit Azusu-1-->
+                <card>2404</card><!-- Enclave Signal-4-->
+                <card>2404</card><!-- Enclave Signal-4-->
+                <card>42612</card><!-- Zantizorum-1-->
+                <card>35272</card><!-- Tail Gun-3-->
+                <card>42932</card><!-- Aerun Reaper-1-->
+            </always_include>
+        </deck>
+    </campaign>
+
+    <campaign>
+        <id>1212</id>
+        <name>ConKrell102</name>
+        <name>Conduit Krellus Normal 2</name>
+        <commander>1015</commander>
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>2404</card><!-- Enclave Signal-4-->
+                <card>2404</card><!-- Enclave Signal-4-->
+                <card>43066</card><!-- Manifold Crest-3-->
+                <card>43226</card><!-- Conduit Azusu-1-->
+                <card>17472</card><!-- Locus-3-->
+                <card>42734</card><!-- Minzorin-3-->
+                <card>42612</card><!-- Zantizorum-1-->
+                <card>6644</card><!-- Eclipse Edge-4-->
+                <card>6644</card><!-- Eclipse Edge-4-->
+                <card>42932</card><!-- Aerun Reaper-1-->
+            </always_include>
+        </deck>
+    </campaign>
+
+    <campaign>
+        <id>1213</id>
+        <name>ConKrell103</name>
+        <name>Conduit Krellus Normal 3</name>
+        <commander>25216</commander>
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>42614</card><!-- Zantizorum-3-->
+                <card>42614</card><!-- Zantizorum-3-->
+                <card>36651</card><!-- Skixer-6-->
+                <card>37422</card><!-- Scavenge Larva-3-->
+                <card>43069</card><!-- Manifold Crest-6-->
+                <card>39568</card><!-- Smelt Riser-1-->
+                <card>43226</card><!-- Conduit Azusu-1-->
+                <card>42932</card><!-- Aerun Reaper-1-->
+                <card>42734</card><!-- Minzorin-3-->
+                <card>8578</card><!-- Pulse Reactor-3-->
+            </always_include>
+        </deck>
+    </campaign>
+
+    <campaign>
+        <id>1214</id>
+        <name>ConKrell104</name>
+        <name>Conduit Krellus Normal 4</name>
+        <commander>1015</commander>
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>42612</card><!-- Zantizorum-1-->
+                <card>2404</card><!-- Enclave Signal-4-->
+                <card>39648</card><!-- Feral Xeboroid-3-->
+                <card>43048</card><!-- Hill Quaker-3-->
+                <card>43226</card><!-- Conduit Azusu-1-->
+                <card>35455</card><!-- Agile Courier-6-->
+                <card>6640</card><!-- Eclipse Rider-4-->
+                <card>6640</card><!-- Eclipse Rider-4-->
+                <card>42125</card><!-- Vacant Drifter-6-->
+                <card>42932</card><!-- Aerun Reaper-1-->
+            </always_include>
+        </deck>
+    </campaign>
+
+    <campaign>
+        <id>1215</id>
+        <name>ConKrell105</name>
+        <name>Conduit Krellus Normal 5</name>
+        <commander>1015</commander>
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>6644</card><!-- Eclipse Edge-4-->
+                <card>42029</card><!-- Zuruwing-6-->
+                <card>42125</card><!-- Vacant Drifter-6-->
+                <card>42612</card><!-- Zantizorum-1-->
+                <card>35455</card><!-- Agile Courier-6-->
+                <card>42932</card><!-- Aerun Reaper-1-->
+                <card>41366</card><!-- Vespine Ossos-3-->
+                <card>43226</card><!-- Conduit Azusu-1-->
+                <card>2404</card><!-- Enclave Signal-4-->
+                <card>39648</card><!-- Feral Xeboroid-3-->
+            </always_include>
+        </deck>
+    </campaign>
+
+    <campaign>
+        <id>1216</id>
+        <name>ConKrell106</name>
+        <name>Conduit Krellus Normal 6</name>
+        <commander>25318</commander>
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>40994</card><!-- Malaphos Vaporizer-3-->
+                <card>42934</card><!-- Aerun Reaper-3-->
+                <card>42934</card><!-- Aerun Reaper-3-->
+                <card>41369</card><!-- Vespine Ossos-6-->
+                <card>42612</card><!-- Zantizorum-1-->
+                <card>41381</card><!-- Vossar-6-->
+                <card>42029</card><!-- Zuruwing-6-->
+                <card>43226</card><!-- Conduit Azusu-1-->
+                <card>42377</card><!-- Kronn-6-->
+                <card>40716</card><!-- Tizona the Dreaded-3-->
+            </always_include>
+        </deck>
+    </campaign>
+
+    <campaign>
+        <id>1217</id>
+        <name>ConKrell107</name>
+        <name>Conduit Krellus Normal 7</name>
+        <commander>25324</commander>
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>42380</card><!-- Kronn the Wanderer-3-->
+                <card>33360</card><!-- Armada Patrol-4-->
+                <card>17155</card><!-- Growing Dam-6-->
+                <card>42932</card><!-- Aerun Reaper-1-->
+                <card>43226</card><!-- Conduit Azusu-1-->
+                <card>43226</card><!-- Conduit Azusu-1-->
+                <card>41381</card><!-- Vossar-6-->
+                <card>38011</card><!-- Spirit Bloomer-6-->
+                <card>41345</card><!-- Warp Creator-6-->
+                <card>42612</card><!-- Zantizorum-1-->
+            </always_include>
+        </deck>
+    </campaign>
+
+    <campaign>
+        <id>1221</id>
+        <name>ConKrell201</name>
+        <name>Conduit Krellus Heroic 1</name>
+        <commander>1043</commander>
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>43228</card><!-- Conduit Azusu-3-->
+                <card>37940</card><!-- Orbiter Locked-1-->
+                <card>31044</card><!-- Portal Emerger-3-->
+                <card>35284</card><!-- Ram Tail-3-->
+                <card>35284</card><!-- Ram Tail-3-->
+                <card>36660</card><!-- Skixaramos-3-->
+                <card>32361</card><!-- Coleopt Scamp-3-->
+                <card>42614</card><!-- Zantizorum-3-->
+                <card>42934</card><!-- Aerun Reaper-3-->
+            </always_include>
+        </deck>
+    </campaign>
+
+    <campaign>
+        <id>1222</id>
+        <name>ConKrell202</name>
+        <name>Conduit Krellus Heroic 2</name>
+        <commander>1043</commander>
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>39576</card><!-- Depth Riser-3-->
+                <card>32364</card><!-- Coleopt Scamp-6-->
+                <card>37945</card><!-- Orbiter Locked-6-->
+                <card>17481</card><!-- Locus Convergent-6-->
+                <card>43228</card><!-- Conduit Azusu-3-->
+                <card>42740</card><!-- Minzorin Scargiver-3-->
+                <card>42934</card><!-- Aerun Reaper-3-->
+                <card>42617</card><!-- Zantizorum-6-->
+                <card>43078</card><!-- Manifold Mitre-3-->
+                <card>8587</card><!-- Beam Reactor-6-->
+            </always_include>
+        </deck>
+    </campaign>
+
+    <campaign>
+        <id>1223</id>
+        <name>ConKrell203</name>
+        <name>Conduit Krellus Heroic 3</name>
+        <commander>25218</commander>
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>42617</card><!-- Zantizorum-6-->
+                <card>42617</card><!-- Zantizorum-6-->
+                <card>38925</card><!-- Ambusher-6-->
+                <card>39576</card><!-- Depth Riser-3-->
+                <card>42934</card><!-- Aerun Reaper-3-->
+                <card>42737</card><!-- Minzorin-6-->
+                <card>42737</card><!-- Minzorin-6-->
+                <card>37434</card><!-- Scavenge Biosect-3-->
+                <card>36663</card><!-- Skixaramos-6-->
+                <card>43228</card><!-- Conduit Azusu-3-->
+            </always_include>
+        </deck>
+    </campaign>
+
+    <campaign>
+        <id>1224</id>
+        <name>ConKrell204</name>
+        <name>Conduit Krellus Heroic 4</name>
+        <commander>17931</commander>
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>39651</card><!-- Feral Xeboroid-6-->
+                <card>39651</card><!-- Feral Xeboroid-6-->
+                <card>17815</card><!-- Radiant Blossom-6-->
+                <card>35461</card><!-- Brisk Courier-6-->
+                <card>42449</card><!-- Tripod Komra-6-->
+                <card>43228</card><!-- Conduit Azusu-3-->
+                <card>42131</card><!-- Imprinted Drifter-6-->
+                <card>42934</card><!-- Aerun Reaper-3-->
+                <card>43054</card><!-- Mountain Quaker-3-->
+                <card>42614</card><!-- Zantizorum-3-->
+            </always_include>
+        </deck>
+    </campaign>
+
+    <campaign>
+        <id>1225</id>
+        <name>ConKrell205</name>
+        <name>Conduit Krellus Heroic 5</name>
+        <commander>17931</commander>
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>35359</card><!-- Energy Deflector-6-->
+                <card>17815</card><!-- Radiant Blossom-6-->
+                <card>41375</card><!-- Vespine Vertus-6-->
+                <card>43057</card><!-- Mountain Quaker-6-->
+                <card>42934</card><!-- Aerun Reaper-3-->
+                <card>42452</card><!-- Tripod Indra-3-->
+                <card>43228</card><!-- Conduit Azusu-3-->
+                <card>42614</card><!-- Zantizorum-3-->
+                <card>40079</card><!-- Amon Forge-6-->
+                <card>42032</card><!-- Zuruwing Aleph-3-->
+            </always_include>
+        </deck>
+    </campaign>
+
+    <campaign>
+        <id>1226</id>
+        <name>ConKrell206</name>
+        <name>Conduit Krellus Heroic 6</name>
+        <commander>25320</commander>
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>42614</card><!-- Zantizorum-3-->
+                <card>41000</card><!-- Malaphos Fumigator-3-->
+                <card>40716</card><!-- Tizona the Dreaded-3-->
+                <card>42937</card><!-- Aerun Reaper-6-->
+                <card>42032</card><!-- Zuruwing Aleph-3-->
+                <card>43228</card><!-- Conduit Azusu-3-->
+                <card>40547</card><!-- Emblazoner-6-->
+                <card>41384</card><!-- Humming Vossar-3-->
+                <card>42937</card><!-- Aerun Reaper-6-->
+                <card>42383</card><!-- Kronn the Wanderer-6-->
+            </always_include>
+        </deck>
+    </campaign>
+
+    <campaign>
+        <id>1227</id>
+        <name>ConKrell207</name>
+        <name>Conduit Krellus Heroic 7</name>
+        <commander>25326</commander>
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>43228</card><!-- Conduit Azusu-3-->
+                <card>43228</card><!-- Conduit Azusu-3-->
+                <card>42614</card><!-- Zantizorum-3-->
+                <card>42934</card><!-- Aerun Reaper-3-->
+                <card>17158</card><!-- Living Dam-3-->
+                <card>33365</card><!-- Armada Scout-3-->
+                <card>42380</card><!-- Kronn the Wanderer-3-->
+                <card>38017</card><!-- Spirit Awakener-6-->
+                <card>41390</card><!-- Resonant Vossar-3-->
+                <card>41348</card><!-- Warp Melder-3-->
+            </always_include>
+        </deck>
+    </campaign>
+
+    <campaign>
+        <id>1231</id>
+        <name>ConKrell301</name>
+        <name>Conduit Krellus Mythic 1</name>
+        <commander>1045</commander>
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>43231</card><!-- Conduit Azusu-6-->
+                <card>37951</card><!-- Orbiter Synced-6-->
+                <card>37951</card><!-- Orbiter Synced-6-->
+                <card>42617</card><!-- Zantizorum-6-->
+                <card>36663</card><!-- Skixaramos-6-->
+                <card>36663</card><!-- Skixaramos-6-->
+                <card>42197</card><!-- Violent Skyrender-6-->
+                <card>32370</card><!-- Coleopt Slash-6-->
+                <card>35287</card><!-- Ram Tail-6-->
+                <card>42937</card><!-- Aerun Reaper-6-->
+            </always_include>
+        </deck>
+    </campaign>
+
+    <campaign>
+        <id>1232</id>
+        <name>ConKrell302</name>
+        <name>Conduit Krellus Mythic 2</name>
+        <commander>1045</commander>
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>42617</card><!-- Zantizorum-6-->
+                <card>42197</card><!-- Violent Skyrender-6-->
+                <card>42743</card><!-- Minzorin Scargiver-6-->
+                <card>17487</card><!-- Locus Rift-6-->
+                <card>38931</card><!-- Ambusher Extreme-6-->
+                <card>8593</card><!-- Krellus' Reactor-6-->
+                <card>8593</card><!-- Krellus' Reactor-6-->
+                <card>43081</card><!-- Manifold Mitre-6-->
+                <card>43231</card><!-- Conduit Azusu-6-->
+                <card>42937</card><!-- Aerun Reaper-6-->
+            </always_include>
+        </deck>
+    </campaign>
+
+    <campaign>
+        <id>1233</id>
+        <name>ConKrell303</name>
+        <name>Conduit Krellus Mythic 3</name>
+        <commander>25221</commander>
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>39579</card><!-- Depth Riser-6-->
+                <card>39579</card><!-- Depth Riser-6-->
+                <card>42743</card><!-- Minzorin Scargiver-6-->
+                <card>42743</card><!-- Minzorin Scargiver-6-->
+                <card>38937</card><!-- Warp Ambusher-6-->
+                <card>42617</card><!-- Zantizorum-6-->
+                <card>42617</card><!-- Zantizorum-6-->
+                <card>36663</card><!-- Skixaramos-6-->
+                <card>42937</card><!-- Aerun Reaper-6-->
+                <card>43231</card><!-- Conduit Azusu-6-->
+            </always_include>
+        </deck>
+    </campaign>
+
+    <campaign>
+        <id>1234</id>
+        <name>ConKrell304</name>
+        <name>Conduit Krellus Mythic 4</name>
+        <commander>17933</commander>
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>43231</card><!-- Conduit Azusu-6-->
+                <card>39657</card><!-- Dire Xeboroid-6-->
+                <card>39657</card><!-- Dire Xeboroid-6-->
+                <card>42137</card><!-- Kleave's Drifter-6-->
+                <card>35467</card><!-- Nimble Courier-6-->
+                <card>35467</card><!-- Nimble Courier-6-->
+                <card>42937</card><!-- Aerun Reaper-6-->
+                <card>17827</card><!-- Radiant Harvest-6-->
+                <card>42617</card><!-- Zantizorum-6-->
+                <card>42461</card><!-- Tripod Astra-6-->
+            </always_include>
+        </deck>
+    </campaign>
+
+    <campaign>
+        <id>1235</id>
+        <name>ConKrell305</name>
+        <name>Conduit Krellus Mythic 5</name>
+        <commander>17933</commander>
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>43063</card><!-- Continent Quaker-6-->
+                <card>42461</card><!-- Tripod Astra-6-->
+                <card>40085</card><!-- Amon Matrix-6-->
+                <card>42937</card><!-- Aerun Reaper-6-->
+                <card>39423</card><!-- Restless Marauder-6-->
+                <card>42617</card><!-- Zantizorum-6-->
+                <card>42041</card><!-- Zuruwing Flock-6-->
+                <card>41375</card><!-- Vespine Vertus-6-->
+                <card>42461</card><!-- Tripod Astra-6-->
+                <card>43231</card><!-- Conduit Azusu-6-->
+            </always_include>
+        </deck>
+    </campaign>
+
+    <campaign>
+        <id>1236</id>
+        <name>ConKrell306</name>
+        <name>Conduit Krellus Mythic 6</name>
+        <commander>25323</commander>
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>42617</card><!-- Zantizorum-6-->
+                <card>42041</card><!-- Zuruwing Flock-6-->
+                <card>39423</card><!-- Restless Marauder-6-->
+                <card>40725</card><!-- Tizona the Terrifying-6-->
+                <card>40559</card><!-- Emblazoner Mu-6-->
+                <card>42937</card><!-- Aerun Reaper-6-->
+                <card>42937</card><!-- Aerun Reaper-6-->
+                <card>41003</card><!-- Malaphos Fumigator-6-->
+                <card>43231</card><!-- Conduit Azusu-6-->
+                <card>40307</card><!-- Lithid's Ogrosaur-6-->
+            </always_include>
+        </deck>
+    </campaign>
+
+    <campaign>
+        <id>1237</id>
+        <name>ConKrell307</name>
+        <name>Conduit Krellus Mythic 7</name>
+        <commander>25329</commander>
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>42937</card><!-- Aerun Reaper-6-->
+                <card>38131</card><!-- Necrox the Demise-6-->
+                <card>41357</card><!-- Warp Fabricator-6-->
+                <card>42689</card><!-- Ozra the All-Absorber-6-->
+                <card>42617</card><!-- Zantizorum-6-->
+                <card>43231</card><!-- Conduit Azusu-6-->
+                <card>43231</card><!-- Conduit Azusu-6-->
+                <card>40307</card><!-- Lithid's Ogrosaur-6-->
+                <card>34624</card><!-- Grand Counsul Xavis-6-->
+                <card>33374</card><!-- Armada Outrider-6-->
+                <card>17167</card><!-- Sinuous Dam-6-->
+            </always_include>
+        </deck>
+    </campaign>
+
+    <campaign>
+        <id>1311</id>
+        <name>Deimos101</name>
+        <name>Deimos Despoiler Normal 1</name>
+        <commander>1007</commander>
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>16860</card><!-- Ricochet-3-->
+                <card>44514</card><!-- Pits Tamer-1-->
+                <card>6856</card><!-- Rancor-4-->
+                <card>6856</card><!-- Rancor-4-->
+                <card>37918</card><!-- Rank Buster-3-->
+                <card>43794</card><!-- Forsaken Engineer-1-->
+                <card>4409</card><!-- Spire Invader-4-->
+                <card>4409</card><!-- Spire Invader-4-->
+                <card>40094</card><!-- Dissolver-3-->
+                <card>44070</card><!-- Vlade's Vaque-1-->
+            </always_include>
+        </deck>
+    </campaign>
+
+    <campaign>
+        <id>1312</id>
+        <name>Deimos102</name>
+        <name>Deimos Despoiler Normal 2</name>
+        <commander>1007</commander>
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>44514</card><!-- Pits Tamer-1-->
+                <card>43794</card><!-- Forsaken Engineer-1-->
+                <card>30522</card><!-- Spark Roller-3-->
+                <card>6856</card><!-- Rancor-4-->
+                <card>6856</card><!-- Rancor-4-->
+                <card>4409</card><!-- Spire Invader-4-->
+                <card>4409</card><!-- Spire Invader-4-->
+                <card>36894</card><!-- Zoid Released-3-->
+                <card>37194</card><!-- Paton-3-->
+                <card>44070</card><!-- Vlade's Vaque-1-->
+            </always_include>
+        </deck>
+    </campaign>
+
+    <campaign>
+        <id>1313</id>
+        <name>Deimos103</name>
+        <name>Deimos Despoiler Normal 3</name>
+        <commander>25346</commander>
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>36894</card><!-- Zoid Released-3-->
+                <card>32433</card><!-- Inferno Wielder-3-->
+                <card>35488</card><!-- Head of Rituals-3-->
+                <card>44514</card><!-- Pits Tamer-1-->
+                <card>44070</card><!-- Vlade's Vaque-1-->
+                <card>37197</card><!-- Paton-6-->
+                <card>43796</card><!-- Forsaken Engineer-3-->
+                <card>43796</card><!-- Forsaken Engineer-3-->
+                <card>39328</card><!-- Forsaken Dazer-1-->
+                <card>37921</card><!-- Rank Buster-6-->
+            </always_include>
+        </deck>
+    </campaign>
+
+    <campaign>
+        <id>1314</id>
+        <name>Deimos104</name>
+        <name>Deimos Despoiler Normal 4</name>
+        <commander>1007</commander>
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>38557</card><!-- Skelly-6-->
+                <card>30621</card><!-- Collector-6-->
+                <card>38212</card><!-- Erebus Guard-3-->
+                <card>43794</card><!-- Forsaken Engineer-1-->
+                <card>44070</card><!-- Vlade's Vaque-1-->
+                <card>4409</card><!-- Spire Invader-4-->
+                <card>4409</card><!-- Spire Invader-4-->
+                <card>6856</card><!-- Rancor-4-->
+                <card>34393</card><!-- Chainsaw Chariot-3-->
+                <card>44514</card><!-- Pits Tamer-1-->
+            </always_include>
+        </deck>
+    </campaign>
+
+    <campaign>
+        <id>1315</id>
+        <name>Deimos105</name>
+        <name>Deimos Despoiler Normal 5</name>
+        <commander>1007</commander>
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>43794</card><!-- Forsaken Engineer-1-->
+                <card>32880</card><!-- Heart Swallower-6-->
+                <card>30621</card><!-- Collector-6-->
+                <card>38212</card><!-- Erebus Guard-3-->
+                <card>34255</card><!-- Highway Robber-3-->
+                <card>44070</card><!-- Vlade's Vaque-1-->
+                <card>38557</card><!-- Skelly-6-->
+                <card>6856</card><!-- Rancor-4-->
+                <card>44514</card><!-- Pits Tamer-1-->
+                <card>4409</card><!-- Spire Invader-4-->
+            </always_include>
+        </deck>
+    </campaign>
+
+    <campaign>
+        <id>1316</id>
+        <name>Deimos106</name>
+        <name>Deimos Despoiler Normal 6</name>
+        <commander>25352</commander>
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>44072</card><!-- Vlade's Vaque-3-->
+                <card>44072</card><!-- Vlade's Vaque-3-->
+                <card>32880</card><!-- Heart Swallower-6-->
+                <card>43794</card><!-- Forsaken Engineer-1-->
+                <card>40241</card><!-- Buckle-6-->
+                <card>39534</card><!-- Nuclear Driver-3-->
+                <card>44514</card><!-- Pits Tamer-1-->
+                <card>36187</card><!-- Sidewinder-6-->
+                <card>34183</card><!-- Sipahi Revolt-3-->
+                <card>34258</card><!-- Highway Robber-6-->
+            </always_include>
+        </deck>
+    </campaign>
+
+    <campaign>
+        <id>1317</id>
+        <name>Deimos107</name>
+        <name>Deimos Despoiler Normal 7</name>
+        <commander>25364</commander>
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>44070</card><!-- Vlade's Vaque-1-->
+                <card>41045</card><!-- Wyvern-6-->
+                <card>43794</card><!-- Forsaken Engineer-1-->
+                <card>16497</card><!-- Soul Seeker-6-->
+                <card>36331</card><!-- Emulsifier-6-->
+                <card>44514</card><!-- Pits Tamer-1-->
+                <card>44514</card><!-- Pits Tamer-1-->
+                <card>39891</card><!-- Brugasus Tamer-4-->
+                <card>40241</card><!-- Buckle-6-->
+                <card>36190</card><!-- Sidewinder Cobra-3-->
+            </always_include>
+        </deck>
+    </campaign>
+
+    <campaign>
+        <id>1321</id>
+        <name>Deimos201</name>
+        <name>Deimos Despoiler Heroic 1</name>
+        <commander>1055</commander>
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>44516</card><!-- Pits Tamer-3-->
+                <card>43796</card><!-- Forsaken Engineer-3-->
+                <card>44072</card><!-- Vlade's Vaque-3-->
+                <card>16872</card><!-- Ricochet Bombardier-3-->
+                <card>37930</card><!-- Rank Vaporizer-3-->
+                <card>37930</card><!-- Rank Vaporizer-3-->
+                <card>40106</card><!-- Forsaken Dissolver-3-->
+                <card>40106</card><!-- Forsaken Dissolver-3-->
+                <card>42770</card><!-- Flint of the Forsaken-1-->
+                <card>8704</card><!-- Solar Optic-3-->
+            </always_include>
+        </deck>
+    </campaign>
+
+    <campaign>
+        <id>1322</id>
+        <name>Deimos202</name>
+        <name>Deimos Despoiler Heroic 2</name>
+        <commander>1055</commander>
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>30531</card><!-- Spark Ranger-6-->
+                <card>44072</card><!-- Vlade's Vaque-3-->
+                <card>32436</card><!-- Inferno Wielder-6-->
+                <card>37206</card><!-- Paton Heaver-3-->
+                <card>36900</card><!-- Zoid Battered-3-->
+                <card>39336</card><!-- Forsaken Paralyzer-3-->
+                <card>8707</card><!-- Solar Optic-6-->
+                <card>43796</card><!-- Forsaken Engineer-3-->
+                <card>44516</card><!-- Pits Tamer-3-->
+                <card>42775</card><!-- Flint of the Forsaken-6-->
+            </always_include>
+        </deck>
+    </campaign>
+
+    <campaign>
+        <id>1323</id>
+        <name>Deimos203</name>
+        <name>Deimos Despoiler Heroic 3</name>
+        <commander>25348</commander>
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>35500</card><!-- Master of Rituals-3-->
+                <card>44117</card><!-- Forsaken Corruptor-6-->
+                <card>37933</card><!-- Rank Vaporizer-6-->
+                <card>36897</card><!-- Zoid Released-6-->
+                <card>36897</card><!-- Zoid Released-6-->
+                <card>43799</card><!-- Forsaken Engineer-6-->
+                <card>43799</card><!-- Forsaken Engineer-6-->
+                <card>44072</card><!-- Vlade's Vaque-3-->
+                <card>39336</card><!-- Forsaken Paralyzer-3-->
+                <card>44516</card><!-- Pits Tamer-3-->
+            </always_include>
+        </deck>
+    </campaign>
+
+    <campaign>
+        <id>1324</id>
+        <name>Deimos204</name>
+        <name>Deimos Despoiler Heroic 4</name>
+        <commander>17871</commander>
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>42341</card><!-- Devitalizer-6-->
+                <card>44072</card><!-- Vlade's Vaque-3-->
+                <card>38563</card><!-- Bare Skelly-6-->
+                <card>43796</card><!-- Forsaken Engineer-3-->
+                <card>44516</card><!-- Pits Tamer-3-->
+                <card>30627</card><!-- Corpse Collector-6-->
+                <card>41249</card><!-- Sulfuris Vial-6-->
+                <card>34399</card><!-- Whipsaw Chariot-3-->
+                <card>38215</card><!-- Erebus Guard-6-->
+                <card>38215</card><!-- Erebus Guard-6-->
+            </always_include>
+        </deck>
+    </campaign>
+
+    <campaign>
+        <id>1325</id>
+        <name>Deimos205</name>
+        <name>Deimos Despoiler Heroic 5</name>
+        <commander>17871</commander>
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>34402</card><!-- Whipsaw Chariot-6-->
+                <card>41216</card><!-- Sulfuris Flask-3-->
+                <card>44072</card><!-- Vlade's Vaque-3-->
+                <card>44516</card><!-- Pits Tamer-3-->
+                <card>32883</card><!-- Heart Ingester-3-->
+                <card>43796</card><!-- Forsaken Engineer-3-->
+                <card>15473</card><!-- Shore Destroyer-6-->
+                <card>42341</card><!-- Devitalizer-6-->
+                <card>36639</card><!-- Crazed Whirler-6-->
+                <card>34264</card><!-- Highway Warrior-6-->
+            </always_include>
+        </deck>
+    </campaign>
+
+    <campaign>
+        <id>1326</id>
+        <name>Deimos206</name>
+        <name>Deimos Despoiler Heroic 6</name>
+        <commander>25354</commander>
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>34183</card><!-- Sipahi Revolt-3-->
+                <card>43691</card><!-- Shock Displacer-6-->
+                <card>43796</card><!-- Forsaken Engineer-3-->
+                <card>44075</card><!-- Vlade's Vaque-6-->
+                <card>44075</card><!-- Vlade's Vaque-6-->
+                <card>36193</card><!-- Sidewinder Cobra-6-->
+                <card>40244</card><!-- Buckle Clatter-3-->
+                <card>44516</card><!-- Pits Tamer-3-->
+                <card>32883</card><!-- Heart Ingester-3-->
+                <card>39540</card><!-- Nuclear Engine-3-->
+            </always_include>
+        </deck>
+    </campaign>
+
+    <campaign>
+        <id>1327</id>
+        <name>Deimos207</name>
+        <name>Deimos Despoiler Heroic 7</name>
+        <commander>25366</commander>
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>36334</card><!-- APC Emulsifier-3-->
+                <card>16500</card><!-- Soul Searcher-3-->
+                <card>40250</card><!-- Buckle Clanger-3-->
+                <card>44516</card><!-- Pits Tamer-3-->
+                <card>44516</card><!-- Pits Tamer-3-->
+                <card>41051</card><!-- Wyvern Collector-6-->
+                <card>44072</card><!-- Vlade's Vaque-3-->
+                <card>39896</card><!-- Brugasus Rider-3-->
+                <card>36190</card><!-- Sidewinder Cobra-3-->
+                <card>43796</card><!-- Forsaken Engineer-3-->
+            </always_include>
+        </deck>
+    </campaign>
+
+    <campaign>
+        <id>1331</id>
+        <name>Deimos301</name>
+        <name>Deimos Despoiler Mythic 1</name>
+        <commander>1057</commander>
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>37933</card><!-- Rank Vaporizer-6-->
+                <card>37933</card><!-- Rank Vaporizer-6-->
+                <card>44075</card><!-- Vlade's Vaque-6-->
+                <card>40109</card><!-- Forsaken Dissolver-6-->
+                <card>43799</card><!-- Forsaken Engineer-6-->
+                <card>35389</card><!-- Channel Wolf-6-->
+                <card>42781</card><!-- Flint the Unforgiving-6-->
+                <card>42781</card><!-- Flint the Unforgiving-6-->
+                <card>44519</card><!-- Pits Tamer-6-->
+                <card>8713</card><!-- Solar Plexus-6-->
+            </always_include>
+        </deck>
+    </campaign>
+
+    <campaign>
+        <id>1332</id>
+        <name>Deimos302</name>
+        <name>Deimos Despoiler Mythic 2</name>
+        <commander>1057</commander>
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>30537</card><!-- Spark Rover-6-->
+                <card>44123</card><!-- Pits Corruptor-6-->
+                <card>43799</card><!-- Forsaken Engineer-6-->
+                <card>35389</card><!-- Channel Wolf-6-->
+                <card>44075</card><!-- Vlade's Vaque-6-->
+                <card>44519</card><!-- Pits Tamer-6-->
+                <card>32436</card><!-- Inferno Wielder-6-->
+                <card>32436</card><!-- Inferno Wielder-6-->
+                <card>36903</card><!-- Zoid Battered-6-->
+                <card>37209</card><!-- Paton Heaver-6-->
+            </always_include>
+        </deck>
+    </campaign>
+
+    <campaign>
+        <id>1333</id>
+        <name>Deimos303</name>
+        <name>Deimos Despoiler Mythic 3</name>
+        <commander>25351</commander>
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>43799</card><!-- Forsaken Engineer-6-->
+                <card>43799</card><!-- Forsaken Engineer-6-->
+                <card>44129</card><!-- Vlade's Corruptor-6-->
+                <card>37933</card><!-- Rank Vaporizer-6-->
+                <card>44519</card><!-- Pits Tamer-6-->
+                <card>36903</card><!-- Zoid Battered-6-->
+                <card>36903</card><!-- Zoid Battered-6-->
+                <card>44075</card><!-- Vlade's Vaque-6-->
+                <card>39339</card><!-- Forsaken Paralyzer-6-->
+                <card>39339</card><!-- Forsaken Paralyzer-6-->
+            </always_include>
+        </deck>
+    </campaign>
+
+    <campaign>
+        <id>1334</id>
+        <name>Deimos304</name>
+        <name>Deimos Despoiler Mythic 4</name>
+        <commander>17873</commander>
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>42353</card><!-- Infectious Devitalizer-6-->
+                <card>38569</card><!-- Secured Skelly-6-->
+                <card>38569</card><!-- Secured Skelly-6-->
+                <card>43799</card><!-- Forsaken Engineer-6-->
+                <card>44519</card><!-- Pits Tamer-6-->
+                <card>44075</card><!-- Vlade's Vaque-6-->
+                <card>30633</card><!-- Death Collector-6-->
+                <card>38221</card><!-- Erebus Keeper-6-->
+                <card>38221</card><!-- Erebus Keeper-6-->
+                <card>41225</card><!-- Sulfuris Sprayer-6-->
+            </always_include>
+        </deck>
+    </campaign>
+
+    <campaign>
+        <id>1335</id>
+        <name>Deimos305</name>
+        <name>Deimos Despoiler Mythic 5</name>
+        <commander>17873</commander>
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>40061</card><!-- Vex Warcaller-6-->
+                <card>43799</card><!-- Forsaken Engineer-6-->
+                <card>34264</card><!-- Highway Warrior-6-->
+                <card>44519</card><!-- Pits Tamer-6-->
+                <card>32892</card><!-- Heart Gorger-6-->
+                <card>41225</card><!-- Sulfuris Sprayer-6-->
+                <card>41225</card><!-- Sulfuris Sprayer-6-->
+                <card>44075</card><!-- Vlade's Vaque-6-->
+                <card>15479</card><!-- Coast Destroyer-6-->
+                <card>34408</card><!-- Ripsaw Chariot-6-->
+            </always_include>
+        </deck>
+    </campaign>
+
+    <campaign>
+        <id>1336</id>
+        <name>Deimos306</name>
+        <name>Deimos Despoiler Mythic 6</name>
+        <commander>25357</commander>
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>43799</card><!-- Forsaken Engineer-6-->
+                <card>44585</card><!-- Vault Infiltrator-6-->
+                <card>39543</card><!-- Nuclear Engine-6-->
+                <card>40061</card><!-- Vex Warcaller-6-->
+                <card>44075</card><!-- Vlade's Vaque-6-->
+                <card>44075</card><!-- Vlade's Vaque-6-->
+                <card>44519</card><!-- Pits Tamer-6-->
+                <card>32892</card><!-- Heart Gorger-6-->
+                <card>34192</card><!-- Sipahi Responder-6-->
+                <card>43703</card><!-- Shock Disperser-6-->
+            </always_include>
+        </deck>
+    </campaign>
+
+    <campaign>
+        <id>1337</id>
+        <name>Deimos307</name>
+        <name>Deimos Despoiler Mythic 7</name>
+        <commander>25369</commander>
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>16509</card><!-- Soul Annex-6-->
+                <card>43799</card><!-- Forsaken Engineer-6-->
+                <card>44423</card><!-- Forgeborn Immortal-6-->
+                <card>44519</card><!-- Pits Tamer-6-->
+                <card>44519</card><!-- Pits Tamer-6-->
+                <card>44075</card><!-- Vlade's Vaque-6-->
+                <card>43853</card><!-- Thane Skullsplitter-6-->
+                <card>44237</card><!-- Razor Shredder-6-->
+                <card>36343</card><!-- Huron Emulsifier-6-->
+                <card>44585</card><!-- Vault Infiltrator-6-->
+                <card>39905</card><!-- Brugasus Cavalry-6-->
+            </always_include>
+        </deck>
+    </campaign>
 
 </root>
