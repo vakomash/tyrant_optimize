@@ -985,8 +985,9 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
         // try to skip a card unless it's allowed
         if (!allowed_candidates.count(card->m_id))
         {
-            // skip non-top-level cards always (adjust_deck() will try to downgrade them if necessary)
-            if (!card->is_top_level_card())
+            // skip non-top-level cards (adjust_deck() will try to downgrade them if necessary)
+            bool use_top_level = (card->m_type == CardType::commander) ? use_top_level_commander : use_top_level_card;
+            if (!card->is_top_level_card() and (fund || use_top_level || !owned_cards[card->m_id]))
             { continue; }
 
             // skip disallowed
