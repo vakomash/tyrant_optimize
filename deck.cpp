@@ -236,7 +236,7 @@ void Deck::set(const std::vector<unsigned>& ids, const std::map<signed, char> &m
                 std::cerr << "WARNING: Ignoring additional commander " << card->m_name << " (" << commander->m_name << " already in deck)\n";
             }
         }
-        else if (card->m_category == CardCategory::dominion)
+        else if (card->m_category == CardCategory::dominion_alpha)
         {
             dominion_cards.emplace_back(card);
             non_deck_cards_seen++;

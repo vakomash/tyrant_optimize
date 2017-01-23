@@ -742,7 +742,7 @@ inline bool is_it_dead(CardStatus& c)
 }
 inline bool is_it_dominion(CardStatus* c)
 {
-    return (c->m_card->m_category == CardCategory::dominion);
+    return (c->m_card->m_category == CardCategory::dominion_alpha);
 }
 inline void remove_dead(Storage<CardStatus>& storage)
 {

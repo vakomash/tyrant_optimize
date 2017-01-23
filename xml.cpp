@@ -237,7 +237,7 @@ void parse_card_node(Cards& all_cards, Card* card, xml_node<>* card_node)
         else if (card->m_id < 55001)
         {
             card->m_type = CardType::structure;
-            card->m_category = CardCategory::dominion;
+            card->m_category = CardCategory::dominion_alpha;
         }
 
         // [55001+]
