@@ -219,8 +219,10 @@ inline bool is_triggered_skill(Skill::Skill skill_id)
     }
 }
 
-inline PassiveBGE::PassiveBGE passive_bge_name_to_id(const std::string & name)
+inline PassiveBGE::PassiveBGE passive_bge_name_to_id(const std::string& name_)
 {
+    std::string name(name_);
+    name.erase(std::remove_if(name.begin(), name.end(), boost::is_any_of("-")), name.end());
     for (unsigned i(PassiveBGE::no_bge); i < PassiveBGE::num_passive_bges; ++i)
     {
         if (boost::iequals(passive_bge_names[i], name))

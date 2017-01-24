@@ -1274,7 +1274,7 @@ bool parse_bge(
 
     // parse as passive or skill based BGE
     std::vector<std::string> tokens, skill_name_list;
-    boost::split(tokens, bge_name, boost::is_any_of(" -"));
+    boost::split(tokens, bge_name, boost::is_any_of(" "));
     boost::split(skill_name_list, tokens[0], boost::is_any_of("+"));
     try
     {
