@@ -2253,13 +2253,11 @@ Results<uint64_t> play(Field* fd)
     typedef unsigned points_score_type;
 #endif
 
-    // Play fortresses
+    // Play dominion & fortresses
     for (unsigned _ = 0; _ < 2; ++ _)
     {
-        for (const Card* played_card: fd->tap->deck->dominion_cards)
-        {
-            PlayCard(played_card, fd).op<CardType::structure>();
-        }
+        if (fd->tap->deck->alpha_dominion)
+        { PlayCard(fd->tap->deck->alpha_dominion, fd).op<CardType::structure>(); }
         for (const Card* played_card: fd->tap->deck->shuffled_forts)
         {
             PlayCard(played_card, fd).op<CardType::structure>();
@@ -2616,7 +2614,7 @@ Results<uint64_t> play(Field* fd)
             }
         case OptimizationMode::campaign:
             {
-                unsigned total_dominions_destroyed = p[0]->deck->dominion_cards.size() - p[0]->structures.count(is_it_dominion);
+                unsigned total_dominions_destroyed = (p[0]->deck->alpha_dominion != nullptr) - p[0]->structures.count(is_it_dominion);
                 unsigned campaign_score = 100 - 10 * (p[0]->total_cards_destroyed - total_dominions_destroyed);
                 return {1, 0, 0, (points_score_type)campaign_score};
             }

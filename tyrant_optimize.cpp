@@ -909,10 +909,8 @@ void print_deck_inline(const unsigned deck_cost, const FinalResults<long double>
     std::cout << ": " << deck->commander->m_name;
 
     // print dominions
-    for (const Card* card: deck->dominion_cards)
-    {
-        std::cout << ", " << card->m_name;
-    }
+    if (deck->alpha_dominion)
+    { std::cout << ", " << deck->alpha_dominion->m_name; }
 
     // print deck cards
     if (deck->strategy == DeckStrategy::random)
@@ -1887,7 +1885,7 @@ int main(int argc, char** argv)
     {
         try
         {
-            your_deck->add_doms(opt_doms + ",");
+            your_deck->add_dominions(opt_doms + ",", true);
         }
         catch(const std::runtime_error& e)
         {
@@ -2117,7 +2115,7 @@ int main(int argc, char** argv)
 
     for (auto deck_parsed: deck_list_parsed)
     {
-		Deck* enemy_deck{nullptr};
+        Deck* enemy_deck{nullptr};
         try
         {
             enemy_deck = find_deck(decks, all_cards, deck_parsed.first);
@@ -2154,7 +2152,7 @@ int main(int argc, char** argv)
         {
             try
             {
-                enemy_deck->add_doms(opt_enemy_doms + ",");
+                enemy_deck->add_dominions(opt_enemy_doms + ",", true);
             }
             catch(const std::runtime_error& e)
             {

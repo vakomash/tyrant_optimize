@@ -51,6 +51,7 @@ public:
     DeckStrategy::DeckStrategy strategy;
 
     const Card* commander;
+    const Card* alpha_dominion;
     unsigned commander_max_level;
     std::vector<const Card*> cards;
     std::map<signed, char> card_marks;  // <positions of card, prefix mark>: -1 indicating the commander. E.g, used as a mark to be kept in attacking deck when optimizing.
@@ -68,7 +69,6 @@ public:
     std::string deck_string;
     std::unordered_set<unsigned> vip_cards;
     std::vector<unsigned> given_hand;
-    std::vector<const Card*> dominion_cards;
     std::vector<const Card*> fortress_cards;
 
     Deck(
@@ -87,6 +87,7 @@ public:
         upgrade_opportunities(upgrade_opportunities_),
         strategy(strategy_),
         commander(nullptr),
+        alpha_dominion(nullptr),
         shuffled_commander(nullptr),
         deck_size(0),
         mission_req(0)
@@ -126,7 +127,8 @@ public:
     void set_vip_cards(const std::string& deck_string_);
     void set_given_hand(const std::string& deck_string_);
     void add_forts(const std::string& deck_string_);
-    void add_doms(const std::string& deck_string_);
+    void add_dominions(const std::string& deck_string_, bool override_dom);
+    void add_dominion(const Card* dom_card, bool override_dom);
 
     Deck* clone() const;
     std::string hash() const;

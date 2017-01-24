@@ -238,7 +238,7 @@ void Deck::set(const std::vector<unsigned>& ids, const std::map<signed, char> &m
         }
         else if (card->m_category == CardCategory::dominion_alpha)
         {
-            dominion_cards.emplace_back(card);
+            add_dominion(card, false);
             non_deck_cards_seen++;
         }
         else if (card->m_category == CardCategory::fortress_defense || card->m_category == CardCategory::fortress_siege)
@@ -312,12 +312,43 @@ void Deck::add_forts(const std::string& deck_string)
     }
 }
 
-void Deck::add_doms(const std::string& deck_string)
+void Deck::add_dominions(const std::string& deck_string, bool override_dom)
 {
     auto && id_marks = string_to_ids(all_cards, deck_string, "dominion_cards");
     for (auto id: id_marks.first)
     {
-        dominion_cards.push_back(all_cards.by_id(id));
+        add_dominion(all_cards.by_id(id), override_dom);
+    }
+}
+
+void Deck::add_dominion(const Card* dom_card, bool override_dom)
+{
+    if (dom_card->m_category == CardCategory::dominion_alpha)
+    {
+        if (alpha_dominion && !override_dom)
+        {
+            std::cerr << "WARNING: ";
+            if (!name.empty()) { std::cerr << "deck " << name << ": "; }
+            std::cerr << "Ignoring additional alpha dominion " << dom_card->m_name
+                << " (" << alpha_dominion->m_name << " already in deck)\n";
+        }
+        else
+        {
+            if (alpha_dominion)
+            {
+                std::cerr << "WARNING: ";
+                if (!name.empty()) { std::cerr << "deck " << name << ": "; }
+                std::cerr << "Overriding alpha dominion " << alpha_dominion->m_name
+                    << " by " << dom_card->m_name << std::endl;
+            }
+            alpha_dominion = dom_card;
+        }
+    }
+    else
+    {
+        std::cerr << "WARNING: ";
+        if (!name.empty()) { std::cerr << "deck " << name << ": "; }
+        std::cerr << "Ignoring non-dominion card " << dom_card->m_name << std::endl;
     }
 }
 
@@ -326,7 +357,7 @@ std::string Deck::hash() const
     std::stringstream ios;
     std::vector<const Card*> deck_all_cards;
     deck_all_cards.emplace_back(commander);
-    deck_all_cards.insert(deck_all_cards.end(), dominion_cards.begin(), dominion_cards.end());
+    if (alpha_dominion) { deck_all_cards.emplace_back(alpha_dominion); }
     deck_all_cards.insert(deck_all_cards.end(), cards.begin(), cards.end());
     if (strategy == DeckStrategy::random)
     {
@@ -365,18 +396,19 @@ std::string Deck::medium_description() const
     {
         ios << "No commander";
     }
-    for (const Card * card: dominion_cards)
-    {
-        ios << ", " << card->m_name;
-    }
+
+    // dominions
+    if (alpha_dominion)
+    { ios << ", " << alpha_dominion->m_name; }
+
+    // fortresses
     for (const Card * card: fortress_cards)
-    {
-        ios << ", " << card->m_name;
-    }
+    { ios << ", " << card->m_name; }
+
+    // normal cards
     for (const Card * card: cards)
-    {
-        ios << ", " << card->m_name;
-    }
+    { ios << ", " << card->m_name; }
+
     unsigned num_pool_cards = 0;
     for (auto& pool: variable_cards)
     {
