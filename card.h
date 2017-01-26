@@ -4,6 +4,7 @@
 #include <cstring>
 #include <string>
 #include <vector>
+#include <map>
 #include "tyrant.h"
 
 class Card

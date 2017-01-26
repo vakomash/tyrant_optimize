@@ -1,4 +1,5 @@
 #include "tyrant.h"
+#include "card.h"
 
 #include <string>
 
@@ -48,7 +49,8 @@ const std::string cardtype_names[CardType::num_cardtypes]{"Commander", "Assault"
 const std::string rarity_names[]{"", "common", "rare", "epic", "legend", "vindi", "mythic", };
 
 unsigned const upgrade_cost[]{0, 5, 15, 30, 75, 150};
-unsigned const salvaging_income[][7]{{}, {0, 1, 2, 5}, {0, 5, 10, 15, 20}, {0, 20, 25, 30, 40, 50, 65}, {0, 40, 45, 60, 75, 100, 125}, {0, 80, 85, 100, 125, 175, 250}};
+std::map<const Card*, unsigned> dominion_cost[3][7];
+std::map<const Card*, unsigned> dominion_refund[3][7];
 
 unsigned min_possible_score[]{0, 0, 0, 10, 5, 5, 5, 0
 #ifndef NQUEST

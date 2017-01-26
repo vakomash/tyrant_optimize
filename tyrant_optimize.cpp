@@ -20,6 +20,7 @@
 #include <functional>
 #include <iostream>
 #include <map>
+#include <unordered_map>
 #include <set>
 #include <stack>
 #include <string>
@@ -51,7 +52,8 @@ struct Requirement
 namespace {
     gamemode_t gamemode{fight};
     OptimizationMode optimization_mode{OptimizationMode::notset};
-    std::map<unsigned, unsigned> owned_cards;
+    std::unordered_map<unsigned, unsigned> owned_cards;
+    const Card* owned_alpha_dominion{nullptr};
     bool use_owned_cards{true};
     unsigned min_deck_len{1};
     unsigned max_deck_len{10};
@@ -65,6 +67,8 @@ namespace {
 #ifdef TUO_MODE_OPEN_THE_DECK
     bool mode_open_the_deck{false};
 #endif
+    bool use_dominion_climbing{false};
+    bool use_dominion_defusing{false};
     unsigned use_fused_card_level{0};
     unsigned use_fused_commander_level{0};
     bool show_ci{false};
@@ -128,7 +132,8 @@ Deck* find_deck(Decks& decks, const Cards& all_cards, std::string deck_name)
     return(deck);
 }
 //---------------------- $80 deck optimization ---------------------------------
-unsigned get_required_cards_before_upgrade(const std::vector<const Card *> & card_list, std::map<const Card*, unsigned> & num_cards)
+unsigned get_required_cards_before_upgrade(std::unordered_map<unsigned, unsigned> owned_cards,
+    const std::vector<const Card *>& card_list, std::map<const Card*, unsigned>& num_cards)
 {
     unsigned deck_cost = 0;
     std::set<const Card*> unresolved_cards;
@@ -137,36 +142,58 @@ unsigned get_required_cards_before_upgrade(const std::vector<const Card *> & car
         ++ num_cards[card];
         unresolved_cards.insert(card);
     }
-    // un-upgrade only if fund is used
-    while (fund > 0 && !unresolved_cards.empty())
+    // un-upgrade according to type/category
+    // * use fund for normal cards
+    // * use only top-level cards for initial (basic) dominion (Alpha Dominion) and dominion material (Dominion Shard)
+    while (!unresolved_cards.empty())
     {
+        // pop next unresolved card
         auto card_it = unresolved_cards.end();
-        auto card = *(-- card_it);
+        auto card = *(--card_it);
         unresolved_cards.erase(card_it);
-        if ((use_fused_card_level > 0 && card->m_set == 1000 && card->m_rarity <= 2 && card->m_level == 1) ||  // assume unlimited common/rare level-1 cards (standard set) under endgame 1|2
-            (owned_cards[card->m_id] < num_cards[card] && !card->m_recipe_cards.empty()))
+
+        // assume unlimited common/rare level-1 cards (standard set)
+        if ((card->m_set == 1000) && (card->m_rarity <= 2) && (card->is_low_level_card()))
+        { continue; }
+
+        // keep un-defused (top-level) basic dominion & its material
+        if ((card->m_id == 50002) || (card->m_category == CardCategory::dominion_material))
+        { continue; }
+
+        // defuse if inventory lacks required cards and recipe is not empty
+        if ((fund || (card->m_category != CardCategory::normal))
+            && (owned_cards[card->m_id] < num_cards[card]) && !card->m_recipe_cards.empty())
         {
             unsigned num_under = num_cards[card] - owned_cards[card->m_id];
             num_cards[card] = owned_cards[card->m_id];
-//            std::cout << "-" << num_under << " " << card->m_name << "\n"; // XXX
-            deck_cost += num_under * card->m_recipe_cost;
+
+            // do count cost (in SP) only for normal cards
+            if (card->m_category == CardCategory::normal)
+            {
+                deck_cost += num_under * card->m_recipe_cost;
+            }
+
+            // enqueue recipe cards as unresolved
             for (auto recipe_it : card->m_recipe_cards)
             {
                 num_cards[recipe_it.first] += num_under * recipe_it.second;
-//                std::cout << "+" << num_under * recipe_it.second << " " << recipe_it.first->m_name << "\n"; // XXX
                 unresolved_cards.insert(recipe_it.first);
             }
         }
     }
-//    std::cout << "\n"; // XXX
     return deck_cost;
 }
 
-unsigned get_deck_cost(const Deck * deck)
+inline unsigned get_required_cards_before_upgrade(const std::vector<const Card *>& card_list, std::map<const Card*, unsigned>& num_cards)
+{
+    return get_required_cards_before_upgrade(owned_cards, card_list, num_cards);
+}
+
+unsigned get_deck_cost(const Deck* deck)
 {
     if (!use_owned_cards)
     { return 0; }
-    std::map<const Card *, unsigned> num_in_deck;
+    std::map<const Card*, unsigned> num_in_deck;
     unsigned deck_cost = 0;
     if (deck->commander)
     { deck_cost += get_required_cards_before_upgrade({deck->commander}, num_in_deck); }
@@ -180,15 +207,45 @@ unsigned get_deck_cost(const Deck * deck)
     return deck_cost;
 }
 
-bool is_owned_or_can_be_fused(const Card * card)
+bool is_in_recipe(const Card* card, const Card* material)
+{
+    // is it already material?
+    if (card == material)
+    { return true; }
+
+    // no recipes
+    if (card->m_recipe_cards.empty())
+    { return false; }
+
+    // avoid illegal
+    if (card->m_category == CardCategory::dominion_material)
+    { return false; }
+
+    // check recursively
+    for (auto recipe_it : card->m_recipe_cards)
+    {
+        // is material found?
+        if (recipe_it.first == material)
+        { return true; }
+
+        // go deeper ...
+        if (is_in_recipe(recipe_it.first, material))
+        { return true; }
+    }
+
+    // found nothing
+    return false;
+}
+
+bool is_owned_or_can_be_fused(const Card* card)
 {
     if (owned_cards[card->m_id])
     { return true; }
-    if (!fund)
+    if (!fund && (card->m_category == CardCategory::normal))
     { return false; }
-    std::map<const Card *, unsigned> num_in_deck;
+    std::map<const Card*, unsigned> num_in_deck;
     unsigned deck_cost = get_required_cards_before_upgrade({card}, num_in_deck);
-    if (deck_cost > fund)
+    if ((card->m_category == CardCategory::normal) && (deck_cost > fund))
     {
         while (!card->is_low_level_card() && (deck_cost > fund))
         {
@@ -199,12 +256,35 @@ bool is_owned_or_can_be_fused(const Card * card)
         if (deck_cost > fund)
         { return false; }
     }
+    std::map<unsigned, unsigned> num_under;
     for (auto it: num_in_deck)
     {
         if (it.second > owned_cards[it.first->m_id])
-        { return false; }
+        {
+            if ((card->m_category == CardCategory::dominion_alpha) && use_dominion_defusing
+                && !is_in_recipe(card, owned_alpha_dominion))
+            {
+                if (it.first->m_id != 50002)
+                {
+                    num_under[it.first->m_id] += it.second - owned_cards[it.first->m_id];
+                }
+                continue;
+            }
+            return false;
+        }
     }
-    return true;
+    if (!num_under.empty())
+    {
+        std::map<const Card*, unsigned>& refund = dominion_refund[owned_alpha_dominion->m_fusion_level][owned_alpha_dominion->m_level];
+        for (auto & refund_it : refund)
+        {
+            unsigned refund_id = refund_it.first->m_id;
+            if (!num_under.count(refund_id)) { continue; }
+            num_under[refund_id] = safe_minus(num_under[refund_id], refund_it.second);
+            if (!num_under[refund_id]) { num_under.erase(refund_id); }
+        }
+    }
+    return num_under.empty();
 }
 
 // remove val from oppo if found, otherwise append val to self
@@ -231,7 +311,16 @@ bool adjust_deck(Deck * deck, const signed from_slot, const signed to_slot, cons
     cards_out.clear();
     cards_in.clear();
     if (from_slot < 0)
-    { // change commander
+    {
+        if (card->m_category == CardCategory::dominion_alpha)
+        { // change alpha dominion
+            cards_out.emplace_back(-1, deck->alpha_dominion);
+            deck->alpha_dominion = card;
+            cards_in.emplace_back(-1, deck->alpha_dominion);
+            return true;
+        }
+
+        // change commander
         cards_out.emplace_back(-1, deck->commander);
         deck->commander = card;
         cards_in.emplace_back(-1, deck->commander);
@@ -943,6 +1032,66 @@ void print_deck_inline(const unsigned deck_cost, const FinalResults<long double>
     std::cout << std::endl;
 }
 //------------------------------------------------------------------------------
+inline bool try_improve_deck(Deck* d1, unsigned from_slot, unsigned to_slot, const Card* card_candidate,
+        const Card*& best_commander, const Card*& best_alpha_dominion, std::vector<const Card*>& best_cards,
+        FinalResults<long double>& best_score, unsigned& best_gap, std::string& best_deck,
+        std::map<std::string, EvaluatedResults>& evaluated_decks, EvaluatedResults& zero_results,
+        unsigned long& skipped_simulations, Process& proc)
+{
+    unsigned deck_cost;
+    std::vector<std::pair<signed, const Card *>> cards_out, cards_in;
+    std::mt19937& re = proc.threads_data[0]->re;
+
+    // setup best deck
+    d1->commander = best_commander;
+    d1->alpha_dominion = best_alpha_dominion;
+    d1->cards = best_cards;
+
+    // try to adjust the deck
+    if (!adjust_deck(d1, from_slot, to_slot, card_candidate, fund, re, deck_cost, cards_out, cards_in))
+    { return false; }
+
+    // check gap
+    unsigned new_gap = check_requirement(d1, requirement
+#ifndef NQUEST
+        , quest
+#endif
+    );
+    if ((new_gap > 0) && (new_gap >= best_gap))
+    { return false; }
+
+    // check previous simulations
+    auto && cur_deck = d1->hash();
+    auto && emplace_rv = evaluated_decks.insert({cur_deck, zero_results});
+    auto & prev_results = emplace_rv.first->second;
+    if (!emplace_rv.second)
+    {
+        skipped_simulations += prev_results.second;
+    }
+
+    // Evaluate new deck
+    auto compare_results = proc.compare(best_score.n_sims, prev_results, best_score);
+    auto current_score = compute_score(compare_results, proc.factors);
+
+    // Is it better ?
+    if (new_gap < best_gap || current_score.points > best_score.points + min_increment_of_score)
+    {
+        // Then update best score/slot, print stuff
+        std::cout << "Deck improved: " << d1->hash() << ": " << card_slot_id_names(cards_out) << " -> " << card_slot_id_names(cards_in) << ": ";
+        best_gap = new_gap;
+        best_score = current_score;
+        best_deck = cur_deck;
+        best_commander = d1->commander;
+        best_alpha_dominion = d1->alpha_dominion;
+        best_cards = d1->cards;
+        print_score_info(compare_results, proc.factors);
+        print_deck_inline(deck_cost, best_score, d1);
+        return true;
+    }
+
+    return false;
+}
+//------------------------------------------------------------------------------
 void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d1, Process& proc, Requirement & requirement
 #ifndef NQUEST
     , Quest & quest
@@ -950,18 +1099,18 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
 )
 {
 	EvaluatedResults zero_results = { EvaluatedResults::first_type(proc.enemy_decks.size()), 0 };
-    auto best_deck = d1->hash();
+    std::string best_deck = d1->hash();
     std::map<std::string, EvaluatedResults> evaluated_decks{{best_deck, zero_results}};
-    EvaluatedResults & results = proc.evaluate(num_min_iterations, evaluated_decks.begin()->second);
+    EvaluatedResults& results = proc.evaluate(num_min_iterations, evaluated_decks.begin()->second);
     print_score_info(results, proc.factors);
-    auto current_score = compute_score(results, proc.factors);
-    auto best_score = current_score;
+    FinalResults<long double> best_score = compute_score(results, proc.factors);
     const Card* best_commander = d1->commander;
+    const Card* best_alpha_dominion = d1->alpha_dominion;
     std::vector<const Card*> best_cards = d1->cards;
     unsigned deck_cost = get_deck_cost(d1);
     fund = std::max(fund, deck_cost);
     print_deck_inline(deck_cost, best_score, d1);
-    std::mt19937 & re = proc.threads_data[0]->re;
+    std::mt19937& re = proc.threads_data[0]->re;
     unsigned best_gap = check_requirement(d1, requirement
 #ifndef NQUEST
         , quest
@@ -971,49 +1120,120 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
     bool deck_has_been_improved = true;
     unsigned long skipped_simulations = 0;
     std::vector<const Card*> commander_candidates;
+    std::vector<const Card*> alpha_dominion_candidates;
     std::vector<const Card*> card_candidates;
-    std::vector<std::pair<signed, const Card *>> cards_out, cards_in;
 
     // resolve available to player cards
     auto player_assaults_and_structures = proc.cards.player_commanders;
     player_assaults_and_structures.insert(player_assaults_and_structures.end(), proc.cards.player_structures.begin(), proc.cards.player_structures.end());
     player_assaults_and_structures.insert(player_assaults_and_structures.end(), proc.cards.player_assaults.begin(), proc.cards.player_assaults.end());
-    for (auto card: player_assaults_and_structures)
+    for (const Card* card: player_assaults_and_structures)
     {
+        // skip illegal
+        if ((card->m_category != CardCategory::dominion_alpha)
+            && (card->m_category != CardCategory::normal))
+        { continue; }
+
+        // skip dominions when their climbing is disabled
+        if ((card->m_category == CardCategory::dominion_alpha) && (!use_dominion_climbing))
+        { continue; }
+
         // try to skip a card unless it's allowed
         if (!allowed_candidates.count(card->m_id))
         {
-            // skip non-top-level cards (adjust_deck() will try to downgrade them if necessary)
-            bool use_top_level = (card->m_type == CardType::commander) ? use_top_level_commander : use_top_level_card;
-            if (!card->is_top_level_card() and (fund || use_top_level || !owned_cards[card->m_id]))
-            { continue; }
-
-            // skip disallowed
+            // skip disallowed always
             if (disallowed_candidates.count(card->m_id))
             { continue; }
 
-            // skip lowest fusion levels
-            unsigned use_fused_level = (card->m_type == CardType::commander) ? use_fused_commander_level : use_fused_card_level;
-            if (card->m_fusion_level < use_fused_level)
-            { continue; }
+            // handle dominions
+            if (card->m_category == CardCategory::dominion_alpha)
+            {
+                // skip non-top-level dominions anyway
+                // (will check it later and downgrade if necessary according to amount of material (shards))
+                if (!card->is_top_level_card())
+                { continue; }
+
+                // skip basic dominions
+                if ((card->m_id == 50001) || (card->m_id == 50002))
+                { continue; }
+            }
+
+            // handle normal cards
+            else
+            {
+                // skip non-top-level cards (adjust_deck() will try to downgrade them if necessary)
+                bool use_top_level = (card->m_type == CardType::commander) ? use_top_level_commander : use_top_level_card;
+                if (!card->is_top_level_card() and (fund || use_top_level || !owned_cards[card->m_id]))
+                { continue; }
+
+                // skip lowest fusion levels
+                unsigned use_fused_level = (card->m_type == CardType::commander) ? use_fused_commander_level : use_fused_card_level;
+                if (card->m_fusion_level < use_fused_level)
+                { continue; }
+            }
         }
+
+        // skip sub-dominion cards anyway
+        if ((card->m_category == CardCategory::dominion_alpha) && is_in_recipe(owned_alpha_dominion, card))
+        { continue; }
 
         // skip unavailable cards anyway when ownedcards is used
         if (use_owned_cards && !is_owned_or_can_be_fused(card))
-        { continue; }
+        {
+            bool success = false;
+            if (card->m_category == CardCategory::dominion_alpha)
+            {
+                while (!card->is_low_level_card() && !success)
+                {
+                    card = card->downgraded();
+                    if (is_in_recipe(owned_alpha_dominion, card)) { break; }
+                    success = is_owned_or_can_be_fused(card);
+                }
+            }
+            if (!success)
+            { continue; }
+        }
 
-        // enqueue candidate
+        // enqueue candidate according to category & type
         if (card->m_type == CardType::commander)
         {
             commander_candidates.emplace_back(card);
         }
-        else
+        else if (card->m_category == CardCategory::dominion_alpha)
+        {
+            alpha_dominion_candidates.emplace_back(card);
+        }
+        else if (card->m_category == CardCategory::normal)
         {
             card_candidates.emplace_back(card);
         }
     }
     // append NULL as void card as well
     card_candidates.emplace_back(nullptr);
+
+    // add current alpha dominion to candidates if necessary
+    // or setup first candidate into the deck if no alpha dominion defined
+    if (use_dominion_climbing)
+    {
+        if (best_alpha_dominion)
+        {
+            if (!std::count(alpha_dominion_candidates.begin(), alpha_dominion_candidates.end(), best_alpha_dominion))
+            {
+                alpha_dominion_candidates.emplace_back(best_alpha_dominion);
+            }
+        }
+        else if (!alpha_dominion_candidates.empty())
+        {
+            best_alpha_dominion = d1->alpha_dominion = alpha_dominion_candidates[0];
+        }
+        if (debug_print > 0)
+        {
+            for (const Card* dom_card : alpha_dominion_candidates)
+            {
+                std::cout << " ** next Alpha Dominion candidate: " << dom_card->m_name << std::endl;
+            }
+        }
+    }
 
     // << main climbing loop >>
     for (unsigned from_slot(freezed_cards), dead_slot(freezed_cards); ;
@@ -1039,6 +1259,8 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
         }
         if (best_score.points - target_score > -1e-9)
         { continue; }
+
+        // commander
         if (requirement.num_cards.count(best_commander) == 0)
         {
             // << commander candidate loop >>
@@ -1046,48 +1268,35 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
             {
                 if (best_score.points - target_score > -1e-9)
                 { break; }
-                // Various checks to check if the card is accepted
-                assert(commander_candidate->m_type == CardType::commander);
-                if (commander_candidate->m_name == best_commander->m_name)
+                if (commander_candidate == best_commander)
                 { continue; }
-                d1->commander = best_commander;
-                d1->cards = best_cards;
-                if (!adjust_deck(d1, -1, -1, commander_candidate, fund, re, deck_cost, cards_out, cards_in))
-                { continue; }
-                unsigned new_gap = check_requirement(d1, requirement
-#ifndef NQUEST
-                    , quest
-#endif
-                );
-                if (new_gap > 0 && new_gap >= best_gap)
-                { continue; }
-                auto && cur_deck = d1->hash();
-                auto && emplace_rv = evaluated_decks.insert({cur_deck, zero_results});
-                auto & prev_results = emplace_rv.first->second;
-                if (!emplace_rv.second)
-                {
-                    skipped_simulations += prev_results.second;
-                }
-                // Evaluate new deck
-                auto compare_results = proc.compare(best_score.n_sims, prev_results, best_score);
-                current_score = compute_score(compare_results, proc.factors);
-                // Is it better ?
-                if (new_gap < best_gap || current_score.points > best_score.points + min_increment_of_score)
-                {
-                    std::cout << "Deck improved: " << d1->hash() << ": " << card_slot_id_names(cards_out) << " -> " << card_slot_id_names(cards_in) << ": ";
-                    // Then update best score/commander, print stuff
-                    best_gap = new_gap;
-                    best_score = current_score;
-                    best_deck = cur_deck;
-                    best_commander = commander_candidate;
-                    best_cards = d1->cards;
-                    deck_has_been_improved = true;
-                    print_score_info(compare_results, proc.factors);
-                    print_deck_inline(deck_cost, best_score, d1);
-                }
+                deck_has_been_improved |= try_improve_deck(d1, -1, -1, commander_candidate,
+                    best_commander, best_alpha_dominion, best_cards, best_score, best_gap, best_deck,
+                    evaluated_decks, zero_results, skipped_simulations, proc);
             }
             // Now that all commanders are evaluated, take the best one
             d1->commander = best_commander;
+            d1->alpha_dominion = best_alpha_dominion;
+            d1->cards = best_cards;
+        }
+
+        // alpha dominion
+        if (use_dominion_climbing && !alpha_dominion_candidates.empty())
+        {
+            // << alpha dominion candidate loop >>
+            for (const Card* alpha_dominion_candidate: alpha_dominion_candidates)
+            {
+                if (best_score.points - target_score > -1e-9)
+                { break; }
+                if (alpha_dominion_candidate == best_alpha_dominion)
+                { continue; }
+                deck_has_been_improved |= try_improve_deck(d1, -1, -1, alpha_dominion_candidate,
+                    best_commander, best_alpha_dominion, best_cards, best_score, best_gap, best_deck,
+                    evaluated_decks, zero_results, skipped_simulations, proc);
+            }
+            // Now that all alpha dominions are evaluated, take the best one
+            d1->commander = best_commander;
+            d1->alpha_dominion = best_alpha_dominion;
             d1->cards = best_cards;
         }
 
@@ -1097,60 +1306,25 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
         // << card candidate loop >>
         for (const Card* card_candidate: card_candidates)
         {
-            // Various checks to check if the card is accepted
-            assert(!card_candidate || card_candidate->m_type != CardType::commander);
             for (unsigned to_slot(is_random ? from_slot : card_candidate ? freezed_cards : (best_cards.size() - 1));
                     to_slot < (is_random ? (from_slot + 1) : (best_cards.size() + (from_slot < best_cards.size() ? 0 : 1)));
                     ++ to_slot)
             {
-                d1->commander = best_commander;
-                d1->cards = best_cards;
                 if (card_candidate ?
-                        (from_slot < best_cards.size() && (from_slot == to_slot && card_candidate->m_name == best_cards[to_slot]->m_name)) // 2 Omega -> 2 Omega
+                        (from_slot < best_cards.size() && (from_slot == to_slot && card_candidate == best_cards[to_slot])) // 2 Omega -> 2 Omega
                         :
                         (from_slot == best_cards.size())) // void -> void
                 { continue; }
-                if (!adjust_deck(d1, from_slot, to_slot, card_candidate, fund, re, deck_cost, cards_out, cards_in))
-                { continue; }
-                unsigned new_gap = check_requirement(d1, requirement
-#ifndef NQUEST
-                    , quest
-#endif
-                );
-                if (new_gap > 0 && new_gap >= best_gap)
-                { continue; }
-                auto && cur_deck = d1->hash();
-                auto && emplace_rv = evaluated_decks.insert({cur_deck, zero_results});
-                auto & prev_results = emplace_rv.first->second;
-                if (!emplace_rv.second)
-                {
-                    skipped_simulations += prev_results.second;
-                }
-                // Evaluate new deck
-                auto compare_results = proc.compare(best_score.n_sims, prev_results, best_score);
-                current_score = compute_score(compare_results, proc.factors);
-                // Is it better ?
-                if (new_gap < best_gap || current_score.points > best_score.points + min_increment_of_score)
-                {
-                    // Then update best score/slot, print stuff
-                    std::cout << "Deck improved: " << d1->hash() << ": " << card_slot_id_names(cards_out) << " -> " << card_slot_id_names(cards_in) << ": ";
-                    best_gap = new_gap;
-                    best_score = current_score;
-                    best_deck = cur_deck;
-                    best_commander = d1->commander;
-                    best_cards = d1->cards;
-                    deck_has_been_improved = true;
-                    print_score_info(compare_results, proc.factors);
-                    print_deck_inline(deck_cost, best_score, d1);
-                }
+                deck_has_been_improved |= try_improve_deck(d1, from_slot, to_slot, card_candidate,
+                    best_commander, best_alpha_dominion, best_cards, best_score, best_gap, best_deck,
+                    evaluated_decks, zero_results, skipped_simulations, proc);
             }
             if (best_score.points - target_score > -1e-9)
             { break; }
         }
-        d1->commander = best_commander;
-        d1->cards = best_cards;
     }
     d1->commander = best_commander;
+    d1->alpha_dominion = best_alpha_dominion;
     d1->cards = best_cards;
     unsigned simulations = 0;
     for (auto evaluation: evaluated_decks)
@@ -1552,6 +1726,15 @@ int main(int argc, char** argv)
             fund = atoi(argv[argIndex+1]);
             argIndex += 1;
         }
+        else if (strcmp(argv[argIndex], "dom+") == 0 || strcmp(argv[argIndex], "dominion+") == 0)
+        {
+            use_dominion_climbing = true;
+        }
+        else if (strcmp(argv[argIndex], "dom-") == 0 || strcmp(argv[argIndex], "dominion-") == 0)
+        {
+            use_dominion_climbing = true;
+            use_dominion_defusing = true;
+        }
         else if (strcmp(argv[argIndex], "random") == 0)
         {
             opt_your_strategy = DeckStrategy::random;
@@ -1787,6 +1970,8 @@ int main(int argc, char** argv)
             load_cards_xml(all_cards, "data/cards_section_" + to_string(section) + ".xml", false);
             ++ section);
     all_cards.organize();
+    load_levels_xml(all_cards, "data/levels.xml", true);
+    all_cards.fix_dominion_recipes();
     for (const auto & suffix: fn_suffix_list)
     {
         load_decks_xml(decks, all_cards, "data/missions" + suffix + ".xml", "data/raids" + suffix + ".xml", suffix.empty());
@@ -1818,9 +2003,49 @@ int main(int argc, char** argv)
                 }
             }
         }
+        std::map<unsigned, unsigned> _owned_cards;
         for (const auto & oc_str: opt_owned_cards_str_list)
         {
-            read_owned_cards(all_cards, owned_cards, oc_str);
+            read_owned_cards(all_cards, _owned_cards, oc_str);
+        }
+
+        // keep only one copy of alpha dominion when dominion climbing is enabled
+        if (use_dominion_climbing)
+        {
+            for (auto owned_it = _owned_cards.begin(); owned_it != _owned_cards.end(); )
+            {
+                const Card* owned_card = all_cards.by_id(owned_it->first);
+                bool need_remove = (!owned_it->second);
+                if (!need_remove && (owned_card->m_category == CardCategory::dominion_alpha))
+                {
+                    if (!owned_alpha_dominion)
+                    {
+                        owned_alpha_dominion = owned_card;
+                    }
+                    else
+                    {
+                        std::cerr << "Warning: ownedcards already contains alpha dominion (" << owned_alpha_dominion->m_name
+                            << "): removing additional " << owned_card->m_name << std::endl;
+                        need_remove = true;
+                    }
+                }
+                if (need_remove) { owned_it = _owned_cards.erase(owned_it); }
+                else { ++owned_it; }
+            }
+            if (!owned_alpha_dominion)
+            {
+                owned_alpha_dominion = all_cards.by_id(50002);
+                std::cerr << "Warning: dominion climbing enabled and no alpha dominion found in owned cards, adding default "
+                    << owned_alpha_dominion->m_name << std::endl;
+            }
+            _owned_cards[owned_alpha_dominion->m_id] = 1;
+        }
+
+        // remap owned cards to unordered map (should be quicker for searching)
+        owned_cards.reserve(_owned_cards.size());
+        for (auto owned_it = _owned_cards.begin(); owned_it != _owned_cards.end(); ++owned_it)
+        {
+            owned_cards[owned_it->first] = owned_it->second;
         }
     }
 
@@ -2190,6 +2415,8 @@ int main(int argc, char** argv)
     {
         claim_cards({your_deck->commander});
         claim_cards(your_deck->cards);
+        if (your_deck->alpha_dominion)
+            claim_cards({your_deck->alpha_dominion});
     }
 
     // shrink any oversized deck to maximum of 10 cards + commander

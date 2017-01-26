@@ -93,7 +93,7 @@ Gui, Add, Edit, vSimOptions r1 xs w600, %IniSimOptions%
 Gui, Add, Button, default r2 w100 x100 y+15 section, Simulate
 Gui, Add, Checkbox, vx86 Checked%Inix86%, x86 (32-bit)
 Gui, Add, Button, r2 w100 ys xs+200, Exit
-Gui, Show,, Simple Tyrant Unleashed Optimize Starter v2.44.3
+Gui, Show,, Simple Tyrant Unleashed Optimize Starter v2.45.0
 return
 
 ButtonSimulate:
@@ -157,7 +157,13 @@ if ErrorLevel
 UrlDownloadToFile, *0 http://mobile.tyrantonline.com/assets/skills_set.xml, data\skills_set.xml
 if ErrorLevel
 {
-    MsgBox, Error downloading missions.xml.
+    MsgBox, Error downloading skills_set.xml.
+    had_error := true
+}
+UrlDownloadToFile, *0 http://mobile.tyrantonline.com/assets/levels.xml, data\levels.xml
+if ErrorLevel
+{
+    MsgBox, Error downloading levels.xml.
     had_error := true
 }
 Loop, 12

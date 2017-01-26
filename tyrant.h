@@ -1,14 +1,17 @@
 #ifndef TYRANT_H_INCLUDED
 #define TYRANT_H_INCLUDED
 
-#define TYRANT_OPTIMIZER_VERSION "2.44.3"
+#define TYRANT_OPTIMIZER_VERSION "2.45.0"
 
 #include <string>
 #include <sstream>
+#include <map>
 #include <unordered_set>
 #include <unordered_map>
 #include <tuple>
 #include <boost/algorithm/string.hpp>
+
+class Card;
 
 enum Faction
 {
@@ -241,6 +244,10 @@ inline void map_keys_to_set(const std::unordered_map<unsigned, unsigned>& m, std
     }
 }
 
+inline unsigned safe_minus(unsigned x, unsigned y)
+{
+    return (x > y) ? (x - y) : 0;
+}
 
 namespace CardType {
 enum CardType {
@@ -268,7 +275,8 @@ extern const std::string cardtype_names[CardType::num_cardtypes];
 extern const std::string rarity_names[];
 
 extern unsigned const upgrade_cost[];
-extern unsigned const salvaging_income[][7];
+extern std::map<const Card*, unsigned> dominion_cost[3][7];
+extern std::map<const Card*, unsigned> dominion_refund[3][7];
 
 namespace DeckType {
 enum DeckType {

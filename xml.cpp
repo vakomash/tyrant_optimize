@@ -227,7 +227,7 @@ void parse_card_node(Cards& all_cards, Card* card, xml_node<>* card_node)
         else if (card->m_id < 50001)
         {
             card->m_type = CardType::assault;
-            if (card->m_id == 43451)
+            if (card->m_id == 43451 || card->m_id == 43452)
             {
                 card->m_category = CardCategory::dominion_material;
             }
@@ -281,13 +281,12 @@ void parse_card_node(Cards& all_cards, Card* card, xml_node<>* card_node)
         parse_card_node(all_cards, top_card, upgrade_node);
         if (top_card->m_type == CardType::commander)
         {
-            // Commanders cost twice and cannot be salvaged.
+            // Commanders cost twice
             top_card->m_recipe_cost = 2 * upgrade_cost[pre_upgraded_card->m_level];
         }
         else
         {
-            // Salvaging income counts?
-            top_card->m_recipe_cost = upgrade_cost[pre_upgraded_card->m_level]; // + salvaging_income[top_card->m_rarity][pre_upgraded_card->m_level] - salvaging_income[top_card->m_rarity][top_card->m_level];
+            top_card->m_recipe_cost = upgrade_cost[pre_upgraded_card->m_level];
         }
         top_card->m_recipe_cards.clear();
         top_card->m_recipe_cards[pre_upgraded_card] = 1;
@@ -321,11 +320,8 @@ void load_skills_set_xml(Cards & all_cards, const std::string & filename, bool d
     xml_document<> doc;
     parse_file(filename, buffer, doc, do_warn_on_missing);
     xml_node<>* root = doc.first_node();
+    if (!root) { return; }
 
-    if (!root)
-    {
-        return;
-    }
     for (xml_node<>* set_node = root->first_node("cardSet");
             set_node;
             set_node = set_node->next_sibling("cardSet"))
@@ -335,6 +331,75 @@ void load_skills_set_xml(Cards & all_cards, const std::string & filename, bool d
         if (id_node && visible_node && atoi(visible_node->value()))
         {
             all_cards.visible_cardset.insert(atoi(id_node->value()));
+        }
+    }
+}
+
+void load_levels_xml(Cards& all_cards, const std::string& filename, bool do_warn_on_missing)
+{
+    std::vector<char> buffer;
+    xml_document<> doc;
+    parse_file(filename, buffer, doc, do_warn_on_missing);
+    xml_node<>* root = doc.first_node();
+    if (!root) { return; }
+
+    for (xml_node<>* dfl_node = root->first_node("dominion_fusion_level");
+            dfl_node;
+            dfl_node = dfl_node->next_sibling("dominion_fusion_level"))
+    {
+        xml_node<>* fl_node = dfl_node->first_node("fusion_level");
+        if (!fl_node)
+        {
+            std::cerr << "WARNING: levels.xml/dominion_fusion_level: no fusion_level" << std::endl;
+            continue;
+        }
+        unsigned fusion_lvl = atoi(fl_node->value());
+        if (fusion_lvl > 2)
+        {
+            std::cerr << "WARNING: levels.xml/dominion_fusion_level: unsupported fusion level: " << fusion_lvl << std::endl;
+            continue;
+        }
+        for (xml_node<>* lvl_node = dfl_node->first_node("level");
+                lvl_node;
+                lvl_node = lvl_node->next_sibling("level"))
+        {
+            xml_node<>* id_node(lvl_node->first_node("id"));
+            unsigned card_lvl = id_node ? atoi(id_node->value()) : 0;
+            if (!(card_lvl >= 1 && card_lvl <= 6))
+            {
+                std::cerr << "WARNING: levels.xml/dominion_fusion_level: unsupported card level: " << card_lvl << std::endl;
+                continue;
+            }
+
+            // dominion cost in shards (dominion material)
+            // each level have cost for next level (using lvl+1), first level cost can be found in fusion recipes
+            for (xml_node<>* cost_node = lvl_node->first_node("card_cost");
+                    cost_node && (card_lvl < 6);
+                    cost_node = cost_node->next_sibling("card_cost"))
+            {
+                const Card* cost_card = all_cards.by_id(atoi(cost_node->first_attribute("card_id")->value()));
+                if (cost_card->m_category != CardCategory::dominion_material)
+                {
+                    std::cerr << "WARNING: levels.xml/dominion_fusion_level: card_id=" << cost_card->m_id
+                        << " (" << cost_card->m_name << ") is not a dominion material card (new shard type?)" << std::endl;
+                }
+                else
+                {
+                    dominion_cost[fusion_lvl][card_lvl+1][cost_card] += atoi(cost_node->first_attribute("number")->value());
+                }
+            }
+
+            // dominion refund in shards (dominion material)
+            for (xml_node<>* ref_node = lvl_node->first_node("card_refund");
+                    ref_node;
+                    ref_node = ref_node->next_sibling("card_refund"))
+            {
+                const Card* refund_card = all_cards.by_id(atoi(ref_node->first_attribute("card_id")->value()));
+                if (refund_card->m_category == CardCategory::dominion_material)
+                {
+                    dominion_refund[fusion_lvl][card_lvl][refund_card] += atoi(ref_node->first_attribute("number")->value());
+                }
+            }
         }
     }
 }

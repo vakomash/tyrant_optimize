@@ -111,7 +111,26 @@ void Cards::organize()
     }
 #endif
 }
-
+//------------------------------------------------------------------------------
+void Cards::fix_dominion_recipes()
+{
+    for (Card* card: all_cards)
+    {
+        if (card->m_category != CardCategory::dominion_alpha)
+        { continue; }
+        std::map<const Card*, unsigned> dom_cost = dominion_cost[card->m_fusion_level][card->m_level];
+        for (auto recipe_it : dom_cost)
+        {
+            // except basic Alpha Dominion (id 50001 & 50002 for lvl 1 & 2 respectively)
+            if ((card->m_id != 50001) && (card->m_id != 50002))
+            {
+                card->m_recipe_cards[recipe_it.first] += recipe_it.second;
+            }
+        }
+        card->m_recipe_cost = 0; // no SP required
+    }
+}
+//------------------------------------------------------------------------------
 void Cards::add_card(Card * card, const std::string & name)
 {
     std::string simple_name{simplify_name(name)};

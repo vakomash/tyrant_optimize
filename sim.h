@@ -21,11 +21,6 @@ class Achievement;
 
 extern unsigned turn_limit;
 
-inline unsigned safe_minus(unsigned x, unsigned y)
-{
-    return(x - std::min(x, y));
-}
-
 //---------------------- Represent Simulation Results ----------------------------
 template<typename result_type>
 struct Results
