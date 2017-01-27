@@ -1038,7 +1038,7 @@ inline bool try_improve_deck(Deck* d1, unsigned from_slot, unsigned to_slot, con
         std::map<std::string, EvaluatedResults>& evaluated_decks, EvaluatedResults& zero_results,
         unsigned long& skipped_simulations, Process& proc)
 {
-    unsigned deck_cost;
+    unsigned deck_cost(0);
     std::vector<std::pair<signed, const Card *>> cards_out, cards_in;
     std::mt19937& re = proc.threads_data[0]->re;
 
