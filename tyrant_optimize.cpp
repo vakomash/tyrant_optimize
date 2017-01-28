@@ -287,6 +287,52 @@ bool is_owned_or_can_be_fused(const Card* card)
     return num_under.empty();
 }
 
+std::string alpha_dominion_cost(const Card* dom_card)
+{
+    assert(dom_card->m_category == CardCategory::dominion_alpha);
+    if (!owned_alpha_dominion) { return "(no owned alpha dominion)"; }
+    std::unordered_map<unsigned, unsigned> _owned_cards;
+    std::unordered_map<unsigned, unsigned> refund_owned_cards;
+    std::map<const Card*, unsigned> num_cards;
+    std::map<const Card*, unsigned>& refund = dominion_refund[owned_alpha_dominion->m_fusion_level][owned_alpha_dominion->m_level];
+    unsigned own_dom_id = 50002;
+    if (is_in_recipe(dom_card, owned_alpha_dominion))
+    {
+        own_dom_id = owned_alpha_dominion->m_id;
+    }
+    else if (owned_alpha_dominion->m_id != 50002)
+    {
+        for (auto& it : refund)
+        {
+            if (it.first->m_category != CardCategory::dominion_material)
+            { continue; }
+            refund_owned_cards[it.first->m_id] += it.second;
+        }
+    }
+    _owned_cards[own_dom_id] = 1;
+    get_required_cards_before_upgrade(_owned_cards, {dom_card}, num_cards);
+    std::string value("");
+    for (auto& it : num_cards)
+    {
+        if (it.first->m_category != CardCategory::dominion_material)
+        { continue; }
+        value += it.first->m_name + " x " + std::to_string(it.second) + ", ";
+    }
+    if (!is_in_recipe(dom_card, owned_alpha_dominion))
+    {
+        num_cards.clear();
+        get_required_cards_before_upgrade(_owned_cards, {owned_alpha_dominion}, num_cards);
+        value += "using refund: ";
+        for (auto& it : refund)
+        {
+            signed num_under(it.second - (signed)num_cards[it.first]);
+            value += it.first->m_name + " x " + std::to_string(it.second) + "/" + std::to_string(num_under) + ", ";
+        }
+    }
+    value.erase(value.end() - 2, value.end());
+    return value;
+}
+
 // remove val from oppo if found, otherwise append val to self
 template <typename C>
 void append_unless_remove(C & self, C & oppo, typename C::const_reference val)
@@ -1230,7 +1276,8 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
         {
             for (const Card* dom_card : alpha_dominion_candidates)
             {
-                std::cout << " ** next Alpha Dominion candidate: " << dom_card->m_name << std::endl;
+                std::cout << " ** next Alpha Dominion candidate: " << dom_card->m_name
+                    << " ($: " << alpha_dominion_cost(dom_card) << ")" << std::endl;
             }
         }
     }
