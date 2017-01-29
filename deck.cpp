@@ -36,7 +36,7 @@ const char* base64_chars =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     "abcdefghijklmnopqrstuvwxyz"
     "0123456789+/";
-const char* wmt_b64_magic_chars = "-.~!*";
+const char* wmt_b64_magic_chars = "-.~!*_@#$%^&()[]|\\";
 
 // Converts cards in `hash' to a deck.
 // Stores resulting card IDs in `ids'.
