@@ -363,6 +363,7 @@ bool adjust_deck(Deck * deck, const signed from_slot, const signed to_slot, cons
             cards_out.emplace_back(-1, deck->alpha_dominion);
             deck->alpha_dominion = card;
             cards_in.emplace_back(-1, deck->alpha_dominion);
+            deck_cost = get_deck_cost(deck);
             return true;
         }
 
