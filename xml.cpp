@@ -625,6 +625,11 @@ void load_recipes_xml(Cards& all_cards, const std::string & filename, bool do_wa
             unsigned card_id(node_value(resource_node, "card_id"));
             unsigned number(node_value(resource_node, "number"));
             if (card_id == 0 || number == 0) { continue; }
+            if (!card->is_low_level_card())
+            {
+                card->m_base_id = card->m_id;
+                card->m_recipe_cards.clear();
+            }
             Card * material_card = all_cards.cards_by_id[card_id];
             card->m_recipe_cards[material_card] += number;
             material_card->m_used_for_cards[card] += number;
