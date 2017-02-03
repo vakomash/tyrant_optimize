@@ -13,6 +13,7 @@ FILES=(
    items.xml
    levels.xml
    codex.xml
+   achievements.xml
 )
 
 TMP_PREFIX="."
