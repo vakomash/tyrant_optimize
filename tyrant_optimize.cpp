@@ -1282,6 +1282,11 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
             }
         }
     }
+    if (!best_alpha_dominion && owned_alpha_dominion)
+    {
+        best_alpha_dominion = owned_alpha_dominion;
+        std::cout << "Setting up owned Alpha Dominion into a deck: " << best_alpha_dominion->m_name << std::endl;
+    }
 
     // << main climbing loop >>
     for (unsigned from_slot(freezed_cards), dead_slot(freezed_cards); ;
@@ -2061,37 +2066,35 @@ int main(int argc, char** argv)
             read_owned_cards(all_cards, _owned_cards, oc_str);
         }
 
-        // keep only one copy of alpha dominion when dominion climbing is enabled
-        if (use_dominion_climbing)
+        // keep only one copy of alpha dominion
+        for (auto owned_it = _owned_cards.begin(); owned_it != _owned_cards.end(); )
         {
-            for (auto owned_it = _owned_cards.begin(); owned_it != _owned_cards.end(); )
+            const Card* owned_card = all_cards.by_id(owned_it->first);
+            bool need_remove = (!owned_it->second);
+            if (!need_remove && (owned_card->m_category == CardCategory::dominion_alpha))
             {
-                const Card* owned_card = all_cards.by_id(owned_it->first);
-                bool need_remove = (!owned_it->second);
-                if (!need_remove && (owned_card->m_category == CardCategory::dominion_alpha))
+                if (!owned_alpha_dominion)
                 {
-                    if (!owned_alpha_dominion)
-                    {
-                        owned_alpha_dominion = owned_card;
-                    }
-                    else
-                    {
-                        std::cerr << "Warning: ownedcards already contains alpha dominion (" << owned_alpha_dominion->m_name
-                            << "): removing additional " << owned_card->m_name << std::endl;
-                        need_remove = true;
-                    }
+                    owned_alpha_dominion = owned_card;
                 }
-                if (need_remove) { owned_it = _owned_cards.erase(owned_it); }
-                else { ++owned_it; }
+                else
+                {
+                    std::cerr << "Warning: ownedcards already contains alpha dominion (" << owned_alpha_dominion->m_name
+                        << "): removing additional " << owned_card->m_name << std::endl;
+                    need_remove = true;
+                }
             }
-            if (!owned_alpha_dominion)
-            {
-                owned_alpha_dominion = all_cards.by_id(50002);
-                std::cerr << "Warning: dominion climbing enabled and no alpha dominion found in owned cards, adding default "
-                    << owned_alpha_dominion->m_name << std::endl;
-            }
-            _owned_cards[owned_alpha_dominion->m_id] = 1;
+            if (need_remove) { owned_it = _owned_cards.erase(owned_it); }
+            else { ++owned_it; }
         }
+        if (!owned_alpha_dominion && use_dominion_climbing)
+        {
+            owned_alpha_dominion = all_cards.by_id(50002);
+            std::cerr << "Warning: dominion climbing enabled and no alpha dominion found in owned cards, adding default "
+                << owned_alpha_dominion->m_name << std::endl;
+        }
+        if (owned_alpha_dominion)
+        { _owned_cards[owned_alpha_dominion->m_id] = 1; }
 
         // remap owned cards to unordered map (should be quicker for searching)
         owned_cards.reserve(_owned_cards.size());
