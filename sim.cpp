@@ -593,7 +593,7 @@ struct PlayCard
     {
         setStorage<type>();
         placeCard<type>();
-        return(status);
+        return status;
     }
 
     template <enum CardType::CardType>
@@ -2276,26 +2276,14 @@ Results<uint64_t> play(Field* fd)
 
         // Play a card
         const Card* played_card(fd->tap->deck->next());
-        if(played_card)
+        if (played_card)
         {
-            // Evaluate skill Allegiance
-            for (CardStatus * status : fd->tap->assaults.m_indirect)
-            {
-                unsigned allegiance_value = status->skill(Skill::allegiance);
-                assert(status->m_card);
-                if (allegiance_value > 0 && is_alive(status) && status->m_card->m_faction == played_card->m_faction)
-                {
-                    _DEBUG_MSG(1, "%s activates Allegiance %u\n", status_description(status).c_str(), allegiance_value);
-                    if (! status->m_sundered)
-                    { status->m_attack += allegiance_value; }
-                    status->m_max_hp += allegiance_value;
-                    status->m_hp += allegiance_value;
-                }
-            }
+            unsigned played_faction_mask(0);
+            unsigned same_faction_cards_count(0);
 
             // Play selected card
             CardStatus * played_status = nullptr;
-            switch(played_card->m_type)
+            switch (played_card->m_type)
             {
             case CardType::assault:
                 played_status = PlayCard(played_card, fd).op<CardType::assault>();
@@ -2311,9 +2299,31 @@ Results<uint64_t> play(Field* fd)
                 break;
             }
 
-            // Evaluate skill Stasis (if card is played)
-            unsigned played_faction_mask = 0;
-            if (played_status)
+            // assert(played_status); played_status can't be NULL here
+
+            // Evaluate skill Allegiance & count cards with same faction
+            for (CardStatus * status : fd->tap->assaults.m_indirect)
+            {
+                if (status == played_status) { continue; } // except itself
+
+                //if (!is_alive(status)) { continue; } // Can card be dead at this moment?.. No
+                //assert(status->m_card); // Is it really necessary?.. No
+                if (status->m_card->m_faction == played_card->m_faction)
+                {
+                    ++ same_faction_cards_count;
+                    unsigned allegiance_value = status->skill(Skill::allegiance);
+                    if (allegiance_value)
+                    {
+                        _DEBUG_MSG(1, "%s activates Allegiance %u\n", status_description(status).c_str(), allegiance_value);
+                        if (! status->m_sundered)
+                        { status->m_attack += allegiance_value; }
+                        status->m_max_hp += allegiance_value;
+                        status->m_hp += allegiance_value;
+                    }
+                }
+            }
+
+            // Evaluate skill Stasis / Passive BGE TemporalBacklash
             {
                 played_faction_mask = (1u << played_status->m_faction);
 
@@ -2325,8 +2335,20 @@ Results<uint64_t> play(Field* fd)
                 }
             }
 
+            // Evaluate Passive BGE Oath-of-Loyalty
+            unsigned allegiance_value = played_status->skill(Skill::allegiance);
+            if (fd->bg_effects[fd->tapi].count(PassiveBGE::oath_of_loyalty) && same_faction_cards_count && allegiance_value)
+            {
+                unsigned bge_value = allegiance_value * same_faction_cards_count;
+                _DEBUG_MSG(1, "Oath of Loyalty: %s activates Allegiance %u x %u = %u\n",
+                    status_description(played_status).c_str(), allegiance_value, same_faction_cards_count, bge_value);
+                played_status->m_attack += bge_value;
+                played_status->m_max_hp += bge_value;
+                played_status->m_hp += bge_value;
+            }
+
             // summarize stasis only if current faction is marked for it
-            if (played_status && (played_card->m_delay > 0) && (played_card->m_type == CardType::assault)
+            if ((played_card->m_delay > 0) && (played_card->m_type == CardType::assault)
                 && (fd->tap->stasis_faction_bitmap & played_faction_mask))
             {
                 unsigned stacked_stasis = (fd->tap->commander.m_faction == played_status->m_faction)
@@ -2396,9 +2418,9 @@ Results<uint64_t> play(Field* fd)
                 }
             }
         }
-        if(__builtin_expect(fd->end, false)) { break; }
+        if (__builtin_expect(fd->end, false)) { break; }
 
-        // Evaluate Heroism BGE skills
+        // Evaluate Passive BGE Heroism skills
         if (fd->bg_effects[fd->tapi].count(PassiveBGE::heroism))
         {
             for (CardStatus * dst: fd->tap->assaults.m_indirect)
@@ -2466,11 +2488,11 @@ Results<uint64_t> play(Field* fd)
         // Evaluate commander
         fd->current_phase = Field::commander_phase;
         evaluate_skills<CardType::commander>(fd, &fd->tap->commander, fd->tap->commander.m_card->m_skills);
-        if(__builtin_expect(fd->end, false)) { break; }
+        if (__builtin_expect(fd->end, false)) { break; }
 
         // Evaluate structures
         fd->current_phase = Field::structures_phase;
-        for(fd->current_ci = 0; !fd->end && fd->current_ci < fd->tap->structures.size(); ++fd->current_ci)
+        for (fd->current_ci = 0; !fd->end && (fd->current_ci < fd->tap->structures.size()); ++fd->current_ci)
         {
             CardStatus* current_status(&fd->tap->structures[fd->current_ci]);
             if (!is_active(current_status))
@@ -2482,10 +2504,11 @@ Results<uint64_t> play(Field* fd)
                 evaluate_skills<CardType::structure>(fd, current_status, current_status->m_card->m_skills);
             }
         }
+
         // Evaluate assaults
         fd->current_phase = Field::assaults_phase;
         fd->bloodlust_value = 0;
-        for(fd->current_ci = 0; !fd->end && fd->current_ci < fd->tap->assaults.size(); ++fd->current_ci)
+        for (fd->current_ci = 0; !fd->end && (fd->current_ci < fd->tap->assaults.size()); ++fd->current_ci)
         {
             // ca: current assault
             CardStatus* current_status(&fd->tap->assaults[fd->current_ci]);
@@ -2539,7 +2562,7 @@ Results<uint64_t> play(Field* fd)
         }
         fd->current_phase = Field::end_phase;
         turn_end_phase(fd);
-        if(__builtin_expect(fd->end, false)) { break; }
+        if (__builtin_expect(fd->end, false)) { break; }
         _DEBUG_MSG(1, "TURN %u ends for %s\n", fd->turn, status_description(&fd->tap->commander).c_str());
         std::swap(fd->tapi, fd->tipi);
         std::swap(fd->tap, fd->tip);
