@@ -329,7 +329,9 @@ std::string alpha_dominion_cost(const Card* dom_card)
             value += it.first->m_name + " x " + std::to_string(it.second) + "/" + std::to_string(num_under) + ", ";
         }
     }
-    value.erase(value.end() - 2, value.end());
+    // remove trailing ', ' for non-empty string / replace empty by '(none)'
+    if (!value.empty()) { value.erase(value.end() - 2, value.end()); }
+    else { value += "(none)"; }
     return value;
 }
 
