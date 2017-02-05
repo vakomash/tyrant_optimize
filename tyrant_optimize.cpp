@@ -2557,6 +2557,7 @@ int main(int argc, char** argv)
             use_owned_cards = true;
             use_top_level_card = false;
             use_top_level_commander = false;
+            use_dominion_climbing = false;
             if (min_deck_len == 1 && max_deck_len == 10)
             {
                 min_deck_len = max_deck_len = your_deck->cards.size();
