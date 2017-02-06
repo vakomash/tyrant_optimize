@@ -3,7 +3,7 @@
 import sys
 
 POINTS = int(sys.argv[1])
-ENERGY = int(sys.argv[2]) if (len(sys.argv) > 2) else 157
+ENERGY = int(sys.argv[2]) if (len(sys.argv) > 2) else 161
 
 def eval(points, energy):
     def check(points, wins, losses):
