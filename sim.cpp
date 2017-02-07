@@ -2301,7 +2301,7 @@ Results<uint64_t> play(Field* fd)
 
             // assert(played_status); played_status can't be NULL here
 
-            // Evaluate skill Allegiance & count cards with same faction
+            // Evaluate skill Allegiance & count assaults with same faction (structures will be counted later)
             for (CardStatus * status : fd->tap->assaults.m_indirect)
             {
                 if (status == played_status) { continue; } // except itself
@@ -2337,14 +2337,27 @@ Results<uint64_t> play(Field* fd)
 
             // Evaluate Passive BGE Oath-of-Loyalty
             unsigned allegiance_value = played_status->skill(Skill::allegiance);
-            if (fd->bg_effects[fd->tapi].count(PassiveBGE::oath_of_loyalty) && same_faction_cards_count && allegiance_value)
+            if (allegiance_value && fd->bg_effects[fd->tapi].count(PassiveBGE::oath_of_loyalty))
             {
-                unsigned bge_value = allegiance_value * same_faction_cards_count;
-                _DEBUG_MSG(1, "Oath of Loyalty: %s activates Allegiance %u x %u = %u\n",
-                    status_description(played_status).c_str(), allegiance_value, same_faction_cards_count, bge_value);
-                played_status->m_attack += bge_value;
-                played_status->m_max_hp += bge_value;
-                played_status->m_hp += bge_value;
+                // count structures with same faction (except fortresses, dominions and other non-normal structures)
+                for (CardStatus * status : fd->tap->structures.m_indirect)
+                {
+                    if ((status->m_card->m_category == CardCategory::normal) && (status->m_card->m_faction == played_card->m_faction))
+                    {
+                        ++ same_faction_cards_count;
+                    }
+                }
+
+                // apply BGE Oath-of-Loyalty when multiplier isn't zero
+                if (same_faction_cards_count)
+                {
+                    unsigned bge_value = allegiance_value * same_faction_cards_count;
+                    _DEBUG_MSG(1, "Oath of Loyalty: %s activates Allegiance %u x %u = %u\n",
+                        status_description(played_status).c_str(), allegiance_value, same_faction_cards_count, bge_value);
+                    played_status->m_attack += bge_value;
+                    played_status->m_max_hp += bge_value;
+                    played_status->m_hp += bge_value;
+                }
             }
 
             // summarize stasis only if current faction is marked for it
