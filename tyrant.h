@@ -264,6 +264,7 @@ enum CardCategory {
     special,
     fortress_defense,
     fortress_siege,
+    fortress_conquest,
     dominion_alpha,
     dominion_material,
     num_cardcategories

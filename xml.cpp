@@ -171,7 +171,7 @@ void parse_card_node(Cards& all_cards, Card* card, xml_node<>* card_node)
             card->m_type = CardType::structure;
 
             // fortress
-            if (card->m_id >= 2700 && card->m_id < 2997)
+            if ((card->m_id >= 2700) && (card->m_id < 2997))
             {
                 if (fortress_type_node) {
                     unsigned fort_type_value = atoi(fortress_type_node->value());
@@ -227,7 +227,7 @@ void parse_card_node(Cards& all_cards, Card* card, xml_node<>* card_node)
         else if (card->m_id < 50001)
         {
             card->m_type = CardType::assault;
-            if (card->m_id == 43451 || card->m_id == 43452)
+            if ((card->m_id == 43451) || (card->m_id == 43452))
             {
                 card->m_category = CardCategory::dominion_material;
             }
@@ -249,6 +249,22 @@ void parse_card_node(Cards& all_cards, Card* card, xml_node<>* card_node)
     if (rarity_node) { card->m_rarity = atoi(rarity_node->value()); }
     if (type_node) { card->m_faction = static_cast<Faction>(atoi(type_node->value())); }
     card->m_set = set;
+
+    // fortresses
+    if (set == 8000)
+    {
+        if (card->m_type != CardType::structure)
+        {
+            std::cerr << "Warning: parsing card [" << card->m_id << "]: set 8000 supposes fortresses card that implies type Structure"
+                << ", but card has type " << cardtype_names[card->m_type] << std::endl;
+        }
+
+        // assume all other fortresses as conquest towers
+        if (card->m_category == CardCategory::normal)
+        {
+            card->m_category = CardCategory::fortress_conquest;
+        }
+    }
 
     if (card_node->first_node("skill"))
     { // inherit no skill if there is skill node
