@@ -27,6 +27,7 @@ Menu, MyMenu, Add, ownedcards.txt, MenuOwnedcards
 Menu, MyMenu, Add, customdecks.txt, MenuCustomdecks
 Menu, MyMenu, Add, cardabbrs.txt, MenuCardabbrs
 Menu, MyMenu, Add, Update XMLs, MenuUpdate
+Menu, MyMenu, Add, Update XMLs (DEV), MenuUpdateDev
 Menu, MyMenu, Add, Help, MenuHelp
 Menu, MyMenu, Add, Web, MenuWeb
 Gui, Menu, MyMenu
@@ -71,7 +72,7 @@ if (IniEffectNum = 0) {
 
 Gui, Add, ComboBox, vEffect xs Choose%IniEffectNum% section, %BGEffects%
 Gui, Add, DDL, altsubmit vMode Choose%IniMode%, Battle / Mission|Battle (defense)|GW / CQ / Surge|GW (defense)|Brawl|Brawl (defense)|Raid|Campaign
-Gui, Add, DDL, altsubmit vOperation Group Choose%IniOperation% xs, Climb|Sim|Reorder
+Gui, Add, DDL, altsubmit vOperation Group Choose%IniOperation% xs, Climb|Sim|Reorder|Climbex
 
 Gui, Add, Text, ys, Endgame:
 Gui, Add, Text, r1, Order:
@@ -98,10 +99,23 @@ return
 
 ButtonSimulate:
 Gui, Submit
+MyDeck := RegExReplace(MyDeck, "\R")
+MyDeck := RegExReplace(MyDeck, "(^\s*|\s*$)")
+
+EnemiesDeck := RegExReplace(EnemiesDeck, "\R")
+EnemiesDeck := RegExReplace(EnemiesDeck, "(^\s*|\s*$)")
+
+SimOptions := RegExReplace(SimOptions, "(^\s*|\s*$)")
+
+GuiControl, , Edit1, %MyDeck% ; this will put the content of the variable in the editbox (edit1 is taken by the winspy)
+GuiControl, , Edit3, %EnemiesDeck% ; this will put the content of the variable in the editbox (edit1 is taken by the winspy)
+GuiControl, , Edit11, %SimOptions% ; this will put the content of the variable in the editbox (edit11 is taken by the winspy)
+Gui, Submit, NoHide ; save the changes and not hide the windows)
+
 selTUO := (x86 ? "tuo-x86" : "tuo")
 selMode := (Mode == 1 ? "pvp" : Mode == 2 ? "pvp-defense" : Mode == 3 ? "gw" : Mode == 4 ? "gw-defense" :Mode == 5 ? "brawl" : Mode == 6 ? "brawl-defense" : Mode == 7 ? "raid" : "campaign")
 selOrder := (Order == 1 ? "random" : "ordered")
-selOperation :=  (Operation == 1 ? "climb" : Operation == 2 ? "sim" : "reorder")
+selOperation :=  (Operation == 1 ? "climb" : Operation == 2 ? "sim" : Operation == 3 ? "reorder": "climbex")
 selMySiege := (MySiege == "" ? "" : "yf """ MySiege """ ")
 selEnemySiege := ( EnemySiege == "" ? "" : "ef """ EnemySiege """ ")
 selVIP := ( VIP == "" ? "" : "vip """ VIP """ " )
@@ -191,6 +205,60 @@ if !had_error
     MsgBox, 0, Update finished, xml files successfully updated.`nThis Window will auto close in 2 seconds., 2
 Gui, Show
 return
+
+MenuUpdateDev:
+MsgBox, 0, Update started, Updating XML (DEV) files.`nPlease wait at least one minute. A new window should open soon.`nThis Window will auto close in 5 seconds. , 5
+UrlDownloadToFile, *0 http://mobile-dev.tyrantonline.com/assets/fusion_recipes_cj2.xml, data\fusion_recipes_cj2.xml
+had_error := false
+if ErrorLevel
+{
+    MsgBox, Error downloading fusion_recipes_cj2.xml.
+    had_error := true
+}
+UrlDownloadToFile, *0 http://mobile-dev.tyrantonline.com/assets/missions.xml, data\missions.xml
+if ErrorLevel
+{
+    MsgBox, Error downloading missions.xml.
+    had_error := true
+}
+UrlDownloadToFile, *0 http://mobile-dev.tyrantonline.com/assets/skills_set.xml, data\skills_set.xml
+if ErrorLevel
+{
+    MsgBox, Error downloading skills_set.xml.
+    had_error := true
+}
+UrlDownloadToFile, *0 http://mobile-dev.tyrantonline.com/assets/levels.xml, data\levels.xml
+if ErrorLevel
+{
+    MsgBox, Error downloading levels.xml.
+    had_error := true
+}
+Loop, 12
+{
+    UrlDownloadToFile, *0 http://mobile-dev.tyrantonline.com/assets/cards_section_%A_Index%.xml, data\cards_section_%A_Index%.xml
+    if ErrorLevel
+    {
+        MsgBox, Error downloading cards_section_%A_Index%.xml.
+        had_error := true
+    }
+}
+UrlDownloadToFile, *0 https://raw.githubusercontent.com/dsuchka/tyrant_optimize/merged/data/raids.xml, data\raids.xml
+if ErrorLevel
+{
+    MsgBox, Error downloading raids.xml.
+    had_error := true
+}
+UrlDownloadToFile, *0 https://raw.githubusercontent.com/dsuchka/tyrant_optimize/merged/data/bges.txt, data\bges.txt
+if ErrorLevel
+{
+    MsgBox, Error downloading bges.txt.
+    had_error := true
+}
+if !had_error
+    MsgBox, 0, Update finished, xml files successfully updated.`nThis Window will auto close in 2 seconds., 2
+Gui, Show
+return
+
 
 MenuOwnedcards:
 Gui, Submit
