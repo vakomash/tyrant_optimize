@@ -1,7 +1,7 @@
 #ifndef TYRANT_H_INCLUDED
 #define TYRANT_H_INCLUDED
 
-#define TYRANT_OPTIMIZER_VERSION "2.46.2"
+#define TYRANT_OPTIMIZER_VERSION "2.47.0"
 
 #include <string>
 #include <sstream>
@@ -36,7 +36,8 @@ enum Skill
     enfeeble, jam, mortar, siege, strike, sunder, weaken,
 
     // Activation (helpful):
-    enhance, evolve, heal, mend, overload, protect, rally, enrage, rush,
+    enhance, evolve, heal, mend, overload, protect, rally,
+    enrage, entrap, rush,
 
     // Activation (unclassified/polymorphic):
     mimic,
@@ -116,6 +117,7 @@ inline bool is_activation_helpful_skill(Skill::Skill skill_id)
     case Skill::protect:
     case Skill::rally:
     case Skill::enrage:
+    case Skill::entrap:
     case Skill::rush:
         return true;
     default:
@@ -152,6 +154,7 @@ inline bool is_activation_skill_with_x(Skill::Skill skill_id)
     case Skill::protect:
     case Skill::rally:
     case Skill::enrage:
+    case Skill::entrap:
     case Skill::rush:
         return true;
     default:

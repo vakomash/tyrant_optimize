@@ -143,7 +143,9 @@ inline void Field::finalize_action()
 inline unsigned CardStatus::skill_base_value(Skill::Skill skill_id) const
 {
     return m_card->m_skill_value[skill_id + m_primary_skill_offset[skill_id]]
-            + (skill_id == Skill::berserk ? m_enraged : 0);
+            + (skill_id == Skill::berserk ? m_enraged : 0)
+            + (skill_id == Skill::counter ? m_entrapped : 0)
+    ;
 }
 //------------------------------------------------------------------------------
 inline unsigned CardStatus::skill(Skill::Skill skill_id) const
@@ -199,6 +201,7 @@ inline void CardStatus::set(const Card& card)
     m_protected_stasis = 0;
     m_rallied = 0;
     m_enraged = 0;
+    m_entrapped = 0;
     m_derallied = 0;
     m_rush_attempted = false;
     m_sundered = false;
@@ -307,8 +310,20 @@ std::string CardStatus::description() const
     if(m_protected > 0) { desc += ", protected " + to_string(m_protected); }
     if(m_protected_stasis > 0) { desc += ", stasis " + to_string(m_protected_stasis); }
     if(m_enraged > 0) { desc += ", enraged " + to_string(m_enraged); }
+    if(m_entrapped > 0) { desc += ", entrapped " + to_string(m_entrapped); }
 //    if(m_step != CardStep::none) { desc += ", Step " + to_string(static_cast<int>(m_step)); }
-    for (const auto & ss: m_card->m_skills)
+    std::vector<SkillSpec> card_skills(m_card->m_skills);
+    if (m_enraged && !std::count_if(card_skills.begin(), card_skills.end(), [](const SkillSpec ss) { return (ss.id == Skill::berserk); }))
+    {
+        SkillSpec ss{Skill::berserk, m_enraged, allfactions, 0, 0, Skill::no_skill, Skill::no_skill, false,};
+        card_skills.emplace_back(ss);
+    }
+    if (m_entrapped && !std::count_if(card_skills.begin(), card_skills.end(), [](const SkillSpec ss) { return (ss.id == Skill::counter); }))
+    {
+        SkillSpec ss{Skill::counter, m_entrapped, allfactions, 0, 0, Skill::no_skill, Skill::no_skill, false,};
+        card_skills.emplace_back(ss);
+    }
+    for (const auto& ss : card_skills)
     {
         std::string skill_desc;
         if (m_evolved_skill_offset[ss.id] != 0) { skill_desc += "->" + skill_names[ss.id + m_evolved_skill_offset[ss.id]]; }
@@ -860,6 +875,7 @@ void turn_end_phase(Field* fd)
             std::memset(status.m_enhanced_value, 0, sizeof status.m_enhanced_value);
             status.m_evaded = 0;  // so far only useful in Inactive turn
             status.m_paybacked = 0;  // ditto
+            status.m_entrapped = 0;
         }
     }
     // Inactive player's structure cards:
@@ -1639,6 +1655,12 @@ inline void perform_skill<Skill::enrage>(Field* fd, CardStatus* src, CardStatus*
 }
 
 template<>
+inline void perform_skill<Skill::entrap>(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s)
+{
+    dst->m_entrapped += s.x;
+}
+
+template<>
 inline void perform_skill<Skill::rush>(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s)
 {
     dst->m_delay -= std::min(std::max(s.x, 1u), dst->m_delay);
@@ -1806,6 +1828,9 @@ template<> std::vector<CardStatus*>& skill_targets<Skill::rally>(Field* fd, Card
 { return(skill_targets_allied_assault(fd, src)); }
 
 template<> std::vector<CardStatus*>& skill_targets<Skill::enrage>(Field* fd, CardStatus* src)
+{ return(skill_targets_allied_assault(fd, src)); }
+
+template<> std::vector<CardStatus*>& skill_targets<Skill::entrap>(Field* fd, CardStatus* src)
 { return(skill_targets_allied_assault(fd, src)); }
 
 template<> std::vector<CardStatus*>& skill_targets<Skill::rush>(Field* fd, CardStatus* src)
@@ -2701,6 +2726,7 @@ void fill_skill_table()
     skill_table[Skill::protect] = perform_targetted_allied_fast<Skill::protect>;
     skill_table[Skill::rally] = perform_targetted_allied_fast<Skill::rally>;
     skill_table[Skill::enrage] = perform_targetted_allied_fast<Skill::enrage>;
+    skill_table[Skill::entrap] = perform_targetted_allied_fast<Skill::entrap>;
     skill_table[Skill::rush] = perform_targetted_allied_fast_rush;
     skill_table[Skill::siege] = perform_targetted_hostile_fast<Skill::siege>;
     skill_table[Skill::strike] = perform_targetted_hostile_fast<Skill::strike>;
