@@ -905,9 +905,9 @@ void print_score_info(const EvaluatedResults& results, std::vector<long double>&
             case OptimizationMode::war:
 #ifndef NQUEST
             case OptimizationMode::quest:
+#endif
                 std::cout << val.points << " ";
                 break;
-#endif
             default:
                 std::cout << val.points / 100 << " ";
                 break;
