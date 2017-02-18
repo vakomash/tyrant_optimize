@@ -630,17 +630,22 @@ void Deck::shuffle(std::mt19937& re)
     }
     if (strategy != DeckStrategy::exact_ordered)
     {
-        auto shufflable_iter = shuffled_cards.begin();
-        for (auto hand_card_id: given_hand)
+        std::deque<const Card*>* pools[] = { &shuffled_forts, &shuffled_cards };
+        for (std::deque<const Card*>* pool : pools)
         {
-            auto it = std::find_if (shufflable_iter, shuffled_cards.end(), [hand_card_id](const Card* card) -> bool { return card->m_id == hand_card_id; });
-            if (it != shuffled_cards.end())
+            auto shufflable_iter = pool->begin();
+            for (auto hand_card_id: given_hand)
             {
-                std::swap(*shufflable_iter, *it);
-                ++ shufflable_iter;
+                auto it = std::find_if (shufflable_iter, pool->end(),
+                    [hand_card_id](const Card* card) -> bool { return card->m_id == hand_card_id; });
+                if (it != pool->end())
+                {
+                    std::swap(*shufflable_iter, *it);
+                    ++ shufflable_iter;
+                }
             }
+            std::shuffle(shufflable_iter, pool->end(), re);
         }
-        std::shuffle(shufflable_iter, shuffled_cards.end(), re);
 #if 0
         if (!given_hand.empty())
         {
