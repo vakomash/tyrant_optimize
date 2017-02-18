@@ -431,7 +431,7 @@ Deck* read_deck(Decks& decks, const Cards& all_cards, xml_node<>* node, DeckType
     std::vector<const Card*> fortress_cards;
     for (xml_node<>* fortress_card_node = node->first_node("fortress_card");
             fortress_card_node;
-            fortress_card_node = fortress_card_node->next_sibling("/fortress_card"))
+            fortress_card_node = fortress_card_node->next_sibling("fortress_card"))
     {
         const Card * card = all_cards.by_id(atoi(fortress_card_node->first_attribute("id")->value()));
         fortress_cards.push_back(card);
