@@ -2144,6 +2144,11 @@ int main(int argc, char** argv)
         std::cerr << "Error: Invalid attack deck " << your_deck_name << ": has optional cards.\n";
         your_deck = nullptr;
     }
+    else if (!your_deck->variable_forts.empty())
+    {
+        std::cerr << "Error: Invalid attack deck " << your_deck_name << ": has optional cards.\n";
+        your_deck = nullptr;
+    }
     if (your_deck == nullptr)
     {
         usage(argc, argv);

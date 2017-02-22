@@ -518,6 +518,30 @@
 			</always_include>
 		</deck>
 	</raid>
+	<raid>
+		<id>25</id>
+		<name>Archmatron's Flagship Raid</name>
+		<levels>26</levels>
+		<commander>25404</commander>
+		<fortress_pool amount="2">
+			<card replicates="1">18146</card>
+			<card replicates="1">18156</card>
+			<card replicates="1">18166</card>
+			<card replicates="1">18176</card>
+		</fortress_pool>
+		<deck>
+			<card_pool amount="10">
+				<card replicates="2">45760</card>
+				<card replicates="2">45770</card>
+				<card replicates="2">45780</card>
+				<card replicates="2">45790</card>
+				<card replicates="2">45800</card>
+				<card replicates="1">45810</card>
+				<card replicates="1">45820</card>
+				<card replicates="1">45830</card>
+			</card_pool>
+		</deck>
+	</raid>
 <!-- END of Raids -->
 
 

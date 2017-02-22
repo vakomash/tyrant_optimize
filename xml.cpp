@@ -428,6 +428,14 @@ Deck* read_deck(Decks& decks, const Cards& all_cards, xml_node<>* node, DeckType
     xml_node<>* commander_max_level_node(node->first_node("commander_max_level"));
     unsigned commander_max_level = commander_max_level_node ? atoi(commander_max_level_node->value()) : commander_card->m_top_level_card->m_level;
     unsigned upgrade_opportunities = commander_max_level - card->m_level;
+    std::vector<const Card*> always_cards;
+    std::vector<std::tuple<unsigned, unsigned, std::vector<const Card*>>> some_forts;
+    std::vector<std::tuple<unsigned, unsigned, std::vector<const Card*>>> some_cards;
+    xml_node<>* deck_node(node->first_node("deck"));
+    xml_node<>* levels_node(node->first_node("levels"));
+    unsigned max_level = levels_node ? atoi(levels_node->value()) : 10;
+
+    // Fixed fortresses (<fortress_card id="xxx"/>)
     std::vector<const Card*> fortress_cards;
     for (xml_node<>* fortress_card_node = node->first_node("fortress_card");
             fortress_card_node;
@@ -437,11 +445,35 @@ Deck* read_deck(Decks& decks, const Cards& all_cards, xml_node<>* node, DeckType
         fortress_cards.push_back(card);
         upgrade_opportunities += card->m_top_level_card->m_level - card->m_level;
     }
-    std::vector<const Card*> always_cards;
-    std::vector<std::tuple<unsigned, unsigned, std::vector<const Card*>>> some_cards;
-    xml_node<>* deck_node(node->first_node("deck"));
-    xml_node<>* levels_node(node->first_node("levels"));
-    unsigned max_level = levels_node ? atoi(levels_node->value()) : 10;
+
+    // Variable fortresses (<fortress_pool amount="x" replicates="y"> ... </fortress_pool>)
+    for (xml_node<>* fortress_pool_node = node->first_node("fortress_pool");
+            fortress_pool_node;
+            fortress_pool_node = fortress_pool_node->next_sibling("fortress_pool"))
+    {
+        unsigned num_cards_from_pool(atoi(fortress_pool_node->first_attribute("amount")->value()));
+        unsigned pool_replicates(fortress_pool_node->first_attribute("replicates")
+            ? atoi(fortress_pool_node->first_attribute("replicates")->value())
+            : 1);
+        std::vector<const Card*> cards_from_pool;
+        unsigned upgrade_points = 0;
+        for (xml_node<>* card_node = fortress_pool_node->first_node("card");
+                card_node;
+                card_node = card_node->next_sibling("card"))
+        {
+            card = all_cards.by_id(atoi(card_node->value()));
+            unsigned card_replicates(card_node->first_attribute("replicates") ? atoi(card_node->first_attribute("replicates")->value()) : 1);
+            while (card_replicates --)
+            {
+                cards_from_pool.push_back(card);
+                upgrade_points += card->m_top_level_card->m_level - card->m_level;
+            }
+        }
+        some_forts.push_back(std::make_tuple(num_cards_from_pool, pool_replicates, cards_from_pool));
+        upgrade_opportunities += upgrade_points * num_cards_from_pool * pool_replicates / cards_from_pool.size();
+    }
+
+    // Fixed cards (<always_include> ... </always_include>)
     xml_node<>* always_node{deck_node->first_node("always_include")};
     for (xml_node<>* card_node = (always_node ? always_node : deck_node)->first_node("card");
             card_node;
@@ -455,12 +487,14 @@ Deck* read_deck(Decks& decks, const Cards& all_cards, xml_node<>* node, DeckType
             upgrade_opportunities += card->m_top_level_card->m_level - card->m_level;
         }
     }
+
+    // Variable cards (<card_pool amount="x" replicates="y"> ... </card_pool>)
     for (xml_node<>* pool_node = deck_node->first_node("card_pool");
             pool_node;
             pool_node = pool_node->next_sibling("card_pool"))
     {
         unsigned num_cards_from_pool(atoi(pool_node->first_attribute("amount")->value()));
-        unsigned replicates(pool_node->first_attribute("replicates") ? atoi(pool_node->first_attribute("replicates")->value()) : 1);
+        unsigned pool_replicates(pool_node->first_attribute("replicates") ? atoi(pool_node->first_attribute("replicates")->value()) : 1);
         std::vector<const Card*> cards_from_pool;
         unsigned upgrade_points = 0;
         for (xml_node<>* card_node = pool_node->first_node("card");
@@ -468,12 +502,18 @@ Deck* read_deck(Decks& decks, const Cards& all_cards, xml_node<>* node, DeckType
                 card_node = card_node->next_sibling("card"))
         {
             card = all_cards.by_id(atoi(card_node->value()));
-            cards_from_pool.push_back(card);
-            upgrade_points += card->m_top_level_card->m_level - card->m_level;
+            unsigned card_replicates(card_node->first_attribute("replicates") ? atoi(card_node->first_attribute("replicates")->value()) : 1);
+            while (card_replicates --)
+            {
+                cards_from_pool.push_back(card);
+                upgrade_points += card->m_top_level_card->m_level - card->m_level;
+            }
         }
-        some_cards.push_back(std::make_tuple(num_cards_from_pool, replicates, cards_from_pool));
-        upgrade_opportunities += upgrade_points * num_cards_from_pool * replicates / cards_from_pool.size();
+        some_cards.push_back(std::make_tuple(num_cards_from_pool, pool_replicates, cards_from_pool));
+        upgrade_opportunities += upgrade_points * num_cards_from_pool * pool_replicates / cards_from_pool.size();
     }
+
+    // Mission requirement
     xml_node<>* mission_req_node(node->first_node(decktype == DeckType::mission ? "req" : "mission_req"));
     unsigned mission_req(mission_req_node ? atoi(mission_req_node->value()) : 0);
 
@@ -483,7 +523,7 @@ Deck* read_deck(Decks& decks, const Cards& all_cards, xml_node<>* node, DeckType
         unsigned upgrade_points = ceil(upgrade_opportunities * (level - 1) / (double)(max_level - 1));
         decks.decks.push_back(Deck{all_cards, decktype, id, deck_name, upgrade_points, upgrade_opportunities});
         Deck* deck = &decks.decks.back();
-        deck->set(commander_card, commander_max_level, always_cards, some_cards, mission_req);
+        deck->set(commander_card, commander_max_level, always_cards, some_forts, some_cards, mission_req);
         deck->fortress_cards = fortress_cards;
         decks.add_deck(deck, deck_name);
         decks.add_deck(deck, decktype_names[decktype] + " #" + to_string(id) + "-" + to_string(level));
@@ -491,7 +531,7 @@ Deck* read_deck(Decks& decks, const Cards& all_cards, xml_node<>* node, DeckType
 
     decks.decks.push_back(Deck{all_cards, decktype, id, base_deck_name});
     Deck* deck = &decks.decks.back();
-    deck->set(commander_card, commander_max_level, always_cards, some_cards, mission_req);
+    deck->set(commander_card, commander_max_level, always_cards, some_forts, some_cards, mission_req);
     deck->fortress_cards = fortress_cards;
 
     // upgrade cards for full-level missions/raids
@@ -503,6 +543,11 @@ Deck* read_deck(Decks& decks, const Cards& all_cards, xml_node<>* node, DeckType
         { card = card->m_top_level_card; }
         for (auto && card: deck->cards)
         { card = card->m_top_level_card; }
+        for (auto && pool: deck->variable_forts)
+        {
+            for (auto && card: std::get<2>(pool))
+            { card = card->m_top_level_card; }
+        }
         for (auto && pool: deck->variable_cards)
         {
             for (auto && card: std::get<2>(pool))

@@ -401,15 +401,27 @@ std::string Deck::medium_description() const
     if (alpha_dominion)
     { ios << ", " << alpha_dominion->m_name; }
 
-    // fortresses
+    // fortresses (fixed)
     for (const Card * card: fortress_cards)
     { ios << ", " << card->m_name; }
 
-    // normal cards
+    // normal cards (fixed)
     for (const Card * card: cards)
     { ios << ", " << card->m_name; }
 
+    // fortress (variable)
     unsigned num_pool_cards = 0;
+    for (auto& pool: variable_forts)
+    {
+        num_pool_cards += std::get<0>(pool) * std::get<1>(pool);
+    }
+    if (num_pool_cards > 0)
+    {
+        ios << ", and " << num_pool_cards << " fortresses from pool";
+    }
+
+    // normal cards (variable)
+    num_pool_cards = 0;
     for (auto& pool: variable_cards)
     {
         num_pool_cards += std::get<0>(pool) * std::get<1>(pool);
@@ -418,6 +430,8 @@ std::string Deck::medium_description() const
     {
         ios << ", and " << num_pool_cards << " cards from pool";
     }
+
+    // upgrade points/opports info
     if (upgrade_points > 0)
     {
         ios << " +" << upgrade_points << "/" << upgrade_opportunities;
@@ -439,14 +453,34 @@ std::string Deck::long_description() const
     {
         ios << "No commander\n";
     }
+
+    // fixed fortresses
     for (const Card * card: fortress_cards)
     {
         show_upgrades(ios, card, card->m_top_level_card->m_level, "");
     }
+
+    // fixed cards
     for (const Card* card: cards)
     {
         show_upgrades(ios, card, card->m_top_level_card->m_level, "  ");
     }
+
+    // variable fortresses
+    for (auto& pool: variable_forts)
+    {
+		if (std::get<1>(pool) > 1)
+		{
+			ios << std::get<1>(pool) << " copies of each of ";
+		}
+        ios << std::get<0>(pool) << " in:\n";
+        for (auto& card: std::get<2>(pool))
+        {
+            show_upgrades(ios, card, card->m_top_level_card->m_level, "  ");
+        }
+    }
+
+    // variable cards
     for (auto& pool: variable_cards)
     {
 		if (std::get<1>(pool) > 1)
@@ -459,6 +493,8 @@ std::string Deck::long_description() const
             show_upgrades(ios, card, card->m_top_level_card->m_level, "  ");
         }
     }
+
+    // return formed string
     return ios.str();
 }
 
@@ -569,6 +605,25 @@ void Deck::shuffle(std::mt19937& re)
     boost::insert(shuffled_forts, shuffled_forts.end(), fortress_cards);
     shuffled_cards.clear();
     boost::insert(shuffled_cards, shuffled_cards.end(), cards);
+    if (!variable_forts.empty())
+    {
+        if (strategy != DeckStrategy::random)
+        {
+            throw std::runtime_error("Support only random strategy for raid/quest deck.");
+        }
+        for (auto& card_pool: variable_forts)
+        {
+			auto & amount = std::get<0>(card_pool);
+			auto & replicates = std::get<1>(card_pool);
+			auto & card_list = std::get<2>(card_pool);
+            assert(amount <= card_list.size());
+            partial_shuffle(card_list.begin(), card_list.begin() + amount, card_list.end(), re);
+			for (unsigned rep = 0; rep < replicates; ++ rep)
+			{
+				shuffled_forts.insert(shuffled_forts.end(), card_list.begin(), card_list.begin() + amount);
+			}
+        }
+    }
     if (!variable_cards.empty())
     {
         if (strategy != DeckStrategy::random)
