@@ -1147,7 +1147,7 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
 #endif
 )
 {
-	EvaluatedResults zero_results = { EvaluatedResults::first_type(proc.enemy_decks.size()), 0 };
+    EvaluatedResults zero_results = { EvaluatedResults::first_type(proc.enemy_decks.size()), 0 };
     std::string best_deck = d1->hash();
     std::map<std::string, EvaluatedResults> evaluated_decks{{best_deck, zero_results}};
     EvaluatedResults& results = proc.evaluate(num_min_iterations, evaluated_decks.begin()->second);
@@ -1634,8 +1634,8 @@ int main(int argc, char** argv)
     unsigned opt_num_threads(4);
     DeckStrategy::DeckStrategy opt_your_strategy(DeckStrategy::random);
     DeckStrategy::DeckStrategy opt_enemy_strategy(DeckStrategy::random);
-	std::string opt_forts, opt_enemy_forts;
-	std::string opt_doms, opt_enemy_doms;
+    std::string opt_forts, opt_enemy_forts;
+    std::string opt_doms, opt_enemy_doms;
     std::string opt_hand, opt_enemy_hand;
     std::string opt_vip;
     std::string opt_allow_candidates;
