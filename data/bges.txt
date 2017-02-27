@@ -16,12 +16,12 @@ Power Source: Overload 1
 Ferocity: Enrage 6
 Tartarian Gift: Rally+Enrage all 3
 Artillery: Mortar all 6
-Orbital Cannon: Strike 10
+Orbital Cannon: Strike 16
 Bloodthirst: Enhance All Leech 6
 Emergency Aid: Heal 18
 Extended Reach: Enhance All Swipe 5
 Mirror Madness: Mimic 10
-Eternal Backlash: Enhance All Counter 6
+Eternal Backlash: Enhance All Counter 6; Entrap 6
 Winter Tempest: Protect+Weaken All 4
 Sulfuris Essence: Evolve All Poison Venom; Enhance All Venom 6
 Way of the Forsaken: Enhance All Corrosive 8;Heal All Raider 7;Enfeeble 7
