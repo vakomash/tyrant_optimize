@@ -25,7 +25,7 @@ Bloodthirst: Enhance All Leech 6
 Emergency Aid: Heal 18
 Extended Reach: Enhance All Swipe 5
 //Mirror Madness: Mimic 10
-Mirror Madness: Entrap 10, Weaken 10
+Mirror Madness: Entrap 10; Weaken 10
 Eternal Backlash: Enhance All Counter 6; Entrap 6
 Winter Tempest: Protect+Weaken All 4
 Sulfuris Essence: Evolve All Poison Venom; Enhance All Venom 6
