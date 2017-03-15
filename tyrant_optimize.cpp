@@ -49,6 +49,14 @@ struct Requirement
     std::unordered_map<const Card*, unsigned> num_cards;
 };
 
+struct OutputOptions
+{
+    unsigned top_weakest_decks_by_winrate{0};
+    unsigned top_weakest_decks_by_points{0};
+    unsigned top_strongest_decks_by_winrate{0};
+    unsigned top_strongest_decks_by_points{0};
+};
+
 namespace {
     gamemode_t gamemode{fight};
     OptimizationMode optimization_mode{OptimizationMode::notset};
@@ -76,6 +84,7 @@ namespace {
     unsigned iterations_multiplier{10};
     unsigned sim_seed{0};
     Requirement requirement;
+    OutputOptions output_options;
 #ifndef NQUEST
     Quest quest;
 #endif
@@ -1960,19 +1969,19 @@ int main(int argc, char** argv)
                 const bool has_value = (delim_pos != std::string::npos);
                 const std::string & opt_name = has_value ? opt.substr(0, delim_pos) : opt;
                 const std::string opt_value{has_value ? opt.substr(delim_pos + 1) : opt};
-                auto ensure_opt_value = [](const bool has_value, const std::string & opt_name)
+                auto ensure_opt_value = [has_value](const std::string & opt_name)
                 {
                     if (!has_value)
                     { throw std::runtime_error("climb-opts:" + opt_name + " requires an argument"); }
                 };
                 if ((opt_name == "iter-mul") or (opt_name == "iterations-multiplier"))
                 {
-                    ensure_opt_value(has_value, opt_name);
+                    ensure_opt_value(opt_name);
                     iterations_multiplier = std::stoi(opt_value);
                 }
                 else if ((opt_name == "egc") or (opt_name == "endgame-commander") or (opt_name == "min-commander-fusion-level"))
                 {
-                    ensure_opt_value(has_value, opt_name);
+                    ensure_opt_value(opt_name);
                     use_fused_commander_level = std::stoi(opt_value);
                 }
                 else if (opt_name == "use-all-commander-levels")
@@ -1994,6 +2003,52 @@ int main(int argc, char** argv)
                 else
                 {
                     std::cerr << "Error: Unknown climb option " << opt_name;
+                    if (has_value)
+                    { std::cerr << " (value is: " << opt_value << ")"; }
+                    std::cerr << std::endl;
+                    return 1;
+                }
+            }
+        }
+        // output options
+        else if (strncmp(argv[argIndex], "output-opts:", 12) == 0)
+        {
+            std::string output_opts_str(argv[argIndex] + 12);
+            boost::tokenizer<boost::char_delimiters_separator<char>> output_opts{output_opts_str, boost::char_delimiters_separator<char>{false, ",", ""}};
+            for (const auto & opt : output_opts)
+            {
+                const auto delim_pos = opt.find("=");
+                const bool has_value = (delim_pos != std::string::npos);
+                const std::string & opt_name = has_value ? opt.substr(0, delim_pos) : opt;
+                const std::string opt_value{has_value ? opt.substr(delim_pos + 1) : opt};
+                auto ensure_opt_value = [has_value](const std::string & opt_name)
+                {
+                    if (!has_value)
+                    { throw std::runtime_error("output-opts:" + opt_name + " requires an argument"); }
+                };
+                if (opt_name == "top-weakest-decks-by-winrate")
+                {
+                    ensure_opt_value(opt_name);
+                    output_options.top_weakest_decks_by_winrate = std::stoi(opt_value);
+                }
+                else if (opt_name == "top-weakest-decks-by-points")
+                {
+                    ensure_opt_value(opt_name);
+                    output_options.top_weakest_decks_by_points = std::stoi(opt_value);
+                }
+                else if (opt_name == "top-strongest-decks-by-winrate")
+                {
+                    ensure_opt_value(opt_name);
+                    output_options.top_strongest_decks_by_winrate = std::stoi(opt_value);
+                }
+                else if (opt_name == "top-strongest-decks-by-points")
+                {
+                    ensure_opt_value(opt_name);
+                    output_options.top_strongest_decks_by_points = std::stoi(opt_value);
+                }
+                else
+                {
+                    std::cerr << "Error: Unknown output option " << opt_name;
                     if (has_value)
                     { std::cerr << " (value is: " << opt_value << ")"; }
                     std::cerr << std::endl;
