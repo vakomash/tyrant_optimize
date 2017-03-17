@@ -1084,7 +1084,7 @@ void print_deck_inline(const unsigned deck_cost, const FinalResults<long double>
 inline bool try_improve_deck(Deck* d1, unsigned from_slot, unsigned to_slot, const Card* card_candidate,
         const Card*& best_commander, const Card*& best_alpha_dominion, std::vector<const Card*>& best_cards,
         FinalResults<long double>& best_score, unsigned& best_gap, std::string& best_deck,
-        std::map<std::string, EvaluatedResults>& evaluated_decks, EvaluatedResults& zero_results,
+        std::unordered_map<std::string, EvaluatedResults>& evaluated_decks, EvaluatedResults& zero_results,
         unsigned long& skipped_simulations, Process& proc)
 {
     unsigned deck_cost(0);
@@ -1149,7 +1149,7 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
 {
     EvaluatedResults zero_results = { EvaluatedResults::first_type(proc.enemy_decks.size()), 0 };
     std::string best_deck = d1->hash();
-    std::map<std::string, EvaluatedResults> evaluated_decks{{best_deck, zero_results}};
+    std::unordered_map<std::string, EvaluatedResults> evaluated_decks{{best_deck, zero_results}};
     EvaluatedResults& results = proc.evaluate(num_min_iterations, evaluated_decks.begin()->second);
     print_score_info(results, proc.factors);
     FinalResults<long double> best_score = compute_score(results, proc.factors);
