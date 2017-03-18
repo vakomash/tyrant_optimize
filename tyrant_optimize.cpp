@@ -132,7 +132,7 @@ Deck* find_deck(Decks& decks, const Cards& all_cards, std::string deck_name)
     return(deck);
 }
 //---------------------- $80 deck optimization ---------------------------------
-unsigned get_required_cards_before_upgrade(std::unordered_map<unsigned, unsigned> owned_cards,
+unsigned get_required_cards_before_upgrade(std::unordered_map<unsigned, unsigned>& owned_cards,
     const std::vector<const Card *>& card_list, std::map<const Card*, unsigned>& num_cards)
 {
     unsigned deck_cost = 0;
