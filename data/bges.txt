@@ -43,7 +43,7 @@ Camaraderie: Enhance All Coalition 3
 // Conquest Zones
 // --
 Phobos Station: Orbital Bombardment
-Orbital Bombardment: Strike all 3; Siege all 5
+Orbital Bombardment: Enfeeble all 3; Siege all 5
 // --
 The Spire: Imperial Domain
 Imperial Domain: Heal all 5
