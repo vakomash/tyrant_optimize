@@ -1414,6 +1414,7 @@ void print_available_effects()
         "  Heroism\n"
         "  Zealots-Preservation\n"
         "  Metamorphosis\n"
+        "  Megamorphosis\n"
         "  Revenge X\n"
         "  Turning-Tides\n"
         "  Virulence\n"
