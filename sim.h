@@ -275,7 +275,7 @@ public:
 #ifndef NQUEST
     const Quest quest;
 #endif
-    std::unordered_map<unsigned, unsigned> bg_effects[2]; // passive BGE
+    std::array<signed short, PassiveBGE::num_passive_bges> bg_effects[2]; // passive BGE
     std::vector<SkillSpec> bg_skills[2]; // active BGE, casted every turn
     // With the introduction of on death skills, a single skill can trigger arbitrary many skills.
     // They are stored in this, and cleared after all have been performed.
@@ -308,8 +308,10 @@ public:
 #ifndef NQUEST
             const Quest & quest_,
 #endif
-            std::unordered_map<unsigned, unsigned>& your_bg_effects_, std::unordered_map<unsigned, unsigned>& enemy_bg_effects_,
-            std::vector<SkillSpec>& your_bg_skills_, std::vector<SkillSpec>& enemy_bg_skills_) :
+            std::array<signed short, PassiveBGE::num_passive_bges>& your_bg_effects_,
+            std::array<signed short, PassiveBGE::num_passive_bges>& enemy_bg_effects_,
+            std::vector<SkillSpec>& your_bg_skills_,
+            std::vector<SkillSpec>& enemy_bg_skills_) :
         end{false},
         re(re_),
         cards(cards_),
