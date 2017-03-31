@@ -542,6 +542,21 @@
 			</card_pool>
 		</deck>
 	</raid>
+	<raid>
+		<id>25</id>
+		<name>Synapse Unleashed Raid</name>
+		<levels>26</levels>
+		<commander>25430</commander>
+		<deck>
+			<always_include>
+				<card replicates="2">46710</card>
+				<card replicates="2">46720</card>
+				<card replicates="2">46730</card>
+				<card replicates="2">46740</card>
+				<card replicates="2">46750</card>
+			</always_include>
+		</deck>
+	</raid>
 <!-- END of Raids -->
 
 
