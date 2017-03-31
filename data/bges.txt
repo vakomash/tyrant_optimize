@@ -37,12 +37,13 @@ Soothing Chant: Heal all 2
 Noxious Arena: Enfeeble all 2
 Bathe in Blood: Bloodlust 2
 Fervorous Revenge: Revenge 3
+Camaraderie: Enhance All Coalition 3
 
 
 // Conquest Zones
 // --
 Phobos Station: Orbital Bombardment
-Orbital Bombardment: Strike all 3; Siege all 3
+Orbital Bombardment: Enfeeble all 3; Siege all 5
 // --
 The Spire: Imperial Domain
 Imperial Domain: Heal all 5

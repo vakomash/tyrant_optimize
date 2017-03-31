@@ -3,7 +3,7 @@ SRCS := $(wildcard *.cpp)
 OBJS := $(patsubst %.cpp,obj/%.o,$(SRCS))
 INCS := $(wildcard *.h)
 
-CPPFLAGS := -Wall -Werror -std=gnu++11 -O3 -DNDEBUG -DNQUEST
+CPPFLAGS := -Wall -Werror -std=gnu++11 -Ofast -DNDEBUG -DNQUEST
 LDFLAGS := -lboost_system -lboost_thread -lboost_filesystem -lboost_regex
 
 all: $(MAIN)

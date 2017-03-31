@@ -3,13 +3,16 @@ SRCS := $(wildcard *.cpp)
 OBJS := $(patsubst %.cpp,obj/%.o,$(SRCS))
 INCS := $(wildcard *.h)
 
-CPPFLAGS := -Wall -Werror -std=gnu++11 -O3 -DNDEBUG -DNQUEST -DTUO_MODE_OPEN_THE_DECK
+CPPFLAGS := -Wall -Werror -std=gnu++11 -Ofast -DNDEBUG -DNQUEST -DTUO_MODE_OPEN_THE_DECK
 LDFLAGS := -lboost_system -lboost_thread -lboost_filesystem -lboost_regex
 
 all: $(MAIN)
 
-obj/%.o: %.cpp $(INCS)
+obj/.stamp:
 	mkdir -p obj
+	touch obj/.stamp
+
+obj/%.o: %.cpp $(INCS) obj/.stamp
 	$(CXX) $(CPPFLAGS) -o $@ -c $<
 
 $(MAIN): $(OBJS)

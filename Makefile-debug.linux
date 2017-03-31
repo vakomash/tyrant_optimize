@@ -8,8 +8,11 @@ LDFLAGS := -lboost_system -lboost_thread -lboost_filesystem -lboost_regex
 
 all: $(MAIN)
 
-obj-debug/%.o: %.cpp $(INCS)
+obj-debug/.stamp:
 	mkdir -p obj-debug
+	touch obj-debug/.stamp
+
+obj-debug/%.o: %.cpp $(INCS) obj-debug/.stamp
 	$(CXX) $(CPPFLAGS) -o $@ -c $<
 
 $(MAIN): $(OBJS)

@@ -132,7 +132,7 @@ Deck* find_deck(Decks& decks, const Cards& all_cards, std::string deck_name)
     return(deck);
 }
 //---------------------- $80 deck optimization ---------------------------------
-unsigned get_required_cards_before_upgrade(std::unordered_map<unsigned, unsigned> owned_cards,
+unsigned get_required_cards_before_upgrade(std::unordered_map<unsigned, unsigned>& owned_cards,
     const std::vector<const Card *>& card_list, std::map<const Card*, unsigned>& num_cards)
 {
     unsigned deck_cost = 0;
@@ -629,15 +629,17 @@ struct SimulationData
 #ifndef NQUEST
     Quest quest;
 #endif
-    std::unordered_map<unsigned, unsigned> your_bg_effects, enemy_bg_effects;
+    std::array<signed short, PassiveBGE::num_passive_bges> your_bg_effects, enemy_bg_effects;
     std::vector<SkillSpec> your_bg_skills, enemy_bg_skills;
 
     SimulationData(unsigned seed, const Cards& cards_, const Decks& decks_, unsigned num_enemy_decks_, std::vector<long double> factors_, gamemode_t gamemode_,
 #ifndef NQUEST
             Quest & quest_,
 #endif
-            std::unordered_map<unsigned, unsigned>& your_bg_effects_, std::unordered_map<unsigned, unsigned>& enemy_bg_effects_,
-            std::vector<SkillSpec>& your_bg_skills_, std::vector<SkillSpec>& enemy_bg_skills_) :
+            std::array<signed short, PassiveBGE::num_passive_bges>& your_bg_effects_,
+            std::array<signed short, PassiveBGE::num_passive_bges>& enemy_bg_effects_,
+            std::vector<SkillSpec>& your_bg_skills_,
+            std::vector<SkillSpec>& enemy_bg_skills_) :
         re(seed),
         cards(cards_),
         decks(decks_),
@@ -729,14 +731,15 @@ public:
 #ifndef NQUEST
     Quest quest;
 #endif
-    std::unordered_map<unsigned, unsigned> your_bg_effects, enemy_bg_effects;
+    std::array<signed short, PassiveBGE::num_passive_bges> your_bg_effects, enemy_bg_effects;
     std::vector<SkillSpec> your_bg_skills, enemy_bg_skills;
 
     Process(unsigned num_threads_, const Cards& cards_, const Decks& decks_, Deck* your_deck_, std::vector<Deck*> enemy_decks_, std::vector<long double> factors_, gamemode_t gamemode_,
 #ifndef NQUEST
             Quest & quest_,
 #endif
-            std::unordered_map<unsigned, unsigned>& your_bg_effects_, std::unordered_map<unsigned, unsigned>& enemy_bg_effects_,
+            std::array<signed short, PassiveBGE::num_passive_bges>& your_bg_effects_,
+            std::array<signed short, PassiveBGE::num_passive_bges>& enemy_bg_effects_,
             std::vector<SkillSpec>& your_bg_skills_, std::vector<SkillSpec>& enemy_bg_skills_) :
         num_threads(num_threads_),
         main_barrier(num_threads+1),
@@ -1084,7 +1087,7 @@ void print_deck_inline(const unsigned deck_cost, const FinalResults<long double>
 inline bool try_improve_deck(Deck* d1, unsigned from_slot, unsigned to_slot, const Card* card_candidate,
         const Card*& best_commander, const Card*& best_alpha_dominion, std::vector<const Card*>& best_cards,
         FinalResults<long double>& best_score, unsigned& best_gap, std::string& best_deck,
-        std::map<std::string, EvaluatedResults>& evaluated_decks, EvaluatedResults& zero_results,
+        std::unordered_map<std::string, EvaluatedResults>& evaluated_decks, EvaluatedResults& zero_results,
         unsigned long& skipped_simulations, Process& proc)
 {
     unsigned deck_cost(0);
@@ -1149,7 +1152,7 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
 {
     EvaluatedResults zero_results = { EvaluatedResults::first_type(proc.enemy_decks.size()), 0 };
     std::string best_deck = d1->hash();
-    std::map<std::string, EvaluatedResults> evaluated_decks{{best_deck, zero_results}};
+    std::unordered_map<std::string, EvaluatedResults> evaluated_decks{{best_deck, zero_results}};
     EvaluatedResults& results = proc.evaluate(num_min_iterations, evaluated_decks.begin()->second);
     print_score_info(results, proc.factors);
     FinalResults<long double> best_score = compute_score(results, proc.factors);
@@ -1411,6 +1414,7 @@ void print_available_effects()
         "  Heroism\n"
         "  Zealots-Preservation\n"
         "  Metamorphosis\n"
+        "  Megamorphosis\n"
         "  Revenge X\n"
         "  Turning-Tides\n"
         "  Virulence\n"
@@ -1469,8 +1473,8 @@ bool parse_bge(
     std::string bge_name,
     unsigned player,
     const std::unordered_map<std::string, std::string>& bge_aliases,
-    std::unordered_map<unsigned, unsigned>& your_bg_effects,
-    std::unordered_map<unsigned, unsigned>& enemy_bg_effects,
+    std::array<signed short, PassiveBGE::num_passive_bges>& your_bg_effects,
+    std::array<signed short, PassiveBGE::num_passive_bges>& enemy_bg_effects,
     std::vector<SkillSpec>& your_bg_skills,
     std::vector<SkillSpec>& enemy_bg_skills,
     std::unordered_set<std::string> used_bge_aliases
@@ -1518,7 +1522,9 @@ bool parse_bge(
             if (passive_bge_id != PassiveBGE::no_bge)
             {
                 // map bge id to its value (if present otherwise zero)
-                auto bge_value = (tokens.size() > 1) ? boost::lexical_cast<unsigned>(tokens[1]) : 0;
+                signed short bge_value = (tokens.size() > 1) ? boost::lexical_cast<signed short>(tokens[1]) : -1;
+                if (!bge_value)
+                    throw std::runtime_error("BGE " + skill_name + ": zero value means no BGE");
                 if ((player == 0) or (player == 2))
                     your_bg_effects[passive_bge_id] = bge_value;
                 if ((player == 1) or (player == 2))
@@ -1651,7 +1657,7 @@ int main(int argc, char** argv)
     bool opt_keep_commander{false};
     std::vector<std::tuple<unsigned, unsigned, Operation>> opt_todo;
     std::vector<std::string> opt_effects[3];  // 0-you; 1-enemy; 2-global
-    std::unordered_map<unsigned, unsigned> opt_bg_effects[2];
+    std::array<signed short, PassiveBGE::num_passive_bges> opt_bg_effects[2];
     std::vector<SkillSpec> opt_bg_skills[2];
     std::unordered_set<unsigned> disallowed_recipes;
 
@@ -2106,6 +2112,9 @@ int main(int argc, char** argv)
         }
     }
 
+    // parse BGEs
+    opt_bg_effects[0].fill(0);
+    opt_bg_effects[1].fill(0);
     for (int player = 2; player >= 0; -- player)
     {
         for (auto && opt_effect: opt_effects[player])
@@ -2498,13 +2507,14 @@ int main(int argc, char** argv)
     if (debug_print >= 0)
     {
         std::cout << "Your Deck: " << (debug_print > 0 ? your_deck->long_description() : your_deck->medium_description()) << std::endl;
-        for (const auto & bg_effect: opt_bg_effects[0])
+        for (unsigned bg_effect = PassiveBGE::no_bge; bg_effect < PassiveBGE::num_passive_bges; ++bg_effect)
         {
-            std::cout << "Your BG Effect: " << passive_bge_names[bg_effect.first];
-            if (bg_effect.second)
-            {
-                std::cout << " " << bg_effect.second;
-            }
+            auto bge_value = opt_bg_effects[0][bg_effect];
+            if (!bge_value)
+                continue;
+            std::cout << "Your BG Effect: " << passive_bge_names[bg_effect];
+            if (bge_value != -1)
+                std::cout << " " << bge_value;
             std::cout << std::endl;
         }
         for (const auto & bg_skill: opt_bg_skills[0])
@@ -2516,13 +2526,14 @@ int main(int argc, char** argv)
         {
             std::cout << "Enemy's Deck:" << enemy_decks_factors[i] << ": " << (debug_print > 0 ? enemy_decks[i]->long_description() : enemy_decks[i]->medium_description()) << std::endl;
         }
-        for (const auto & bg_effect: opt_bg_effects[1])
+        for (unsigned bg_effect = PassiveBGE::no_bge; bg_effect < PassiveBGE::num_passive_bges; ++bg_effect)
         {
-            std::cout << "Enemy's BG Effect: " << passive_bge_names[bg_effect.first];
-            if (bg_effect.second)
-            {
-                std::cout << " " << bg_effect.second;
-            }
+            auto bge_value = opt_bg_effects[1][bg_effect];
+            if (!bge_value)
+                continue;
+            std::cout << "Enemy's BG Effect: " << passive_bge_names[bg_effect];
+            if (bge_value != -1)
+                std::cout << " " << bge_value;
             std::cout << std::endl;
         }
         for (const auto & bg_skill: opt_bg_skills[1])
