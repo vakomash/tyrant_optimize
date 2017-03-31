@@ -545,15 +545,15 @@
 	<raid>
 		<id>26</id>
 		<name>Synapse Unleashed Raid</name>
-		<levels>26</levels>
+		<levels>50</levels>
 		<commander>25430</commander>
 		<deck>
 			<always_include>
-				<card replicates="2">46710</card>
-				<card replicates="2">46720</card>
-				<card replicates="2">46730</card>
-				<card replicates="2">46740</card>
-				<card replicates="2">46750</card>
+				<card replicates="10">46710</card>
+				<card replicates="10">46720</card>
+				<card replicates="10">46730</card>
+				<card replicates="10">46740</card>
+				<card replicates="10">46750</card>
 			</always_include>
 		</deck>
 	</raid>
