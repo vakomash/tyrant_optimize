@@ -35,10 +35,11 @@ class Deck:
         if self.cards_dominion is not None:
             cards.append(self.cards_dominion)
         cards.extend(self.cards_other)
+        cards_view = "<{:02d} unt> {}".format(self.cardsCount(), str(cards))
         if self.points is None:
-            return "({}) {}".format(self.name, str(cards))
+            return "({}) {}".format(self.name, cards_view)
         else:
-            return "({}) [ {:^3.2f} ] {}".format(self.name, self.points, str(cards))
+            return "({}) [ {:^3.2f} ] {}".format(self.name, self.points, cards_view)
     def __repr__(self):
         return self.__str__()
     def cardsCount(self):
@@ -118,6 +119,6 @@ for i in range(0, len(deck_names)-1):
         res = CmpResult((n1, n2), sim_points)
         results.append(res)
 
-results.sort(key = lambda x: -int(x.points*1000))
-for r in results[1:max(int(len(results)/30), 1)]:
+results.sort(key = lambda x: -x.points)
+for r in results[0:max(int(len(results)/50), 1)]:
     show_result(r)
