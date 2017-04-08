@@ -1,7 +1,7 @@
 #ifndef TYRANT_H_INCLUDED
 #define TYRANT_H_INCLUDED
 
-#define TYRANT_OPTIMIZER_VERSION "2.49.0"
+#define TYRANT_OPTIMIZER_VERSION "2.50.0"
 
 #include <string>
 #include <sstream>
@@ -43,7 +43,8 @@ enum Skill
     mimic,
 
     // Defensive:
-    armor, avenge, corrosive, counter, evade, payback, revenge, refresh, wall, barrier,
+    armor, avenge, corrosive, counter, evade,
+    payback, revenge, tribute, refresh, wall, barrier,
 
     // Combat-Modifier:
     coalition, legion, pierce, rupture, swipe, drain, venom,
@@ -173,6 +174,7 @@ inline bool is_defensive_skill(Skill::Skill skill_id)
     case Skill::evade:
     case Skill::payback:
     case Skill::revenge:
+    case Skill::tribute:
     case Skill::refresh:
     case Skill::wall:
         return true;

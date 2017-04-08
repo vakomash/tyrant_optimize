@@ -201,6 +201,7 @@ inline void CardStatus::set(const Card& card)
     m_jammed = false;
     m_overloaded = false;
     m_paybacked = 0;
+    m_tributed = 0;
     m_poisoned = 0;
     m_protected = 0;
     m_protected_stasis = 0;
@@ -665,42 +666,84 @@ void PlayCard::setStorage<CardType::structure>()
 // Check if a skill actually proc'ed.
 template<Skill::Skill>
 inline bool skill_check(Field* fd, CardStatus* c, CardStatus* ref)
-{ return(true); }
+{ return is_alive(c); }
+
+template<>
+inline bool skill_check<Skill::heal>(Field* fd, CardStatus* c, CardStatus* ref)
+{
+    return can_be_healed(c);
+}
+
+template<>
+inline bool skill_check<Skill::mend>(Field* fd, CardStatus* c, CardStatus* ref)
+{
+    return can_be_healed(c);
+}
+
+template<>
+inline bool skill_check<Skill::rally>(Field* fd, CardStatus* c, CardStatus* ref)
+{
+    return !c->m_sundered;
+}
+
+template<>
+inline bool skill_check<Skill::enrage>(Field* fd, CardStatus* c, CardStatus* ref)
+{
+    return is_active(c) && !has_attacked(c);
+}
+
+template<>
+inline bool skill_check<Skill::overload>(Field* fd, CardStatus* c, CardStatus* ref)
+{
+    return is_active(c) && !c->m_overloaded && !has_attacked(c);
+}
 
 template<>
 inline bool skill_check<Skill::evade>(Field* fd, CardStatus* c, CardStatus* ref)
 {
-    return(c->m_player != ref->m_player);
+    return (c->m_player != ref->m_player);
+}
+
+template<>
+inline bool skill_check<Skill::jam>(Field* fd, CardStatus* c, CardStatus* ref)
+{
+    return is_active_next_turn(c);
 }
 
 template<>
 inline bool skill_check<Skill::leech>(Field* fd, CardStatus* c, CardStatus* ref)
 {
-    return(can_be_healed(c));
+    return can_be_healed(c);
 }
 
 template<>
 inline bool skill_check<Skill::coalition>(Field* fd, CardStatus* c, CardStatus* ref)
 {
-    return(is_active(c));
+    return is_active(c);
 }
 
 template<>
 inline bool skill_check<Skill::legion>(Field* fd, CardStatus* c, CardStatus* ref)
 {
-    return(is_active(c));
+    return is_active(c);
 }
 
 template<>
 inline bool skill_check<Skill::payback>(Field* fd, CardStatus* c, CardStatus* ref)
 {
-    return(ref->m_card->m_type == CardType::assault && is_alive(ref));
+    return (ref->m_card->m_type == CardType::assault) && is_alive(ref);
 }
 
 template<>
 inline bool skill_check<Skill::revenge>(Field* fd, CardStatus* c, CardStatus* ref)
 {
     return skill_check<Skill::payback>(fd, c, ref);
+}
+
+template<>
+inline bool skill_check<Skill::tribute>(Field* fd, CardStatus* c, CardStatus* ref)
+{
+    return (ref->m_card->m_type == CardType::assault) && (c != ref);
 }
 
 template<>
@@ -939,6 +982,7 @@ void turn_end_phase(Field* fd)
             status.m_weakened = 0;
             status.m_inhibited = 0;
             status.m_sabotaged = 0;
+            status.m_tributed = 0;
             status.m_overloaded = false;
             status.m_step = CardStep::none;
         }
@@ -1440,7 +1484,7 @@ struct if_<false,T1,T2>
 
 template<unsigned skill_id>
 inline bool skill_predicate(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s)
-{ return is_alive(dst); }
+{ return skill_check<static_cast<Skill::Skill>(skill_id)>(fd, dst, src); }
 
 template<>
 inline bool skill_predicate<Skill::enhance>(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s)
@@ -1476,20 +1520,6 @@ inline bool skill_predicate<Skill::evolve>(Field* fd, CardStatus* src, CardStatu
 }
 
 template<>
-inline bool skill_predicate<Skill::mend>(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s)
-{ return(can_be_healed(dst)); }
-
-template<>
-inline bool skill_predicate<Skill::heal>(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s)
-{ return(can_be_healed(dst)); }
-
-template<>
-inline bool skill_predicate<Skill::jam>(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s)
-{
-    return is_active_next_turn(dst);
-}
-
-template<>
 inline bool skill_predicate<Skill::mimic>(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s)
 {
     // skip dead units
@@ -1520,33 +1550,36 @@ inline bool skill_predicate<Skill::mimic>(Field* fd, CardStatus* src, CardStatus
 template<>
 inline bool skill_predicate<Skill::overload>(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s)
 {
-    if (dst->m_overloaded || has_attacked(dst) || !is_active(dst))
-    {
-        return false;
-    }
-    bool has_inhibited_unit = false;
-    for (const auto & c: fd->players[dst->m_player]->assaults.m_indirect)
-    {
-        if (is_alive(c) && c->m_inhibited)
-        {
-            has_inhibited_unit = true;
-            break;
-        }
-    }
+    // basic skill check
+    if (!skill_check<Skill::overload>(fd, dst, src))
+    { return false; }
+
+    // check skills
+    bool inhibited_searched = false;
     for (const auto & ss: dst->m_card->m_skills)
     {
+        // skip cooldown skills
         if (dst->m_skill_cd[ss.id] > 0)
-        {
-            continue;
-        }
+        { continue; }
+
+        // get evolved skill
         Skill::Skill evolved_skill_id = static_cast<Skill::Skill>(ss.id + dst->m_evolved_skill_offset[ss.id]);
+
+        // unit with an activation hostile skill is always valid target for OL
         if (is_activation_hostile_skill(evolved_skill_id))
+        { return true; }
+
+        // unit with an activation helpful skill is valid target only when there are inhibited units
+        if ((evolved_skill_id != Skill::mend)
+            && is_activation_helpful_skill(evolved_skill_id)
+            && __builtin_expect(!inhibited_searched, true))
         {
-            return true;
-        }
-        if (has_inhibited_unit && (evolved_skill_id != Skill::mend) && is_activation_helpful_skill(evolved_skill_id))
-        {
-            return true;
+            for (const auto & c: fd->players[dst->m_player]->assaults.m_indirect)
+            {
+                if (is_alive(c) && c->m_inhibited)
+                { return true; }
+            }
+            inhibited_searched = true;
         }
     }
     return false;
@@ -1555,25 +1588,35 @@ inline bool skill_predicate<Skill::overload>(Field* fd, CardStatus* src, CardSta
 template<>
 inline bool skill_predicate<Skill::rally>(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s)
 {
-    return ! dst->m_sundered && (fd->tapi == dst->m_player ? is_active(dst) && !has_attacked(dst) : is_active_next_turn(dst));
+    return skill_check<Skill::rally>(fd, dst, src) // basic skill check
+        // Passive BGE Divert check:
+        && (__builtin_expect((fd->tapi == dst->m_player), true) // is target on the active side?
+            ? is_active(dst) && !has_attacked(dst) // normal case
+            : is_active_next_turn(dst) // diverted case
+        )
+    ;
 }
 
 template<>
 inline bool skill_predicate<Skill::enrage>(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s)
 {
-    return is_active(dst) && dst->m_step == CardStep::none && attack_power(dst) > 0;
+    return skill_check<Skill::enrage>(fd, dst, src) // basic skill check
+        && (dst->m_step == CardStep::none) // card hasn't attacked yet
+        && (attack_power(dst) > 0) // card can perform direct attack
+    ;
 }
 
 template<>
 inline bool skill_predicate<Skill::rush>(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s)
 {
-    return ! src->m_rush_attempted && dst->m_delay >= (src->m_card->m_type == CardType::assault && dst->m_index < src->m_index ? 2u : 1u);
+    return (!src->m_rush_attempted)
+        && (dst->m_delay >= ((src->m_card->m_type == CardType::assault) && (dst->m_index < src->m_index) ? 2u : 1u));
 }
 
 template<>
 inline bool skill_predicate<Skill::weaken>(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s)
 {
-    return attack_power(dst) > 0 && is_active_next_turn(dst);
+    return (attack_power(dst) > 0) && is_active_next_turn(dst);
 }
 
 template<>
@@ -1898,7 +1941,7 @@ bool check_and_perform_skill(Field* fd, CardStatus* src, CardStatus* dst, const 
 #endif
 )
 {
-    if(skill_check<skill_id>(fd, src, dst))
+    if (__builtin_expect(skill_check<skill_id>(fd, dst, src), true))
     {
 #ifndef NQUEST
         if (src->m_player == 0 && ! has_counted_quest)
@@ -1924,6 +1967,19 @@ bool check_and_perform_skill(Field* fd, CardStatus* src, CardStatus* dst, const 
         if (s.c > 0)
         {
             src->m_skill_cd[skill_id] = s.c;
+        }
+        // Skill: Tribute
+        if (skill_check<Skill::tribute>(fd, dst, src)
+            // only activation helpful skills can be tributed (* except Evolve, Enhance, and Rush)
+            && is_activation_helpful_skill(s.id) && (s.id != Skill::evolve) && (s.id != Skill::enhance) && (s.id != Skill::rush)
+            && (dst->m_tributed < dst->skill(Skill::tribute))
+            && skill_check<skill_id>(fd, src, src))
+        {
+            ++ dst->m_tributed;
+            _DEBUG_MSG(1, "%s tributes %s back to %s\n",
+                status_description(dst).c_str(), skill_short_description(s).c_str(),
+                status_description(src).c_str());
+            perform_skill<skill_id>(fd, src, src, s);
         }
         return(true);
     }
