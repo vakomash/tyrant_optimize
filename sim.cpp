@@ -22,11 +22,16 @@ inline bool is_active_next_turn(CardStatus* c) { return(can_act(c) && c->m_delay
 // Can be healed / repaired
 inline bool can_be_healed(CardStatus* c) { return(is_alive(c) && c->m_hp < c->m_max_hp); }
 // Strange Transmission [Gilians] features
+#ifdef TUO_GILIAN
 inline bool is_gilian(CardStatus* c) { return(
         (c->m_card->m_id >= 25054 && c->m_card->m_id <= 25063) // Gilian Commander
     ||  (c->m_card->m_id >= 38348 && c->m_card->m_id <= 38388) // Gilian assaults plus the Gil's Shard
 ); }
 inline bool is_alive_gilian(CardStatus* c) { return(is_alive(c) && is_gilian(c)); }
+#else
+# define is_gilian(c) (false)
+# define is_alive_gilian(c) (false)
+#endif
 //------------------------------------------------------------------------------
 inline std::string status_description(const CardStatus* status)
 {
