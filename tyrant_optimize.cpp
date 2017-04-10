@@ -1309,6 +1309,9 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
             auto & prev_results = evaluated_decks[best_deck];
             skipped_simulations += prev_results.second;
             // Re-evaluate the best deck
+            d1->commander = best_commander;
+            d1->alpha_dominion = best_alpha_dominion;
+            d1->cards = best_cards;
             auto evaluate_result = proc.evaluate(std::min(prev_results.second * iterations_multiplier, num_iterations), prev_results);
             best_score = compute_score(evaluate_result, proc.factors);
             std::cout << "Results refined: ";
