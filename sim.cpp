@@ -2249,6 +2249,10 @@ void perform_targetted_hostile_fast(Field* fd, CardStatus* src, const SkillSpec&
                     target_desc = "right";
 #endif
                     break;
+
+                // wtf?
+                default:
+                    __builtin_unreachable();
                 }
 
                 // skip illegal target
