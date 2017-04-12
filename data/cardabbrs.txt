@@ -3,8 +3,9 @@ CS: Corrosive Spore
 LC: Lightning Cannon
 DF: Death Factory
 IA: Inspiring Altar
-MT: Mortar Tower
 SF: Sky Fortress
+DS: Darkspire
+MC: Medical Center
 
 // Defense forts
 TC: Tesla Coil
