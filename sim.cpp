@@ -1191,7 +1191,9 @@ struct PerformAttack
         att_dmg = pre_modifier_dmg;
         if (att_dmg == 0)
         { return; }
+#ifndef NDEBUG
         std::string desc;
+#endif
         unsigned legion_value = 0;
 
         // Enhance damage (if additional damage isn't prevented)
@@ -1210,7 +1212,9 @@ struct PerformAttack
                 if (legion_value)
                 {
                     legion_value *= legion_base;
+#ifndef NDEBUG
                     if (debug_print > 0) { desc += "+" + to_string(legion_value) + "(legion)"; }
+#endif
                     att_dmg += legion_value;
                 }
             }
@@ -1228,7 +1232,9 @@ struct PerformAttack
                 assert(factions_bitmap);
                 unsigned uniq_factions = byte_bits_count(factions_bitmap);
                 unsigned coalition_value = coalition_base * uniq_factions;
+#ifndef NDEBUG
                 if (debug_print > 0) { desc += "+" + to_string(coalition_value) + "(coalition/x" + to_string(uniq_factions) + ")"; }
+#endif
                 att_dmg += coalition_value;
             }
 
@@ -1236,7 +1242,9 @@ struct PerformAttack
             unsigned rupture_value = att_status->skill(Skill::rupture);
             if (rupture_value > 0)
             {
+#ifndef NDEBUG
                 if (debug_print > 0) { desc += "+" + to_string(rupture_value) + "(rupture)"; }
+#endif
                 att_dmg += rupture_value;
             }
 
@@ -1244,26 +1252,34 @@ struct PerformAttack
             unsigned venom_value = att_status->skill(Skill::venom);
             if (venom_value > 0 && def_status->m_poisoned > 0)
             {
+#ifndef NDEBUG
                 if (debug_print > 0) { desc += "+" + to_string(venom_value) + "(venom)"; }
+#endif
                 att_dmg += venom_value;
             }
 
             // Passive BGE: Bloodlust
             if (fd->bloodlust_value > 0)
             {
+#ifndef NDEBUG
                 if (debug_print > 0) { desc += "+" + to_string(fd->bloodlust_value) + "(bloodlust)"; }
+#endif
                 att_dmg += fd->bloodlust_value;
             }
 
             // State: Enfeebled
             if(def_status->m_enfeebled > 0)
             {
+#ifndef NDEBUG
                 if(debug_print > 0) { desc += "+" + to_string(def_status->m_enfeebled) + "(enfeebled)"; }
+#endif
                 att_dmg += def_status->m_enfeebled;
             }
         }
         // prevent damage
+#ifndef NDEBUG
         std::string reduced_desc;
+#endif
         unsigned reduced_dmg(0);
         unsigned armor_value = def_status->skill(Skill::armor);
         // Passive BGE: Fortification
@@ -1277,21 +1293,28 @@ struct PerformAttack
         }
         if (armor_value > 0)
         {
+#ifndef NDEBUG
             if(debug_print > 0) { reduced_desc += to_string(armor_value) + "(armor)"; }
+#endif
             reduced_dmg += armor_value;
         }
         if (def_status->protected_value() > 0)
         {
+#ifndef NDEBUG
             if(debug_print > 0) { reduced_desc += (reduced_desc.empty() ? "" : "+") + to_string(def_status->protected_value()) + "(protected)"; }
+#endif
             reduced_dmg += def_status->protected_value();
         }
         unsigned pierce_value = att_status->skill(Skill::pierce) + att_status->skill(Skill::rupture);
         if (reduced_dmg > 0 && pierce_value > 0)
         {
+#ifndef NDEBUG
             if (debug_print > 0) { reduced_desc += "-" + to_string(pierce_value) + "(pierce)"; }
+#endif
             reduced_dmg = safe_minus(reduced_dmg, pierce_value);
         }
         att_dmg = safe_minus(att_dmg, reduced_dmg);
+#ifndef NDEBUG
         if (debug_print > 0)
         {
             if(!reduced_desc.empty()) { desc += "-[" + reduced_desc + "]"; }
@@ -1300,6 +1323,7 @@ struct PerformAttack
                 status_description(att_status).c_str(),
                 status_description(def_status).c_str(), pre_modifier_dmg, desc.c_str());
         }
+#endif
         // Passive BGE: Brigade
         if (__builtin_expect(fd->bg_effects[fd->tapi][PassiveBGE::brigade] && legion_value, false)
             && can_be_healed(att_status))
