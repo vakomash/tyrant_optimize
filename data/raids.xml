@@ -557,6 +557,27 @@
 			</always_include>
 		</deck>
 	</raid>
+	<raid>
+		<id>101</id> <!-- lol -->
+		<name>Council of Sages Raid</name>
+		<levels>26</levels>
+		<commander>25446</commander>
+		<fortress_pool amount="2">
+			<card replicates="1">18186</card>
+			<card replicates="1">18196</card>
+			<card replicates="1">18206</card>
+			<card replicates="1">18216</card>
+		</fortress_pool>
+		<deck>
+			<always_include>
+				<card replicates="2">47054</card>
+				<card replicates="2">47064</card>
+				<card replicates="2">47074</card>
+				<card replicates="2">47084</card>
+				<card replicates="2">47094</card>
+			</always_include>
+		</deck>
+	</raid>
 <!-- END of Raids -->
 
 
