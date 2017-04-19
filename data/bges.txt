@@ -1,31 +1,30 @@
 // Guild War BGEs
+Sandblast: Entrap All 6; Weaken All 4
+Plasma Burst: Heal 15; Protect 15; Sunder 15
+Landmine: Entrap 16
 Inspired: Rally all 4
 Blightblast: Enfeeble all 4
 Bombing Run: Strike all 3
 Triage: Heal all 8
 Charged Up: Overload 3
-//Combined Arms: Enhance All Coalition 2;Rally+Enfeeble+Strike all 2
-Combined Arms: Enhance All Coalition 2;Rally+Enfeeble all 2; Siege all 4
+Combined Arms: Enhance All Coalition 2; Rally+Enfeeble+Strike all 2
 Blitzkrieg: Rush
 Paladin's Presence: Protect all 3
 Viral Warfare: Enhance all Poison 3
-//Progenitor Tech: Heal+Protect+Rally+Enfeeble+Strike+Weaken all 2
-Progenitor Tech: Heal+Protect+Rally+Enfeeble+Weaken all 2; Siege all 3
+Progenitor Tech: Heal+Protect+Rally+Enfeeble+Strike+Weaken all 3
 Diminisher: Sunder all 2
 Divine Blessing: Heal all 4; Rally all 3
 Opalescence: Heal+Protect all 2
 Power Source: Overload 1
 Ferocity: Enrage 6
-Tartarian Gift: Rally+Enrage all 3
-//Artillery: Mortar all 6
-Artillery: Siege all 9
+Tartarian Gift: Rally all 5; Enrage all 4
+Artillery: Mortar all 7
 //Orbital Cannon: Strike 16
 Orbital Cannon: Enfeeble 14
 Bloodthirst: Enhance All Leech 6
 Emergency Aid: Heal 18
 Extended Reach: Enhance All Swipe 5
-//Mirror Madness: Mimic 10
-Mirror Madness: Entrap 10; Weaken 10
+Mirror Madness: Mimic 10
 Eternal Backlash: Enhance All Counter 6; Entrap 6
 Winter Tempest: Protect+Weaken All 4
 Sulfuris Essence: Evolve All Poison Venom; Enhance All Venom 6
