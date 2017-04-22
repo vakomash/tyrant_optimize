@@ -34,7 +34,9 @@ for arg in "${ARGS[@]}"; do
     [[ $arg =~ ^-o[=-] ]] && found_ownedcards=1
     [[ $arg = debug ]] && found_debug="debug"
 done
-((found_ownedcards)) || ARGS+=("-o=${TUO_ROOT}/data/ownedcards_${TUO_LOGIN}.txt")
+if (( ! found_ownedcards )) && (( TUO_RESTRICT_OWNEDCARDS )); then
+    ARGS+=("-o=${TUO_ROOT}/data/ownedcards_${TUO_LOGIN}.txt")
+fi
 
 
 ## helper function: quote shell params

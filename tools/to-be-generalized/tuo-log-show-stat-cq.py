@@ -1,6 +1,7 @@
 #!/usr/bin/python2
 # -*- coding: UTF-8 -*-
 
+import os
 import re
 import sys
 
@@ -10,7 +11,7 @@ file_names = sys.argv[1:]
 FNAME_FORMAT = re.compile(
     r'^tuo-exp-cq'
     r'.(?P<ad>attack|defense)'
-    r'.(?P<commander>\w+)-vs-(?P<enemy>[\w;]+)'
+    r'.(?P<commander>[\w+-]+)-vs-(?P<enemy>[\w;]+)'
     r'.effect\[(?P<effect>(?:[^]])*)\]'
     r'.(?P<algo>\w+)'
     r'.at-(?P<at>\d{4}-\d{2}-\d{2}-\d{2}).log$'
@@ -27,12 +28,17 @@ RECORD_FORMAT = re.compile(
 )
 
 REFIND_FORMAT = re.compile(
-    r'^Results refined: '
+    r'^Results refined: .* / (?P<iters>\d+)\)$'
 )
 
 # Deck improved: KAhNWwVJ+VJ+eeAhZCDhHBEh: [123] A -> [456] B: 94.684 (191 123 41 / 200)'
 ITERS_FORMAT = re.compile(
     r'^(Deck improved: .*: )?[0-9.]+ \((\d+ )+/ (?P<iters>\d+)\)$'
+)
+
+# PID
+PID_FORMAT = re.compile(
+    '^pid: (?P<pid>\d+)'
 )
 
 
@@ -41,7 +47,7 @@ ITERS_FORMAT = re.compile(
 ##
 
 # Dracorex Hivelord, Unirager, Tormentor, Tormentor, Overmind Bane, Sacrificial Chamber, Cimex Parasite, Vile Emergence, Vile Emergence, Vile Emergence, Riktox Liquefier
-# win%: 82.4078 (1837 1880 ... / <iters>) 
+# win%: 82.4078 (1837 1880 ... / <iters>)
 # stall%: 0.0936906 (0 2 1 ... / <iters>)
 # loss%: 17.4986 (163 118 ... / <iters>)
 
@@ -83,8 +89,12 @@ for fname in file_names:
         elif algo in ('climbex', 'climb'):
             m_rec = None
             m_imp = None
+            m_ref = None
+            m_pid = None
             for x in f:
-                if REFIND_FORMAT.match(x):
+                m = REFIND_FORMAT.match(x)
+                if m:
+                    m_ref = m
                     continue
 
                 m = RECORD_FORMAT.match(x)
@@ -96,10 +106,28 @@ for fname in file_names:
                 if m:
                     m_imp = m
                     continue
+
+                m = PID_FORMAT.match(x)
+                if m:
+                    m_pid = m
+                    continue
             if None in (m_rec, m_imp):
                 raise Exception('file not ready yet: %s' % fname)
+
+            result_attrs['is_alive'] = False
+            if m_pid is not None:
+                result_attrs.update(m_pid.groupdict())
+                pid = int(m_pid.group('pid'))
+                cmdline = '/proc/{}/cmdline'.format(pid)
+                if os.path.isfile(cmdline):
+                    with open('/proc/{}/cmdline'.format(pid), 'rb') as f_cmdline:
+                        data = f_cmdline.read().split('\x00')
+                        if os.path.split(data[0])[1] == 'tuo':
+                            result_attrs['is_alive'] = True
             result_attrs.update(m_rec.groupdict())
             result_attrs.update(m_imp.groupdict())
+            if m_ref:
+                result_attrs.update(m_ref.groupdict())
         else:
             raise Exception("unsupported algo: {}".format(algo))
         win_rate = float(result_attrs['win_rate'])
@@ -130,23 +158,25 @@ for x in from_worts_to_best:
 def show_result(sorted_result, header):
     if not sorted_result:
         return
-    print '\n\n ***  {}  ***\n'.format(header)
+    print '   ***  {}  ***\n'.format(header)
     for x in sorted_result:
         cost = 'cost' in x[2] and x[2]['cost'] or "-"*5
         print ' {proc_state} I{result_attrs[iters]:<3} {win_rate:5.1f}% $[ {cost:<5} ]'\
             '  <{result_attrs[units]:>2} unt> {result_attrs[deck]}'\
             .format(
-                proc_state = x[2]['fin'] and 'FIN' or 'RUN',
+                #proc_state = x[2]['fin'] and 'FIN' or 'RUN',
+                proc_state = x[2]['fin'] and 'FIN' or x[2]['is_alive'] and 'RUN' or 'RIP',
                 fname_attrs = x[1],
                 result_attrs = x[2],
                 win_rate = x[3],
                 cost = cost,
             )
+    print '\n'
 
 # show attack
 for effect, m in attack_effect_to_result_mapping.items():
     for enemy, result in m.items():
-        show_result(result, 'Attack on [ {} ] vs «{}»'.format(effect, enemy))
+        show_result(result, 'Attack at [ {} ] vs «{}»'.format(effect, enemy))
 
 # show defense
 for effect, m in defense_effect_to_result_mapping.items():
