@@ -1,166 +1,148 @@
 #!/bin/bash
 
+yforts=""
+eforts=""
 mode=${1:-both}
 
-#yforts=""
-#yforts="Andar Quarantine-2, Red Maw Base-2, Baron's Claw Labs-2, The Spire-2, Phobos Station-2"
-yforts="Baron's Claw Labs-3, Red Maw Base-3, Andar Quarantine-2, Phobos Station-2, Magma Foundry"
-
-
-eforts="$yforts"
+#yforts="Andar Quarantine-3, The Spire-3, Ashrock Redoubt-3, Baron's Claw Labs-2, SkyCom Complex-2"
+#yforts="Phobos Station-3, Ashrock Redoubt-3, Baron's Claw Labs-3, Andar Quarantine-3, Norhaven-2"
+yforts="Phobos Station-3, Andar Quarantine-3, SkyCom Complex-3, Spire-3, Ashrock Redoubt-3"
+eforts="Phobos Station-3, The Spire-3, Ashrock Redoubt-3, Baron's Claw Labs-2, SkyCom Complex-2, Andar Quarantine-2"
 
 attack_effects=(
-    #-e ""
-    #-e "The Spire"
-    -e "Phobos Station"
-    #-e "Red Maw Base"
+    -e ""
+    #-e "Phobos Station"
+
     #-e "Andar Quarantine"
+    #-e "The Spire"
+    #-e "Ashrock Redoubt"
+    #-e "Baron's Claw Labs"
+    #-e "SkyCom Complex"
+
+    #-e "Colonial Relay"
+    #-e "Mech Graveyard"
+    #-e "Infested Depot"
+    #-e "Seismic Beacon"
+    #-e "Tyrolian Outpost"
+
+    #-e "Red Maw Base"
+    #-e "Brood Nest"
+    #-e "Borean Forges"
+    #-e "Magma Foundry"
 )
 
 defense_effects=(
     -e ""
-    -e "Phobos Station"
-    -e "The Spire"
-    -e "Red Maw Base"
-    -e "Baron's Claw Labs"
-    -e "Andar Quarantine"
 )
 
 flags=(
-    -f _gt_20160324
-    -f _gt_20160326
-    -f _ham
-    -G 1
-    -F 300
-    -f allow-candidates -f "Loathe Gravewing, Hatred, Griller, Oppressor, Slenditer, Glade Resistor, Total Control, Beta Zoid"
-    -f disallow-recipes -f "Dune Runner, Kor Ragetrooper, Shock Disruptor, Ternary Dreadshot"
+    -f _${TUO_LOGIN:-dsuchka}
+    -f _cq_gt_atk
+    -f _cq_gt2
+    -f _bb_lv1
+    -f "climb-opts:iter-mul=6,use-all-card-levels"
+    #-f dom-
+    -G 2 #1
+    -F 550 #6000 #1000 #6000
 )
 
 attack=(
     -t 4
-    -i 15${TUO_DECK:+00}
-    -I 150
+    -i 13${TUO_DECK:+00}
+    -I 200
 )
 
 defense=(
-    -t 6
-    -i 20${TUO_DECK:+00}
-    -I 400
+    -t 4
+    -i 33${TUO_DECK:+00}
+    -I 500
     -d
-    #-f enemy:ordered
+    -f enemy:ordered
 )
 
 declare -A attack_enemies defense_enemies
 
 # enemy def-decks for 'attack' simming
 attack_enemies=(
-    [top_def]="arena_p2w:4;ddd"
+    #[cq_top]="CQ_GT_MYTH:0.5;CQ_GT_HERO:1.25;CQ_GT_NORM:0.75"
+    #[cq_low]="CQ_GT_HERO:0.5;CQ_GT_NORM:1.25;CQ_GT_EASY:0.75"
+    [cq_top]="CQ_GT_HARD:0.5;CQ_GT_NORM:0.75"
+    [cq_low]="CQ_GT_NORM:0.5;CQ_GT_EASY:0.75"
 )
 
 # enemy atk-decks for 'defense' simming
 defense_enemies=(
-    [top_atk]="arena_p2w:4;arena_mix:2"
+    [cq_atk]="CQ_GT_ATK_HARD:0.5;CQ_GT_ATK_NORM:1.0"
 )
 
-if [[ $mode = attack ]] || [[ $mode = both ]]; then
-    attack_commanders=(
-        silus_cq
-        typhon_cq
-        #any
-    )
-fi
-
-if [[ $mode = defense ]] || [[ $mode = both ]]; then
-    defense_commanders=(
-        silus_cq
-        typhon_cq
-        #any
-    )
-fi
-
-if [[ $TUO_LOGIN == "lugofira" ]]; then
-    if [[ $mode = attack ]] || [[ $mode = both ]]; then
+case "$TUO_LOGIN" in
+    (dsuchka|"")
         attack_commanders=(
-            vex5
+            any
+            any_rt
+            typhon
+            #const
+            #krellus
+            #any_imp
+        )
+        ;;
+
+    (lugofira)
+        attack_commanders=(
             ded
             nexor
         )
-    fi
-    if [[ $mode = defense ]] || [[ $mode = both ]]; then
-        defense_commanders=(
-            vex5
-            ded
-            nexor
-        )
-    fi
-elif [[ $TUO_LOGIN == "pryyf" ]]; then
-    if [[ $mode = attack ]] || [[ $mode = both ]]; then
-        attack_commanders=(
-            dracorex
-            krellus
-            any
-        )
-    fi
-    if [[ $mode = defense ]] || [[ $mode = both ]]; then
-        defense_commanders=(
-            dracorex
-            krellus
-            any
-        )
-    fi
-elif [[ $TUO_LOGIN == "type55" ]]; then
-    if [[ $mode = attack ]] || [[ $mode = both ]]; then
-        attack_commanders=(
-            silus
-        )
-    fi
-    if [[ $mode = defense ]] || [[ $mode = both ]]; then
-        defense_commanders=(
-            silus
-        )
-    fi
-elif [[ $TUO_LOGIN == "ken" ]]; then
-    if [[ $mode = attack ]] || [[ $mode = both ]]; then
-        attack_commanders=(
-            barracus
-            typhon
-            halcyon
-            malort
-            any
-        )
-    fi
-    if [[ $mode = defense ]] || [[ $mode = both ]]; then
-        defense_commanders=(
-            typhon
-            barracus
-            any
-        )
-    fi
+        ;;
+
+esac
+
+### BEGIN OF INITIAL DECKS ###
+
+declare -A TUO_INITIAL_DECKS
+
+TUO_EXP_SETTINGS="$HOME/.tuo-exp${TUO_LOGIN:+.$TUO_LOGIN}"
+
+if ! source "$TUO_EXP_SETTINGS"; then
+    echo "No such file (TUO-EXP SETTINGS): $TUO_EXP_SETTINGS" 2>&1
+    exit 255
 fi
+
+## if 'any' commander is not set: set any first found as 'any'
+if [[ -z ${TUO_INITIAL_DECKS[any]+x} ]]; then
+    for x in "${TUO_INITIAL_DECKS[@]}"; do
+        TUO_INITIAL_DECKS[any]=$x
+        break
+    done
+fi
+
+### END OF INITIAL DECKS ###
+
+[[ -z ${defense_commanders+x} ]] && [[ ! -z ${attack_commanders+x} ]] && defense_commanders=("${attack_commanders[@]}")
+
+[[ -z ${attack_commanders+x} ]] && attack_commanders=("${!TUO_INITIAL_DECKS[@]}")
+[[ -z ${defense_commanders+x} ]] && defense_commanders=("${!TUO_INITIAL_DECKS[@]}")
 
 if [[ -n $TUO_DECK ]]; then
-    attack_commanders=()
-    defense_commanders=()
-    if [[ $mode = attack ]] || [[ $mode = both ]]; then
-        attack_commanders=(deck)
-    fi
-    if [[ $mode = defense ]] || [[ $mode = both ]]; then
-        defense_commanders=(deck)
-    fi
+    attack_commanders=(deck)
+    defense_commanders=(deck)
 fi
 
 
-for enemy in "${!attack_enemies[@]}"; do
-    for commander in "${attack_commanders[@]}"; do
-        tuo-exp-cq.sh ${TUO_DECK:+-s -D "$TUO_DECK"} -c $commander \
-            -Y "$yforts" -E "$eforts" \
-            "${attack_effects[@]}" "${attack[@]}" "${flags[@]}" "${attack_enemies[$enemy]}" "$enemy"
+if [[ $mode = attack ]] || [[ $mode = both ]]; then
+    for enemy in "${!attack_enemies[@]}"; do
+        for commander in "${attack_commanders[@]}"; do
+            tuo-exp-cq.sh ${TUO_DECK:+-s -D "$TUO_DECK"} -c $commander \
+                -Y "$yforts" -E "$eforts" \
+                "${attack_effects[@]}" "${attack[@]}" "${flags[@]}" "${attack_enemies[$enemy]}" "$enemy"
+        done
     done
-done
-for enemy in "${!defense_enemies[@]}"; do
-    for commander in "${defense_commanders[@]}"; do
-        tuo-exp-cq.sh ${TUO_DECK:+-s -D "$TUO_DECK"} -c $commander \
-            -Y "$yforts" -E "$eforts" \
-            "${defense_effects[@]}" "${defense[@]}" "${flags[@]}" "${defense_enemies[$enemy]}" "$enemy"
+fi
+if [[ $mode = defense ]] || [[ $mode = both ]]; then
+    for enemy in "${!defense_enemies[@]}"; do
+        for commander in "${defense_commanders[@]}"; do
+            tuo-exp-cq.sh ${TUO_DECK:+-s -D "$TUO_DECK"} -c $commander \
+                -Y "$yforts" -E "$eforts" \
+                "${defense_effects[@]}" "${defense[@]}" "${flags[@]}" "${defense_enemies[$enemy]}" "$enemy"
+        done
     done
-done
+fi

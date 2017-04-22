@@ -11,7 +11,7 @@ file_names = sys.argv[1:]
 FNAME_FORMAT = re.compile(
     r'^tuo-exp-gw'
     r'.(?P<ad>attack|defense)'
-    r'.(?P<commander>\w+)-vs-(?P<enemy>[\w:;+-]+)'
+    r'.(?P<commander>[\w+]+)-vs-(?P<enemy>[\w:;+-]+)'
     r'.(?P<yfort>\w+).(?P<efort>\w+)'
      '.e\[(?P<bges>[a-zA-Z0-9:\' -]+)\]'
     r'.(?P<algo>\w+).(?:(?P<order>ordered|random)\.)?log$'
@@ -28,7 +28,7 @@ RECORD_FORMAT = re.compile(
 )
 
 REFIND_FORMAT = re.compile(
-    r'^Results refined: '
+    r'^Results refined: (?P<new>[0-9.]+)'
 )
 
 # Deck improved: KAhNWwVJ+VJ+eeAhZCDhHBEh: [123] A -> [456] B: 94.684 (191 123 41 / 200)'
@@ -47,7 +47,7 @@ PID_FORMAT = re.compile(
 ##
 
 # Dracorex Hivelord, Unirager, Tormentor, Tormentor, Overmind Bane, Sacrificial Chamber, Cimex Parasite, Vile Emergence, Vile Emergence, Vile Emergence, Riktox Liquefier
-# win%: 82.4078 (1837 1880 ... / <iters>) 
+# win%: 82.4078 (1837 1880 ... / <iters>)
 # stall%: 0.0936906 (0 2 1 ... / <iters>)
 # loss%: 17.4986 (163 118 ... / <iters>)
 
@@ -64,8 +64,11 @@ SIM_STALL_RATE_FORMAT = re.compile(
 )
 
 
+result_key = lambda fname_attrs, result_attrs: tuple(map(lambda x: (x, fname_attrs[x]), ['ad', 'yfort', 'efort', 'bges', 'enemy']))
+result_key_sort_key = lambda key: key
+result_key_header = lambda key: "\n\n  -       -    -  - - -----  ({ad})  [{yfort}]×[{efort}]  / vs /  {enemy}  ----- - -  -    -       -\n".format(**dict(key))
 
-results = list()
+results = dict()
 
 max_ybge_len = 2
 max_ebge_len = 2
@@ -100,23 +103,28 @@ for fname in file_names:
             m_rec = None
             m_imp = None
             m_pid = None
+            refind_new_value = None
             for x in f:
-                if REFIND_FORMAT.match(x):
+                m = REFIND_FORMAT.match(x)
+                if m:
+                    refind_new_value = m.group('new')
                     continue
 
                 m = RECORD_FORMAT.match(x)
                 if m:
                     m_rec = m
+                    refind_new_value = None
                     continue
 
                 m = ITERS_FORMAT.match(x)
                 if m:
                     m_imp = m
                     continue
-                
+
                 m = PID_FORMAT.match(x)
                 if m:
                     m_pid = m
+                    continue
             if None in (m_rec, m_imp, m_pid):
                 raise Exception('file not ready yet: %s' % fname)
 
@@ -132,15 +140,20 @@ for fname in file_names:
                             result_attrs['is_alive'] = True
             result_attrs.update(m_rec.groupdict())
             result_attrs.update(m_imp.groupdict())
+            if refind_new_value:
+                result_attrs['win_rate'] = refind_new_value
         else:
             raise Exception("unsupported algo: {}".format(algo))
         win_rate = float(result_attrs['win_rate'])
-        results.append((fname, fname_attrs, result_attrs, win_rate))
+        res_key = result_key(fname_attrs, result_attrs)
+        if res_key not in results:
+            results[res_key] = list()
+        results[res_key].append((fname, fname_attrs, result_attrs, win_rate))
         if not result_attrs.has_key('cost') or result_attrs['cost'] is None:
             result_attrs['cost'] = '--'
         max_cost_len = max(max_cost_len, len(result_attrs['cost']))
 
-out_fmg = (
+out_fmt = (
     '{{proc_state}} I{{result_attrs[iters]:<3}} {{win_rate:6.1f}}%'
     '  ({{fname_attrs[ad]:^{max_ad_len}}})'
     '  $[ {{result_attrs[cost]:<{max_cost_len}}} ]'
@@ -149,11 +162,15 @@ out_fmg = (
     ' :: <{{result_attrs[units]:>2}} unt> {{result_attrs[deck]}}'
 ).format(**globals())
 
-from_worts_to_best = sorted(results, key=lambda t: -t[3]) # sort by win_rate (index=4)
-for x in from_worts_to_best:
-    print out_fmg.format(
-        proc_state = x[2]['fin'] and 'FIN' or x[2]['is_alive'] and 'RUN' or 'RIP',
-        fname_attrs = x[1],
-        result_attrs = x[2],
-        win_rate = x[3]
-    )
+sorted_keys = sorted(results.keys(), key=result_key_sort_key)
+for k in sorted_keys:
+    print result_key_header(k)
+    sorted_by_winrate_desc = sorted(results[k], key=lambda t: -t[3]) # sort by win_rate (index=4)
+    for x in sorted_by_winrate_desc:
+        out_attrs = {
+            "proc_state": x[2]['fin'] and 'FIN' or x[2]['is_alive'] and 'RUN' or 'RIP',
+            "fname_attrs": x[1],
+            "result_attrs": x[2],
+            "win_rate": x[3],
+        }
+        print out_fmt.format(**out_attrs)
