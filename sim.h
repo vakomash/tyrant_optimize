@@ -28,11 +28,7 @@ struct Results
     result_type wins;
     result_type draws;
     result_type losses;
-#ifdef TUO_MODE_OPEN_THE_DECK
-    double points;
-#else
     result_type points;
-#endif
     template<typename other_result_type>
     Results& operator+=(const Results<other_result_type>& other)
     {

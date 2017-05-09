@@ -2396,11 +2396,7 @@ Results<uint64_t> play(Field* fd)
     fd->tap = fd->players[fd->tapi];
     fd->tip = fd->players[fd->tipi];
     fd->end = false;
-#ifdef TUO_MODE_OPEN_THE_DECK
-    typedef double points_score_type;
-#else
     typedef unsigned points_score_type;
-#endif
 
     // Play dominion & fortresses
     for (unsigned _ = 0; _ < 2; ++ _)

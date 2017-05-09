@@ -64,9 +64,7 @@ namespace {
     long double confidence_level{0.99};
     bool use_top_level_card{true};
     bool use_top_level_commander{true};
-#if defined(TUO_MODE_OPEN_THE_DECK) || defined(TUO_MODE_OPEN_THE_DECK2)
     bool mode_open_the_deck{false};
-#endif
     bool use_dominion_climbing{false};
     bool use_dominion_defusing{false};
     unsigned use_fused_card_level{0};
@@ -692,23 +690,15 @@ struct SimulationData
 #endif
                 your_bg_effects, enemy_bg_effects, your_bg_skills, enemy_bg_skills);
             Results<uint64_t> result(play(&fd));
-#if defined(TUO_MODE_OPEN_THE_DECK)
-            if (mode_open_the_deck)
+            if (__builtin_expect(mode_open_the_deck, false))
             {
-                double //points_scale = 1.0;
-                points_scale = (fd.players[1]->deck->cards.size() - fd.players[1]->deck->shuffled_cards.size())
-                    / (float) fd.players[1]->deck->cards.size();
-                result.points *= points_scale;
+                // are there remaining (unopened) cards?
+                if (fd.players[1]->deck->shuffled_cards.size())
+                {
+                    // apply min score (there are unopened cards, so mission failed)
+                    result.points = min_possible_score[(size_t)optimization_mode];
+                }
             }
-#elif defined(TUO_MODE_OPEN_THE_DECK2)
-            if (mode_open_the_deck)
-            {
-                result.points =
-                    (fd.players[1]->deck->shuffled_cards.size()) // are there remaining (unopened) cards?
-                        ? min_possible_score[(size_t)optimization_mode] // min score (there are unopened cards)
-                        : max_possible_score[(size_t)optimization_mode]; // max score (there are no unopened cards)
-            }
-#endif
             res.emplace_back(result);
         }
         return(res);
@@ -2002,11 +1992,7 @@ int main(int argc, char** argv)
                 }
                 else if ((opt_name == "otd") or (opt_name == "open-the-deck"))
                 {
-#if defined(TUO_MODE_OPEN_THE_DECK) || defined(TUO_MODE_OPEN_THE_DECK2)
                     mode_open_the_deck = true;
-#else
-                    throw std::runtime_error("Ooops! open-the-deck mode isn't supported (you need to rebuild tuo with -DTUO_MODE_OPEN_THE_DECK or -DTUO_MODE_OPEN_THE_DECK2)");
-#endif
                 }
                 else
                 {

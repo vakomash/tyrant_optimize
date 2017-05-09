@@ -12,10 +12,6 @@
 #include <boost/algorithm/string.hpp>
 
 
-#if defined(TUO_MODE_OPEN_THE_DECK) && defined(TUO_MODE_OPEN_THE_DECK2)
-# error "TUO_MODE_OPEN_THE_DECK & TUO_MODE_OPEN_THE_DECK2 cannot work together"
-#endif
-
 class Card;
 
 enum Faction
