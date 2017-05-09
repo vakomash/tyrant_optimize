@@ -1425,6 +1425,7 @@ void print_available_effects()
         "  Temporal-Backlash\n"
         "  Furiosity\n"
         "  Oath-Of-Loyalty\n"
+        "  Blood-Vengeance\n"
         ;
 }
 void usage(int argc, char** argv)

@@ -7,6 +7,7 @@
 #include <string>
 #include <sstream>
 #include <vector>
+#include <cmath>
 
 #include "tyrant.h"
 #include "card.h"
@@ -398,17 +399,40 @@ void prepend_on_death(Field* fd)
         if (status->m_card->m_type == CardType::assault)
         {
             // Skill: Avenge
-            for (auto && adj_status: fd->adjacent_assaults(status))
+            const unsigned host_idx = status->m_index;
+            unsigned from_idx, till_idx;
+            if (__builtin_expect(fd->bg_effects[fd->tapi][PassiveBGE::bloodvengeance], false))
             {
+                // Passive BGE Blood Vengeance: scan all assaults for Avenge
+                from_idx = 0;
+                till_idx = assaults.size() - 1;
+            }
+            else
+            {
+                from_idx = safe_minus(host_idx, 1);
+                till_idx = std::min(host_idx + 1, safe_minus(assaults.size(), 1));
+            }
+            for (; from_idx <= till_idx; ++ from_idx)
+            {
+                if (from_idx == host_idx) { continue; }
+                CardStatus* adj_status = &assaults[from_idx];
+                if (!is_alive(adj_status)) { continue; }
                 unsigned avenge_value = adj_status->skill(Skill::avenge);
-                if (__builtin_expect(avenge_value, false))
+                if (!avenge_value) { continue; }
+
+                // Passive BGE Blood Vengeance: use half value rounded up
+                // (for distance > 1, i. e. non-standard Avenge triggering)
+                if (__builtin_expect((std::abs((signed)from_idx - (signed)host_idx) > 1), false))
                 {
-                    _DEBUG_MSG(1, "%s activates Avenge %u\n", status_description(adj_status).c_str(), avenge_value);
-                    if (! adj_status->m_sundered)
-                    { adj_status->m_attack += avenge_value; }
-                    adj_status->m_max_hp += avenge_value;
-                    adj_status->m_hp += avenge_value;
+                    avenge_value = (avenge_value + 1) / 2;
                 }
+                _DEBUG_MSG(1, "%s%s activates Avenge %u\n",
+                    (std::abs((signed)from_idx - (signed)host_idx) > 1 ? "BGE BloodVengeance: " : ""),
+                    status_description(adj_status).c_str(), avenge_value);
+                if (! adj_status->m_sundered)
+                { adj_status->m_attack += avenge_value; }
+                adj_status->m_max_hp += avenge_value;
+                adj_status->m_hp += avenge_value;
             }
 
             // Passive BGE: Virulence
