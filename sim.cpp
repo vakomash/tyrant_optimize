@@ -86,28 +86,6 @@ inline CardStatus * Field::right_assault(const CardStatus * status, const unsign
     }
     return nullptr;
 }
-inline const std::vector<CardStatus *> Field::adjacent_assaults(const CardStatus * status)
-{
-    return adjacent_assaults(status, 1);
-}
-inline const std::vector<CardStatus *> Field::adjacent_assaults(const CardStatus * status, const unsigned n)
-{
-    std::vector<CardStatus *> res;
-    res.reserve(n * 2);
-    for (unsigned i(n); i > 0; -- i)
-    {
-        auto left_status = left_assault(status, i);
-        if (left_status)
-        { res.push_back(left_status); }
-    }
-    for (unsigned i(1); i <= n; ++ i)
-    {
-        auto right_status = right_assault(status, i);
-        if (right_status)
-        { res.push_back(right_status); }
-    }
-    return res;
-}
 inline void Field::print_selection_array()
 {
 #ifndef NDEBUG
@@ -1218,6 +1196,8 @@ struct PerformAttack
 #ifndef NDEBUG
         std::string desc;
 #endif
+        auto& att_assaults = fd->tap->assaults; // (active) attacker assaults
+        auto& def_assaults = fd->tip->assaults; // (inactive) defender assaults
         unsigned legion_value = 0;
 
         // Enhance damage (if additional damage isn't prevented)
@@ -1227,12 +1207,11 @@ struct PerformAttack
             unsigned legion_base = att_status->skill(Skill::legion);
             if (__builtin_expect((legion_base > 0) && skill_check<Skill::legion>(fd, att_status, nullptr), false))
             {
-                auto & assaults = fd->tap->assaults;
                 bool bge_megamorphosis = fd->bg_effects[fd->tapi][PassiveBGE::megamorphosis];
-                legion_value += (att_status->m_index > 0) && is_alive(&assaults[att_status->m_index - 1])
-                    && (bge_megamorphosis || (assaults[att_status->m_index - 1].m_faction == att_status->m_faction));
-                legion_value += ((att_status->m_index + 1) < assaults.size()) && is_alive(&assaults[att_status->m_index + 1])
-                    && (bge_megamorphosis || (assaults[att_status->m_index + 1].m_faction == att_status->m_faction));
+                legion_value += (att_status->m_index > 0) && is_alive(&att_assaults[att_status->m_index - 1])
+                    && (bge_megamorphosis || (att_assaults[att_status->m_index - 1].m_faction == att_status->m_faction));
+                legion_value += ((att_status->m_index + 1) < att_assaults.size()) && is_alive(&att_assaults[att_status->m_index + 1])
+                    && (bge_megamorphosis || (att_assaults[att_status->m_index + 1].m_faction == att_status->m_faction));
                 if (legion_value)
                 {
                     legion_value *= legion_base;
@@ -1248,7 +1227,7 @@ struct PerformAttack
             if (coalition_base > 0)
             {
                 uint8_t factions_bitmap = 0;
-                for (CardStatus * status : fd->tap->assaults.m_indirect)
+                for (CardStatus * status : att_assaults.m_indirect)
                 {
                     if (! is_alive(status)) { continue; }
                     factions_bitmap |= (1 << (status->m_card->m_faction));
@@ -1305,13 +1284,18 @@ struct PerformAttack
         std::string reduced_desc;
 #endif
         unsigned reduced_dmg(0);
-        unsigned armor_value = def_status->skill(Skill::armor);
-        // Passive BGE: Fortification
-        if (__builtin_expect(fd->bg_effects[fd->tapi][PassiveBGE::fortification], false)
-            && (def_status->m_card->m_type == CardType::assault))
-        {
-            for (auto && adj_status: fd->adjacent_assaults(def_status))
+        unsigned armor_value = 0;
+        // Armor
+        if (def_status->m_card->m_type == CardType::assault) {
+            // Passive BGE: Fortification (adj step -> 1 (1 left, host, 1 right)
+            unsigned adj_size = (unsigned)(fd->bg_effects[fd->tapi][PassiveBGE::fortification]);
+            unsigned host_idx = def_status->m_index;
+            unsigned from_idx = safe_minus(host_idx, adj_size);
+            unsigned till_idx = std::min(host_idx + adj_size, safe_minus(def_assaults.size(), 1));
+            for (; from_idx <= till_idx; ++ from_idx)
             {
+                CardStatus* adj_status = &def_assaults[from_idx];
+                if (!is_alive(adj_status)) { continue; }
                 armor_value = std::max(armor_value, adj_status->skill(Skill::armor));
             }
         }
@@ -1464,7 +1448,7 @@ bool attack_phase(Field* fd)
     unsigned att_dmg = 0;
     if (alive_assault(def_assaults, fd->current_ci))
     {
-        CardStatus * def_status = &fd->tip->assaults[fd->current_ci];
+        CardStatus* def_status = &def_assaults[fd->current_ci];
         att_dmg = PerformAttack{fd, att_status, def_status}.op<CardType::assault>();
         unsigned swipe_value = att_status->skill(Skill::swipe);
         unsigned drain_value = att_status->skill(Skill::drain);
@@ -1472,8 +1456,15 @@ bool attack_phase(Field* fd)
         {
             bool critical_reach = fd->bg_effects[fd->tapi][PassiveBGE::criticalreach];
             auto drain_total_dmg = att_dmg;
-            for (auto && adj_status: fd->adjacent_assaults(def_status, critical_reach ? 2 : 1))
+            unsigned adj_size = 1 + (unsigned)(critical_reach);
+            unsigned host_idx = def_status->m_index;
+            unsigned from_idx = safe_minus(host_idx, adj_size);
+            unsigned till_idx = std::min(host_idx + adj_size, safe_minus(def_assaults.size(), 1));
+            for (; from_idx <= till_idx; ++ from_idx)
             {
+                if (from_idx == host_idx) { continue; }
+                CardStatus* adj_status = &def_assaults[from_idx];
+                if (!is_alive(adj_status)) { continue; }
                 unsigned swipe_dmg = safe_minus(
                     swipe_value + drain_value + def_status->m_enfeebled,
                     def_status->protected_value());
@@ -1894,8 +1885,16 @@ inline unsigned select_fast<Skill::mend>(Field* fd, CardStatus* src, const std::
 {
     fd->selection_array.clear();
     bool critical_reach = fd->bg_effects[fd->tapi][PassiveBGE::criticalreach];
-    for (auto && adj_status: fd->adjacent_assaults(src, critical_reach ? 2 : 1))
+    auto& assaults = fd->players[src->m_player]->assaults;
+    unsigned adj_size = 1 + (unsigned)(critical_reach);
+    unsigned host_idx = src->m_index;
+    unsigned from_idx = safe_minus(host_idx, adj_size);
+    unsigned till_idx = std::min(host_idx + adj_size, safe_minus(assaults.size(), 1));
+    for (; from_idx <= till_idx; ++ from_idx)
     {
+        if (from_idx == host_idx) { continue; }
+        CardStatus* adj_status = &assaults[from_idx];
+        if (!is_alive(adj_status)) { continue; }
         if (skill_predicate<Skill::mend>(fd, src, adj_status, s))
         {
             fd->selection_array.push_back(adj_status);
