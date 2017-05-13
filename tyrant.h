@@ -1,7 +1,7 @@
 #ifndef TYRANT_H_INCLUDED
 #define TYRANT_H_INCLUDED
 
-#define TYRANT_OPTIMIZER_VERSION "2.50.0"
+#define TYRANT_OPTIMIZER_VERSION "2.51.0"
 
 #include <string>
 #include <sstream>
@@ -10,6 +10,7 @@
 #include <unordered_map>
 #include <tuple>
 #include <boost/algorithm/string.hpp>
+
 
 class Card;
 
@@ -71,6 +72,7 @@ enum PassiveBGE
     bloodlust, brigade, counterflux, divert, enduringrage, fortification, heroism,
     zealotspreservation, metamorphosis, megamorphosis, revenge, turningtides, virulence,
     haltedorders, devour, criticalreach, temporalbacklash, furiosity, oath_of_loyalty,
+    bloodvengeance,
 
     // End of BGEs
     num_passive_bges

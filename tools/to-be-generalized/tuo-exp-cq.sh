@@ -15,13 +15,13 @@ eiters=""
 fund=""
 endgame=""
 threads=8
-min_deck_size=5
+min_deck_size=3
 max_deck_size=10
 
 declare -i tzoffset=$(( ( $(date +%:::z) ) * 3600 ))
-declare -i dstoffset=3600
+declare -i dstoffset=$(( 1 * 3600 ))
 declare -i match_period=$(( 4 * 3600 ))
-declare -i aligned_4h_time=$(( ( ($(date +%s) + tzoffset) / match_period ) * match_period - tzoffset + dstoffset ))
+declare -i aligned_4h_time=$(( ( ($(date +%s) + tzoffset - dstoffset) / match_period ) * match_period - tzoffset + dstoffset ))
 
 
 ### BEGIN OF INITIAL DECKS ###
@@ -170,7 +170,10 @@ for effect in "${effects[@]}"; do
     esac
 
     log="tuo-exp-cq.${game_type}.${commander}-vs-${target}.effect[${effect}].${todo}.at-$(date '+%F-%H' -d @${aligned_4h_time}).log"
-    rm -rf $log
+    if [[ -f $log ]]; then
+        echo "log already exists: $log" >&2
+        exit 2
+    fi
 
     OLD_IFS=$IFS
     IFS=$'\n'

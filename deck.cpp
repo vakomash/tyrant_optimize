@@ -547,26 +547,19 @@ const Card* Deck::next()
     }
     else if (strategy == DeckStrategy::ordered)
     {
-        auto cardIter = std::min_element(shuffled_cards.begin(), shuffled_cards.begin() + std::min<unsigned>(3u, shuffled_cards.size()), [this](const Card* card1, const Card* card2) -> bool
-                                         {
-                                             auto card1_order = order.find(card1->m_id);
-                                             if (!card1_order->second.empty())
-                                             {
-                                                 auto card2_order = order.find(card2->m_id);
-                                                 if (!card2_order->second.empty())
-                                                 {
-                                                     return(*card1_order->second.begin() < *card2_order->second.begin());
-                                                 }
-                                                 else
-                                                 {
-                                                     return(true);
-                                                 }
-                                             }
-                                             else
-                                             {
-                                                 return(false);
-                                             }
-                                         });
+        auto cardIter = std::min_element(
+            shuffled_cards.begin(),
+            shuffled_cards.begin() + std::min<unsigned>(3u, shuffled_cards.size()),
+            [this](const Card* card1, const Card* card2) -> bool {
+                auto card1_order = order.find(card1->m_id);
+                if (card1_order->second.empty())
+                    return false;
+                auto card2_order = order.find(card2->m_id);
+                if (card2_order->second.empty())
+                    return true;
+                return (*card1_order->second.begin() < *card2_order->second.begin());
+            }
+        );
         auto card = *cardIter;
         shuffled_cards.erase(cardIter);
         auto card_order = order.find(card->m_id);

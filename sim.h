@@ -28,11 +28,7 @@ struct Results
     result_type wins;
     result_type draws;
     result_type losses;
-#ifdef TUO_MODE_OPEN_THE_DECK
-    double points;
-#else
     result_type points;
-#endif
     template<typename other_result_type>
     Results& operator+=(const Results<other_result_type>& other)
     {
@@ -356,8 +352,6 @@ public:
     inline CardStatus * left_assault(const CardStatus * status, const unsigned n);
     inline CardStatus * right_assault(const CardStatus * status);
     inline CardStatus * right_assault(const CardStatus * status, const unsigned n);
-    inline const std::vector<CardStatus *> adjacent_assaults(const CardStatus * status);
-    inline const std::vector<CardStatus *> adjacent_assaults(const CardStatus * status, const unsigned n);
     inline void print_selection_array();
     inline void prepare_action();
     inline void finalize_action();

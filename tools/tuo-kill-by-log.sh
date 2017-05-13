@@ -14,11 +14,19 @@ check_tuo_pid() {
 
 for i in "$@"; do
     xname=$(basename "$i")
-    pid=$(head -n10 "$i" | grep -P -o '(?<=^pid: )\d+')
+    pid=$(head -n5 "$i" | grep -a -P -o '(?<=^pid: )\d+')
+    #echo "raw pid: <$pid>"
     if ! check_tuo_pid "$pid"; then
         echo "$xname => $pid (dead)" 1>&2
         continue
     fi
-    echo "$xname => $pid (kill -${sign})" 1>&2
+    swap=$(cat /proc/$pid/status | fgrep VmSwap | sed -r -e 's/^VmSwap:\s*//g')
+    echo "$xname => $pid (kill -${sign}) (swap: $swap)" 1>&2
     kill -"${sign}" "$pid"
+    case "${sign^^}" in
+        9|15|TERM|KILL)
+            ##echo "removing log: $i" 1>&2
+            ##rm -rf "$i"
+        ;;
+    esac
 done

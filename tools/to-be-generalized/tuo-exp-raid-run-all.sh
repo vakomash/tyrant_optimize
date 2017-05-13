@@ -1,25 +1,40 @@
 #!/bin/bash
 
-raid_name="Warden Raid"
-effect="Virulence"
-#levels=({07..15})
-#levels=({10..19})
+raid_name="Council of Sages Raid"
+effect="Megamorphosis"
+#levels=({14..14})
+#levels=({09..14})
+#levels=({09..25})
+#levels=({16..18})
+#levels=({15..20})
+#levels=({14..25})
 #levels=({15..25})
-#levels=({20..22})
-levels=({22..25})
-#levels=(14)
+levels=({23..25})
 
-declare -i FUND=0 #550 # SP for commander upping
+#levels=({20..30})
+#levels=({45..49})
+
+declare -i FUND=550 #1100 #5000 #10000
+declare -i ITERS_FROM=2000
+declare -i ITERS_TILL=100000
+declare -i THREADS=4
+declare -i ENDGAME=2
 
 declare -A yforts=(
-    #[mt_mt]="Mortar Tower #2"
+    #[ia_ia]="Inspiring Altar #2"
+    #[lc_lc]="Lightning Cannon #2"
     #[sf_sf]="Sky Fortress #2"
-    [lc_lc]="Lightning Cannon #2"
-    #[cs3_lc3]="Corrosive Spore-3, Lightning Cannon-3"
-    #[lc3_lc3]="Lightning Cannon-3(2)"
     #[cs_cs]="Corrosive Spore #2"
     #[df_df]="Death Factory #2"
-    #[ia_ia]="Inspiring Altar #2"
+    #[ds_ds]="Darkspire #2"
+    #[mc_mc]="Medical Center #2"
+
+    #[xx_xx]=""
+
+    #[cs3_lc3]="Corrosive Spore-3, Lightning Cannon-3"
+    #[lc3_lc3]="Lightning Cannon-3(2)"
+    [lc1_lc1]="Lightning Cannon-1(2)"
+    #[lc_lc3]="Lightning Cannon, Lightning Cannon-3"
     #[ia1_ia1]="Inspiring Altar-1(2)"
     #[cs_lc]="Corrosive Spore, Lightning Cannon"
     #[cs_df]="Corrosive Spore, Death Factory"
@@ -31,39 +46,32 @@ declare -A yforts=(
 
 commanders=(
     silus
-    typhon
-    malort
-    ded
-
+    #typhon
     any
+    #any_rt
+    #any_imp
+    #any_coa
 
-    #halc
-    #petr
+    #silus
+    #const
+    #nexor
+    #kylen
+    #krellus
+    #ded
+    #any
+    #any_rt
+    #any_bt
+    #any_imp
 )
 if [[ $TUO_LOGIN == "lugofira" ]]; then
     commanders=(
-        #vex5
-        #petr
         ded
-        #nexor
-        any
-    )
-elif [[ $TUO_LOGIN == "type55" ]]; then
-    commanders=(
-        silus
-    )
-elif [[ $TUO_LOGIN == "pryyf" ]]; then
-    commanders=(
-        dracorex
-        krellus
-        any
-    )
-elif [[ $TUO_LOGIN == "alexan64" ]]; then
-    commanders=(
-        barracus
+        nexor+
+        nexor
         any
     )
 fi
+
 
 for level in "${levels[@]}"; do
     for yfort in "${!yforts[@]}"; do
@@ -72,12 +80,11 @@ for level in "${levels[@]}"; do
                 -c "$commander" \
                 -Y "${yforts[$yfort]}" \
                 -e "$effect" \
-                -i 2000 -I 20000 -t 6 \
-                -G 1 -F $FUND \
+                -i $ITERS_FROM -I $ITERS_TILL \
+                -t $THREADS \
+                -G $ENDGAME -F $FUND \
+                -f "_${TUO_LOGIN:-dsuchka}" \
                 "${raid_name}-${level##0}" "raid_${level}_${yfort}"
-                #-f allow-candidates -f 'Loathe Gravewing' \
-                #-f disallow-candidates -f 'Dune Runner, Ternary Dreadshot, Gun Virtuoso, Kor Ragetrooper, Shock Disruptor' \
-                #-f disallow-candidates -f 'Kor Ragetrooper, Shock Disruptor' \
         done
     done
 done

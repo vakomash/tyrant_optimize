@@ -1,46 +1,168 @@
 #!/bin/bash
 
-FUND=900
+FUND=0 #1100 #6000 #4000 #6000 #10000
 
-RUN_BRAWL=1
-RUN_ARENA=0
+RUN_BRAWL=0
+RUN_ARENA=1
 
 RUN_ATTACK=1
-RUN_DEFENSE=0
+RUN_DEFENSE=1
 
 RANDOM_ATTACK=0
 
-ATTACK_ITERS=(20 200)
-DEFENSE_ITERS=(100 1000)
+ATTACK_ITERS=(13 200)
+DEFENSE_ITERS=(33 500)
 
-ENEMY_DECK="apr_top_50:1;apr_top_200:3"
-#ENEMY_ALIAS="$ENEMY_DECK"
-ENEMY_ALIAS="comp"
+((RANDOM_ATTACK)) && ATTACK_ITERS=("${DEFENSE_ITERS[@]}")
 
-COMMON_OPTIONS=(
-    _brawl_apr
-    -e "ZealotsPreservation"
-    endgame 1
-    -t 2
-    allow-candidates "Loathe Gravewing, Hatred, Griller, Oppressor, Slenditer, Glade Resistor, Subsonic Deity, Eidolon, Vrost, Psycher, Inquisitor"
-    #disallow-candidates 'Steel Ram'
-    #disallow-recipes "Stonewall Garrison, Xeno Harvestman, Nettle Miscreant, Ward Bombardier, Ternary Dreadshot, Patriarch's Bidding"
-    disallow-recipes "Dune Runner, Kor Ragetrooper, Shock Disruptor, Ternary Dreadshot, Atomic Wardriver"
-)
 
-BRAWL_OPTIONS=(
-    -L 7 10
-)
+ATK_COMMANDERS=(any)
+#ATK_COMMANDERS+=(any_{sunder,coalition})
+#ATK_COMMANDERS+=(any_{rt,imp,coa})
+#ATK_COMMANDERS+=(ded)
+#ATK_COMMANDERS+=(const)
+#ATK_COMMANDERS+=(nexor)
+ATK_COMMANDERS+=(silus)
+#ATK_COMMANDERS+=(kylen)
+#ATK_COMMANDERS+=(typhon)
+#ATK_COMMANDERS+=(krellus)
 
-ARENA_OPTIONS=(
-)
 
-#ATK_COMMANDERS=({any,typhon,silus}_punct {typhon,silus}_3ek silus ded typhon malort ark emp const any)
-#ATK_COMMANDERS=(silus typhon ded malort any)
-ATK_COMMANDERS=({silus,typhon}_{2ek{,_mortar},mortar} any ded)
-[[ $TUO_LOGIN == pryyf ]] && ATK_COMMANDERS=(dracorex krellus any)
+
+[[ $TUO_LOGIN == lugofira ]] && ATK_COMMANDERS=(ded nexor nexor any)
 
 #DEF_COMMANDERS=(silus)
+
+ENEMY_DECK="arena_all"
+#ENEMY_DECK="Arena"
+ENEMY_ALIAS="${ENEMY_DECK,,}"
+
+#ENEMY_DECK="GW_GT_DEF"
+#ENEMY_ALIAS="gw_gt_def"
+
+#ENEMY_DEF_DECK="BRAWL_GT_MYTH:0.5;BRAWL_GT_HARD:1.25;BRAWL_GT_NORM:1.0"
+#ENEMY_DEF_ALIAS="brawl_gt_medium"
+
+#ENEMY_DEF_DECK="BRAWL_GT_NORM:1.0;BRAWL_GT_EASY:1.5"
+#ENEMY_DEF_ALIAS="brawl_gt_easy"
+
+#ENEMY_DEF_DECK="BRAWL_GT_HARD:1.0;BRAWL_GT_NORM:1.5"
+#ENEMY_DEF_ALIAS="brawl_gt_norm"
+
+#ENEMY_DEF_DECK="BRAWL_GT_MYTH:1.0;BRAWL_GT_HARD:1.5"
+#ENEMY_DEF_ALIAS="brawl_gt_hard"
+
+#ENEMY_DEF_DECK="CQ_GT_HARD:0.5;CQ_GT_NORM:1.0"
+#ENEMY_DEF_ALIAS="cq_gt_hard"
+
+# ----------------- BEG WR ---------------------
+
+#ENEMY_DEF_DECK="/^BRAWL_GT__WR_(50_54|55_59|60_64|65_69)$/"
+#ENEMY_DEF_ALIAS="brawl_gt_wr60_10"
+
+#ENEMY_DEF_DECK="/^BRAWL_GT__WR_(60_64|65_69|70_74|75_79)$/"
+#ENEMY_DEF_ALIAS="brawl_gt_wr70_10"
+
+#ENEMY_DEF_DECK="/^BRAWL_GT__WR_(75_79|80_84)$/"
+#ENEMY_DEF_ALIAS="brawl_gt_wr80_5"
+
+#ENEMY_DEF_DECK="/^BRAWL_GT__WR_(70_74|75_79|80_84|85_89|90_94)$/"
+#ENEMY_DEF_ALIAS="brawl_gt_wr80_10"
+
+#ENEMY_DEF_DECK="BRAWL_GT__WR_30_34:0.3;BRAWL_GT__WR_35_39:0.4;BRAWL_GT__WR_40_44:0.5;BRAWL_GT__WR_45_49:0.6;BRAWL_GT__WR_50_54:0.5;BRAWL_GT__WR_55_59:0.4"
+#ENEMY_DEF_ALIAS="brawl_gt_easy"
+
+ENEMY_DEF_DECK="BRAWL_GT__WR_40_44:0.3;BRAWL_GT__WR_45_49:0.4;BRAWL_GT__WR_50_54:0.5;BRAWL_GT__WR_55_59:0.6;BRAWL_GT__WR_60_64:0.5;BRAWL_GT__WR_65_69:0.4;BRAWL_GT__WR_70_74:0.3"
+ENEMY_DEF_ALIAS="brawl_gt_medium"
+
+ENEMY_DEF_DECK="BRAWL_GT__WR_60_64:0.3;BRAWL_GT__WR_65_69:0.4;BRAWL_GT__WR_70_74:0.5;BRAWL_GT__WR_75_79:0.6;BRAWL_GT__WR_80_84:0.5;BRAWL_GT__WR_85_89:0.4;BRAWL_GT__WR_90_99:0.3"
+ENEMY_DEF_ALIAS="brawl_gt_hard"
+
+# ----------------- END WR ---------------------
+
+#ENEMY_ATK_DECK="BRAWL_GT_ATK_ALL"
+#ENEMY_ATK_ALIAS="${ENEMY_ATK_DECK,,}"
+
+ENEMY_ATK_DECK="BRAWL_GT_ATK_MYTH:1.0;BRAWL_GT_ATK_HERO:1.25;BRAWL_GT_ATK_NORM:0.75"
+ENEMY_ATK_ALIAS="brawl_atk_strong"
+
+#ENEMY_ATK_DECK="CQ_GT_ATK_ALL"
+#ENEMY_ATK_ALIAS="${ENEMY_ATK_DECK,,}"
+
+#BGE="_FLX"
+unset BGE
+
+#ENEMY_DECK="BRAWL_GT${BGE}_ALL"
+#ENEMY_ALIAS="brawl_gt_all"
+
+#ENEMY_DECK="BRAWL_GT${BGE}_ATK_ALL"
+#ENEMY_ALIAS="brawl_gt_atk"
+
+#ENEMY_DECK="BRAWL_GT${BGE}_FANT"
+#ENEMY_ALIAS="brawl_gt_fant"
+
+#ENEMY_DECK="BRAWL_GT${BGE}_FANT:2;BRAWL_GT${BGE}_MYTH:5;BRAWL_GT${BGE}_HERO:3"
+#ENEMY_ALIAS="brawl_gt_crazy"
+
+#ENEMY_DECK="BRAWL_GT${BGE}_FANT:1;BRAWL_GT${BGE}_MYTH:2;BRAWL_GT${BGE}_HERO:3;BRAWL_GT${BGE}_NORM:2"
+#ENEMY_ALIAS="brawl_gt_strong"
+
+#ENEMY_DECK="BRAWL_GT${BGE}_MYTH:1;BRAWL_GT${BGE}_HERO:2;BRAWL_GT${BGE}_NORM:3;BRAWL_GT${BGE}_EASY:2"
+#ENEMY_ALIAS="brawl_gt_normal"
+
+#ENEMY_DECK="BRAWL_GT${BGE}_HERO:1;BRAWL_GT${BGE}_NORM:2;BRAWL_GT${BGE}_EASY:3"
+#ENEMY_ALIAS="brawl_gt_easy"
+
+
+COMMON_OPTIONS=(
+    ddd_b64
+    _${TUO_LOGIN:-dsuchka}
+    _${TUO_LOGIN:-dsuchka}_bb
+    #_gw_gt.FA_x_SF_SF
+    #_gw_gt_atk.SF_SF_x_FA
+    #_mj2
+    _brawl_gt
+    _brawl_gt_atk
+    #_cq_gt2
+    #_cq_gt_atk
+    #_arena
+    endgame 2
+    -t 4
+    climb-opts:iter-mul=6
+    #dom-
+    -e "Megamorphosis"
+)
+
+#
+##  Arena options
+#
+
+ARENA_COMMON_OPTIONS=(
+)
+
+ARENA_ATTACK_OPTIONS=(
+    #climb-opts:open-the-deck
+)
+
+ARENA_DEFENSE_OPTIONS=(
+    enemy:ordered
+)
+
+
+#
+##  Brawl options
+#
+
+BRAWL_COMMON_OPTIONS=(
+)
+
+BRAWL_ATTACK_OPTIONS=(
+    #-L 7 10
+)
+
+BRAWL_DEFENSE_OPTIONS=(
+    enemy:ordered
+)
 
 
 ## setup fund option or unset variable
@@ -100,6 +222,10 @@ run_command() {
     local log=$1
     shift
     local command=("$@")
+    if [[ -e "$log" ]]; then
+        echo "log already exists: $log"
+        return 1
+    fi
     ( echo "run: ${command[@]}"; echo ) | tee "$log" >&2
     "${command[@]}" &>> "$log" &
 }
@@ -108,7 +234,10 @@ run_command() {
 if ((RUN_BRAWL)); then
     if ((RUN_ATTACK)); then
         ((RANDOM_ATTACK)) && order="random" || order="ordered"
-        OPTIONS=("${COMMON_OPTIONS[@]}" "${BRAWL_OPTIONS[@]}" "$order" brawl climbex "${ATTACK_ITERS[@]}")
+        OPTIONS=(
+            "${COMMON_OPTIONS[@]}" "${BRAWL_COMMON_OPTIONS[@]}" "${BRAWL_ATTACK_OPTIONS[@]}"
+            "$order" brawl climbex "${ATTACK_ITERS[@]}"
+        )
         for commander in "${ATK_COMMANDERS[@]}"; do
             check_commander "$commander" || continue
             log="tuo-brawl.attack-${order}.${commander}-vs-${ENEMY_DEF_ALIAS}${FUND:+.fund${FUND}}.log"
@@ -118,7 +247,10 @@ if ((RUN_BRAWL)); then
         done
     fi
     if ((RUN_DEFENSE)); then
-        OPTIONS=("${COMMON_OPTIONS[@]}" "${BRAWL_OPTIONS[@]}" random brawl-defense climbex "${DEFENSE_ITERS[@]}")
+        OPTIONS=(
+            "${COMMON_OPTIONS[@]}" "${BRAWL_COMMON_OPTIONS[@]}" "${BRAWL_DEFENSE_OPTIONS[@]}"
+            random brawl-defense climbex "${DEFENSE_ITERS[@]}"
+        )
         for commander in "${DEF_COMMANDERS[@]}"; do
             check_commander "$commander" || continue
             log="tuo-brawl.defense-random.${commander}-vs-${ENEMY_ATK_ALIAS}${FUND:+.fund${FUND}}.log"
@@ -133,7 +265,10 @@ fi
 if ((RUN_ARENA)); then
     if ((RUN_ATTACK)); then
         ((RANDOM_ATTACK)) && order="random" || order="ordered"
-        OPTIONS=("${COMMON_OPTIONS[@]}" "${ARENA_OPTIONS[@]}" "$order" fight win climbex "${ATTACK_ITERS[@]}")
+        OPTIONS=(
+            "${COMMON_OPTIONS[@]}" "${ARENA_COMMON_OPTIONS[@]}" "${ARENA_ATTACK_OPTIONS[@]}"
+            "$order" fight win climbex "${ATTACK_ITERS[@]}"
+        )
         for commander in "${ATK_COMMANDERS[@]}"; do
             check_commander "$commander" || continue
             log="tuo-arena.attack-${order}.${commander}-vs-${ENEMY_DEF_ALIAS}${FUND:+.fund${FUND}}.log"
@@ -143,7 +278,10 @@ if ((RUN_ARENA)); then
         done
     fi
     if ((RUN_DEFENSE)); then
-        OPTIONS=("${COMMON_OPTIONS[@]}" "${ARENA_OPTIONS[@]}" random surge defense climbex "${DEFENSE_ITERS[@]}")
+        OPTIONS=(
+            "${COMMON_OPTIONS[@]}" "${ARENA_COMMON_OPTIONS[@]}" "${ARENA_DEFENSE_OPTIONS[@]}"
+            random surge defense climbex "${DEFENSE_ITERS[@]}"
+        )
         for commander in "${DEF_COMMANDERS[@]}"; do
             check_commander "$commander" || continue
             log="tuo-arena.defense-random.${commander}-vs-${ENEMY_ATK_ALIAS}${FUND:+.fund${FUND}}.log"

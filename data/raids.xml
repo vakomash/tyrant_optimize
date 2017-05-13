@@ -557,6 +557,27 @@
 			</always_include>
 		</deck>
 	</raid>
+	<raid>
+		<id>101</id> <!-- lol -->
+		<name>Council of Sages Raid</name>
+		<levels>26</levels>
+		<commander>25446</commander>
+		<fortress_pool amount="2">
+			<card replicates="1">18186</card>
+			<card replicates="1">18196</card>
+			<card replicates="1">18206</card>
+			<card replicates="1">18216</card>
+		</fortress_pool>
+		<deck>
+			<always_include>
+				<card replicates="2">47054</card>
+				<card replicates="2">47064</card>
+				<card replicates="2">47074</card>
+				<card replicates="2">47084</card>
+				<card replicates="2">47094</card>
+			</always_include>
+		</deck>
+	</raid>
 <!-- END of Raids -->
 
 
@@ -5947,6 +5968,448 @@
                 <card>36343</card><!-- Huron Emulsifier-6-->
                 <card>44585</card><!-- Vault Infiltrator-6-->
                 <card>39905</card><!-- Brugasus Cavalry-6-->
+            </always_include>
+        </deck>
+    </campaign>
+
+    <campaign>
+        <name>PrimalNexus101</name>
+        <name>Primal Nexus Normal 1</name>
+        <commander>1261</commander><!-- Sidoze-3 -->
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>15131</card><!-- Icon-3 -->
+                <card>6268</card><!-- Grenadier-4 -->
+                <card>6268</card><!-- Grenadier-4 -->
+                <card>46290</card><!-- Savage Fissure-1 -->
+                <card>7793</card><!-- Halesurge-3 -->
+                <card>46404</card><!-- Doomspeaker-1 -->
+                <card>5624</card><!-- Missile Walker-4 -->
+                <card>5624</card><!-- Missile Walker-4 -->
+                <card>47104</card><!-- Grizrael Eternal-1 -->
+                <card>37197</card><!-- Paton -->
+            </always_include>
+        </deck>
+    </campaign>
+    
+    <campaign>
+        <name>PrimalNexus102</name>
+        <name>Primal Nexus Normal 2</name>
+        <commander>1261</commander><!-- Sidoze-3 -->
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>6268</card><!-- Grenadier-4 -->
+                <card>6268</card><!-- Grenadier-4 -->
+                <card>6655</card><!-- Launcher-3 -->
+                <card>5624</card><!-- Missile Walker-4 -->
+                <card>5624</card><!-- Missile Walker-4 -->
+                <card>46404</card><!-- Doomspeaker-1 -->
+                <card>12840</card><!-- Kiln Mail-3 -->
+                <card>33889</card><!-- Hillock Bust-3 -->
+                <card>47104</card><!-- Grizrael Eternal-1 -->
+                <card>46290</card><!-- Savage Fissure-1 -->
+            </always_include>
+        </deck>
+    </campaign>
+    
+    <campaign>
+        <name>PrimalNexus103</name>
+        <name>Primal Nexus Normal 3</name>
+        <commander>25414</commander><!-- Savage Anicetus-1 -->
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>15218</card><!-- Relliger-3 -->
+                <card>33889</card><!-- Hillock Bust-3 -->
+                <card>7796</card><!-- Halesurge -->
+                <card>12843</card><!-- Kiln Mail -->
+                <card>12218</card><!-- Marshall-3 -->
+                <card>46292</card><!-- Savage Fissure-3 -->
+                <card>46292</card><!-- Savage Fissure-3 -->
+                <card>5257</card><!-- Diviner-1 -->
+                <card>47104</card><!-- Grizrael Eternal-1 -->
+                <card>46404</card><!-- Doomspeaker-1 -->
+            </always_include>
+        </deck>
+    </campaign>
+    
+    <campaign>
+        <name>PrimalNexus104</name>
+        <name>Primal Nexus Normal 4</name>
+        <commander>1261</commander><!-- Sidoze-3 -->
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>13977</card><!-- Jolter-3 -->
+                <card>6268</card><!-- Grenadier-4 -->
+                <card>5624</card><!-- Missile Walker-4 -->
+                <card>5624</card><!-- Missile Walker-4 -->
+                <card>33035</card><!-- Wendigo-3 -->
+                <card>16327</card><!-- Zharkon -->
+                <card>46404</card><!-- Doomspeaker-1 -->
+                <card>46290</card><!-- Savage Fissure-1 -->
+                <card>44000</card><!-- Arbor Alias-3 -->
+                <card>47104</card><!-- Grizrael Eternal-1 -->
+            </always_include>
+        </deck>
+    </campaign>
+    
+    <campaign>
+        <name>PrimalNexus105</name>
+        <name>Primal Nexus Normal 5</name>
+        <commander>1261</commander><!-- Sidoze-3 -->
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>32607</card><!-- Sporadic Barrager-3 -->
+                <card>16327</card><!-- Zharkon -->
+                <card>6268</card><!-- Grenadier-4 -->
+                <card>31872</card><!-- Maverick -->
+                <card>5624</card><!-- Missile Walker-4 -->
+                <card>46404</card><!-- Doomspeaker-1 -->
+                <card>30064</card><!-- Stern Corsair-3 -->
+                <card>33416</card><!-- Cerberus -->
+                <card>47104</card><!-- Grizrael Eternal-1 -->
+                <card>46290</card><!-- Savage Fissure-1 -->
+            </always_include>
+        </deck>
+    </campaign>
+    
+    <campaign>
+        <name>PrimalNexus106</name>
+        <name>Primal Nexus Normal 6</name>
+        <commander>25424</commander><!-- Alexiares Regent-1 -->
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>33416</card><!-- Cerberus -->
+                <card>31875</card><!-- Maverick Unbowed-3 -->
+                <card>11077</card><!-- Dauntless -->
+                <card>16327</card><!-- Zharkon -->
+                <card>33041</card><!-- Starving Wendigo-3 -->
+                <card>46406</card><!-- Doomspeaker-3 -->
+                <card>46406</card><!-- Doomspeaker-3 -->
+                <card>44009</card><!-- Axle Alias -->
+                <card>47104</card><!-- Grizrael Eternal-1 -->
+                <card>46290</card><!-- Savage Fissure-1 -->
+            </always_include>
+        </deck>
+    </campaign>
+    
+    <campaign>
+        <name>PrimalNexus107</name>
+        <name>Primal Nexus Normal 7</name>
+        <commander>25456</commander><!-- Primal Nexus-1 -->
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>14449</card><!-- Roadster -->
+                <card>31346</card><!-- Wyrm Tooth -->
+                <card>33146</card><!-- Velocity Chaser -->
+                <card>495</card><!-- Omniseer-4 -->
+                <card>30856</card><!-- Tech Submersible-3 -->
+                <card>33584</card><!-- Living Steel -->
+                <card>46290</card><!-- Savage Fissure-1 -->
+                <card>47104</card><!-- Grizrael Eternal-1 -->
+                <card>47104</card><!-- Grizrael Eternal-1 -->
+                <card>46404</card><!-- Doomspeaker-1 -->
+            </always_include>
+        </deck>
+    </campaign>
+
+    <campaign>
+        <name>PrimalNexus201</name>
+        <name>Primal Nexus Heroic 1</name>
+        <commander>1025</commander><!-- Halcyon-3 -->
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>12212</card><!-- Halerift-3 -->
+                <card>12212</card><!-- Halerift-3 -->
+                <card>47106</card><!-- Grizrael Eternal-3 -->
+                <card>37206</card><!-- Paton Heaver-3 -->
+                <card>15143</card><!-- Iconoclast-3 -->
+                <card>15143</card><!-- Iconoclast-3 -->
+                <card>41882</card><!-- Volatile Mercury-3 -->
+                <card>46406</card><!-- Doomspeaker-3 -->
+                <card>42624</card><!-- Tethys Lander-1 -->
+                <card>46292</card><!-- Savage Fissure-3 -->
+            </always_include>
+        </deck>
+    </campaign>
+    
+    <campaign>
+        <name>PrimalNexus202</name>
+        <name>Primal Nexus Heroic 2</name>
+        <commander>1025</commander><!-- Halcyon-3 -->
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>46406</card><!-- Doomspeaker-3 -->
+                <card>6664</card><!-- Ballistic Launcher -->
+                <card>12852</card><!-- Kiln Shield-3 -->
+                <card>47106</card><!-- Grizrael Eternal-3 -->
+                <card>39090</card><!-- Bandit Eliminator-3 -->
+                <card>33895</card><!-- Hillock Blunder-3 -->
+                <card>38266</card><!-- Arena Tiller-3 -->
+                <card>46292</card><!-- Savage Fissure-3 -->
+                <card>5472</card><!-- The Divine-3 -->
+                <card>12227</card><!-- Decorated Marshall -->
+            </always_include>
+        </deck>
+    </campaign>
+    
+    <campaign>
+        <name>PrimalNexus203</name>
+        <name>Primal Nexus Heroic 3</name>
+        <commander>25416</commander><!-- Savage Anicetus-3 -->
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>46406</card><!-- Doomspeaker-3 -->
+                <card>41882</card><!-- Volatile Mercury-3 -->
+                <card>39090</card><!-- Bandit Eliminator-3 -->
+                <card>46295</card><!-- Savage Fissure -->
+                <card>46295</card><!-- Savage Fissure -->
+                <card>7802</card><!-- Haleflash -->
+                <card>13721</card><!-- Qotic -->
+                <card>42626</card><!-- Tethys Lander-3 -->
+                <card>47106</card><!-- Grizrael Eternal-3 -->
+                <card>5262</card><!-- Diviner -->
+            </always_include>
+        </deck>
+    </campaign>
+    
+    <campaign>
+        <name>PrimalNexus204</name>
+        <name>Primal Nexus Heroic 4</name>
+        <commander>1034</commander><!-- Typhon Vex -->
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>13980</card><!-- Jolter -->
+                <card>47106</card><!-- Grizrael Eternal-3 -->
+                <card>46406</card><!-- Doomspeaker-3 -->
+                <card>36669</card><!-- Warlock -->
+                <card>37615</card><!-- Wavecrasher -->
+                <card>37924</card><!-- Rank Disperser-3 -->
+                <card>16327</card><!-- Zharkon -->
+                <card>46292</card><!-- Savage Fissure-3 -->
+                <card>44009</card><!-- Axle Alias -->
+                <card>42488</card><!-- Reactant Disarmer-3 -->
+            </always_include>
+        </deck>
+    </campaign>
+    
+    <campaign>
+        <name>PrimalNexus205</name>
+        <name>Primal Nexus Heroic 5</name>
+        <commander>1034</commander><!-- Typhon Vex -->
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>46406</card><!-- Doomspeaker-3 -->
+                <card>33422</card><!-- Cerberus Mobilized -->
+                <card>46292</card><!-- Savage Fissure-3 -->
+                <card>36669</card><!-- Warlock -->
+                <card>31875</card><!-- Maverick Unbowed-3 -->
+                <card>47106</card><!-- Grizrael Eternal-3 -->
+                <card>42491</card><!-- Reactant Disarmer -->
+                <card>38266</card><!-- Arena Tiller-3 -->
+                <card>30067</card><!-- Stern Corsair -->
+                <card>32613</card><!-- Extreme Barrager-3 -->
+            </always_include>
+        </deck>
+    </campaign>
+    
+    <campaign>
+        <name>PrimalNexus206</name>
+        <name>Primal Nexus Heroic 6</name>
+        <commander>25426</commander><!-- Alexiares Regent-3 -->
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>41573</card><!-- Founder -->
+                <card>46292</card><!-- Savage Fissure-3 -->
+                <card>36672</card><!-- Warlock Salvo-3 -->
+                <card>37924</card><!-- Rank Disperser-3 -->
+                <card>46409</card><!-- Doomspeaker -->
+                <card>46409</card><!-- Doomspeaker -->
+                <card>41591</card><!-- Disintegrator -->
+                <card>37618</card><!-- Wavecrasher Dire-3 -->
+                <card>47106</card><!-- Grizrael Eternal-3 -->
+                <card>42488</card><!-- Reactant Disarmer-3 -->
+            </always_include>
+        </deck>
+    </campaign>
+    
+    <campaign>
+        <name>PrimalNexus207</name>
+        <name>Primal Nexus Heroic 7</name>
+        <commander>25458</commander><!-- Primal Nexus-3 -->
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>47106</card><!-- Grizrael Eternal-3 -->
+                <card>47106</card><!-- Grizrael Eternal-3 -->
+                <card>36100</card><!-- Top Clandestine-3 -->
+                <card>11705</card><!-- Ezamit Serene-3 -->
+                <card>46406</card><!-- Doomspeaker-3 -->
+                <card>46292</card><!-- Savage Fissure-3 -->
+                <card>46010</card><!-- Rioter Ram-3 -->
+                <card>18082</card><!-- Ingot Forge-3 -->
+                <card>42716</card><!-- Balor Deathgaze-3 -->
+                <card>43676</card><!-- Corona Smasher-3 -->
+            </always_include>
+        </deck>
+    </campaign>
+
+
+    <campaign>
+        <name>PrimalNexus301</name>
+        <name>Primal Nexus Mythic 1</name>
+        <commander>25225</commander><!-- Lord Halcyon-5 -->
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>41891</card><!-- Erratic Mercury -->
+                <card>41891</card><!-- Erratic Mercury -->
+                <card>39099</card><!-- Bandit Life Stealer -->
+                <card>39099</card><!-- Bandit Life Stealer -->
+                <card>46795</card><!-- Sandstorm Ambusher -->
+                <card>46409</card><!-- Doomspeaker -->
+                <card>47109</card><!-- Grizrael Eternal -->
+                <card>45375</card><!-- Saiph Starseer -->
+                <card>46295</card><!-- Savage Fissure -->
+                <card>42635</card><!-- Tethys Ashore -->
+            </always_include>
+        </deck>
+    </campaign>
+    
+    <campaign>
+        <name>PrimalNexus302</name>
+        <name>Primal Nexus Mythic 2</name>
+        <commander>25225</commander><!-- Lord Halcyon-5 -->
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>45375</card><!-- Saiph Starseer -->
+                <card>41891</card><!-- Erratic Mercury -->
+                <card>45213</card><!-- Halcyon's Ruffian -->
+                <card>46409</card><!-- Doomspeaker -->
+                <card>47109</card><!-- Grizrael Eternal -->
+                <card>42263</card><!-- First Explorer -->
+                <card>46295</card><!-- Savage Fissure -->
+                <card>38275</card><!-- Wasteland Tiller -->
+                <card>46795</card><!-- Sandstorm Ambusher -->
+                <card>44231</card><!-- Rock Shredder -->
+            </always_include>
+        </deck>
+    </campaign>
+    
+    <campaign>
+        <name>PrimalNexus303</name>
+        <name>Primal Nexus Mythic 3</name>
+        <commander>25419</commander><!-- Savage Anicetus -->
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>46295</card><!-- Savage Fissure -->
+                <card>45378</card><!-- Saiph Starmaw-3 -->
+                <card>45854</card><!-- Utopia of Creation-3 -->
+                <card>46978</card><!-- Windstorm Successor-3 -->
+                <card>46409</card><!-- Doomspeaker -->
+                <card>47109</card><!-- Grizrael Eternal -->
+                <card>46795</card><!-- Sandstorm Ambusher -->
+                <card>42263</card><!-- First Explorer -->
+                <card>45213</card><!-- Halcyon's Ruffian -->
+                <card>44234</card><!-- Razor Shredder-3 -->
+            </always_include>
+        </deck>
+    </campaign>
+    
+    <campaign>
+        <name>PrimalNexus304</name>
+        <name>Primal Nexus Mythic 4</name>
+        <commander>25244</commander><!-- Typhon the Mad -->
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>46313</card><!-- Warzone Minelayer -->
+                <card>46295</card><!-- Savage Fissure -->
+                <card>42263</card><!-- First Explorer -->
+                <card>37627</card><!-- Wavecrasher Extreme -->
+                <card>42757</card><!-- Imitator Pod -->
+                <card>39099</card><!-- Bandit Life Stealer -->
+                <card>47109</card><!-- Grizrael Eternal -->
+                <card>36681</card><!-- Warlock Crossfire -->
+                <card>46409</card><!-- Doomspeaker -->
+                <card>41891</card><!-- Erratic Mercury -->
+            </always_include>
+        </deck>
+    </campaign>
+    
+    <campaign>
+        <name>PrimalNexus305</name>
+        <name>Primal Nexus Mythic 5</name>
+        <commander>25244</commander><!-- Typhon the Mad -->
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>47109</card><!-- Grizrael Eternal -->
+                <card>44845</card><!-- Oni Headhunter -->
+                <card>36681</card><!-- Warlock Crossfire -->
+                <card>42083</card><!-- Primal Criterion -->
+                <card>41585</card><!-- Founder of Dark -->
+                <card>46295</card><!-- Savage Fissure -->
+                <card>46409</card><!-- Doomspeaker -->
+                <card>42497</card><!-- Neocyte Disarmer -->
+                <card>43997</card><!-- Oxidianiosus -->
+                <card>46313</card><!-- Warzone Minelayer -->
+            </always_include>
+        </deck>
+    </campaign>
+    
+    <campaign>
+        <name>PrimalNexus306</name>
+        <name>Primal Nexus Mythic 6</name>
+        <commander>25429</commander><!-- Alexiares Regent -->
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>44848</card><!-- Oni Headcollector-3 -->
+                <card>44492</card><!-- Planet Shaper-3 -->
+                <card>43997</card><!-- Oxidianiosus -->
+                <card>42083</card><!-- Primal Criterion -->
+                <card>46295</card><!-- Savage Fissure -->
+                <card>41600</card><!-- Frenetic Disintegrator-3 -->
+                <card>46313</card><!-- Warzone Minelayer -->
+                <card>47109</card><!-- Grizrael Eternal -->
+                <card>46409</card><!-- Doomspeaker -->
+                <card>45252</card><!-- Zethus the Dominant-3 -->
+            </always_include>
+        </deck>
+    </campaign>
+    
+    <campaign>
+        <name>PrimalNexus307</name>
+        <name>Primal Nexus Mythic 7</name>
+        <commander>25461</commander><!-- Primal Nexus -->
+        <levels>1</levels>
+        <deck>
+            <always_include>
+                <card>46409</card><!-- Doomspeaker -->
+                <card>41930</card><!-- Tormented Gambit-3 -->
+                <card>42083</card><!-- Primal Criterion -->
+                <card>46295</card><!-- Savage Fissure -->
+                <card>44351</card><!-- Sulfuris Cascade -->
+                <card>45570</card><!-- Rastax's Overflight-3 -->
+                <card>42874</card><!-- Therion Aetherstorm-3 -->
+                <card>47109</card><!-- Grizrael Eternal -->
+                <card>46034</card><!-- Argonaut Captain-3 -->
+                <card>41765</card><!-- Thrash Mauler -->
             </always_include>
         </deck>
     </campaign>

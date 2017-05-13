@@ -7,6 +7,7 @@
 #include <string>
 #include <sstream>
 #include <vector>
+#include <cmath>
 
 #include "tyrant.h"
 #include "card.h"
@@ -84,28 +85,6 @@ inline CardStatus * Field::right_assault(const CardStatus * status, const unsign
         }
     }
     return nullptr;
-}
-inline const std::vector<CardStatus *> Field::adjacent_assaults(const CardStatus * status)
-{
-    return adjacent_assaults(status, 1);
-}
-inline const std::vector<CardStatus *> Field::adjacent_assaults(const CardStatus * status, const unsigned n)
-{
-    std::vector<CardStatus *> res;
-    res.reserve(n * 2);
-    for (unsigned i(n); i > 0; -- i)
-    {
-        auto left_status = left_assault(status, i);
-        if (left_status)
-        { res.push_back(left_status); }
-    }
-    for (unsigned i(1); i <= n; ++ i)
-    {
-        auto right_status = right_assault(status, i);
-        if (right_status)
-        { res.push_back(right_status); }
-    }
-    return res;
 }
 inline void Field::print_selection_array()
 {
@@ -398,17 +377,40 @@ void prepend_on_death(Field* fd)
         if (status->m_card->m_type == CardType::assault)
         {
             // Skill: Avenge
-            for (auto && adj_status: fd->adjacent_assaults(status))
+            const unsigned host_idx = status->m_index;
+            unsigned from_idx, till_idx;
+            if (__builtin_expect(fd->bg_effects[fd->tapi][PassiveBGE::bloodvengeance], false))
             {
+                // Passive BGE Blood Vengeance: scan all assaults for Avenge
+                from_idx = 0;
+                till_idx = assaults.size() - 1;
+            }
+            else
+            {
+                from_idx = safe_minus(host_idx, 1);
+                till_idx = std::min(host_idx + 1, safe_minus(assaults.size(), 1));
+            }
+            for (; from_idx <= till_idx; ++ from_idx)
+            {
+                if (from_idx == host_idx) { continue; }
+                CardStatus* adj_status = &assaults[from_idx];
+                if (!is_alive(adj_status)) { continue; }
                 unsigned avenge_value = adj_status->skill(Skill::avenge);
-                if (__builtin_expect(avenge_value, false))
+                if (!avenge_value) { continue; }
+
+                // Passive BGE Blood Vengeance: use half value rounded up
+                // (for distance > 1, i. e. non-standard Avenge triggering)
+                if (__builtin_expect((std::abs((signed)from_idx - (signed)host_idx) > 1), false))
                 {
-                    _DEBUG_MSG(1, "%s activates Avenge %u\n", status_description(adj_status).c_str(), avenge_value);
-                    if (! adj_status->m_sundered)
-                    { adj_status->m_attack += avenge_value; }
-                    adj_status->m_max_hp += avenge_value;
-                    adj_status->m_hp += avenge_value;
+                    avenge_value = (avenge_value + 1) / 2;
                 }
+                _DEBUG_MSG(1, "%s%s activates Avenge %u\n",
+                    (std::abs((signed)from_idx - (signed)host_idx) > 1 ? "BGE BloodVengeance: " : ""),
+                    status_description(adj_status).c_str(), avenge_value);
+                if (! adj_status->m_sundered)
+                { adj_status->m_attack += avenge_value; }
+                adj_status->m_max_hp += avenge_value;
+                adj_status->m_hp += avenge_value;
             }
 
             // Passive BGE: Virulence
@@ -1191,7 +1193,11 @@ struct PerformAttack
         att_dmg = pre_modifier_dmg;
         if (att_dmg == 0)
         { return; }
+#ifndef NDEBUG
         std::string desc;
+#endif
+        auto& att_assaults = fd->tap->assaults; // (active) attacker assaults
+        auto& def_assaults = fd->tip->assaults; // (inactive) defender assaults
         unsigned legion_value = 0;
 
         // Enhance damage (if additional damage isn't prevented)
@@ -1201,16 +1207,17 @@ struct PerformAttack
             unsigned legion_base = att_status->skill(Skill::legion);
             if (__builtin_expect((legion_base > 0) && skill_check<Skill::legion>(fd, att_status, nullptr), false))
             {
-                auto & assaults = fd->tap->assaults;
                 bool bge_megamorphosis = fd->bg_effects[fd->tapi][PassiveBGE::megamorphosis];
-                legion_value += (att_status->m_index > 0) && is_alive(&assaults[att_status->m_index - 1])
-                    && (bge_megamorphosis || (assaults[att_status->m_index - 1].m_faction == att_status->m_faction));
-                legion_value += ((att_status->m_index + 1) < assaults.size()) && is_alive(&assaults[att_status->m_index + 1])
-                    && (bge_megamorphosis || (assaults[att_status->m_index + 1].m_faction == att_status->m_faction));
+                legion_value += (att_status->m_index > 0) && is_alive(&att_assaults[att_status->m_index - 1])
+                    && (bge_megamorphosis || (att_assaults[att_status->m_index - 1].m_faction == att_status->m_faction));
+                legion_value += ((att_status->m_index + 1) < att_assaults.size()) && is_alive(&att_assaults[att_status->m_index + 1])
+                    && (bge_megamorphosis || (att_assaults[att_status->m_index + 1].m_faction == att_status->m_faction));
                 if (legion_value)
                 {
                     legion_value *= legion_base;
+#ifndef NDEBUG
                     if (debug_print > 0) { desc += "+" + to_string(legion_value) + "(legion)"; }
+#endif
                     att_dmg += legion_value;
                 }
             }
@@ -1220,7 +1227,7 @@ struct PerformAttack
             if (coalition_base > 0)
             {
                 uint8_t factions_bitmap = 0;
-                for (CardStatus * status : fd->tap->assaults.m_indirect)
+                for (CardStatus * status : att_assaults.m_indirect)
                 {
                     if (! is_alive(status)) { continue; }
                     factions_bitmap |= (1 << (status->m_card->m_faction));
@@ -1228,7 +1235,9 @@ struct PerformAttack
                 assert(factions_bitmap);
                 unsigned uniq_factions = byte_bits_count(factions_bitmap);
                 unsigned coalition_value = coalition_base * uniq_factions;
+#ifndef NDEBUG
                 if (debug_print > 0) { desc += "+" + to_string(coalition_value) + "(coalition/x" + to_string(uniq_factions) + ")"; }
+#endif
                 att_dmg += coalition_value;
             }
 
@@ -1236,7 +1245,9 @@ struct PerformAttack
             unsigned rupture_value = att_status->skill(Skill::rupture);
             if (rupture_value > 0)
             {
+#ifndef NDEBUG
                 if (debug_print > 0) { desc += "+" + to_string(rupture_value) + "(rupture)"; }
+#endif
                 att_dmg += rupture_value;
             }
 
@@ -1244,54 +1255,74 @@ struct PerformAttack
             unsigned venom_value = att_status->skill(Skill::venom);
             if (venom_value > 0 && def_status->m_poisoned > 0)
             {
+#ifndef NDEBUG
                 if (debug_print > 0) { desc += "+" + to_string(venom_value) + "(venom)"; }
+#endif
                 att_dmg += venom_value;
             }
 
             // Passive BGE: Bloodlust
             if (fd->bloodlust_value > 0)
             {
+#ifndef NDEBUG
                 if (debug_print > 0) { desc += "+" + to_string(fd->bloodlust_value) + "(bloodlust)"; }
+#endif
                 att_dmg += fd->bloodlust_value;
             }
 
             // State: Enfeebled
             if(def_status->m_enfeebled > 0)
             {
+#ifndef NDEBUG
                 if(debug_print > 0) { desc += "+" + to_string(def_status->m_enfeebled) + "(enfeebled)"; }
+#endif
                 att_dmg += def_status->m_enfeebled;
             }
         }
         // prevent damage
+#ifndef NDEBUG
         std::string reduced_desc;
+#endif
         unsigned reduced_dmg(0);
-        unsigned armor_value = def_status->skill(Skill::armor);
-        // Passive BGE: Fortification
-        if (__builtin_expect(fd->bg_effects[fd->tapi][PassiveBGE::fortification], false)
-            && (def_status->m_card->m_type == CardType::assault))
-        {
-            for (auto && adj_status: fd->adjacent_assaults(def_status))
+        unsigned armor_value = 0;
+        // Armor
+        if (def_status->m_card->m_type == CardType::assault) {
+            // Passive BGE: Fortification (adj step -> 1 (1 left, host, 1 right)
+            unsigned adj_size = (unsigned)(fd->bg_effects[fd->tapi][PassiveBGE::fortification]);
+            unsigned host_idx = def_status->m_index;
+            unsigned from_idx = safe_minus(host_idx, adj_size);
+            unsigned till_idx = std::min(host_idx + adj_size, safe_minus(def_assaults.size(), 1));
+            for (; from_idx <= till_idx; ++ from_idx)
             {
+                CardStatus* adj_status = &def_assaults[from_idx];
+                if (!is_alive(adj_status)) { continue; }
                 armor_value = std::max(armor_value, adj_status->skill(Skill::armor));
             }
         }
         if (armor_value > 0)
         {
+#ifndef NDEBUG
             if(debug_print > 0) { reduced_desc += to_string(armor_value) + "(armor)"; }
+#endif
             reduced_dmg += armor_value;
         }
         if (def_status->protected_value() > 0)
         {
+#ifndef NDEBUG
             if(debug_print > 0) { reduced_desc += (reduced_desc.empty() ? "" : "+") + to_string(def_status->protected_value()) + "(protected)"; }
+#endif
             reduced_dmg += def_status->protected_value();
         }
         unsigned pierce_value = att_status->skill(Skill::pierce) + att_status->skill(Skill::rupture);
         if (reduced_dmg > 0 && pierce_value > 0)
         {
+#ifndef NDEBUG
             if (debug_print > 0) { reduced_desc += "-" + to_string(pierce_value) + "(pierce)"; }
+#endif
             reduced_dmg = safe_minus(reduced_dmg, pierce_value);
         }
         att_dmg = safe_minus(att_dmg, reduced_dmg);
+#ifndef NDEBUG
         if (debug_print > 0)
         {
             if(!reduced_desc.empty()) { desc += "-[" + reduced_desc + "]"; }
@@ -1300,6 +1331,7 @@ struct PerformAttack
                 status_description(att_status).c_str(),
                 status_description(def_status).c_str(), pre_modifier_dmg, desc.c_str());
         }
+#endif
         // Passive BGE: Brigade
         if (__builtin_expect(fd->bg_effects[fd->tapi][PassiveBGE::brigade] && legion_value, false)
             && can_be_healed(att_status))
@@ -1416,7 +1448,7 @@ bool attack_phase(Field* fd)
     unsigned att_dmg = 0;
     if (alive_assault(def_assaults, fd->current_ci))
     {
-        CardStatus * def_status = &fd->tip->assaults[fd->current_ci];
+        CardStatus* def_status = &def_assaults[fd->current_ci];
         att_dmg = PerformAttack{fd, att_status, def_status}.op<CardType::assault>();
         unsigned swipe_value = att_status->skill(Skill::swipe);
         unsigned drain_value = att_status->skill(Skill::drain);
@@ -1424,8 +1456,15 @@ bool attack_phase(Field* fd)
         {
             bool critical_reach = fd->bg_effects[fd->tapi][PassiveBGE::criticalreach];
             auto drain_total_dmg = att_dmg;
-            for (auto && adj_status: fd->adjacent_assaults(def_status, critical_reach ? 2 : 1))
+            unsigned adj_size = 1 + (unsigned)(critical_reach);
+            unsigned host_idx = def_status->m_index;
+            unsigned from_idx = safe_minus(host_idx, adj_size);
+            unsigned till_idx = std::min(host_idx + adj_size, safe_minus(def_assaults.size(), 1));
+            for (; from_idx <= till_idx; ++ from_idx)
             {
+                if (from_idx == host_idx) { continue; }
+                CardStatus* adj_status = &def_assaults[from_idx];
+                if (!is_alive(adj_status)) { continue; }
                 unsigned swipe_dmg = safe_minus(
                     swipe_value + drain_value + def_status->m_enfeebled,
                     def_status->protected_value());
@@ -1846,8 +1885,16 @@ inline unsigned select_fast<Skill::mend>(Field* fd, CardStatus* src, const std::
 {
     fd->selection_array.clear();
     bool critical_reach = fd->bg_effects[fd->tapi][PassiveBGE::criticalreach];
-    for (auto && adj_status: fd->adjacent_assaults(src, critical_reach ? 2 : 1))
+    auto& assaults = fd->players[src->m_player]->assaults;
+    unsigned adj_size = 1 + (unsigned)(critical_reach);
+    unsigned host_idx = src->m_index;
+    unsigned from_idx = safe_minus(host_idx, adj_size);
+    unsigned till_idx = std::min(host_idx + adj_size, safe_minus(assaults.size(), 1));
+    for (; from_idx <= till_idx; ++ from_idx)
     {
+        if (from_idx == host_idx) { continue; }
+        CardStatus* adj_status = &assaults[from_idx];
+        if (!is_alive(adj_status)) { continue; }
         if (skill_predicate<Skill::mend>(fd, src, adj_status, s))
         {
             fd->selection_array.push_back(adj_status);
@@ -2372,11 +2419,7 @@ Results<uint64_t> play(Field* fd)
     fd->tap = fd->players[fd->tapi];
     fd->tip = fd->players[fd->tipi];
     fd->end = false;
-#ifdef TUO_MODE_OPEN_THE_DECK
-    typedef double points_score_type;
-#else
     typedef unsigned points_score_type;
-#endif
 
     // Play dominion & fortresses
     for (unsigned _ = 0; _ < 2; ++ _)

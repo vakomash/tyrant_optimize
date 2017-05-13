@@ -64,9 +64,7 @@ namespace {
     long double confidence_level{0.99};
     bool use_top_level_card{true};
     bool use_top_level_commander{true};
-#ifdef TUO_MODE_OPEN_THE_DECK
     bool mode_open_the_deck{false};
-#endif
     bool use_dominion_climbing{false};
     bool use_dominion_defusing{false};
     unsigned use_fused_card_level{0};
@@ -692,15 +690,15 @@ struct SimulationData
 #endif
                 your_bg_effects, enemy_bg_effects, your_bg_skills, enemy_bg_skills);
             Results<uint64_t> result(play(&fd));
-#ifdef TUO_MODE_OPEN_THE_DECK
-            if (mode_open_the_deck)
+            if (__builtin_expect(mode_open_the_deck, false))
             {
-                double //points_scale = 1.0;
-                points_scale = (fd.players[1]->deck->cards.size() - fd.players[1]->deck->shuffled_cards.size())
-                    / (float) fd.players[1]->deck->cards.size();
-                result.points *= points_scale;
+                // are there remaining (unopened) cards?
+                if (fd.players[1]->deck->shuffled_cards.size())
+                {
+                    // apply min score (there are unopened cards, so mission failed)
+                    result.points = min_possible_score[(size_t)optimization_mode];
+                }
             }
-#endif
             res.emplace_back(result);
         }
         return(res);
@@ -1427,6 +1425,7 @@ void print_available_effects()
         "  Temporal-Backlash\n"
         "  Furiosity\n"
         "  Oath-Of-Loyalty\n"
+        "  Blood-Vengeance\n"
         ;
 }
 void usage(int argc, char** argv)
@@ -1994,11 +1993,7 @@ int main(int argc, char** argv)
                 }
                 else if ((opt_name == "otd") or (opt_name == "open-the-deck"))
                 {
-#ifdef TUO_MODE_OPEN_THE_DECK
                     mode_open_the_deck = true;
-#else
-                    throw std::runtime_error("Ooops! open-the-deck mode isn't supported (you need to rebuild tuo with -DTUO_MODE_OPEN_THE_DECK)");
-#endif
                 }
                 else
                 {

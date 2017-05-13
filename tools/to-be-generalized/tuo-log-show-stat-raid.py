@@ -7,10 +7,10 @@ import sys
 file_names = sys.argv[1:]
 
 FNAME_FORMAT = re.compile(
-    r'^tuo-exp-raid\.(?P<commander>\w+)'
+    r'^tuo-exp-raid\.(?P<commander>[\w\+]+)'
     r'-vs-raid_(?P<level>\d+)_(?P<fort>\w+)'
     r'(?:\.mk_(?P<mk>\w+))?'
-    r'\.effect\[(?P<effect>\w+)\]'
+    r'\.effect\[(?P<effect>[\w-]+)\]'
     r'\.(?P<algo>\w+)\.(?:(?P<order>random|ordered)\.)?log$'
 )
 
@@ -26,7 +26,7 @@ REFIND_FORMAT = re.compile(
 )
 
 ITERS_FORMAT = re.compile(
-    r'^(Deck improved: .*: )?[0-9.]+ \((\d+ )+/ (?P<iters>\d+)\)$'
+    r'^(Deck improved: .*: )?[0-9.]+ \(([0-9.]+ )+/ (?P<iters>\d+)\)$'
 )
 
 lvl2results = dict()
@@ -54,7 +54,7 @@ for fname in file_names:
                 m_imp = m
                 continue
         if None in (m_rec, m_imp):
-            raise Exception('file not ready yet: %s' % fname)
+            raise Exception('file is not ready yet: %s' % fname)
         result_attrs.update(m_rec.groupdict())
         result_attrs.update(m_imp.groupdict())
         level = int(fname_attrs['level'])
@@ -72,7 +72,7 @@ for level in levels:
     from_worts_to_best = sorted(results, key=lambda t: -t[4]) # sort by score (index=4)
     print '\n\n    *** level #{} ***\n'.format(level)
     for x in from_worts_to_best:
-        cost = x[2].has_key('cost') and x[2]['cost'] or " (none) "
+        cost = x[2].has_key('cost') and x[2]['cost'] or "$(none) "
         print ' {proc_state} I{result_attrs[iters]:<6}'\
             '  {win_rate:5.1f}% / {score:<5.1f}  [ {cost:<6}]'\
             '  [{fname_attrs[fort]:^7}] ::'\

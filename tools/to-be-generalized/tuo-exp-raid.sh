@@ -15,7 +15,7 @@ eiters=""
 fund=""
 endgame=""
 threads=8
-min_deck_size=4
+min_deck_size=3
 max_deck_size=10
 
 
@@ -155,7 +155,7 @@ options=(
     "${flags[@]}" raid "$order" "$todo" "$iters" ${eiters:+"$eiters"}
 )
 
-[[ $commander =~ ^any(_|$) ]] || opts+=("keep-commander")
+[[ $commander =~ ^any(_|$) ]] || options+=("keep-commander")
 
 command=(tuo.sh "$deck" "$enemy_target" "${options[@]}")
 
