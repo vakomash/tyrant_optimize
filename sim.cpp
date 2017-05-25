@@ -665,9 +665,11 @@ void PlayCard::setStorage<CardType::structure>()
 }
 
 // Check if a skill actually proc'ed.
-template<Skill::Skill>
+template<Skill::Skill skill_id>
 inline bool skill_check(Field* fd, CardStatus* c, CardStatus* ref)
-{ return is_alive(c); }
+{
+    return is_defensive_skill(skill_id) || is_alive(c);
+}
 
 template<>
 inline bool skill_check<Skill::heal>(Field* fd, CardStatus* c, CardStatus* ref)
