@@ -15,13 +15,13 @@
 #include "deck.h"
 
 //------------------------------------------------------------------------------
-inline bool has_attacked(CardStatus* c) { return(c->m_step == CardStep::attacked); }
-inline bool is_alive(CardStatus* c) { return(c->m_hp > 0); }
-inline bool can_act(CardStatus* c) { return(is_alive(c) && !c->m_jammed); }
-inline bool is_active(CardStatus* c) { return(can_act(c) && c->m_delay == 0); }
-inline bool is_active_next_turn(CardStatus* c) { return(can_act(c) && c->m_delay <= 1); }
+inline bool has_attacked(CardStatus* c) { return (c->m_step == CardStep::attacked); }
+inline bool is_alive(CardStatus* c) { return (c->m_hp > 0); }
+inline bool can_act(CardStatus* c) { return is_alive(c) && !c->m_jammed; }
+inline bool is_active(CardStatus* c) { return can_act(c) && (c->m_delay == 0); }
+inline bool is_active_next_turn(CardStatus* c) { return can_act(c) && (c->m_delay <= 1); }
 // Can be healed / repaired
-inline bool can_be_healed(CardStatus* c) { return(is_alive(c) && c->m_hp < c->m_max_hp); }
+inline bool can_be_healed(CardStatus* c) { return is_alive(c) && (c->m_hp < c->max_hp()); }
 // Strange Transmission [Gilians] features
 #ifdef TUO_GILIAN
 inline bool is_gilian(CardStatus* c) { return(
@@ -155,6 +155,22 @@ inline unsigned CardStatus::protected_value() const
     return m_protected + m_protected_stasis;
 }
 //------------------------------------------------------------------------------
+inline unsigned CardStatus::max_hp() const
+{
+    return (m_card->m_health + m_perm_health_buff);
+}
+//------------------------------------------------------------------------------
+inline unsigned CardStatus::add_hp(unsigned value)
+{
+    return (m_hp = std::min(m_hp + value, max_hp()));
+}
+//------------------------------------------------------------------------------
+inline unsigned CardStatus::ext_hp(unsigned value)
+{
+    m_perm_health_buff += value;
+    return add_hp(value);
+}
+//------------------------------------------------------------------------------
 inline void CardStatus::set(const Card* card)
 {
     this->set(*card);
@@ -166,10 +182,11 @@ inline void CardStatus::set(const Card& card)
     m_index = 0;
     m_player = 0;
     m_delay = card.m_delay;
-    m_attack = card.m_attack;
-    m_hp = m_max_hp = card.m_health;
+    m_hp = card.m_health;
     m_step = CardStep::none;
-
+    m_perm_health_buff = 0;
+    m_perm_attack_buff = 0;
+    m_temp_attack_buff = 0;
     m_corroded_rate = 0;
     m_corroded_weakened = 0;
     m_enfeebled = 0;
@@ -183,13 +200,10 @@ inline void CardStatus::set(const Card& card)
     m_poisoned = 0;
     m_protected = 0;
     m_protected_stasis = 0;
-    m_rallied = 0;
     m_enraged = 0;
     m_entrapped = 0;
-    m_derallied = 0;
     m_rush_attempted = false;
     m_sundered = false;
-    m_weakened = 0;
 
     std::memset(m_primary_skill_offset, 0, sizeof m_primary_skill_offset);
     std::memset(m_evolved_skill_offset, 0, sizeof m_evolved_skill_offset);
@@ -197,9 +211,13 @@ inline void CardStatus::set(const Card& card)
     std::memset(m_skill_cd, 0, sizeof m_skill_cd);
 }
 //------------------------------------------------------------------------------
-inline unsigned attack_power(const CardStatus* att)
+inline unsigned CardStatus::attack_power() const
 {
-    return safe_minus(safe_minus(att->m_attack, att->m_weakened + att->m_corroded_weakened) + att->m_rallied, att->m_derallied);
+    signed attack = (signed)m_card->m_attack + m_perm_attack_buff + m_temp_attack_buff;
+#ifndef NDEBUG
+    assert(attack >= 0);
+#endif
+    return (unsigned)attack;
 }
 //------------------------------------------------------------------------------
 std::string skill_description(const SkillSpec& s)
@@ -260,16 +278,10 @@ std::string CardStatus::description() const
     switch(m_card->m_type)
     {
     case CardType::assault:
-        desc += " att:[" + to_string(m_attack);
-        {
-            std::string att_desc;
-            if(m_weakened > 0) { att_desc += "-" + to_string(m_weakened) + "(weakened)"; }
-            if(m_corroded_weakened > 0) { att_desc += "-" + to_string(m_corroded_weakened) + "(corroded)"; }
-            att_desc += "]";
-            if(m_rallied > 0) { att_desc += "+" + to_string(m_rallied) + "(rallied)"; }
-            if(m_derallied > 0) { att_desc += "-" + to_string(m_derallied) + "(derallied)"; }
-            if(!att_desc.empty()) { desc += att_desc + "=" + to_string(attack_power(this)); }
-        }
+        desc += " att:[" + to_string(m_card->m_attack) + "(base)";
+        if (m_perm_attack_buff) { desc += (m_perm_attack_buff > 0 ? "+" : "") + to_string(m_perm_attack_buff) + "(perm)"; }
+        if (m_temp_attack_buff) { desc += (m_temp_attack_buff > 0 ? "+" : "") + to_string(m_temp_attack_buff) + "(temp)"; }
+        desc += "]=" + to_string(attack_power());
     case CardType::structure:
     case CardType::commander:
         desc += " hp:" + to_string(m_hp);
@@ -278,23 +290,22 @@ std::string CardStatus::description() const
         assert(false);
         break;
     }
-    if(m_delay > 0) {
-        desc += " cd:" + to_string(m_delay);
-    }
+    if (m_delay) { desc += " cd:" + to_string(m_delay); }
     // Status w/o value
-    if(m_jammed) { desc += ", jammed"; }
-    if(m_overloaded) { desc += ", overloaded"; }
-    if(m_sundered) { desc += ", sundered"; }
+    if (m_jammed) { desc += ", jammed"; }
+    if (m_overloaded) { desc += ", overloaded"; }
+    if (m_sundered) { desc += ", sundered"; }
     // Status w/ value
-    if(m_corroded_rate > 0) { desc += ", corroded " + to_string(m_corroded_rate); }
-    if(m_enfeebled > 0) { desc += ", enfeebled " + to_string(m_enfeebled); }
-    if(m_inhibited > 0) { desc += ", inhibited " + to_string(m_inhibited); }
-    if(m_sabotaged > 0) { desc += ", sabotaged " + to_string(m_sabotaged); }
-    if(m_poisoned > 0) { desc += ", poisoned " + to_string(m_poisoned); }
-    if(m_protected > 0) { desc += ", protected " + to_string(m_protected); }
-    if(m_protected_stasis > 0) { desc += ", stasis " + to_string(m_protected_stasis); }
-    if(m_enraged > 0) { desc += ", enraged " + to_string(m_enraged); }
-    if(m_entrapped > 0) { desc += ", entrapped " + to_string(m_entrapped); }
+    if (m_corroded_rate) { desc += ", corroded " + to_string(m_corroded_rate); }
+    if (m_corroded_weakened) { desc += ", stacked corroded " + to_string(m_corroded_weakened); }
+    if (m_enfeebled) { desc += ", enfeebled " + to_string(m_enfeebled); }
+    if (m_inhibited) { desc += ", inhibited " + to_string(m_inhibited); }
+    if (m_sabotaged) { desc += ", sabotaged " + to_string(m_sabotaged); }
+    if (m_poisoned) { desc += ", poisoned " + to_string(m_poisoned); }
+    if (m_protected) { desc += ", protected " + to_string(m_protected); }
+    if (m_protected_stasis) { desc += ", stasis " + to_string(m_protected_stasis); }
+    if (m_enraged) { desc += ", enraged " + to_string(m_enraged); }
+    if (m_entrapped) { desc += ", entrapped " + to_string(m_entrapped); }
 //    if(m_step != CardStep::none) { desc += ", Step " + to_string(static_cast<int>(m_step)); }
     std::vector<SkillSpec> card_skills(m_card->m_skills);
     if (m_enraged && !std::count_if(card_skills.begin(), card_skills.end(), [](const SkillSpec ss) { return (ss.id == Skill::berserk); }))
@@ -310,8 +321,8 @@ std::string CardStatus::description() const
     for (const auto& ss : card_skills)
     {
         std::string skill_desc;
-        if (m_evolved_skill_offset[ss.id] != 0) { skill_desc += "->" + skill_names[ss.id + m_evolved_skill_offset[ss.id]]; }
-        if (m_enhanced_value[ss.id] != 0) { skill_desc += " +" + to_string(m_enhanced_value[ss.id]); }
+        if (m_evolved_skill_offset[ss.id]) { skill_desc += "->" + skill_names[ss.id + m_evolved_skill_offset[ss.id]]; }
+        if (m_enhanced_value[ss.id]) { skill_desc += " +" + to_string(m_enhanced_value[ss.id]); }
         if (!skill_desc.empty()) { desc += ", " + skill_names[ss.id] + skill_desc; }
     }
     desc += "]";
@@ -407,9 +418,8 @@ void prepend_on_death(Field* fd)
                     (std::abs((signed)from_idx - (signed)host_idx) > 1 ? "BGE BloodVengeance: " : ""),
                     status_description(adj_status).c_str(), avenge_value);
                 if (! adj_status->m_sundered)
-                { adj_status->m_attack += avenge_value; }
-                adj_status->m_max_hp += avenge_value;
-                adj_status->m_hp += avenge_value;
+                { adj_status->m_perm_attack_buff += (signed)avenge_value; }
+                adj_status->ext_hp(avenge_value);
             }
 
             // Passive BGE: Virulence
@@ -816,10 +826,6 @@ inline void remove_dead(Storage<CardStatus>& storage)
 {
     storage.remove(is_it_dead);
 }
-inline void add_hp(Field* fd, CardStatus* target, unsigned v)
-{
-    target->m_hp = std::min(target->m_hp + v, target->m_max_hp);
-}
 void cooldown_skills(CardStatus * status)
 {
     for (const auto & ss : status->m_card->m_skills)
@@ -959,7 +965,7 @@ void turn_end_phase(Field* fd)
             if (refresh_value > 0 && skill_check<Skill::refresh>(fd, &status, nullptr))
             {
                 _DEBUG_MSG(1, "%s refreshes %u health\n", status_description(&status).c_str(), refresh_value);
-                add_hp(fd, &status, refresh_value);
+                status.add_hp(refresh_value);
             }
             if (status.m_poisoned > 0)
             {
@@ -977,12 +983,10 @@ void turn_end_phase(Field* fd)
                 }
             }
             // end of the opponent's next turn for enemy units
+            status.m_temp_attack_buff = 0;
             status.m_jammed = false;
-            status.m_rallied = 0;
             status.m_enraged = 0;
-            status.m_derallied = 0;
             status.m_sundered = false;
-            status.m_weakened = 0;
             status.m_inhibited = 0;
             status.m_sabotaged = 0;
             status.m_tributed = 0;
@@ -1055,7 +1059,7 @@ struct PerformAttack
     template<enum CardType::CardType def_cardtype>
     unsigned op()
     {
-        unsigned pre_modifier_dmg = attack_power(att_status);
+        unsigned pre_modifier_dmg = att_status->attack_power();
 
         // Evaluation order:
         // modify damage
@@ -1100,9 +1104,9 @@ struct PerformAttack
                 unsigned flux_value = (def_status->skill(Skill::counter) - 1) / flux_denominator + 1;
                 _DEBUG_MSG(1, "Counterflux: %s heals itself and berserks for %u\n",
                     status_description(def_status).c_str(), flux_value);
-                add_hp(fd, def_status, flux_value);
+                def_status->add_hp(flux_value);
                 if (! def_status->m_sundered)
-                { def_status->m_attack += flux_value; }
+                { def_status->m_perm_attack_buff += (signed)flux_value; }
             }
 
             // is attacker dead?
@@ -1125,7 +1129,7 @@ struct PerformAttack
         if (! att_status->m_sundered && berserk_value > 0 && skill_check<Skill::berserk>(fd, att_status, nullptr))
         {
             // perform_skill_berserk
-            att_status->m_attack += berserk_value;
+            att_status->m_perm_attack_buff += (signed)berserk_value;
 #ifndef NQUEST
             if (att_status->m_player == 0)
             {
@@ -1142,7 +1146,7 @@ struct PerformAttack
                 unsigned bge_value = (berserk_value - 1) / bge_denominator + 1;
                 _DEBUG_MSG(1, "EnduringRage: %s heals and protects itself for %u\n",
                     status_description(att_status).c_str(), bge_value);
-                add_hp(fd, att_status, bge_value);
+                att_status->add_hp(bge_value);
                 att_status->m_protected += bge_value;
             }
         }
@@ -1159,7 +1163,7 @@ struct PerformAttack
         {
             _DEBUG_MSG(1, "Heroism: %s gain %u attack\n",
                 status_description(att_status).c_str(), valor_value);
-            att_status->m_attack += valor_value;
+            att_status->m_perm_attack_buff += (signed)valor_value;
         }
 
         // Passive BGE: Devour
@@ -1176,12 +1180,11 @@ struct PerformAttack
             {
                 _DEBUG_MSG(1, "Devour: %s gain %u attack\n",
                     status_description(att_status).c_str(), bge_value);
-                att_status->m_attack += bge_value;
+                att_status->m_perm_attack_buff += (signed)bge_value;
             }
             _DEBUG_MSG(1, "Devour: %s extends max hp / heals itself for %u\n",
                 status_description(att_status).c_str(), bge_value);
-            att_status->m_max_hp += bge_value;
-            att_status->m_hp += bge_value;
+            att_status->ext_hp(bge_value);
         }
 
         return att_dmg;
@@ -1339,7 +1342,7 @@ struct PerformAttack
         {
             _DEBUG_MSG(1, "Brigade: %s heals itself for %u\n",
                 status_description(att_status).c_str(), legion_value);
-            add_hp(fd, att_status, legion_value);
+            att_status->add_hp(legion_value);
         }
     }
 
@@ -1417,7 +1420,7 @@ void PerformAttack::do_leech<CardType::assault>()
         }
 #endif
         _DEBUG_MSG(1, "%s leeches %u health\n", status_description(att_status).c_str(), leech_value);
-        add_hp(fd, att_status, leech_value);
+        att_status->add_hp(leech_value);
     }
 }
 
@@ -1440,7 +1443,7 @@ bool attack_phase(Field* fd)
     CardStatus* att_status(&fd->tap->assaults[fd->current_ci]); // attacking card
     Storage<CardStatus>& def_assaults(fd->tip->assaults);
 
-    if (attack_power(att_status) == 0)
+    if (!att_status->attack_power())
     {
         _DEBUG_MSG(1, "%s cannot take attack (zeroed)\n", status_description(att_status).c_str());
         return false;
@@ -1479,7 +1482,7 @@ bool attack_phase(Field* fd)
             {
                 _DEBUG_MSG(1, "%s drains %u hp\n",
                     status_description(att_status).c_str(), drain_total_dmg);
-                add_hp(fd, att_status, drain_total_dmg);
+                att_status->add_hp(drain_total_dmg);
             }
             prepend_on_death(fd);
             resolve_skill(fd);
@@ -1642,7 +1645,7 @@ inline bool skill_predicate<Skill::enrage>(Field* fd, CardStatus* src, CardStatu
 {
     return skill_check<Skill::enrage>(fd, dst, src) // basic skill check
         && (dst->m_step == CardStep::none) // card hasn't attacked yet
-        && (attack_power(dst) > 0) // card can perform direct attack
+        && (dst->attack_power()) // card can perform direct attack
     ;
 }
 
@@ -1656,7 +1659,7 @@ inline bool skill_predicate<Skill::rush>(Field* fd, CardStatus* src, CardStatus*
 template<>
 inline bool skill_predicate<Skill::weaken>(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s)
 {
-    return (attack_power(dst) > 0) && is_active_next_turn(dst);
+    return dst->attack_power() && is_active_next_turn(dst);
 }
 
 template<>
@@ -1695,7 +1698,7 @@ inline void perform_skill<Skill::evolve>(Field* fd, CardStatus* src, CardStatus*
 template<>
 inline void perform_skill<Skill::heal>(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s)
 {
-    add_hp(fd, dst, s.x);
+    dst->add_hp(s.x);
 
     // Passive BGE: ZealotsPreservation
     if (__builtin_expect(fd->bg_effects[fd->tapi][PassiveBGE::zealotspreservation], false)
@@ -1718,7 +1721,7 @@ inline void perform_skill<Skill::jam>(Field* fd, CardStatus* src, CardStatus* ds
 template<>
 inline void perform_skill<Skill::mend>(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s)
 {
-    add_hp(fd, dst, s.x);
+    dst->add_hp(s.x);
 }
 
 template<>
@@ -1750,7 +1753,7 @@ inline void perform_skill<Skill::protect>(Field* fd, CardStatus* src, CardStatus
 template<>
 inline void perform_skill<Skill::rally>(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s)
 {
-    dst->m_rallied += s.x;
+    dst->m_temp_attack_buff += s.x;
 }
 
 template<>
@@ -1765,7 +1768,7 @@ inline void perform_skill<Skill::enrage>(Field* fd, CardStatus* src, CardStatus*
         _DEBUG_MSG(1, "Furiosity: %s Heals %s for %u\n",
             status_description(src).c_str(),
             status_description(dst).c_str(), bge_value);
-        add_hp(fd, dst, bge_value);
+        dst->add_hp(bge_value);
     }
 }
 
@@ -1801,14 +1804,7 @@ inline void perform_skill<Skill::strike>(Field* fd, CardStatus* src, CardStatus*
 template<>
 inline void perform_skill<Skill::weaken>(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s)
 {
-    auto weaken_value = s.x;
-    if (dst->m_rallied > dst->m_derallied)
-    {
-        auto derally_value = std::min(weaken_value, dst->m_rallied - dst->m_derallied);
-        dst->m_derallied += derally_value;
-        weaken_value -= derally_value;
-    }
-    if (weaken_value > 0) { dst->m_weakened += std::min(weaken_value, attack_power(dst)); }
+    dst->m_temp_attack_buff -= (unsigned)std::min(s.x, dst->attack_power());
 }
 
 template<>
@@ -2051,7 +2047,7 @@ bool check_and_perform_valor(Field* fd, CardStatus* src)
             _DEBUG_MSG(1, "%s loses Valor (no blocker)\n", status_description(src).c_str());
             return false;
         }
-        else if (attack_power(dst) <= attack_power(src))
+        else if (dst->attack_power() <= src->attack_power())
         {
             _DEBUG_MSG(1, "%s loses Valor (weak blocker %s)\n", status_description(src).c_str(), status_description(dst).c_str());
             return false;
@@ -2063,7 +2059,7 @@ bool check_and_perform_valor(Field* fd, CardStatus* src)
         }
 #endif
         _DEBUG_MSG(1, "%s activates Valor %u\n", status_description(src).c_str(), valor_value);
-        src->m_attack += valor_value;
+        src->m_perm_attack_buff += (signed)valor_value;
         return true;
     }
     return false;
@@ -2221,7 +2217,7 @@ void perform_targetted_hostile_fast(Field* fd, CardStatus* src, const SkillSpec&
         // TurningTides
         if (__builtin_expect(has_turningtides, false))
         {
-            old_attack = attack_power(dst);
+            old_attack = dst->attack_power();
         }
 
         // check & apply skill to target(dst)
@@ -2234,7 +2230,7 @@ void perform_targetted_hostile_fast(Field* fd, CardStatus* src, const SkillSpec&
             // TurningTides: get max attack decreasing
             if (__builtin_expect(has_turningtides, false))
             {
-                turningtides_value = std::max(turningtides_value, safe_minus(old_attack, attack_power(dst)));
+                turningtides_value = std::max(turningtides_value, safe_minus(old_attack, dst->attack_power()));
             }
 
             // Payback/Revenge: collect paybackers/revengers
@@ -2321,7 +2317,7 @@ void perform_targetted_hostile_fast(Field* fd, CardStatus* src, const SkillSpec&
                 // TurningTides
                 if (__builtin_expect(has_turningtides, false))
                 {
-                    old_attack = attack_power(target_status);
+                    old_attack = target_status->attack_power();
                 }
 
                 // apply revenged skill
@@ -2334,7 +2330,7 @@ void perform_targetted_hostile_fast(Field* fd, CardStatus* src, const SkillSpec&
                 // revenged TurningTides: get max attack decreasing
                 if (__builtin_expect(has_turningtides, false))
                 {
-                    turningtides_value = std::max(turningtides_value, safe_minus(old_attack, attack_power(target_status)));
+                    turningtides_value = std::max(turningtides_value, safe_minus(old_attack, target_status->attack_power()));
                 }
             }
             if (revenged_count)
@@ -2372,7 +2368,7 @@ void perform_targetted_hostile_fast(Field* fd, CardStatus* src, const SkillSpec&
             // TurningTides
             if (__builtin_expect(has_turningtides, false))
             {
-                old_attack = attack_power(src);
+                old_attack = src->attack_power();
             }
 
             // apply paybacked skill
@@ -2384,7 +2380,7 @@ void perform_targetted_hostile_fast(Field* fd, CardStatus* src, const SkillSpec&
             // handle paybacked TurningTides
             if (__builtin_expect(has_turningtides, false))
             {
-                turningtides_value = std::max(turningtides_value, safe_minus(old_attack, attack_power(src)));
+                turningtides_value = std::max(turningtides_value, safe_minus(old_attack, src->attack_power()));
                 if (turningtides_value > 0)
                 {
                     SkillSpec ss_rally{Skill::rally, turningtides_value, allfactions, 0, 0, Skill::no_skill, Skill::no_skill, false,};
@@ -2486,9 +2482,8 @@ Results<uint64_t> play(Field* fd)
                     {
                         _DEBUG_MSG(1, "%s activates Allegiance %u\n", status_description(status).c_str(), allegiance_value);
                         if (! status->m_sundered)
-                        { status->m_attack += allegiance_value; }
-                        status->m_max_hp += allegiance_value;
-                        status->m_hp += allegiance_value;
+                        { status->m_perm_attack_buff += (signed)allegiance_value; }
+                        status->ext_hp(allegiance_value);
                     }
                 }
             }
@@ -2528,9 +2523,8 @@ Results<uint64_t> play(Field* fd)
                     unsigned bge_value = allegiance_value * same_faction_cards_count;
                     _DEBUG_MSG(1, "Oath of Loyalty: %s activates Allegiance %u x %u = %u\n",
                         status_description(played_status).c_str(), allegiance_value, same_faction_cards_count, bge_value);
-                    played_status->m_attack += bge_value;
-                    played_status->m_max_hp += bge_value;
-                    played_status->m_hp += bge_value;
+                    played_status->m_perm_attack_buff += (signed)bge_value;
+                    played_status->ext_hp(bge_value);
                 }
             }
 
@@ -2723,7 +2717,7 @@ Results<uint64_t> play(Field* fd)
             else
             {
 #ifndef NDEBUG
-                if (current_status->m_protected_stasis > 0)
+                if (current_status->m_protected_stasis)
                 {
                     _DEBUG_MSG(1, "%s loses Stasis protection (activated)\n",
                         status_description(current_status).c_str());
@@ -2735,17 +2729,22 @@ Results<uint64_t> play(Field* fd)
                 evaluate_skills<CardType::assault>(fd, current_status, current_status->m_card->m_skills, &attacked);
                 if (__builtin_expect(fd->end, false)) { break; }
             }
-            if (current_status->m_corroded_rate > 0)
+            if (current_status->m_corroded_rate)
             {
                 if (attacked)
                 {
-                    unsigned v = std::min(current_status->m_corroded_rate, attack_power(current_status));
+                    unsigned v = std::min(current_status->m_corroded_rate, current_status->attack_power());
                     _DEBUG_MSG(1, "%s loses Attack by %u.\n", status_description(current_status).c_str(), v);
-                    current_status->m_corroded_weakened += v;
+                    signed perm_attack_debuff = std::min((signed)current_status->m_card->m_attack + current_status->m_perm_attack_buff, (signed)v);
+                    current_status->m_corroded_weakened += perm_attack_debuff;
+                    current_status->m_perm_attack_buff -= perm_attack_debuff;
+                    current_status->m_temp_attack_buff -= ((signed)v - perm_attack_debuff);
+                    _DEBUG_MSG(1, "%s loses Perm Attack Buff by %d.\n", status_description(current_status).c_str(), perm_attack_debuff);
                 }
                 else
                 {
                     _DEBUG_MSG(1, "%s loses Status corroded.\n", status_description(current_status).c_str());
+                    current_status->m_perm_attack_buff += current_status->m_corroded_weakened;
                     current_status->m_corroded_rate = 0;
                     current_status->m_corroded_weakened = 0;
                 }
@@ -2770,7 +2769,7 @@ Results<uint64_t> play(Field* fd)
         case OptimizationMode::raid:
             raid_damage = 15
                 + (std::min<unsigned>(p[1]->deck->deck_size, (fd->turn + 1) / 2) - p[1]->assaults.size() - p[1]->structures.size())
-                - (10 * p[1]->commander.m_hp / p[1]->commander.m_max_hp);
+                - (10 * p[1]->commander.m_hp / p[1]->commander.max_hp());
             break;
 #ifndef NQUEST
         case OptimizationMode::quest:
