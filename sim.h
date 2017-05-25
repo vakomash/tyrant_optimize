@@ -158,7 +158,6 @@ struct CardStatus
     unsigned m_index;
     unsigned m_player;
     unsigned m_delay;
-    Faction m_faction;
     unsigned m_attack;
     unsigned m_hp;
     unsigned m_max_hp;
