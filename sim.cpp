@@ -2713,6 +2713,7 @@ Results<uint64_t> play(Field* fd)
                         status_description(current_status).c_str(), status_description(across_status).c_str(), inhibit_value);
                     across_status->m_inhibited = inhibit_value;
                 }
+                continue;
             }
             else
             {
@@ -2728,6 +2729,7 @@ Results<uint64_t> play(Field* fd)
                 current_status->m_step = CardStep::attacking;
                 evaluate_skills<CardType::assault>(fd, current_status, current_status->m_card->m_skills, &attacked);
                 if (__builtin_expect(fd->end, false)) { break; }
+                if (__builtin_expect(!is_alive(current_status), false)) { continue; }
             }
             if (current_status->m_corroded_rate)
             {
