@@ -962,7 +962,7 @@ void turn_end_phase(Field* fd)
                 continue;
             }
             unsigned refresh_value = status.skill(Skill::refresh);
-            if (refresh_value > 0 && skill_check<Skill::refresh>(fd, &status, nullptr))
+            if (refresh_value && skill_check<Skill::refresh>(fd, &status, nullptr))
             {
                 _DEBUG_MSG(1, "%s refreshes %u health\n", status_description(&status).c_str(), refresh_value);
                 status.add_hp(refresh_value);
@@ -1016,13 +1016,10 @@ inline CardStatus* select_first_enemy_wall(Field* fd)
 {
     for(unsigned i(0); i < fd->tip->structures.size(); ++i)
     {
-        CardStatus& c(fd->tip->structures[i]);
-        if(c.has_skill(Skill::wall) && is_alive(&c) && skill_check<Skill::wall>(fd, &c, nullptr))
-        {
-            return(&c);
-        }
+        CardStatus* c(&fd->tip->structures[i]);
+        if (c->has_skill(Skill::wall) && is_alive(c) && skill_check<Skill::wall>(fd, c, nullptr)) { return c; }
     }
-    return(nullptr);
+    return nullptr;
 }
 
 inline bool alive_assault(Storage<CardStatus>& assaults, unsigned index)
@@ -1069,14 +1066,14 @@ struct PerformAttack
         // assaults only: (leech if still alive)
 
         modify_attack_damage<def_cardtype>(pre_modifier_dmg);
-        if (att_dmg == 0) { return 0; }
+        if (!att_dmg) { return 0; }
 
         attack_damage<def_cardtype>();
-        if(__builtin_expect(fd->end, false)) { return att_dmg; }
+        if (__builtin_expect(fd->end, false)) { return att_dmg; }
         damage_dependant_pre_oa<def_cardtype>();
 
         // Enemy Skill: Counter
-        if (def_status->has_skill(Skill::counter) && skill_check<Skill::counter>(fd, def_status, att_status))
+        if (def_status->has_skill(Skill::counter))
         {
             // perform_skill_counter
             unsigned counter_dmg(counter_damage(fd, att_status, def_status));
@@ -1113,9 +1110,9 @@ struct PerformAttack
             if (!is_alive(att_status)) { return att_dmg; }
         }
 
-        // State: Corroded
+        // Skill: Corrosive
         unsigned corrosive_value = def_status->skill(Skill::corrosive);
-        if (corrosive_value > att_status->m_corroded_rate && skill_check<Skill::corrosive>(fd, def_status, att_status))
+        if (corrosive_value > att_status->m_corroded_rate)
         {
             // perform_skill_corrosive
             _DEBUG_MSG(1, "%s corrodes %s by %u\n",
@@ -1126,7 +1123,7 @@ struct PerformAttack
 
         // Skill: Berserk
         unsigned berserk_value = att_status->skill(Skill::berserk);
-        if (! att_status->m_sundered && berserk_value > 0 && skill_check<Skill::berserk>(fd, att_status, nullptr))
+        if (!att_status->m_sundered && (berserk_value > 0))
         {
             // perform_skill_berserk
             att_status->m_perm_attack_buff += (signed)berserk_value;
@@ -1209,7 +1206,7 @@ struct PerformAttack
         {
             // Skill: Legion
             unsigned legion_base = att_status->skill(Skill::legion);
-            if (__builtin_expect((legion_base > 0) && skill_check<Skill::legion>(fd, att_status, nullptr), false))
+            if (__builtin_expect(legion_base && skill_check<Skill::legion>(fd, att_status, nullptr), false))
             {
                 bool bge_megamorphosis = fd->bg_effects[fd->tapi][PassiveBGE::megamorphosis];
                 legion_value += (att_status->m_index > 0) && is_alive(&att_assaults[att_status->m_index - 1])
@@ -1228,7 +1225,7 @@ struct PerformAttack
 
             // Skill: Coalition
             unsigned coalition_base = att_status->skill(Skill::coalition);
-            if (coalition_base > 0)
+            if (__builtin_expect(coalition_base, false))
             {
                 uint8_t factions_bitmap = 0;
                 for (CardStatus * status : att_assaults.m_indirect)
