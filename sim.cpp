@@ -220,25 +220,6 @@ inline unsigned CardStatus::attack_power() const
     return (unsigned)attack;
 }
 //------------------------------------------------------------------------------
-std::string skill_description(const SkillSpec& s)
-{
-    return skill_names[s.id] +
-       (s.all ? " all" : s.n == 0 ? "" : std::string(" ") + to_string(s.n)) +
-       (s.y == allfactions ? "" : std::string(" ") + faction_names[s.y]) +
-       (s.s == Skill::no_skill ? "" : std::string(" ") + skill_names[s.s]) +
-       (s.s2 == Skill::no_skill ? "" : std::string(" ") + skill_names[s.s2]) +
-       (s.x == 0 ? "" : std::string(" ") + to_string(s.x)) +
-       (s.c == 0 ? "" : std::string(" every ") + to_string(s.c));
-}
-std::string skill_short_description(const SkillSpec& s)
-{
-    // NOTE: not support summon
-    return skill_names[s.id] +
-        (s.s == Skill::no_skill ? "" : std::string(" ") + skill_names[s.s]) +
-        (s.s2 == Skill::no_skill ? "" : std::string(" ") + skill_names[s.s2]) +
-        (s.x == 0 ? "" : std::string(" ") + to_string(s.x));
-}
-//------------------------------------------------------------------------------
 std::string card_description(const Cards& cards, const Card* c)
 {
     std::string desc;
@@ -329,11 +310,18 @@ std::string CardStatus::description() const
     return(desc);
 }
 //------------------------------------------------------------------------------
-void Hand::reset(std::mt19937& re)
+void Hand::reset(std::mt19937& re, std::vector<SkillSpec>& bg_skills)
 {
     assaults.reset();
     structures.reset();
     deck->shuffle(re);
+    for (auto x_mult_ss : deck->effects)
+    {
+        bg_skills.push_back({x_mult_ss.id,
+            (unsigned)ceil(x_mult_ss.x * deck->level),
+            x_mult_ss.y, x_mult_ss.n, x_mult_ss.c,
+            x_mult_ss.s, x_mult_ss.s2, x_mult_ss.all});
+    }
     commander.set(deck->shuffled_commander);
     total_cards_destroyed = 0;
     if (commander.skill(Skill::stasis))

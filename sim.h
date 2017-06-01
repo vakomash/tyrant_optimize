@@ -219,7 +219,7 @@ public:
     {
     }
 
-    void reset(std::mt19937& re);
+    void reset(std::mt19937& re, std::vector<SkillSpec>& bg_skills);
 
     Deck* deck;
     CardStatus commander;
@@ -368,5 +368,28 @@ public:
     }
 #endif
 };
+
+//------------------------------------------------------------------------------
+template<typename x_type>
+inline std::string skill_description(const _SkillSpec<x_type>& s)
+{
+    return skill_names[s.id] +
+       (s.all ? " all" : s.n == 0 ? "" : std::string(" ") + to_string(s.n)) +
+       (s.y == allfactions ? "" : std::string(" ") + faction_names[s.y]) +
+       (s.s == Skill::no_skill ? "" : std::string(" ") + skill_names[s.s]) +
+       (s.s2 == Skill::no_skill ? "" : std::string(" ") + skill_names[s.s2]) +
+       (s.x == 0 ? "" : std::string(" ") + to_string(s.x)) +
+       (s.c == 0 ? "" : std::string(" every ") + to_string(s.c));
+}
+
+template<typename x_type>
+inline std::string skill_short_description(const _SkillSpec<x_type>& s)
+{
+    // NOTE: not support summon
+    return skill_names[s.id] +
+        (s.s == Skill::no_skill ? "" : std::string(" ") + skill_names[s.s]) +
+        (s.s2 == Skill::no_skill ? "" : std::string(" ") + skill_names[s.s2]) +
+        (s.x == 0 ? "" : std::string(" ") + to_string(s.x));
+}
 
 #endif

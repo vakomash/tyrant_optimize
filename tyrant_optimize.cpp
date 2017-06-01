@@ -682,8 +682,8 @@ struct SimulationData
         res.reserve(enemy_hands.size());
         for (Hand* enemy_hand: enemy_hands)
         {
-            your_hand.reset(re);
-            enemy_hand->reset(re);
+            your_hand.reset(re, your_bg_skills);
+            enemy_hand->reset(re, enemy_bg_skills);
             Field fd(re, cards, your_hand, *enemy_hand, gamemode, optimization_mode,
 #ifndef NQUEST
                 quest,
@@ -1468,8 +1468,6 @@ void usage(int argc, char** argv)
 #endif
         ;
 }
-
-std::string skill_description(const SkillSpec& s);
 
 bool parse_bge(
     std::string bge_name,
@@ -2522,7 +2520,16 @@ int main(int argc, char** argv)
 
         for (unsigned i(0); i < enemy_decks.size(); ++i)
         {
-            std::cout << "Enemy's Deck:" << enemy_decks_factors[i] << ": " << (debug_print > 0 ? enemy_decks[i]->long_description() : enemy_decks[i]->medium_description()) << std::endl;
+            auto enemy_deck = enemy_decks[i];
+            std::cout << "Enemy's Deck:" << enemy_decks_factors[i] << ": "
+                << (debug_print > 0 ? enemy_deck->long_description() : enemy_deck->medium_description()) << std::endl;
+            for (auto x_mult_ss : enemy_deck->effects)
+            {
+                std::cout << "Enemy's X-Mult BG Skill (effective X = round_up[X * " << enemy_deck->level << "]): "
+                    << skill_description(x_mult_ss);
+                if (x_mult_ss.x) { std::cout << " (eff. X = " << ceil(x_mult_ss.x * enemy_deck->level) << ")"; }
+                std::cout << std::endl;
+            }
         }
         for (unsigned bg_effect = PassiveBGE::no_bge; bg_effect < PassiveBGE::num_passive_bges; ++bg_effect)
         {

@@ -1,7 +1,7 @@
 #ifndef TYRANT_H_INCLUDED
 #define TYRANT_H_INCLUDED
 
-#define TYRANT_OPTIMIZER_VERSION "2.51.1"
+#define TYRANT_OPTIMIZER_VERSION "2.52.0"
 
 #include <string>
 #include <sstream>
@@ -342,10 +342,11 @@ enum class OptimizationMode
 extern unsigned min_possible_score[(size_t)OptimizationMode::num_optimization_mode];
 extern unsigned max_possible_score[(size_t)OptimizationMode::num_optimization_mode];
 
-struct SkillSpec
+template <typename x_type>
+struct _SkillSpec
 {
     Skill::Skill id;
-    unsigned x;
+    x_type x;
     Faction y;
     unsigned n;
     unsigned c;
@@ -353,6 +354,9 @@ struct SkillSpec
     Skill::Skill s2;
     bool all;
 };
+
+using SkillSpec = _SkillSpec<unsigned>;
+using SkillSpecXMult = _SkillSpec<double>;
 
 // --------------------------------------------------------------------------------
 // Common functions
