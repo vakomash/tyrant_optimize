@@ -669,10 +669,12 @@ struct SimulationData
     {
         your_deck.reset(your_deck_->clone());
         your_hand.deck = your_deck.get();
+        your_hand.reset(re, &enemy_bg_skills);
         for (unsigned i(0); i < enemy_decks_.size(); ++i)
         {
             enemy_decks[i].reset(enemy_decks_[i]->clone());
             enemy_hands[i]->deck = enemy_decks[i].get();
+            enemy_hands[i]->reset(re, &enemy_bg_skills);
         }
     }
 
@@ -682,8 +684,8 @@ struct SimulationData
         res.reserve(enemy_hands.size());
         for (Hand* enemy_hand: enemy_hands)
         {
-            your_hand.reset(re, your_bg_skills);
-            enemy_hand->reset(re, enemy_bg_skills);
+            your_hand.reset(re);
+            enemy_hand->reset(re);
             Field fd(re, cards, your_hand, *enemy_hand, gamemode, optimization_mode,
 #ifndef NQUEST
                 quest,
