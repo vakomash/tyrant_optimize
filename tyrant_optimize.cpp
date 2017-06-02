@@ -2538,20 +2538,23 @@ int main(int argc, char** argv)
         {
             std::cout << "Enemy's BG Skill: " << skill_description(bg_skill) << std::endl;
         }
-        if (enemy_decks.size() == 1)
+    }
+    if (enemy_decks.size() == 1)
+    {
+        auto enemy_deck = enemy_decks[0];
+        for (auto x_mult_ss : enemy_deck->effects)
         {
-            auto enemy_deck = enemy_decks[0];
-            for (auto x_mult_ss : enemy_deck->effects)
+            if (debug_print >= 0)
             {
                 std::cout << "Enemy's X-Mult BG Skill (effective X = round_up[X * " << enemy_deck->level << "]): "
                     << skill_description(x_mult_ss);
                 if (x_mult_ss.x) { std::cout << " (eff. X = " << ceil(x_mult_ss.x * enemy_deck->level) << ")"; }
                 std::cout << std::endl;
-                opt_bg_skills[1].push_back({x_mult_ss.id,
-                    (unsigned)ceil(x_mult_ss.x * enemy_deck->level),
-                    x_mult_ss.y, x_mult_ss.n, x_mult_ss.c,
-                    x_mult_ss.s, x_mult_ss.s2, x_mult_ss.all});
             }
+            opt_bg_skills[1].push_back({x_mult_ss.id,
+                (unsigned)ceil(x_mult_ss.x * enemy_deck->level),
+                x_mult_ss.y, x_mult_ss.n, x_mult_ss.c,
+                x_mult_ss.s, x_mult_ss.s2, x_mult_ss.all});
         }
     }
 
