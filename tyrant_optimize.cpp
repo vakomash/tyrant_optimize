@@ -669,12 +669,12 @@ struct SimulationData
     {
         your_deck.reset(your_deck_->clone());
         your_hand.deck = your_deck.get();
-        your_hand.reset(re, &enemy_bg_skills);
+        your_hand.setup_bg_skills(enemy_bg_skills);
         for (unsigned i(0); i < enemy_decks_.size(); ++i)
         {
             enemy_decks[i].reset(enemy_decks_[i]->clone());
             enemy_hands[i]->deck = enemy_decks[i].get();
-            enemy_hands[i]->reset(re, &enemy_bg_skills);
+            enemy_hands[i]->setup_bg_skills(enemy_bg_skills);
         }
     }
 

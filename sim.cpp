@@ -310,21 +310,11 @@ std::string CardStatus::description() const
     return(desc);
 }
 //------------------------------------------------------------------------------
-void Hand::reset(std::mt19937& re, std::vector<SkillSpec>* bg_skills)
+void Hand::reset(std::mt19937& re)
 {
     assaults.reset();
     structures.reset();
     deck->shuffle(re);
-    if (bg_skills)
-    {
-        for (auto x_mult_ss : deck->effects)
-        {
-            bg_skills->push_back({x_mult_ss.id,
-                (unsigned)ceil(x_mult_ss.x * deck->level),
-                x_mult_ss.y, x_mult_ss.n, x_mult_ss.c,
-                x_mult_ss.s, x_mult_ss.s2, x_mult_ss.all});
-        }
-    }
     commander.set(deck->shuffled_commander);
     total_cards_destroyed = 0;
     if (commander.skill(Skill::stasis))
@@ -332,9 +322,16 @@ void Hand::reset(std::mt19937& re, std::vector<SkillSpec>* bg_skills)
         stasis_faction_bitmap |= (1u << commander.m_card->m_faction);
     }
 }
-void Hand::reset(std::mt19937& re)
+//------------------------------------------------------------------------------
+void Hand::setup_bg_skills(std::vector<SkillSpec>& bg_skills)
 {
-    reset(re, nullptr);
+    for (auto x_mult_ss : deck->effects)
+    {
+        bg_skills.push_back({x_mult_ss.id,
+            (unsigned)ceil(x_mult_ss.x * deck->level),
+            x_mult_ss.y, x_mult_ss.n, x_mult_ss.c,
+            x_mult_ss.s, x_mult_ss.s2, x_mult_ss.all});
+    }
 }
 //---------------------- $40 Game rules implementation -------------------------
 // Everything about how a battle plays out, except the following:
