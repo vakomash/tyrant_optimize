@@ -669,12 +669,10 @@ struct SimulationData
     {
         your_deck.reset(your_deck_->clone());
         your_hand.deck = your_deck.get();
-        your_hand.setup_bg_skills(enemy_bg_skills);
         for (unsigned i(0); i < enemy_decks_.size(); ++i)
         {
             enemy_decks[i].reset(enemy_decks_[i]->clone());
             enemy_hands[i]->deck = enemy_decks[i].get();
-            enemy_hands[i]->setup_bg_skills(enemy_bg_skills);
         }
     }
 
@@ -2525,13 +2523,6 @@ int main(int argc, char** argv)
             auto enemy_deck = enemy_decks[i];
             std::cout << "Enemy's Deck:" << enemy_decks_factors[i] << ": "
                 << (debug_print > 0 ? enemy_deck->long_description() : enemy_deck->medium_description()) << std::endl;
-            for (auto x_mult_ss : enemy_deck->effects)
-            {
-                std::cout << "Enemy's X-Mult BG Skill (effective X = round_up[X * " << enemy_deck->level << "]): "
-                    << skill_description(x_mult_ss);
-                if (x_mult_ss.x) { std::cout << " (eff. X = " << ceil(x_mult_ss.x * enemy_deck->level) << ")"; }
-                std::cout << std::endl;
-            }
         }
         for (unsigned bg_effect = PassiveBGE::no_bge; bg_effect < PassiveBGE::num_passive_bges; ++bg_effect)
         {
@@ -2546,6 +2537,21 @@ int main(int argc, char** argv)
         for (const auto & bg_skill: opt_bg_skills[1])
         {
             std::cout << "Enemy's BG Skill: " << skill_description(bg_skill) << std::endl;
+        }
+        if (enemy_decks.size() == 1)
+        {
+            auto enemy_deck = enemy_decks[0];
+            for (auto x_mult_ss : enemy_deck->effects)
+            {
+                std::cout << "Enemy's X-Mult BG Skill (effective X = round_up[X * " << enemy_deck->level << "]): "
+                    << skill_description(x_mult_ss);
+                if (x_mult_ss.x) { std::cout << " (eff. X = " << ceil(x_mult_ss.x * enemy_deck->level) << ")"; }
+                std::cout << std::endl;
+                opt_bg_skills[1].push_back({x_mult_ss.id,
+                    (unsigned)ceil(x_mult_ss.x * enemy_deck->level),
+                    x_mult_ss.y, x_mult_ss.n, x_mult_ss.c,
+                    x_mult_ss.s, x_mult_ss.s2, x_mult_ss.all});
+            }
         }
     }
 

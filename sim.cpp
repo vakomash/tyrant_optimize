@@ -322,17 +322,6 @@ void Hand::reset(std::mt19937& re)
         stasis_faction_bitmap |= (1u << commander.m_card->m_faction);
     }
 }
-//------------------------------------------------------------------------------
-void Hand::setup_bg_skills(std::vector<SkillSpec>& bg_skills)
-{
-    for (auto x_mult_ss : deck->effects)
-    {
-        bg_skills.push_back({x_mult_ss.id,
-            (unsigned)ceil(x_mult_ss.x * deck->level),
-            x_mult_ss.y, x_mult_ss.n, x_mult_ss.c,
-            x_mult_ss.s, x_mult_ss.s2, x_mult_ss.all});
-    }
-}
 //---------------------- $40 Game rules implementation -------------------------
 // Everything about how a battle plays out, except the following:
 // the implementation of the attack by an assault card is in the next section;

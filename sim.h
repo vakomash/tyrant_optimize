@@ -220,7 +220,6 @@ public:
     }
 
     void reset(std::mt19937& re);
-    void setup_bg_skills(std::vector<SkillSpec>& bg_skills);
 
     Deck* deck;
     CardStatus commander;
