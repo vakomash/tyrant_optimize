@@ -183,6 +183,7 @@ inline void CardStatus::set(const Card& card)
     m_player = 0;
     m_delay = card.m_delay;
     m_hp = card.m_health;
+    m_hp_drain = 0;
     m_step = CardStep::none;
     m_perm_health_buff = 0;
     m_perm_attack_buff = 0;
@@ -749,10 +750,12 @@ inline bool skill_check<Skill::refresh>(Field* fd, CardStatus* c, CardStatus* re
 template<>
 inline bool skill_check<Skill::drain>(Field* fd, CardStatus* c, CardStatus* ref)
 {
-    return(can_be_healed(c));
+    //return(can_be_healed(c));
+    // Temporary TU bug: drain can reanimate dead unit on counter damage
+    return (c->m_hp < c->max_hp());
 }
 
-void remove_hp(Field* fd, CardStatus* status, unsigned dmg)
+void remove_hp0(Field* fd, CardStatus* status, unsigned dmg, bool check_drain)
 {
     if (__builtin_expect(!dmg, false)) { return; }
     assert(is_alive(status));
@@ -763,6 +766,12 @@ void remove_hp(Field* fd, CardStatus* status, unsigned dmg)
         ++ fd->damaged_units_to_times[status];
         _DEBUG_MSG(2, "%s damaged %u times\n",
             status_description(status).c_str(), fd->damaged_units_to_times[status]);
+    }
+    unsigned drain_value = status->skill(Skill::drain);
+    if (status->m_hp == 0 && check_drain && drain_value)
+    {
+        status->m_hp = std::min(drain_value, status->max_hp());
+        status->m_hp_drain += std::min(drain_value, status->max_hp());
     }
     if (status->m_hp == 0)
     {
@@ -788,6 +797,16 @@ void remove_hp(Field* fd, CardStatus* status, unsigned dmg)
             fd->end = true;
         }
     }
+}
+
+inline void remove_hp(Field* fd, CardStatus* status, unsigned dmg)
+{
+    remove_hp0(fd, status, dmg, false);
+}
+
+inline void remove_hp_counter(Field* fd, CardStatus* status, unsigned dmg)
+{
+    remove_hp0(fd, status, dmg, true);
 }
 
 inline bool is_it_dead(CardStatus& c)
@@ -1068,7 +1087,7 @@ struct PerformAttack
             _DEBUG_MSG(1, "%s takes %u counter damage from %s\n",
                 status_description(att_status).c_str(), counter_dmg,
                 status_description(def_status).c_str());
-            remove_hp(fd, att_status, counter_dmg);
+            remove_hp_counter(fd, att_status, counter_dmg);
             prepend_on_death(fd);
             resolve_skill(fd);
 
@@ -1460,7 +1479,8 @@ bool attack_phase(Field* fd)
             {
                 _DEBUG_MSG(1, "%s drains %u hp\n",
                     status_description(att_status).c_str(), drain_total_dmg);
-                att_status->add_hp(drain_total_dmg);
+                att_status->add_hp(safe_minus(drain_total_dmg, att_status->m_hp_drain));
+                att_status->m_hp_drain = 0;
             }
             prepend_on_death(fd);
             resolve_skill(fd);
