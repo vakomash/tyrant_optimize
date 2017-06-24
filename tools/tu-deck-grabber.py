@@ -407,8 +407,8 @@ def doGrabLastDeck(http):
     if config.getboolean('CORE', 'output_eds'):
         out += "eds{:02d}.".format(enemy_size)
     if config.getboolean('CORE', 'output_guild'):
-        out += re.sub('[^\w]', '_', enemy_guild_name) + '.'
-    out += re.sub('[^\w]', '_', enemy_name)
+        out += re.sub('(?a)[^\w]', '_', enemy_guild_name) + '.'
+    out += re.sub('(?a)[^\w]', '_', enemy_name)
     if config.getboolean('CORE', 'output_missing'):
         missing_cards = enemy_size - enemy_played_cards_count
         if (missing_cards > 0):
