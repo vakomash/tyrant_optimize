@@ -323,6 +323,8 @@ def doHuntAndEnrichUserDb(http):
         tmp_udb_fname = udb_fname + '~'
         with open(tmp_udb_fname, 'wb') as f:
             pickle.dump(user_db, f)
+        if (os.path.exists(udb_fname)):
+            os.remove(udb_fname)
         os.renames(tmp_udb_fname, udb_fname)
         print("INFO: user-db: synced to disk: {} (total {} entries)".format(udb_fname, user_db.size()))
 
