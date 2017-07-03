@@ -214,9 +214,7 @@ inline void CardStatus::set(const Card& card)
 inline unsigned CardStatus::attack_power() const
 {
     signed attack = (signed)m_card->m_attack + m_perm_attack_buff + m_temp_attack_buff;
-#ifndef NDEBUG
-    assert(attack >= 0);
-#endif
+    _DEBUG_ASSERT(attack >= 0);
     return (unsigned)attack;
 }
 //------------------------------------------------------------------------------
@@ -277,8 +275,7 @@ std::string CardStatus::description() const
     if (m_overloaded) { desc += ", overloaded"; }
     if (m_sundered) { desc += ", sundered"; }
     // Status w/ value
-    if (m_corroded_rate) { desc += ", corroded " + to_string(m_corroded_rate); }
-    if (m_corroded_weakened) { desc += ", stacked corroded " + to_string(m_corroded_weakened); }
+    if (m_corroded_weakened || m_corroded_rate) { desc += ", corroded " + to_string(m_corroded_weakened) + " (rate: " + to_string(m_corroded_rate) + ")"; }
     if (m_enfeebled) { desc += ", enfeebled " + to_string(m_enfeebled); }
     if (m_inhibited) { desc += ", inhibited " + to_string(m_inhibited); }
     if (m_sabotaged) { desc += ", sabotaged " + to_string(m_sabotaged); }
@@ -322,16 +319,19 @@ void Hand::reset(std::mt19937& re)
         stasis_faction_bitmap |= (1u << commander.m_card->m_faction);
     }
 }
+
 //---------------------- $40 Game rules implementation -------------------------
 // Everything about how a battle plays out, except the following:
 // the implementation of the attack by an assault card is in the next section;
 // the implementation of the active skills is in the section after that.
 unsigned turn_limit{50};
+
 //------------------------------------------------------------------------------
 inline unsigned opponent(unsigned player)
 {
     return((player + 1) % 2);
 }
+
 //------------------------------------------------------------------------------
 SkillSpec apply_evolve(const SkillSpec& s, signed offset)
 {
@@ -339,6 +339,7 @@ SkillSpec apply_evolve(const SkillSpec& s, signed offset)
     evolved_s.id = static_cast<Skill::Skill>(evolved_s.id + offset);
     return(evolved_s);
 }
+
 //------------------------------------------------------------------------------
 SkillSpec apply_enhance(const SkillSpec& s, unsigned enhanced_value)
 {
@@ -346,6 +347,7 @@ SkillSpec apply_enhance(const SkillSpec& s, unsigned enhanced_value)
     enahnced_s.x += enhanced_value;
     return(enahnced_s);
 }
+
 //------------------------------------------------------------------------------
 SkillSpec apply_sabotage(const SkillSpec& s, unsigned sabotaged_value)
 {
@@ -353,6 +355,7 @@ SkillSpec apply_sabotage(const SkillSpec& s, unsigned sabotaged_value)
     sabotaged_s.x -= std::min(sabotaged_s.x, sabotaged_value);
     return(sabotaged_s);
 }
+
 //------------------------------------------------------------------------------
 void prepend_on_death(Field* fd)
 {
@@ -464,6 +467,7 @@ void prepend_on_death(Field* fd)
     fd->skill_queue.insert(fd->skill_queue.begin(), od_skills.begin(), od_skills.end());
     fd->killed_units.clear();
 }
+
 //------------------------------------------------------------------------------
 void(*skill_table[Skill::num_skills])(Field*, CardStatus* src, const SkillSpec&);
 void resolve_skill(Field* fd)
@@ -513,40 +517,40 @@ void resolve_skill(Field* fd)
         else { skill_table[modified_s.id](fd, status, modified_s); }
     }
 }
+
 //------------------------------------------------------------------------------
 bool attack_phase(Field* fd);
+
 template<Skill::Skill skill_id>
-bool check_and_perform_skill(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s, bool is_evadable
+inline bool check_and_perform_skill(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s, bool is_evadable
 #ifndef NQUEST
     , bool & has_counted_quest
 #endif
 );
+
 bool check_and_perform_valor(Field* fd, CardStatus* src);
+
 template <enum CardType::CardType type>
 void evaluate_skills(Field* fd, CardStatus* status, const std::vector<SkillSpec>& skills, bool* attacked=nullptr)
 {
-    assert(status);
+    _DEBUG_ASSERT(status);
     unsigned num_actions(1);
     for (unsigned action_index(0); action_index < num_actions; ++ action_index)
     {
         fd->prepare_action();
-        assert(fd->skill_queue.size() == 0);
+        _DEBUG_ASSERT(fd->skill_queue.size() == 0);
         for (auto & ss: skills)
         {
             // check if activation skill, assuming activation skills can be evolved from only activation skills
             if (skill_table[ss.id] == nullptr)
-            {
-                continue;
-            }
+            { continue; }
             if (status->m_skill_cd[ss.id] > 0)
-            {
-                continue;
-            }
+            { continue; }
             _DEBUG_MSG(2, "Evaluating %s skill %s\n",
                 status_description(status).c_str(), skill_description(ss).c_str());
             fd->skill_queue.emplace_back(status, ss);
             resolve_skill(fd);
-            if(__builtin_expect(fd->end, false)) { break; }
+            if (__builtin_expect(fd->end, false)) { break; }
         }
         if (type == CardType::assault)
         {
@@ -693,12 +697,6 @@ inline bool skill_check<Skill::overload>(Field* fd, CardStatus* c, CardStatus* r
 }
 
 template<>
-inline bool skill_check<Skill::evade>(Field* fd, CardStatus* c, CardStatus* ref)
-{
-    return (c->m_player != ref->m_player);
-}
-
-template<>
 inline bool skill_check<Skill::jam>(Field* fd, CardStatus* c, CardStatus* ref)
 {
     return is_active_next_turn(c);
@@ -712,12 +710,6 @@ inline bool skill_check<Skill::leech>(Field* fd, CardStatus* c, CardStatus* ref)
 
 template<>
 inline bool skill_check<Skill::coalition>(Field* fd, CardStatus* c, CardStatus* ref)
-{
-    return is_active(c);
-}
-
-template<>
-inline bool skill_check<Skill::legion>(Field* fd, CardStatus* c, CardStatus* ref)
 {
     return is_active(c);
 }
@@ -743,19 +735,19 @@ inline bool skill_check<Skill::tribute>(Field* fd, CardStatus* c, CardStatus* re
 template<>
 inline bool skill_check<Skill::refresh>(Field* fd, CardStatus* c, CardStatus* ref)
 {
-    return(can_be_healed(c));
+    return can_be_healed(c);
 }
 
 template<>
 inline bool skill_check<Skill::drain>(Field* fd, CardStatus* c, CardStatus* ref)
 {
-    return(can_be_healed(c));
+    return can_be_healed(c);
 }
 
 void remove_hp(Field* fd, CardStatus* status, unsigned dmg)
 {
     if (__builtin_expect(!dmg, false)) { return; }
-    assert(is_alive(status));
+    _DEBUG_ASSERT(is_alive(status));
     _DEBUG_MSG(2, "%s takes %u damage\n", status_description(status).c_str(), dmg);
     status->m_hp = safe_minus(status->m_hp, dmg);
     if (fd->current_phase < Field::end_phase && status->has_skill(Skill::barrier))
@@ -792,21 +784,24 @@ void remove_hp(Field* fd, CardStatus* status, unsigned dmg)
 
 inline bool is_it_dead(CardStatus& c)
 {
-    if(c.m_hp == 0) // yes it is
+    if (c.m_hp == 0) // yes it is
     {
         _DEBUG_MSG(1, "Dead and removed: %s\n", status_description(&c).c_str());
-        return(true);
+        return true;
     }
-    else { return(false); } // nope still kickin'
+    return false; // nope still kickin'
 }
+
 inline bool is_it_dominion(CardStatus* c)
 {
     return (c->m_card->m_category == CardCategory::dominion_alpha);
 }
+
 inline void remove_dead(Storage<CardStatus>& storage)
 {
     storage.remove(is_it_dead);
 }
+
 void cooldown_skills(CardStatus * status)
 {
     for (const auto & ss : status->m_card->m_skills)
@@ -819,6 +814,7 @@ void cooldown_skills(CardStatus * status)
         }
     }
 }
+
 void turn_start_phase(Field* fd)
 {
     // Active player's commander card:
@@ -896,6 +892,7 @@ void turn_start_phase(Field* fd)
         }
     }
 }
+
 void turn_end_phase(Field* fd)
 {
     // Inactive player's assault cards:
@@ -985,20 +982,22 @@ void turn_end_phase(Field* fd)
     remove_dead(fd->tip->assaults);
     remove_dead(fd->tip->structures);
 }
+
 //---------------------- $50 attack by assault card implementation -------------
 // Counter damage dealt to the attacker (att) by defender (def)
 // pre-condition: only valid if m_card->m_counter > 0
 inline unsigned counter_damage(Field* fd, CardStatus* att, CardStatus* def)
 {
-    assert(att->m_card->m_type == CardType::assault);
-    return(safe_minus(def->skill(Skill::counter) + att->m_enfeebled, att->protected_value()));
+    _DEBUG_ASSERT(att->m_card->m_type == CardType::assault);
+    return safe_minus(def->skill(Skill::counter) + att->m_enfeebled, att->protected_value());
 }
+
 inline CardStatus* select_first_enemy_wall(Field* fd)
 {
     for(unsigned i(0); i < fd->tip->structures.size(); ++i)
     {
         CardStatus* c(&fd->tip->structures[i]);
-        if (c->has_skill(Skill::wall) && is_alive(c) && skill_check<Skill::wall>(fd, c, nullptr)) { return c; }
+        if (c->has_skill(Skill::wall) && is_alive(c)) { return c; }
     }
     return nullptr;
 }
@@ -1010,16 +1009,17 @@ inline bool alive_assault(Storage<CardStatus>& assaults, unsigned index)
 
 void remove_commander_hp(Field* fd, CardStatus& status, unsigned dmg, bool count_points)
 {
-    //assert(status.m_hp > 0);
-    assert(status.m_card->m_type == CardType::commander);
+    _DEBUG_ASSERT(is_alive(&status));
+    _DEBUG_ASSERT(status.m_card->m_type == CardType::commander);
     _DEBUG_MSG(2, "%s takes %u damage\n", status_description(&status).c_str(), dmg);
     status.m_hp = safe_minus(status.m_hp, dmg);
-    if(status.m_hp == 0)
+    if (status.m_hp == 0)
     {
         _DEBUG_MSG(1, "%s dies\n", status_description(&status).c_str());
         fd->end = true;
     }
 }
+
 //------------------------------------------------------------------------------
 // implementation of one attack by an assault card, against either an enemy
 // assault card, the first enemy wall, or the enemy commander.
@@ -1171,7 +1171,7 @@ struct PerformAttack
     template<enum CardType::CardType>
     void modify_attack_damage(unsigned pre_modifier_dmg)
     {
-        assert(att_status->m_card->m_type == CardType::assault);
+        _DEBUG_ASSERT(att_status->m_card->m_type == CardType::assault);
         att_dmg = pre_modifier_dmg;
         if (att_dmg == 0)
         { return; }
@@ -1187,7 +1187,7 @@ struct PerformAttack
         {
             // Skill: Legion
             unsigned legion_base = att_status->skill(Skill::legion);
-            if (__builtin_expect(legion_base && skill_check<Skill::legion>(fd, att_status, nullptr), false))
+            if (__builtin_expect(legion_base, false))
             {
                 bool bge_megamorphosis = fd->bg_effects[fd->tapi][PassiveBGE::megamorphosis];
                 legion_value += (att_status->m_index > 0) && is_alive(&att_assaults[att_status->m_index - 1])
@@ -1214,7 +1214,7 @@ struct PerformAttack
                     if (! is_alive(status)) { continue; }
                     factions_bitmap |= (1 << (status->m_card->m_faction));
                 }
-                assert(factions_bitmap);
+                _DEBUG_ASSERT(factions_bitmap);
                 unsigned uniq_factions = byte_bits_count(factions_bitmap);
                 unsigned coalition_value = coalition_base * uniq_factions;
 #ifndef NDEBUG
@@ -1957,7 +1957,7 @@ template<> std::vector<CardStatus*>& skill_targets<Skill::mimic>(Field* fd, Card
 { return(skill_targets_hostile_assault(fd, src)); }
 
 template<Skill::Skill skill_id>
-bool check_and_perform_skill(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s, bool is_evadable
+inline bool check_and_perform_skill(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s, bool is_evadable
 #ifndef NQUEST
     , bool & has_counted_quest
 #endif
@@ -1972,9 +1972,7 @@ bool check_and_perform_skill(Field* fd, CardStatus* src, CardStatus* dst, const 
             has_counted_quest = true;
         }
 #endif
-        if (is_evadable &&
-                dst->m_evaded < dst->skill(Skill::evade) &&
-                skill_check<Skill::evade>(fd, dst, src))
+        if (is_evadable && (dst->m_evaded < dst->skill(Skill::evade)))
         {
             ++ dst->m_evaded;
             _DEBUG_MSG(1, "%s %s on %s but it evades\n",
@@ -2443,15 +2441,11 @@ Results<uint64_t> play(Field* fd)
                 break;
             }
 
-            // assert(played_status); played_status can't be NULL here
-
             // Evaluate skill Allegiance & count assaults with same faction (structures will be counted later)
             for (CardStatus * status : fd->tap->assaults.m_indirect)
             {
                 if (status == played_status) { continue; } // except itself
-
-                //if (!is_alive(status)) { continue; } // Can card be dead at this moment?.. No
-                //assert(status->m_card); // Is it really necessary?.. No
+                _DEBUG_ASSERT(is_alive(status));
                 if (bge_megamorphosis || (status->m_card->m_faction == played_card->m_faction))
                 {
                     ++ same_faction_cards_count;

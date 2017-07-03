@@ -280,7 +280,7 @@ public:
     // They are stored in this, and cleared after all have been performed.
     std::deque<std::tuple<CardStatus*, SkillSpec>> skill_queue;
     std::vector<CardStatus*> killed_units;
-    std::unordered_map<CardStatus*, unsigned> damaged_units_to_times;
+    std::map<CardStatus*, unsigned> damaged_units_to_times;
 
     enum phase
     {

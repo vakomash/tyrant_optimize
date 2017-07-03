@@ -403,9 +403,11 @@ extern std::string debug_str;
             fd->print_selection_array();                                \
         }                                                               \
     }
+#define _DEBUG_ASSERT(expr) { assert(expr); }
 #else
 #define _DEBUG_MSG(v, format, args...)
 #define _DEBUG_SELECTION(format, args...)
+#define _DEBUG_ASSERT(expr)
 #endif
 
 #endif
