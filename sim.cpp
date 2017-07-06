@@ -2685,7 +2685,6 @@ Results<uint64_t> play(Field* fd)
                         status_description(current_status).c_str(), status_description(across_status).c_str(), inhibit_value);
                     across_status->m_inhibited = inhibit_value;
                 }
-                continue;
             }
             else
             {
