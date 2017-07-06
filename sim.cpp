@@ -2473,8 +2473,9 @@ Results<uint64_t> play(Field* fd)
                 break;
             }
 
-            // Evaluate skill Allegiance & count assaults with same faction (structures will be counted later)
-            for (CardStatus * status : fd->tap->assaults.m_indirect)
+            // 1. Evaluate skill Allegiance & count assaults with same faction (structures will be counted later)
+            // 2. Passive BGE Cold Sleep
+            for (CardStatus* status : fd->tap->assaults.m_indirect)
             {
                 if (status == played_status) { continue; } // except itself
                 _DEBUG_ASSERT(is_alive(status));
@@ -2489,6 +2490,13 @@ Results<uint64_t> play(Field* fd)
                         { status->m_perm_attack_buff += allegiance_value; }
                         status->ext_hp(allegiance_value);
                     }
+                }
+                if (__builtin_expect(fd->bg_effects[fd->tapi][PassiveBGE::coldsleep], false)
+                    && status->m_protected_stasis && can_be_healed(status))
+                {
+                    unsigned bge_value = (status->m_protected_stasis + 1) / 2;
+                    _DEBUG_MSG(1, "Cold Sleep: %s heals itself for %u\n", status_description(status).c_str(), bge_value);
+                    status->add_hp(bge_value);
                 }
             }
 
