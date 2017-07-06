@@ -22,7 +22,7 @@ const std::string skill_names[Skill::num_skills] =
     "Mimic",
 
     // Defensive:
-    "Armor", "Avenge", "Corrosive", "Counter", "Evade",
+    "Armor", "Avenge", "Corrosive", "Counter", "Evade", "Subdue",
     "Payback", "Revenge", "Tribute", "Refresh", "Wall", "Barrier",
 
     // Combat-Modifier:

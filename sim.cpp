@@ -157,7 +157,7 @@ inline unsigned CardStatus::protected_value() const
 //------------------------------------------------------------------------------
 inline unsigned CardStatus::max_hp() const
 {
-    return (m_card->m_health + m_perm_health_buff);
+    return (m_card->m_health + safe_minus(m_perm_health_buff, m_subdued));
 }
 //------------------------------------------------------------------------------
 inline unsigned CardStatus::add_hp(unsigned value)
@@ -189,6 +189,7 @@ inline void CardStatus::set(const Card& card)
     m_temp_attack_buff = 0;
     m_corroded_rate = 0;
     m_corroded_weakened = 0;
+    m_subdued = 0;
     m_enfeebled = 0;
     m_evaded = 0;
     m_inhibited = 0;
@@ -213,7 +214,12 @@ inline void CardStatus::set(const Card& card)
 //------------------------------------------------------------------------------
 inline unsigned CardStatus::attack_power() const
 {
-    signed attack = (signed)m_card->m_attack + m_perm_attack_buff + m_temp_attack_buff;
+    signed attack =
+        (signed)safe_minus(
+            m_card->m_attack + safe_minus(m_perm_attack_buff, m_subdued),
+            m_corroded_weakened
+        )
+        + m_temp_attack_buff;
     _DEBUG_ASSERT(attack >= 0);
     return (unsigned)attack;
 }
@@ -257,8 +263,15 @@ std::string CardStatus::description() const
     switch(m_card->m_type)
     {
     case CardType::assault:
-        desc += " att:[" + to_string(m_card->m_attack) + "(base)";
-        if (m_perm_attack_buff) { desc += (m_perm_attack_buff > 0 ? "+" : "") + to_string(m_perm_attack_buff) + "(perm)"; }
+        desc += " att:[[" + to_string(m_card->m_attack) + "(base)";
+        if (m_perm_attack_buff)
+        {
+            desc += "+[" + to_string(m_perm_attack_buff) + "(perm)";
+            if (m_subdued) { desc += "-" + to_string(m_subdued) + "(subd)"; }
+            desc += "]";
+        }
+        if (m_corroded_weakened) { desc += "-" + to_string(m_corroded_weakened) + "(corr)"; }
+        desc += "]";
         if (m_temp_attack_buff) { desc += (m_temp_attack_buff > 0 ? "+" : "") + to_string(m_temp_attack_buff) + "(temp)"; }
         desc += "]=" + to_string(attack_power());
     case CardType::structure:
@@ -276,6 +289,7 @@ std::string CardStatus::description() const
     if (m_sundered) { desc += ", sundered"; }
     // Status w/ value
     if (m_corroded_weakened || m_corroded_rate) { desc += ", corroded " + to_string(m_corroded_weakened) + " (rate: " + to_string(m_corroded_rate) + ")"; }
+    if (m_subdued) { desc += ", subdued " + to_string(m_subdued); }
     if (m_enfeebled) { desc += ", enfeebled " + to_string(m_enfeebled); }
     if (m_inhibited) { desc += ", inhibited " + to_string(m_inhibited); }
     if (m_sabotaged) { desc += ", sabotaged " + to_string(m_sabotaged); }
@@ -402,7 +416,7 @@ void prepend_on_death(Field* fd)
                     (std::abs((signed)from_idx - (signed)host_idx) > 1 ? "BGE BloodVengeance: " : ""),
                     status_description(adj_status).c_str(), avenge_value);
                 if (! adj_status->m_sundered)
-                { adj_status->m_perm_attack_buff += (signed)avenge_value; }
+                { adj_status->m_perm_attack_buff += avenge_value; }
                 adj_status->ext_hp(avenge_value);
             }
 
@@ -1084,7 +1098,7 @@ struct PerformAttack
                     status_description(def_status).c_str(), flux_value);
                 def_status->add_hp(flux_value);
                 if (! def_status->m_sundered)
-                { def_status->m_perm_attack_buff += (signed)flux_value; }
+                { def_status->m_perm_attack_buff += flux_value; }
             }
 
             // is attacker dead?
@@ -1107,7 +1121,7 @@ struct PerformAttack
         if (!att_status->m_sundered && (berserk_value > 0))
         {
             // perform_skill_berserk
-            att_status->m_perm_attack_buff += (signed)berserk_value;
+            att_status->m_perm_attack_buff += berserk_value;
 #ifndef NQUEST
             if (att_status->m_player == 0)
             {
@@ -1141,7 +1155,7 @@ struct PerformAttack
         {
             _DEBUG_MSG(1, "Heroism: %s gain %u attack\n",
                 status_description(att_status).c_str(), valor_value);
-            att_status->m_perm_attack_buff += (signed)valor_value;
+            att_status->m_perm_attack_buff += valor_value;
         }
 
         // Passive BGE: Devour
@@ -1156,13 +1170,31 @@ struct PerformAttack
             unsigned bge_value = (leech_value - 1) / bge_denominator + 1;
             if (! att_status->m_sundered)
             {
-                _DEBUG_MSG(1, "Devour: %s gain %u attack\n",
+                _DEBUG_MSG(1, "Devour: %s gains %u attack\n",
                     status_description(att_status).c_str(), bge_value);
-                att_status->m_perm_attack_buff += (signed)bge_value;
+                att_status->m_perm_attack_buff += bge_value;
             }
             _DEBUG_MSG(1, "Devour: %s extends max hp / heals itself for %u\n",
                 status_description(att_status).c_str(), bge_value);
             att_status->ext_hp(bge_value);
+        }
+
+        // Skill: Subdue
+        unsigned subdue_value = def_status->skill(Skill::subdue);
+        if (__builtin_expect(subdue_value, false))
+        {
+            _DEBUG_MSG(1, "%s subdues %s by %u\n",
+                status_description(def_status).c_str(),
+                status_description(att_status).c_str(), subdue_value);
+            att_status->m_subdued += subdue_value;
+            if (att_status->m_hp > att_status->max_hp())
+            {
+                _DEBUG_MSG(1, "%s loses %u HP due to subdue (max hp: %u)\n",
+                    status_description(att_status).c_str(),
+                    (att_status->m_hp - att_status->max_hp()),
+                    att_status->max_hp());
+                att_status->m_hp = att_status->max_hp();
+            }
         }
 
         return att_dmg;
@@ -2035,7 +2067,7 @@ bool check_and_perform_valor(Field* fd, CardStatus* src)
         }
 #endif
         _DEBUG_MSG(1, "%s activates Valor %u\n", status_description(src).c_str(), valor_value);
-        src->m_perm_attack_buff += (signed)valor_value;
+        src->m_perm_attack_buff += valor_value;
         return true;
     }
     return false;
@@ -2454,7 +2486,7 @@ Results<uint64_t> play(Field* fd)
                     {
                         _DEBUG_MSG(1, "%s activates Allegiance %u\n", status_description(status).c_str(), allegiance_value);
                         if (! status->m_sundered)
-                        { status->m_perm_attack_buff += (signed)allegiance_value; }
+                        { status->m_perm_attack_buff += allegiance_value; }
                         status->ext_hp(allegiance_value);
                     }
                 }
@@ -2495,7 +2527,7 @@ Results<uint64_t> play(Field* fd)
                     unsigned bge_value = allegiance_value * same_faction_cards_count;
                     _DEBUG_MSG(1, "Oath of Loyalty: %s activates Allegiance %u x %u = %u\n",
                         status_description(played_status).c_str(), allegiance_value, same_faction_cards_count, bge_value);
-                    played_status->m_perm_attack_buff += (signed)bge_value;
+                    played_status->m_perm_attack_buff += bge_value;
                     played_status->ext_hp(bge_value);
                 }
             }
@@ -2707,17 +2739,14 @@ Results<uint64_t> play(Field* fd)
                 if (attacked)
                 {
                     unsigned v = std::min(current_status->m_corroded_rate, current_status->attack_power());
-                    _DEBUG_MSG(1, "%s loses Attack by %u.\n", status_description(current_status).c_str(), v);
-                    signed perm_attack_debuff = std::min((signed)current_status->m_card->m_attack + current_status->m_perm_attack_buff, (signed)v);
-                    current_status->m_corroded_weakened += perm_attack_debuff;
-                    current_status->m_perm_attack_buff -= perm_attack_debuff;
-                    current_status->m_temp_attack_buff -= ((signed)v - perm_attack_debuff);
-                    _DEBUG_MSG(1, "%s loses Perm Attack Buff by %d.\n", status_description(current_status).c_str(), perm_attack_debuff);
+                    unsigned corrosion = std::min(v, current_status->m_card->m_attack
+                            + current_status->m_perm_attack_buff - current_status->m_corroded_weakened);
+                    _DEBUG_MSG(1, "%s loses Attack by %u (+corrosion %u).\n", status_description(current_status).c_str(), v, corrosion);
+                    current_status->m_corroded_weakened += corrosion;
                 }
                 else
                 {
                     _DEBUG_MSG(1, "%s loses Status corroded.\n", status_description(current_status).c_str());
-                    current_status->m_perm_attack_buff += current_status->m_corroded_weakened;
                     current_status->m_corroded_rate = 0;
                     current_status->m_corroded_weakened = 0;
                 }

@@ -161,11 +161,12 @@ struct CardStatus
     unsigned m_hp;
     CardStep m_step;
     unsigned m_perm_health_buff;
-    signed m_perm_attack_buff;
+    unsigned m_perm_attack_buff;
     signed m_temp_attack_buff;
 
     unsigned m_corroded_rate;
     unsigned m_corroded_weakened;
+    unsigned m_subdued;
     unsigned m_enfeebled;
     unsigned m_evaded;
     unsigned m_inhibited;
