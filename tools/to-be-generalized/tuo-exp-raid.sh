@@ -143,7 +143,10 @@ else
 fi
 
 log="tuo-exp-raid.${commander}-vs-${target}.effect[${effect}].${todo}.${order}.log"
-rm -rf $log
+if [[ -f $log ]]; then
+    echo "log already exists: $log" >&2
+    exit 2
+fi
 
 options=(
     ${effect:+-e "$effect"}
