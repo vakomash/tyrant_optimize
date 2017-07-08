@@ -564,14 +564,13 @@ void evaluate_skills(Field* fd, CardStatus* status, const std::vector<SkillSpec>
                 status_description(status).c_str(), skill_description(ss).c_str());
             fd->skill_queue.emplace_back(status, ss);
             resolve_skill(fd);
-            if (__builtin_expect(fd->end, false)) { break; }
         }
         if (type == CardType::assault)
         {
             // Attack
             if (can_act(status))
             {
-                if (attack_phase(fd) && !*attacked)
+                if (attack_phase(fd))
                 {
                     *attacked = true;
                     if (__builtin_expect(fd->end, false)) { break; }
@@ -584,7 +583,7 @@ void evaluate_skills(Field* fd, CardStatus* status, const std::vector<SkillSpec>
         }
         fd->finalize_action();
         // Flurry
-        if (can_act(status) && is_alive(&fd->tip->commander) && status->has_skill(Skill::flurry) && status->m_skill_cd[Skill::flurry] == 0)
+        if (can_act(status) && status->has_skill(Skill::flurry) && (status->m_skill_cd[Skill::flurry] == 0))
         {
 #ifndef NQUEST
             if (status->m_player == 0)
