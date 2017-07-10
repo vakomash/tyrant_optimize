@@ -2706,10 +2706,7 @@ Results<uint64_t> play(Field* fd)
         fd->bloodlust_value = 0;
         for (fd->current_ci = 0; !fd->end && (fd->current_ci < fd->tap->assaults.size()); ++fd->current_ci)
         {
-            // ca: current assault
             CardStatus* current_status(&fd->tap->assaults[fd->current_ci]);
-            // aa: across assault
-            CardStatus* across_status(fd->current_ci < fd->tip->assaults.size() ? &fd->tip->assaults[fd->current_ci] : NULL);
             bool attacked = false;
             if (!is_active(current_status))
             {
@@ -2717,11 +2714,16 @@ Results<uint64_t> play(Field* fd)
                 // Passive BGE: HaltedOrders
                 unsigned inhibit_value;
                 if (__builtin_expect(fd->bg_effects[fd->tapi][PassiveBGE::haltedorders], false)
-                    && (current_status->m_delay > 0) && across_status && is_alive(across_status)
-                    && (inhibit_value = current_status->skill(Skill::inhibit)) > across_status->m_inhibited)
+                    && (current_status->m_delay > 0) // still frozen
+                    && (fd->current_ci < fd->tip->assaults.size()) // across slot isn't empty
+                    && is_alive(&fd->tip->assaults[fd->current_ci]) // across assault is alive
+                    && ((inhibit_value = current_status->skill(Skill::inhibit))
+                        > fd->tip->assaults[fd->current_ci].m_inhibited)) // inhibit/re-inhibit(if higher)
                 {
+                    CardStatus* across_status(&fd->tip->assaults[fd->current_ci]);
                     _DEBUG_MSG(1, "Halted Orders: %s inhibits %s by %u\n",
-                        status_description(current_status).c_str(), status_description(across_status).c_str(), inhibit_value);
+                        status_description(current_status).c_str(),
+                        status_description(across_status).c_str(), inhibit_value);
                     across_status->m_inhibited = inhibit_value;
                 }
             }
