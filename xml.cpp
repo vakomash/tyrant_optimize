@@ -192,7 +192,7 @@ void parse_card_node(Cards& all_cards, Card* card, xml_node<>* card_node)
                         std::cerr << "Warning: parsing card [" << card->m_id << "]: unsupported fortress_type=" << fort_type_value << std::endl;
                     }
                 }
-                else
+                else if ((card->m_id < 2748) || (card->m_id >= 2754)) // except Sky Fortress
                 {
                     std::cerr << "Warning: parsing card [" << card->m_id << "]: expected fortress_type node" << std::endl;
                 }
