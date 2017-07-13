@@ -201,6 +201,7 @@ struct CardStatus
     inline unsigned protected_value() const;
     inline unsigned attack_power() const;
     inline unsigned max_hp() const;
+    inline unsigned max_hp_wo_subdue() const;
     inline unsigned add_hp(unsigned value);
     inline unsigned ext_hp(unsigned value);
 };

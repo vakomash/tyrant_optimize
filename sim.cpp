@@ -160,9 +160,14 @@ inline unsigned CardStatus::max_hp() const
     return (m_card->m_health + safe_minus(m_perm_health_buff, m_subdued));
 }
 //------------------------------------------------------------------------------
+inline unsigned CardStatus::max_hp_wo_subdue() const
+{
+    return (m_card->m_health + m_perm_health_buff);
+}
+//------------------------------------------------------------------------------
 inline unsigned CardStatus::add_hp(unsigned value)
 {
-    return (m_hp = std::min(m_hp + value, max_hp()));
+    return (m_hp = std::min(m_hp + value, max_hp_wo_subdue()));
 }
 //------------------------------------------------------------------------------
 inline unsigned CardStatus::ext_hp(unsigned value)
@@ -1060,7 +1065,28 @@ struct PerformAttack
         // assaults only: (leech if still alive)
 
         modify_attack_damage<def_cardtype>(pre_modifier_dmg);
-        if (!att_dmg) { return 0; }
+        if (!att_dmg)
+        {
+            // Skill: Subdue (Bug version: Subdue works regardless of dealt dmg)
+            unsigned subdue_value = def_status->skill(Skill::subdue);
+            if (__builtin_expect(subdue_value, false))
+            {
+                _DEBUG_MSG(1, "%s subdues (w/o dmg) %s by %u\n",
+                    status_description(def_status).c_str(),
+                    status_description(att_status).c_str(), subdue_value);
+                att_status->m_subdued += subdue_value;
+                if (att_status->m_hp > att_status->max_hp())
+                {
+                    _DEBUG_MSG(1, "%s loses %u HP due to subdue (max hp: %u)\n",
+                        status_description(att_status).c_str(),
+                        (att_status->m_hp - att_status->max_hp()),
+                        att_status->max_hp());
+                    att_status->m_hp = att_status->max_hp();
+                }
+            }
+
+            return 0;
+        }
 
         attack_damage<def_cardtype>();
         if (__builtin_expect(fd->end, false)) { return att_dmg; }
