@@ -224,6 +224,7 @@ inline bool is_triggered_skill(Skill::Skill skill_id)
     case Skill::allegiance:
     case Skill::flurry:
     case Skill::valor:
+    case Skill::stasis:
         return true;
     default:
         return false;
