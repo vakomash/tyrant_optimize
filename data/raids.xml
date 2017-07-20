@@ -600,6 +600,18 @@
 			</card_pool>
 		</deck>
 	</raid>
+	<raid>
+		<id>39</id>
+		<name>Cult of the Blood God Raid</name>
+		<levels>26</levels>
+		<commander>25514</commander>
+		<fortress_card id="18296"/>
+		<deck>
+			<always_include>
+				<card replicates="10">49214</card>
+			</always_include>
+		</deck>
+	</raid>
 <!-- END of Raids -->
 
 
