@@ -1,7 +1,7 @@
 #ifndef TYRANT_H_INCLUDED
 #define TYRANT_H_INCLUDED
 
-#define TYRANT_OPTIMIZER_VERSION "2.53.0"
+#define TYRANT_OPTIMIZER_VERSION "2.54.1"
 
 #include <string>
 #include <sstream>
@@ -54,13 +54,22 @@ enum Skill
     berserk, inhibit, sabotage, leech, poison,
 
     // Triggered:
-    allegiance, flurry, valor, stasis,
+    allegiance, flurry, valor, stasis, summon,
 
     // End of skills
     num_skills
 };
+enum Trigger
+{
+    activate,
+    play,
+    death,
+    num_triggers
+};
 }
 extern const std::string skill_names[Skill::num_skills];
+extern const std::string skill_trigger_names[Skill::num_triggers];
+
 
 namespace PassiveBGE {
 enum PassiveBGE
@@ -225,6 +234,7 @@ inline bool is_triggered_skill(Skill::Skill skill_id)
     case Skill::flurry:
     case Skill::valor:
     case Skill::stasis:
+    case Skill::summon:
         return true;
     default:
         return false;
@@ -355,6 +365,7 @@ struct _SkillSpec
     Skill::Skill s;
     Skill::Skill s2;
     bool all;
+    unsigned card_id;
 };
 
 using SkillSpec = _SkillSpec<unsigned>;

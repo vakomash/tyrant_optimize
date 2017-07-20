@@ -1535,7 +1535,7 @@ bool parse_bge(
             {
                 unsigned skill_index = 1;
                 // activation BG skill
-                SkillSpec bg_skill{skill_id, 0, allfactions, 0, 0, Skill::no_skill, Skill::no_skill, false};
+                SkillSpec bg_skill{skill_id, 0, allfactions, 0, 0, Skill::no_skill, Skill::no_skill, false, 0,};
 
                 // skill [ ALL | N ] ...
                 if (skill_index < tokens.size() && boost::to_lower_copy(tokens[skill_index]) == "all")
@@ -2516,7 +2516,7 @@ int main(int argc, char** argv)
         }
         for (const auto & bg_skill: opt_bg_skills[0])
         {
-            std::cout << "Your BG Skill: " << skill_description(bg_skill) << std::endl;
+            std::cout << "Your BG Skill: " << skill_description(all_cards, bg_skill) << std::endl;
         }
 
         for (unsigned i(0); i < enemy_decks.size(); ++i)
@@ -2537,7 +2537,7 @@ int main(int argc, char** argv)
         }
         for (const auto & bg_skill: opt_bg_skills[1])
         {
-            std::cout << "Enemy's BG Skill: " << skill_description(bg_skill) << std::endl;
+            std::cout << "Enemy's BG Skill: " << skill_description(all_cards, bg_skill) << std::endl;
         }
     }
     if (enemy_decks.size() == 1)
@@ -2548,7 +2548,7 @@ int main(int argc, char** argv)
             if (debug_print >= 0)
             {
                 std::cout << "Enemy's X-Mult BG Skill (effective X = round_up[X * " << enemy_deck->level << "]): "
-                    << skill_description(x_mult_ss);
+                    << skill_description(all_cards, x_mult_ss);
                 if (x_mult_ss.x) { std::cout << " (eff. X = " << ceil(x_mult_ss.x * enemy_deck->level) << ")"; }
                 std::cout << std::endl;
             }

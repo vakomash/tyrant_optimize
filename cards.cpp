@@ -47,7 +47,7 @@ Cards::~Cards()
 const Card* Cards::by_id(unsigned id) const
 {
     const auto cardIter = cards_by_id.find(id);
-    if(cardIter == cards_by_id.end())
+    if (cardIter == cards_by_id.end())
     {
         throw std::runtime_error("No card with id " + to_string(id));
     }
@@ -65,13 +65,15 @@ void Cards::organize()
     player_commanders.clear();
     player_assaults.clear();
     player_structures.clear();
+
     // Round 1: set cards_by_id
-    for(Card* card: all_cards)
+    for (Card* card: all_cards)
     {
         cards_by_id[card->m_id] = card;
     }
+
     // Round 2: depend on cards_by_id / by_id(); update m_name, [TU] m_top_level_card etc.; set cards_by_name; 
-    for(Card* card: all_cards)
+    for (Card* card: all_cards)
     {
         // Remove delimiters from card names
         size_t pos;
@@ -93,23 +95,20 @@ void Cards::organize()
         }
         add_card(card, card->m_name);
     }
-#if 0 // TODO refactor precedence
-    // Round 3: depend on cards_by_name; set abbreviations
-    for(Card* card: cards)
+
+    // Round 3: depend on summon skill card_id check that card_id
+    for (Card* card: all_cards)
     {
-        // generate abbreviations
-        if(card->m_set > 0)
+        unsigned summon_card_id(card->m_skill_value[Skill::summon]);
+        if (!summon_card_id) { continue; }
+        if (!cards_by_id[summon_card_id])
         {
-            for(auto&& abbr_name : get_abbreviations(card->m_name))
-            {
-                if(abbr_name.length() > 1 && cards_by_name.find(abbr_name) == cards_by_name.end())
-                {
-                    player_cards_abbr[abbr_name] = card->m_name;
-                }
-            }
+            std::cerr << "WARNING: Card [" << card->m_id << "] (" << card->m_name
+                << ") summons an unknown card [" << summon_card_id << "] (removing invalid skill Summon)" << std::endl;
+            std::remove_if(card->m_skills.begin(), card->m_skills.end(), [](const SkillSpec& ss) {return ss.id == Skill::summon;});
+            card->m_skill_value[Skill::summon] = 0;
         }
     }
-#endif
 }
 //------------------------------------------------------------------------------
 void Cards::fix_dominion_recipes()
@@ -181,16 +180,35 @@ void Cards::erase_fusion_recipe(unsigned id)
 }
 
 // class Card
-void Card::add_skill(Skill::Skill id, unsigned x, Faction y, unsigned n, unsigned c, Skill::Skill s, Skill::Skill s2, bool all)
+void Card::add_skill(Skill::Trigger trigger, Skill::Skill id, unsigned x, Faction y, unsigned n, unsigned c, Skill::Skill s, Skill::Skill s2, bool all, unsigned card_id)
 {
-    for(auto it = m_skills.begin(); it != m_skills.end(); ++ it)
+    std::vector<SkillSpec>* storage(nullptr);
+    switch (trigger)
     {
-        if(it->id == id)
-        {
-            m_skills.erase(it);
-            break;
-        }
+    case Skill::Trigger::activate:
+        storage = &m_skills;
+        break;
+    case Skill::Trigger::play:
+        storage = &m_skills_on_play;
+        break;
+    case Skill::Trigger::death:
+        storage = &m_skills_on_death;
+        break;
+    default:
+        _DEBUG_ASSERT(false);
+        __builtin_unreachable();
     }
-    m_skills.push_back({id, x, y, n, c, s, s2, all});
-    m_skill_value[id] = x ? x : n ? n : 1;
+    assert(storage);
+    // remove previous copy of such skill.id
+    {
+        auto pred = [id](const SkillSpec& ss) { return ss.id == id; };
+        m_skills.erase(std::remove_if(m_skills.begin(), m_skills.end(), pred), m_skills.end());
+        m_skills_on_play.erase(std::remove_if(m_skills_on_play.begin(), m_skills_on_play.end(), pred), m_skills_on_play.end());
+        m_skills_on_death.erase(std::remove_if(m_skills_on_death.begin(), m_skills_on_death.end(), pred), m_skills_on_death.end());
+    }
+    // add a new one
+    storage->push_back({id, x, y, n, c, s, s2, all, card_id});
+    // setup value
+    m_skill_value[id] = x ? x : n ? n : card_id ? card_id : 1;
+    m_skill_trigger[id] = trigger;
 }

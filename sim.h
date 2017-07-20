@@ -371,27 +371,37 @@ public:
 #endif
 };
 
+
+//------------------------------------------------------------------------------
+extern std::string card_name_by_id_safe(const Cards& cards, const unsigned card_id);
 //------------------------------------------------------------------------------
 template<typename x_type>
-inline std::string skill_description(const _SkillSpec<x_type>& s)
+inline std::string skill_description(const Cards& cards, const _SkillSpec<x_type>& s, Skill::Trigger trig)
 {
-    return skill_names[s.id] +
-       (s.all ? " all" : s.n == 0 ? "" : std::string(" ") + to_string(s.n)) +
-       (s.y == allfactions ? "" : std::string(" ") + faction_names[s.y]) +
-       (s.s == Skill::no_skill ? "" : std::string(" ") + skill_names[s.s]) +
-       (s.s2 == Skill::no_skill ? "" : std::string(" ") + skill_names[s.s2]) +
-       (s.x == 0 ? "" : std::string(" ") + to_string(s.x)) +
-       (s.c == 0 ? "" : std::string(" every ") + to_string(s.c));
+    return ((trig == Skill::Trigger::play) ? "(On Play)" :
+            (trig == Skill::Trigger::death) ? "(On Death)" : "") +
+        skill_names[s.id] +
+        (s.card_id == 0 ? "" : " " + card_name_by_id_safe(cards, s.card_id) + " id[" + to_string(s.card_id) + "]") +
+        (s.all ? " all" : s.n == 0 ? "" : std::string(" ") + to_string(s.n)) +
+        (s.y == allfactions ? "" : std::string(" ") + faction_names[s.y]) +
+        (s.s == Skill::no_skill ? "" : std::string(" ") + skill_names[s.s]) +
+        (s.s2 == Skill::no_skill ? "" : std::string(" ") + skill_names[s.s2]) +
+        (s.x == 0 ? "" : std::string(" ") + to_string(s.x)) +
+        (s.c == 0 ? "" : std::string(" every ") + to_string(s.c));
 }
 
 template<typename x_type>
-inline std::string skill_short_description(const _SkillSpec<x_type>& s)
+inline std::string skill_description(const Cards& cards, const _SkillSpec<x_type>& s)
+{ return skill_description<x_type>(cards, s, Skill::Trigger::activate); }
+
+template<typename x_type>
+inline std::string skill_short_description(const Cards& cards, const _SkillSpec<x_type>& s)
 {
-    // NOTE: not support summon
     return skill_names[s.id] +
+        (s.card_id == 0 ? "" : " " + card_name_by_id_safe(cards, s.card_id)) +
         (s.s == Skill::no_skill ? "" : std::string(" ") + skill_names[s.s]) +
         (s.s2 == Skill::no_skill ? "" : std::string(" ") + skill_names[s.s2]) +
-        (s.x == 0 ? "" : std::string(" ") + to_string(s.x));
+        (s.x == 0 ? "" : " " + to_string(s.x));
 }
 
 #endif

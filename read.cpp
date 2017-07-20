@@ -79,7 +79,7 @@ DeckList expand_deck_to_list(std::string deck_name, Decks& decks)
     static std::unordered_set<std::string> expanding_decks;
     if (expanding_decks.count(deck_name))
     {
-        std::cerr << "Warning: circular referred deck: " << deck_name << std::endl;
+        std::cerr << "WARNING: There is a circular referred deck: " << deck_name << std::endl;
         return DeckList();
     }
     auto deck_string = deck_name;
@@ -119,7 +119,7 @@ DeckList expand_deck_to_list(std::string deck_name, Decks& decks)
         expanding_decks.erase(deck_name);
         if (res.size() == 0)
         {
-            std::cerr << "Warning: regular expression matches nothing: /" << regex_string << "/." << std::endl;
+            std::cerr << "WARNING: Regular expression matches nothing: /" << regex_string << "/." << std::endl;
         }
         return normalize(res);
     }
@@ -148,7 +148,7 @@ DeckList parse_deck_list(std::string list_string, Decks& decks)
             }
             catch (const boost::bad_lexical_cast & e)
             {
-                std::cerr << "Warning: Is ':' a typo? Skip deck [" << list_token << "]\n";
+                std::cerr << "WARNING: Is ':' a typo? Skip deck [" << list_token << "]\n";
                 continue;
             }
         }
@@ -195,7 +195,7 @@ void parse_card_spec(const Cards& all_cards, const std::string& card_spec, unsig
         card_id = card_it->second->m_id;
         if (all_cards.ambiguous_names.count(simple_name))
         {
-            std::cerr << "Warning: There are multiple cards named " << card_name << " in cards.xml. [" << card_id << "] is used.\n";
+            std::cerr << "WARNING: There are multiple cards named " << card_name << " in cards.xml. [" << card_id << "] is used.\n";
         }
     }
     else if(card_id_iter != simple_name.end())
@@ -258,7 +258,7 @@ const std::pair<std::vector<unsigned>, std::map<signed, char>> string_to_ids(con
     {
         if (! error_list.empty())
         {
-            std::cerr << "Warning: Ignore some cards while resolving " << description << ": ";
+            std::cerr << "WARNING: Ignore some cards while resolving " << description << ": ";
             for (auto error: error_list)
             {
                 std::cerr << '[' << error << ']';

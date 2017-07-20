@@ -53,6 +53,23 @@ Faction skill_faction(xml_node<>* skill)
     return allfactions;
 }
 
+Skill::Trigger skill_trigger(xml_node<>* skill)
+{
+    xml_attribute<>* trigger(skill->first_attribute("trigger"));
+    if (trigger)
+    {
+        for (unsigned t(Skill::Trigger::activate); t < Skill::num_triggers; ++t)
+        {
+            if (skill_trigger_names[t] == boost::to_lower_copy(std::string(trigger->value())))
+            {
+                return static_cast<Skill::Trigger>(t);
+            }
+        }
+        std::cerr << "WARNING: unknown skill trigger: " << trigger->value() << std::endl;
+    }
+    return Skill::Trigger::activate;
+}
+
 unsigned node_value(xml_node<>* skill, const char* attribute, unsigned default_value = 0)
 {
     xml_attribute<>* value_node(skill->first_attribute(attribute));
@@ -105,7 +122,7 @@ bool parse_file(const std::string & filename, std::vector<char>& buffer, xml_doc
     {
         if (do_warn_on_missing)
         {
-            std::cerr << "Warning: The file '" << filename << "' does not exist. Proceeding without reading from this file.\n";
+            std::cerr << "WARNING: The file '" << filename << "' does not exist. Proceeding without reading from this file.\n";
         }
         buffer.resize(1);
         buffer[0] = 0;
@@ -189,12 +206,12 @@ void parse_card_node(Cards& all_cards, Card* card, xml_node<>* card_node)
                         card->m_category = CardCategory::fortress_siege;
                         break;
                     default:
-                        std::cerr << "Warning: parsing card [" << card->m_id << "]: unsupported fortress_type=" << fort_type_value << std::endl;
+                        std::cerr << "WARNING: parsing card [" << card->m_id << "]: unsupported fortress_type=" << fort_type_value << std::endl;
                     }
                 }
                 else if ((card->m_id < 2748) || (card->m_id >= 2754)) // except Sky Fortress
                 {
-                    std::cerr << "Warning: parsing card [" << card->m_id << "]: expected fortress_type node" << std::endl;
+                    std::cerr << "WARNING: parsing card [" << card->m_id << "]: expected fortress_type node" << std::endl;
                 }
             }
         }
@@ -261,7 +278,7 @@ void parse_card_node(Cards& all_cards, Card* card, xml_node<>* card_node)
     {
         if (card->m_type != CardType::structure)
         {
-            std::cerr << "Warning: parsing card [" << card->m_id << "]: set 8000 supposes fortresses card that implies type Structure"
+            std::cerr << "WARNING: parsing card [" << card->m_id << "]: set 8000 supposes fortresses card that implies type Structure"
                 << ", but card has type " << cardtype_names[card->m_type] << std::endl;
         }
 
@@ -275,7 +292,10 @@ void parse_card_node(Cards& all_cards, Card* card, xml_node<>* card_node)
     if (card_node->first_node("skill"))
     { // inherit no skill if there is skill node
         card->m_skills.clear();
+        card->m_skills_on_play.clear();
+        card->m_skills_on_death.clear();
         memset(card->m_skill_value, 0, sizeof card->m_skill_value);
+        memset(card->m_skill_trigger, 0, sizeof card->m_skill_trigger);
     }
     for (xml_node<>* skill_node = card_node->first_node("skill");
             skill_node;
@@ -283,22 +303,24 @@ void parse_card_node(Cards& all_cards, Card* card, xml_node<>* card_node)
     {
         Skill::Skill skill_id = skill_name_to_id(skill_node->first_attribute("id")->value());
         if (skill_id == Skill::no_skill) { continue; }
+        auto trig = skill_trigger(skill_node);
         auto x = node_value(skill_node, "x", 0);
         auto y = skill_faction(skill_node);
         auto n = node_value(skill_node, "n", 0);
         auto c = node_value(skill_node, "c", 0);
         auto s = skill_target_skill(skill_node, "s");
         auto s2 = skill_target_skill(skill_node, "s2");
-        bool all(skill_node->first_attribute("all"));
-        card->add_skill(skill_id, x, y, n, c, s, s2, all);
+        bool all = skill_node->first_attribute("all");
+        auto card_id = node_value(skill_node, "card_id", 0);
+        card->add_skill(trig, skill_id, x, y, n, c, s, s2, all, card_id);
     }
     all_cards.all_cards.push_back(card);
-    Card * top_card = card;
+    Card* top_card = card;
     for (xml_node<>* upgrade_node = card_node->first_node("upgrade");
             upgrade_node;
             upgrade_node = upgrade_node->next_sibling("upgrade"))
     {
-        Card * pre_upgraded_card = top_card;
+        Card* pre_upgraded_card = top_card;
         top_card = new Card(*top_card);
         parse_card_node(all_cards, top_card, upgrade_node);
         if (top_card->m_type == CardType::commander)
@@ -470,7 +492,7 @@ Deck* read_deck(Decks& decks, const Cards& all_cards, xml_node<>* node, DeckType
             fortress_card_node;
             fortress_card_node = fortress_card_node->next_sibling("fortress_card"))
     {
-        const Card * card = all_cards.by_id(atoi(fortress_card_node->first_attribute("id")->value()));
+        const Card* card = all_cards.by_id(atoi(fortress_card_node->first_attribute("id")->value()));
         fortress_cards.push_back(card);
         upgrade_opportunities += card->m_top_level_card->m_level - card->m_level;
     }
@@ -624,7 +646,7 @@ void read_missions(Decks& decks, const Cards& all_cards, const std::string & fil
         }
         catch (const std::runtime_error& e)
         {
-            std::cerr << "Warning: Failed to parse mission [" << deck_name << "] in file " << filename << ": [" << e.what() << "]. Skip the mission.\n";
+            std::cerr << "WARNING: Failed to parse mission [" << deck_name << "] in file " << filename << ": [" << e.what() << "]. Skip the mission.\n";
             continue;
         }
     }
@@ -657,7 +679,7 @@ void read_raids(Decks& decks, const Cards& all_cards, const std::string & filena
         }
         catch (const std::runtime_error& e)
         {
-            std::cerr << "Warning: Failed to parse raid [" << deck_name << "] in file " << filename << ": [" << e.what() << "]. Skip the raid.\n";
+            std::cerr << "WARNING: Failed to parse raid [" << deck_name << "] in file " << filename << ": [" << e.what() << "]. Skip the raid.\n";
             continue;
         }
     }
@@ -678,7 +700,7 @@ void read_raids(Decks& decks, const Cards& all_cards, const std::string & filena
             }
             catch (const std::runtime_error& e)
             {
-                std::cerr << "Warning: Failed to parse campaign [" << name_node->value() << "] in file " << filename << ": [" << e.what() << "]. Skip the campaign.\n";
+                std::cerr << "WARNING: Failed to parse campaign [" << name_node->value() << "] in file " << filename << ": [" << e.what() << "]. Skip the campaign.\n";
                 continue;
             }
         }
@@ -705,7 +727,7 @@ void load_recipes_xml(Cards& all_cards, const std::string & filename, bool do_wa
         xml_node<>* card_id_node(recipe_node->first_node("card_id"));
         if (!card_id_node) { continue; }
         unsigned card_id(atoi(card_id_node->value()));
-        Card * card = all_cards.cards_by_id[card_id];
+        Card* card = all_cards.cards_by_id[card_id];
         if (!card) {
             std::cerr << "Could not find card by id " << card_id << std::endl;
             continue;
@@ -723,7 +745,7 @@ void load_recipes_xml(Cards& all_cards, const std::string & filename, bool do_wa
                 card->m_base_id = card->m_id;
                 card->m_recipe_cards.clear();
             }
-            Card * material_card = all_cards.cards_by_id[card_id];
+            Card* material_card = all_cards.cards_by_id[card_id];
             card->m_recipe_cards[material_card] += number;
             material_card->m_used_for_cards[card] += number;
         }
