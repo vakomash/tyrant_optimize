@@ -2866,7 +2866,7 @@ Results<uint64_t> play(Field* fd)
     {
         case OptimizationMode::raid:
             raid_damage = 15
-                + (std::min<unsigned>(p[1]->deck->deck_size, (fd->turn + 1) / 2) - p[1]->assaults.size() - p[1]->structures.size())
+                + (p[1]->total_cards_destroyed)
                 - (10 * p[1]->commander.m_hp / p[1]->commander.max_hp());
             break;
 #ifndef NQUEST
