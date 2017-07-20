@@ -105,7 +105,7 @@ bool parse_file(const std::string & filename, std::vector<char>& buffer, xml_doc
     {
         if (do_warn_on_missing)
         {
-            std::cerr << "Warning: The file '" << filename << "' does not exist. Proceeding without reading from this file.\n";
+            std::cerr << "WARNING: The file '" << filename << "' does not exist. Proceeding without reading from this file.\n";
         }
         buffer.resize(1);
         buffer[0] = 0;
@@ -189,12 +189,12 @@ void parse_card_node(Cards& all_cards, Card* card, xml_node<>* card_node)
                         card->m_category = CardCategory::fortress_siege;
                         break;
                     default:
-                        std::cerr << "Warning: parsing card [" << card->m_id << "]: unsupported fortress_type=" << fort_type_value << std::endl;
+                        std::cerr << "WARNING: parsing card [" << card->m_id << "]: unsupported fortress_type=" << fort_type_value << std::endl;
                     }
                 }
                 else if ((card->m_id < 2748) || (card->m_id >= 2754)) // except Sky Fortress
                 {
-                    std::cerr << "Warning: parsing card [" << card->m_id << "]: expected fortress_type node" << std::endl;
+                    std::cerr << "WARNING: parsing card [" << card->m_id << "]: expected fortress_type node" << std::endl;
                 }
             }
         }
@@ -261,7 +261,7 @@ void parse_card_node(Cards& all_cards, Card* card, xml_node<>* card_node)
     {
         if (card->m_type != CardType::structure)
         {
-            std::cerr << "Warning: parsing card [" << card->m_id << "]: set 8000 supposes fortresses card that implies type Structure"
+            std::cerr << "WARNING: parsing card [" << card->m_id << "]: set 8000 supposes fortresses card that implies type Structure"
                 << ", but card has type " << cardtype_names[card->m_type] << std::endl;
         }
 
@@ -290,7 +290,8 @@ void parse_card_node(Cards& all_cards, Card* card, xml_node<>* card_node)
         auto s = skill_target_skill(skill_node, "s");
         auto s2 = skill_target_skill(skill_node, "s2");
         bool all(skill_node->first_attribute("all"));
-        card->add_skill(skill_id, x, y, n, c, s, s2, all);
+        auto card_id = node_value(skill_node, "card_id", 0);
+        card->add_skill(skill_id, x, y, n, c, s, s2, all, card_id);
     }
     all_cards.all_cards.push_back(card);
     Card * top_card = card;
@@ -624,7 +625,7 @@ void read_missions(Decks& decks, const Cards& all_cards, const std::string & fil
         }
         catch (const std::runtime_error& e)
         {
-            std::cerr << "Warning: Failed to parse mission [" << deck_name << "] in file " << filename << ": [" << e.what() << "]. Skip the mission.\n";
+            std::cerr << "WARNING: Failed to parse mission [" << deck_name << "] in file " << filename << ": [" << e.what() << "]. Skip the mission.\n";
             continue;
         }
     }
@@ -657,7 +658,7 @@ void read_raids(Decks& decks, const Cards& all_cards, const std::string & filena
         }
         catch (const std::runtime_error& e)
         {
-            std::cerr << "Warning: Failed to parse raid [" << deck_name << "] in file " << filename << ": [" << e.what() << "]. Skip the raid.\n";
+            std::cerr << "WARNING: Failed to parse raid [" << deck_name << "] in file " << filename << ": [" << e.what() << "]. Skip the raid.\n";
             continue;
         }
     }
@@ -678,7 +679,7 @@ void read_raids(Decks& decks, const Cards& all_cards, const std::string & filena
             }
             catch (const std::runtime_error& e)
             {
-                std::cerr << "Warning: Failed to parse campaign [" << name_node->value() << "] in file " << filename << ": [" << e.what() << "]. Skip the campaign.\n";
+                std::cerr << "WARNING: Failed to parse campaign [" << name_node->value() << "] in file " << filename << ": [" << e.what() << "]. Skip the campaign.\n";
                 continue;
             }
         }

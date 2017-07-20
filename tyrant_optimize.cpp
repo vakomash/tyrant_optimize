@@ -1535,7 +1535,7 @@ bool parse_bge(
             {
                 unsigned skill_index = 1;
                 // activation BG skill
-                SkillSpec bg_skill{skill_id, 0, allfactions, 0, 0, Skill::no_skill, Skill::no_skill, false};
+                SkillSpec bg_skill{skill_id, 0, allfactions, 0, 0, Skill::no_skill, Skill::no_skill, false, 0,};
 
                 // skill [ ALL | N ] ...
                 if (skill_index < tokens.size() && boost::to_lower_copy(tokens[skill_index]) == "all")

@@ -54,7 +54,7 @@ enum Skill
     berserk, inhibit, sabotage, leech, poison,
 
     // Triggered:
-    allegiance, flurry, valor, stasis,
+    allegiance, flurry, valor, stasis, summon,
 
     // End of skills
     num_skills
@@ -225,6 +225,7 @@ inline bool is_triggered_skill(Skill::Skill skill_id)
     case Skill::flurry:
     case Skill::valor:
     case Skill::stasis:
+    case Skill::summon:
         return true;
     default:
         return false;
@@ -355,6 +356,7 @@ struct _SkillSpec
     Skill::Skill s;
     Skill::Skill s2;
     bool all;
+    unsigned card_id;
 };
 
 using SkillSpec = _SkillSpec<unsigned>;

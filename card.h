@@ -54,7 +54,7 @@ public:
         std::memset(m_skill_value, 0, sizeof m_skill_value);
     }
 
-    void add_skill(Skill::Skill id, unsigned x, Faction y, unsigned n, unsigned c, Skill::Skill s, Skill::Skill s2, bool all);
+    void add_skill(Skill::Skill id, unsigned x, Faction y, unsigned n, unsigned c, Skill::Skill s, Skill::Skill s2 = Skill::no_skill, bool all = false, unsigned card_id = 0);
     const bool is_top_level_card() const { return (this == m_top_level_card); }
     const bool is_low_level_card() const { return (m_base_id == m_id); }
     const Card* upgraded() const { return is_top_level_card() ? this : m_used_for_cards.begin()->first; }

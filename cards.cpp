@@ -65,13 +65,15 @@ void Cards::organize()
     player_commanders.clear();
     player_assaults.clear();
     player_structures.clear();
+
     // Round 1: set cards_by_id
-    for(Card* card: all_cards)
+    for (Card* card: all_cards)
     {
         cards_by_id[card->m_id] = card;
     }
+
     // Round 2: depend on cards_by_id / by_id(); update m_name, [TU] m_top_level_card etc.; set cards_by_name; 
-    for(Card* card: all_cards)
+    for (Card* card: all_cards)
     {
         // Remove delimiters from card names
         size_t pos;
@@ -93,23 +95,20 @@ void Cards::organize()
         }
         add_card(card, card->m_name);
     }
-#if 0 // TODO refactor precedence
-    // Round 3: depend on cards_by_name; set abbreviations
-    for(Card* card: cards)
+
+    // Round 3: depend on summon skill card_id check that card_id
+    for (Card* card: all_cards)
     {
-        // generate abbreviations
-        if(card->m_set > 0)
+        unsigned summon_card_id(card->m_skill_value[Skill::summon]);
+        if (!summon_card_id) { continue; }
+        if (!cards_by_id[summon_card_id])
         {
-            for(auto&& abbr_name : get_abbreviations(card->m_name))
-            {
-                if(abbr_name.length() > 1 && cards_by_name.find(abbr_name) == cards_by_name.end())
-                {
-                    player_cards_abbr[abbr_name] = card->m_name;
-                }
-            }
+            std::cerr << "WARNING: Card [" << card->m_id << "] (" << card->m_name
+                << ") summons an unknown card [" << summon_card_id << "] (removing invalid skill Summon)" << std::endl;
+            std::remove_if(card->m_skills.begin(), card->m_skills.end(), [](const SkillSpec& ss) {return ss.id == Skill::summon;});
+            card->m_skill_value[Skill::summon] = 0;
         }
     }
-#endif
 }
 //------------------------------------------------------------------------------
 void Cards::fix_dominion_recipes()
@@ -181,16 +180,12 @@ void Cards::erase_fusion_recipe(unsigned id)
 }
 
 // class Card
-void Card::add_skill(Skill::Skill id, unsigned x, Faction y, unsigned n, unsigned c, Skill::Skill s, Skill::Skill s2, bool all)
+void Card::add_skill(Skill::Skill id, unsigned x, Faction y, unsigned n, unsigned c, Skill::Skill s, Skill::Skill s2, bool all, unsigned card_id)
 {
-    for(auto it = m_skills.begin(); it != m_skills.end(); ++ it)
-    {
-        if(it->id == id)
-        {
-            m_skills.erase(it);
-            break;
-        }
-    }
-    m_skills.push_back({id, x, y, n, c, s, s2, all});
-    m_skill_value[id] = x ? x : n ? n : 1;
+    // remove previous copy of such skill.id
+    std::remove_if(m_skills.begin(), m_skills.end(), [id](const SkillSpec& ss) {return ss.id == id;});
+    // add new one
+    m_skills.push_back({id, x, y, n, c, s, s2, all, card_id});
+    // setup value
+    m_skill_value[id] = x ? x : n ? n : card_id ? card_id : 1;
 }

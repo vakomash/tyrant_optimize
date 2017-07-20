@@ -116,7 +116,7 @@ inline void Field::finalize_action()
         if (barrier_base)
         {
             unsigned protect_value = barrier_base * unit_it->second;
-            _DEBUG_MSG(1, "%s protect itself for %u (barrier %u x %u damage taken times)\n",
+            _DEBUG_MSG(1, "%s protects itself for %u (barrier %u x %u damage taken)\n",
                 status_description(dmg_status).c_str(), protect_value, barrier_base, unit_it->second);
             dmg_status->m_protected += protect_value;
         }
@@ -302,12 +302,12 @@ std::string CardStatus::description() const
     std::vector<SkillSpec> card_skills(m_card->m_skills);
     if (m_enraged && !std::count_if(card_skills.begin(), card_skills.end(), [](const SkillSpec ss) { return (ss.id == Skill::berserk); }))
     {
-        SkillSpec ss{Skill::berserk, m_enraged, allfactions, 0, 0, Skill::no_skill, Skill::no_skill, false,};
+        SkillSpec ss{Skill::berserk, m_enraged, allfactions, 0, 0, Skill::no_skill, Skill::no_skill, false, 0,};
         card_skills.emplace_back(ss);
     }
     if (m_entrapped && !std::count_if(card_skills.begin(), card_skills.end(), [](const SkillSpec ss) { return (ss.id == Skill::counter); }))
     {
-        SkillSpec ss{Skill::counter, m_entrapped, allfactions, 0, 0, Skill::no_skill, Skill::no_skill, false,};
+        SkillSpec ss{Skill::counter, m_entrapped, allfactions, 0, 0, Skill::no_skill, Skill::no_skill, false, 0,};
         card_skills.emplace_back(ss);
     }
     for (const auto& ss : card_skills)
@@ -468,8 +468,8 @@ void prepend_on_death(Field* fd)
         {
             if (fd->bg_effects[fd->tapi][PassiveBGE::revenge] < 0)
                 throw std::runtime_error("BGE Revenge: value must be defined & positive");
-            SkillSpec ss_heal{Skill::heal, (unsigned)fd->bg_effects[fd->tapi][PassiveBGE::revenge], allfactions, 0, 0, Skill::no_skill, Skill::no_skill, true,};
-            SkillSpec ss_rally{Skill::rally, (unsigned)fd->bg_effects[fd->tapi][PassiveBGE::revenge], allfactions, 0, 0, Skill::no_skill, Skill::no_skill, true,};
+            SkillSpec ss_heal{Skill::heal, (unsigned)fd->bg_effects[fd->tapi][PassiveBGE::revenge], allfactions, 0, 0, Skill::no_skill, Skill::no_skill, true, 0,};
+            SkillSpec ss_rally{Skill::rally, (unsigned)fd->bg_effects[fd->tapi][PassiveBGE::revenge], allfactions, 0, 0, Skill::no_skill, Skill::no_skill, true, 0,};
             CardStatus * commander = &fd->players[status->m_player]->commander;
             _DEBUG_MSG(2, "Revenge: Preparing skill %s and %s\n",
                 skill_description(ss_heal).c_str(), skill_description(ss_rally).c_str());
@@ -543,6 +543,7 @@ inline bool check_and_perform_skill(Field* fd, CardStatus* src, CardStatus* dst,
 );
 
 bool check_and_perform_valor(Field* fd, CardStatus* src);
+CardStatus* check_and_perform_summon(Field* fd, CardStatus* src);
 
 template <enum CardType::CardType type>
 void evaluate_skills(Field* fd, CardStatus* status, const std::vector<SkillSpec>& skills, bool* attacked=nullptr)
@@ -612,12 +613,16 @@ struct PlayCard
     Field* fd;
     CardStatus* status;
     Storage<CardStatus>* storage;
+    const unsigned actor_index;
+    const CardStatus* actor_status;
 
-    PlayCard(const Card* card_, Field* fd_) :
+    PlayCard(const Card* card_, Field* fd_, unsigned ai_, CardStatus* as_) :
         card{card_},
         fd{fd_},
         status{nullptr},
-        storage{nullptr}
+        storage{nullptr},
+        actor_index{ai_},
+        actor_status{as_}
     {}
 
     template <enum CardType::CardType type>
@@ -639,11 +644,11 @@ struct PlayCard
         status = &storage->add_back();
         status->set(card);
         status->m_index = storage->size() - 1;
-        status->m_player = fd->tapi;
+        status->m_player = actor_index;
 #ifndef NQUEST
-        if (status->m_player == 0)
+        if (actor_index == 0)
         {
-            if (status->m_card->m_type == CardType::assault)
+            if (card->m_type == CardType::assault)
             {
                 fd->inc_counter(QuestType::faction_assault_card_use, card->m_faction);
             }
@@ -651,7 +656,7 @@ struct PlayCard
         }
 #endif
         _DEBUG_MSG(1, "%s plays %s %u [%s]\n",
-            status_description(&fd->tap->commander).c_str(), cardtype_names[type].c_str(),
+            status_description(actor_status).c_str(), cardtype_names[type].c_str(),
             static_cast<unsigned>(storage->size() - 1), card_description(fd->cards, card).c_str());
         if (status->m_delay == 0)
         {
@@ -663,13 +668,13 @@ struct PlayCard
 template <>
 void PlayCard::setStorage<CardType::assault>()
 {
-    storage = &fd->tap->assaults;
+    storage = &fd->players[actor_index]->assaults;
 }
 // structure
 template <>
 void PlayCard::setStorage<CardType::structure>()
 {
-    storage = &fd->tap->structures;
+    storage = &fd->players[actor_index]->structures;
 }
 
 // Check if a skill actually proc'ed.
@@ -837,19 +842,18 @@ void turn_start_phase(Field* fd)
     // reduce delay; reduce skill cooldown
     {
         auto& assaults(fd->tap->assaults);
-        for(unsigned index(0), end(assaults.size());
-            index < end;
-            ++index)
+        for(unsigned index(0), end(assaults.size()); index < end; ++index)
         {
             CardStatus * status = &assaults[index];
             status->m_index = index;
-            if(status->m_delay > 0)
+            if (status->m_delay > 0)
             {
                 _DEBUG_MSG(1, "%s reduces its timer\n", status_description(status).c_str());
-                -- status->m_delay;
+                --status->m_delay;
                 if (status->m_delay == 0)
                 {
                     check_and_perform_valor(fd, status);
+                    check_and_perform_summon(fd, status);
                 }
             }
             else
@@ -863,13 +867,11 @@ void turn_start_phase(Field* fd)
     // reduce delay; reduce skill cooldown
     {
         auto& structures(fd->tap->structures);
-        for(unsigned index(0), end(structures.size());
-            index < end;
-            ++index)
+        for(unsigned index(0), end(structures.size()); index < end; ++index)
         {
             CardStatus * status = &structures[index];
             status->m_index = index;
-            if(status->m_delay > 0)
+            if (status->m_delay > 0)
             {
                 _DEBUG_MSG(1, "%s reduces its timer\n", status_description(status).c_str());
                 --status->m_delay;
@@ -884,9 +886,7 @@ void turn_start_phase(Field* fd)
     // update index
     {
         auto& assaults(fd->tip->assaults);
-        for(unsigned index(0), end(assaults.size());
-            index < end;
-            ++index)
+        for(unsigned index(0), end(assaults.size()); index < end; ++index)
         {
             CardStatus& status(assaults[index]);
             status.m_index = index;
@@ -896,9 +896,7 @@ void turn_start_phase(Field* fd)
     // update index
     {
         auto& structures(fd->tip->structures);
-        for(unsigned index(0), end(structures.size());
-            index < end;
-            ++index)
+        for(unsigned index(0), end(structures.size()); index < end; ++index)
         {
             CardStatus& status(structures[index]);
             status.m_index = index;
@@ -1794,6 +1792,7 @@ inline void perform_skill<Skill::rush>(Field* fd, CardStatus* src, CardStatus* d
     if (dst->m_delay == 0)
     {
         check_and_perform_valor(fd, dst);
+        check_and_perform_summon(fd, dst);
     }
 }
 
@@ -1860,7 +1859,7 @@ inline void perform_skill<Skill::mimic>(Field* fd, CardStatus* src, CardStatus* 
     const SkillSpec & mim_ss = *mimickable_skills[mim_idx];
     Skill::Skill mim_skill_id = static_cast<Skill::Skill>(mim_ss.id);
     auto skill_value = s.x + src->enhanced(mim_skill_id);
-    SkillSpec mimicked_ss{mim_skill_id, skill_value, allfactions, mim_ss.n, 0, mim_ss.s, mim_ss.s2, mim_ss.all};
+    SkillSpec mimicked_ss{mim_skill_id, skill_value, allfactions, mim_ss.n, 0, mim_ss.s, mim_ss.s2, mim_ss.all, mim_ss.card_id,};
     _DEBUG_MSG(1, " * Mimicked skill: %s\n", skill_description(mimicked_ss).c_str());
     skill_table[mim_skill_id](fd, src, mimicked_ss);
 }
@@ -2043,7 +2042,7 @@ inline bool check_and_perform_skill(Field* fd, CardStatus* src, CardStatus* dst,
 bool check_and_perform_valor(Field* fd, CardStatus* src)
 {
     unsigned valor_value = src->skill(Skill::valor);
-    if (valor_value > 0 && ! src->m_sundered && skill_check<Skill::valor>(fd, src, nullptr))
+    if (valor_value && !src->m_sundered && skill_check<Skill::valor>(fd, src, nullptr))
     {
         unsigned opponent_player = opponent(src->m_player);
         const CardStatus * dst = fd->players[opponent_player]->assaults.size() > src->m_index ?
@@ -2070,6 +2069,31 @@ bool check_and_perform_valor(Field* fd, CardStatus* src)
         return true;
     }
     return false;
+}
+
+CardStatus* check_and_perform_summon(Field* fd, CardStatus* src)
+{
+    unsigned summon_card_id = src->m_card->m_skill_value[Skill::summon];
+    if (summon_card_id)
+    {
+        const Card* summoned_card(fd->cards.by_id(summon_card_id));
+        _DEBUG_ASSERT(summoned_card);
+        _DEBUG_MSG(1, "%s summons %s\n", status_description(src).c_str(), summoned_card->m_name.c_str());
+        switch (summoned_card->m_type)
+        {
+        case CardType::assault:
+            return PlayCard(summoned_card, fd, src->m_player, src).op<CardType::assault>();
+        case CardType::structure:
+            return PlayCard(summoned_card, fd, src->m_player, src).op<CardType::structure>();
+        default:
+            _DEBUG_MSG(0, "Unknown card type: #%u %s: %u\n",
+                summoned_card->m_id, card_description(fd->cards, summoned_card).c_str(),
+                summoned_card->m_type);
+            _DEBUG_ASSERT(false);
+            __builtin_unreachable();
+        }
+    }
+    return nullptr;
 }
 
 template<Skill::Skill skill_id>
@@ -2253,7 +2277,7 @@ void perform_targetted_hostile_fast(Field* fd, CardStatus* src, const SkillSpec&
     // apply TurningTides
     if (__builtin_expect(has_turningtides, false) && (turningtides_value > 0))
     {
-        SkillSpec ss_rally{Skill::rally, turningtides_value, allfactions, 0, 0, Skill::no_skill, Skill::no_skill, s.all,};
+        SkillSpec ss_rally{Skill::rally, turningtides_value, allfactions, 0, 0, Skill::no_skill, Skill::no_skill, s.all, 0,};
         _DEBUG_MSG(1, "TurningTides %u!\n", turningtides_value);
         perform_targetted_allied_fast<Skill::rally>(fd, &fd->players[src->m_player]->commander, ss_rally);
     }
@@ -2348,7 +2372,7 @@ void perform_targetted_hostile_fast(Field* fd, CardStatus* src, const SkillSpec&
                 // apply TurningTides
                 if (__builtin_expect(has_turningtides, false) && (turningtides_value > 0))
                 {
-                    SkillSpec ss_rally{Skill::rally, turningtides_value, allfactions, 0, 0, Skill::no_skill, Skill::no_skill, false,};
+                    SkillSpec ss_rally{Skill::rally, turningtides_value, allfactions, 0, 0, Skill::no_skill, Skill::no_skill, false, 0,};
                     _DEBUG_MSG(1, "Paybacked TurningTides %u!\n", turningtides_value);
                     perform_targetted_allied_fast<Skill::rally>(fd, &fd->players[pb_status->m_player]->commander, ss_rally);
                 }
@@ -2390,7 +2414,7 @@ void perform_targetted_hostile_fast(Field* fd, CardStatus* src, const SkillSpec&
                 turningtides_value = std::max(turningtides_value, safe_minus(old_attack, src->attack_power()));
                 if (turningtides_value > 0)
                 {
-                    SkillSpec ss_rally{Skill::rally, turningtides_value, allfactions, 0, 0, Skill::no_skill, Skill::no_skill, false,};
+                    SkillSpec ss_rally{Skill::rally, turningtides_value, allfactions, 0, 0, Skill::no_skill, Skill::no_skill, false, 0,};
                     _DEBUG_MSG(1, "Paybacked TurningTides %u!\n", turningtides_value);
                     perform_targetted_allied_fast<Skill::rally>(fd, &fd->players[pb_status->m_player]->commander, ss_rally);
                 }
@@ -2426,16 +2450,17 @@ Results<uint64_t> play(Field* fd)
     typedef unsigned points_score_type;
 
     // Play dominion & fortresses
-    for (unsigned _ = 0; _ < 2; ++ _)
+    for (unsigned _(0), ai(fd->tapi); _ < 2; ++_)
     {
-        if (fd->tap->deck->alpha_dominion)
-        { PlayCard(fd->tap->deck->alpha_dominion, fd).op<CardType::structure>(); }
-        for (const Card* played_card: fd->tap->deck->shuffled_forts)
+        if (fd->players[ai]->deck->alpha_dominion)
+        { PlayCard(fd->players[ai]->deck->alpha_dominion, fd, ai, &fd->players[ai]->commander).op<CardType::structure>(); }
+        for (const Card* played_card: fd->players[ai]->deck->shuffled_forts)
         {
-            PlayCard(played_card, fd).op<CardType::structure>();
+            PlayCard(played_card, fd, ai, &fd->players[ai]->commander).op<CardType::structure>();
         }
         std::swap(fd->tapi, fd->tipi);
         std::swap(fd->tap, fd->tip);
+        ai = opponent(ai);
     }
 
     while(__builtin_expect(fd->turn <= turn_limit && !fd->end, true))
@@ -2459,10 +2484,10 @@ Results<uint64_t> play(Field* fd)
             switch (played_card->m_type)
             {
             case CardType::assault:
-                played_status = PlayCard(played_card, fd).op<CardType::assault>();
+                played_status = PlayCard(played_card, fd, fd->tapi, &fd->tap->commander).op<CardType::assault>();
                 break;
             case CardType::structure:
-                played_status = PlayCard(played_card, fd).op<CardType::structure>();
+                played_status = PlayCard(played_card, fd, fd->tapi, &fd->tap->commander).op<CardType::structure>();
                 break;
             case CardType::commander:
             case CardType::num_cardtypes:
@@ -2622,7 +2647,7 @@ Results<uint64_t> play(Field* fd)
                 unsigned bge_value = (dst->skill(Skill::valor) + 1) / 2;
                 if (bge_value <= 0)
                 { continue; }
-                SkillSpec ss_protect{Skill::protect, bge_value, allfactions, 0, 0, Skill::no_skill, Skill::no_skill, false,};
+                SkillSpec ss_protect{Skill::protect, bge_value, allfactions, 0, 0, Skill::no_skill, Skill::no_skill, false, 0,};
                 if (dst->m_inhibited > 0)
                 {
                     _DEBUG_MSG(1, "Heroism: %s on %s but it is inhibited\n",
@@ -2729,13 +2754,11 @@ Results<uint64_t> play(Field* fd)
             }
             else
             {
-#ifndef NDEBUG
                 if (current_status->m_protected_stasis)
                 {
                     _DEBUG_MSG(1, "%s loses Stasis protection (activated)\n",
                         status_description(current_status).c_str());
                 }
-#endif
                 current_status->m_protected_stasis = 0;
                 fd->assault_bloodlusted = false;
                 current_status->m_step = CardStep::attacking;
