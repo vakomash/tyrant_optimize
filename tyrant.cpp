@@ -35,6 +35,11 @@ const std::string skill_names[Skill::num_skills] =
     "Allegiance", "Flurry", "Valor", "Stasis", "Summon",
 };
 
+const std::string skill_trigger_names[Skill::num_triggers] =
+{
+    "activate", "play", "death",
+};
+
 const std::string passive_bge_names[PassiveBGE::num_passive_bges] =
 {
     // Placeholder for no-bge:

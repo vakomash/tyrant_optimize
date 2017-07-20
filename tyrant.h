@@ -59,8 +59,17 @@ enum Skill
     // End of skills
     num_skills
 };
+enum Trigger
+{
+    activate,
+    play,
+    death,
+    num_triggers
+};
 }
 extern const std::string skill_names[Skill::num_skills];
+extern const std::string skill_trigger_names[Skill::num_triggers];
+
 
 namespace PassiveBGE {
 enum PassiveBGE

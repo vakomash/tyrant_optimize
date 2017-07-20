@@ -47,7 +47,7 @@ Cards::~Cards()
 const Card* Cards::by_id(unsigned id) const
 {
     const auto cardIter = cards_by_id.find(id);
-    if(cardIter == cards_by_id.end())
+    if (cardIter == cards_by_id.end())
     {
         throw std::runtime_error("No card with id " + to_string(id));
     }
@@ -180,12 +180,35 @@ void Cards::erase_fusion_recipe(unsigned id)
 }
 
 // class Card
-void Card::add_skill(Skill::Skill id, unsigned x, Faction y, unsigned n, unsigned c, Skill::Skill s, Skill::Skill s2, bool all, unsigned card_id)
+void Card::add_skill(Skill::Trigger trigger, Skill::Skill id, unsigned x, Faction y, unsigned n, unsigned c, Skill::Skill s, Skill::Skill s2, bool all, unsigned card_id)
 {
+    std::vector<SkillSpec>* storage(nullptr);
+    switch (trigger)
+    {
+    case Skill::Trigger::activate:
+        storage = &m_skills;
+        break;
+    case Skill::Trigger::play:
+        storage = &m_skills_on_play;
+        break;
+    case Skill::Trigger::death:
+        storage = &m_skills_on_death;
+        break;
+    default:
+        _DEBUG_ASSERT(false);
+        __builtin_unreachable();
+    }
+    assert(storage);
     // remove previous copy of such skill.id
-    std::remove_if(m_skills.begin(), m_skills.end(), [id](const SkillSpec& ss) {return ss.id == id;});
-    // add new one
-    m_skills.push_back({id, x, y, n, c, s, s2, all, card_id});
+    {
+        auto pred = [id](const SkillSpec& ss) { return ss.id == id; };
+        m_skills.erase(std::remove_if(m_skills.begin(), m_skills.end(), pred), m_skills.end());
+        m_skills_on_play.erase(std::remove_if(m_skills_on_play.begin(), m_skills_on_play.end(), pred), m_skills_on_play.end());
+        m_skills_on_death.erase(std::remove_if(m_skills_on_death.begin(), m_skills_on_death.end(), pred), m_skills_on_death.end());
+    }
+    // add a new one
+    storage->push_back({id, x, y, n, c, s, s2, all, card_id});
     // setup value
     m_skill_value[id] = x ? x : n ? n : card_id ? card_id : 1;
+    m_skill_trigger[id] = trigger;
 }
