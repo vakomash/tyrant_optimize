@@ -682,9 +682,9 @@ struct PlayCard
         // resolve On-Play skills
         for (const auto& ss: card->m_skills_on_play)
         {
-            _DEBUG_MSG(2, "On Play %s: Preparing (head) skill %s\n",
+            _DEBUG_MSG(2, "On Play %s: Preparing (tail) skill %s\n",
                 status_description(status).c_str(), skill_description(fd->cards, ss).c_str());
-            fd->skill_queue.emplace(fd->skill_queue.begin(), status, ss);
+            fd->skill_queue.emplace_back(status, ss);
         }
 
         return status;
@@ -929,6 +929,10 @@ void turn_start_phase(Field* fd)
             {
                 _DEBUG_MSG(1, "%s reduces its timer\n", status_description(status).c_str());
                 --status->m_delay;
+                if (status->m_delay == 0)
+                {
+                    check_and_perform_summon(fd, status);
+                }
             }
             else
             {
@@ -2551,7 +2555,13 @@ Results<uint64_t> play(Field* fd)
         // Initialize stuff, remove dead cards
         _DEBUG_MSG(1, "------------------------------------------------------------------------\n"
                 "TURN %u begins for %s\n", fd->turn, status_description(&fd->tap->commander).c_str());
-        turn_start_phase(fd);
+
+        // reduce timers & perform triggered skills (like Summon)
+        fd->prepare_action();
+        turn_start_phase(fd); // summon may postpone skills to be resolved
+        resolve_skill(fd); // resolve postponed skills recursively
+        fd->finalize_action();
+
         bool bge_megamorphosis = fd->bg_effects[fd->tapi][PassiveBGE::megamorphosis];
 
         // Play a card
@@ -2581,8 +2591,7 @@ Results<uint64_t> play(Field* fd)
                 assert(false);
                 break;
             }
-            prepend_on_death(fd);
-            resolve_skill(fd);
+            resolve_skill(fd); // resolve postponed skills recursively
 
             // End 'Play Card' phase action
             fd->finalize_action();
