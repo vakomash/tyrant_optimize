@@ -1,6 +1,6 @@
 // Guild War BGEs
 Sandblast: Entrap All 7; Weaken All 4
-Plasma Burst: Heal 11; Protect 11; Sunder 11
+Plasma Burst: Heal 15; Protect 15; Sunder 15
 Landmine: Entrap 18
 Inspired: Rally all 4
 Blightblast: Enfeeble all 4
@@ -31,6 +31,7 @@ Sulfuris Essence: Evolve All Poison Venom; Enhance All Venom 6
 Way of the Forsaken: Enhance All Corrosive 8; Heal All Raider 7; Enfeeble 7
 Critical Blast: Enhance All Swipe 4; Enfeeble All 4
 Will of the Nephilim: Enhance All Avenge 5; Protect All Bloodthirsty 4; Heal All Righteous 6
+Armada's Conquest: Enhance All Evade 4; Rally All Xeno 6; Mortar 10
 
 // Some other BGEs
 Soothing Chant: Heal all 2
