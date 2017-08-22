@@ -149,7 +149,7 @@ return
 
 MenuWeb:
 Gui, Submit
-Run https://github.com/dsuchka/tyrant_optimize/releases
+Run https://github.com/brikikeks/tyrant_optimize/releases
 Gui, Show
 return
 
@@ -189,13 +189,13 @@ Loop, 13
         had_error := true
     }
 }
-UrlDownloadToFile, *0 https://raw.githubusercontent.com/dsuchka/tyrant_optimize/merged/data/raids.xml, data\raids.xml
+UrlDownloadToFile, *0 https://raw.githubusercontent.com/brikikeks/tyrant_optimize/merged/data/raids.xml, data\raids.xml
 if ErrorLevel
 {
     MsgBox, Error downloading raids.xml.
     had_error := true
 }
-UrlDownloadToFile, *0 https://raw.githubusercontent.com/dsuchka/tyrant_optimize/merged/data/bges.txt, data\bges.txt
+UrlDownloadToFile, *0 https://raw.githubusercontent.com/brikikeks/tyrant_optimize/merged/data/bges.txt, data\bges.txt
 if ErrorLevel
 {
     MsgBox, Error downloading bges.txt.
@@ -242,13 +242,13 @@ Loop, 13
         had_error := true
     }
 }
-UrlDownloadToFile, *0 https://raw.githubusercontent.com/dsuchka/tyrant_optimize/merged/data/raids.xml, data\raids.xml
+UrlDownloadToFile, *0 https://raw.githubusercontent.com/brikikeks/tyrant_optimize/merged/data/raids.xml, data\raids.xml
 if ErrorLevel
 {
     MsgBox, Error downloading raids.xml.
     had_error := true
 }
-UrlDownloadToFile, *0 https://raw.githubusercontent.com/dsuchka/tyrant_optimize/merged/data/bges.txt, data\bges.txt
+UrlDownloadToFile, *0 https://raw.githubusercontent.com/brikikeks/tyrant_optimize/merged/data/bges.txt, data\bges.txt
 if ErrorLevel
 {
     MsgBox, Error downloading bges.txt.
