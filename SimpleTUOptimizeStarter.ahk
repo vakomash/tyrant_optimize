@@ -180,7 +180,7 @@ if ErrorLevel
     MsgBox, Error downloading levels.xml.
     had_error := true
 }
-Loop, 13
+Loop, 14
 {
     UrlDownloadToFile, *0 http://mobile.tyrantonline.com/assets/cards_section_%A_Index%.xml, data\cards_section_%A_Index%.xml
     if ErrorLevel
