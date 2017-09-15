@@ -63,6 +63,8 @@ enum Trigger
 {
     activate,
     play,
+    //APN
+    attacked,
     death,
     num_triggers
 };
