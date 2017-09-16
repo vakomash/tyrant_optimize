@@ -569,8 +569,19 @@ FinalResults<long double> compute_score(const EvaluatedResults& results, std::ve
         final.wins += results.first[index].wins * factors[index];
         final.draws += results.first[index].draws * factors[index];
         final.losses += results.first[index].losses * factors[index];
-        auto lower_bound = boost::math::binomial_distribution<>::find_lower_bound_on_p(results.second, results.first[index].points / max_possible, 1 - confidence_level) * max_possible;
-        auto upper_bound = boost::math::binomial_distribution<>::find_upper_bound_on_p(results.second, results.first[index].points / max_possible, 1 - confidence_level) * max_possible;
+	//APN
+	auto trials = results.second;
+	auto prob = 1-confidence_level;
+	auto successes = results.first[index].points/max_possible;
+	if(successes > trials)
+	{
+		successes = trials;
+		//printf("WARNING: biominal successes > trials");
+		_DEBUG_MSG(2,"WARNING: biominal successes > trials");
+	}
+
+        auto lower_bound = boost::math::binomial_distribution<>::find_lower_bound_on_p(trials, successes, prob) * max_possible;
+        auto upper_bound = boost::math::binomial_distribution<>::find_upper_bound_on_p(trials, successes, prob) * max_possible;
         if (use_harmonic_mean)
         {
             final.points += factors[index] / results.first[index].points;
