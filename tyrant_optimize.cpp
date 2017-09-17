@@ -882,8 +882,21 @@ void thread_evaluate(boost::barrier& main_barrier,
                     }
                     bool compare_stop(false);
                     long double max_possible = max_possible_score[(size_t)optimization_mode];
+					
+					//APN
+					auto trials = thread_total_local;
+					auto prob = 1-confidence_level;
+					auto successes = score_accum / max_possible;
+					if(successes > trials)
+					{
+						successes = trials;
+						printf("WARNING: biominal successes > trials in Threads");
+						_DEBUG_MSG(2,"WARNING: biominal successes > trials in Threads");
+					}
+
+					
                     // Get a loose (better than no) upper bound. TODO: Improve it.
-                    compare_stop = (boost::math::binomial_distribution<>::find_upper_bound_on_p(thread_total_local, score_accum / max_possible, 1 - confidence_level) * max_possible <
+                    compare_stop = (boost::math::binomial_distribution<>::find_upper_bound_on_p(trials, successes, prob) * max_possible <
                             thread_best_results->points + min_increment_of_score);
                     if (compare_stop)
                     {
