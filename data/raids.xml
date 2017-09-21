@@ -645,6 +645,21 @@
 			</card_pool>
 		</deck>
 	</raid>
+	<!-- Not 100% sure -->
+	<raid>
+		<id>41</id>
+		<name>The Doors Raid</name>
+		<commander>25782</commander>
+		<levels>26</levels>
+		<deck>
+			<always_include>
+				<card replicates="4">55790</card>
+				<card replicates="4">55800</card>
+				<card replicates="4">55810</card>
+			</always_include>
+		</deck>
+	</raid>
+
 <!-- END of Raids -->
 
 
