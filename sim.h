@@ -20,6 +20,7 @@ class Field;
 class Achievement;
 
 extern unsigned turn_limit;
+extern unsigned action_index;
 
 //---------------------- Represent Simulation Results ----------------------------
 template<typename result_type>
