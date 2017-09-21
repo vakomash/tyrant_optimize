@@ -663,7 +663,7 @@
 	
 	<raid>
 		<id>42</id>
-		<name>Door of Khensu</name>
+		<name>Door of Khensu Raid</name>
 		<commander>25782</commander>
 		<fortress_card id="18348"/>
 		<levels>26</levels>
