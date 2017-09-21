@@ -23,6 +23,7 @@ inline bool is_alive(CardStatus* c) { return (c->m_hp > 0); }
 inline bool can_act(CardStatus* c) { return is_alive(c) && !c->m_jammed; }
 inline bool is_active(CardStatus* c) { return can_act(c) && (c->m_delay == 0); }
 inline bool is_active_next_turn(CardStatus* c) { return can_act(c) && (c->m_delay <= 1); }
+inline bool will_activate_this_turn(CardStatus* c) { return is_active(c) && ((c->m_step == CardStep::none) || (c->m_step == CardStep::attacking && c->has_skill(Skill::flurry) && action_index < c->skill_base_value(Skill::flurry)));}
 // Can be healed / repaired
 inline bool can_be_healed(CardStatus* c) { return is_alive(c) && (c->m_hp < c->max_hp()); }
 // Strange Transmission [Gilians] features
@@ -774,12 +775,7 @@ inline bool skill_check<Skill::jam>(Field* fd, CardStatus* c, CardStatus* ref)
     { return is_active_next_turn(c); }
 
     // inactive player performs Jam
-    if (is_active(c) && c->m_step == CardStep::attacking && c->has_skill(Skill::flurry) && action_index < c->skill_base_value(Skill::flurry))
-    {
-	    _DEBUG_MSG(2,"**APN** targetable due to flurry\n")
-	    return true;
-    }
-    return is_active(c) && (c->m_step == CardStep::none);
+    return will_activate_this_turn(c);
 }
 
 template<>
@@ -1753,12 +1749,7 @@ inline bool skill_predicate<Skill::weaken>(Field* fd, CardStatus* src, CardStatu
     // APN - On-Attacked/Death don't target the attacking card  
 
     // inactive player performs Weaken (inverted case (on-death activation))
-    if (is_active(dst) && dst->m_step == CardStep::attacking && dst->has_skill(Skill::flurry) && action_index < dst->skill_base_value(Skill::flurry))
-    {
-	    _DEBUG_MSG(2,"**APN** targetable due to flurry\n")
-	    return true;
-    }
-    return is_active(dst) && (dst->m_step == CardStep::none);
+    return will_activate_this_turn(dst);
 }
 
 template<>
