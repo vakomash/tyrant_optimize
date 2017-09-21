@@ -650,6 +650,7 @@
 		<id>41</id>
 		<name>The Doors Raid</name>
 		<commander>25782</commander>
+		<fortress_card id=18348/>
 		<levels>26</levels>
 		<deck>
 			<always_include>
