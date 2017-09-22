@@ -655,8 +655,8 @@
 		<deck>
 			<always_include>
 				<card replicates="4">55790</card>
-				<card replicates="4">55800</card>
-				<card replicates="4">55810</card>
+				<card replicates="3">55800</card>
+				<card replicates="3">55810</card>
 			</always_include>
 		</deck>
 	</raid>
@@ -670,8 +670,8 @@
 		<deck>
 			<always_include>
 				<card replicates="4">55790</card>
-				<card replicates="4">55800</card>
-				<card replicates="4">55810</card>
+				<card replicates="3">55800</card>
+				<card replicates="3">55810</card>
 			</always_include>
 		</deck>
 	</raid>
