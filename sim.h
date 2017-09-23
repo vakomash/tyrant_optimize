@@ -189,6 +189,7 @@ struct CardStatus
     bool m_overloaded;
     bool m_rush_attempted;
     bool m_sundered;
+    bool m_summoned;
 
     CardStatus() {}
 
@@ -217,7 +218,8 @@ public:
         assaults(15),
         structures(15),
         stasis_faction_bitmap(0),
-        total_cards_destroyed(0)
+        total_cards_destroyed(0),
+	total_nonsummon_cards_destroyed(0)
     {
     }
 
@@ -229,6 +231,7 @@ public:
     Storage<CardStatus> structures;
     unsigned stasis_faction_bitmap;
     unsigned total_cards_destroyed;
+    unsigned total_nonsummon_cards_destroyed;
 };
 
 #ifndef NQUEST

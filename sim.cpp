@@ -210,6 +210,8 @@ inline void CardStatus::set(const Card& card)
     m_entrapped = 0;
     m_rush_attempted = false;
     m_sundered = false;
+    //APN
+    m_summoned = false;
 
     std::memset(m_primary_skill_offset, 0, sizeof m_primary_skill_offset);
     std::memset(m_evolved_skill_offset, 0, sizeof m_evolved_skill_offset);
@@ -303,6 +305,7 @@ std::string CardStatus::description() const
     if (m_jammed) { desc += ", jammed"; }
     if (m_overloaded) { desc += ", overloaded"; }
     if (m_sundered) { desc += ", sundered"; }
+    if (m_summoned) { desc+= ", summoned"; }
     // Status w/ value
     if (m_corroded_weakened || m_corroded_rate) { desc += ", corroded " + to_string(m_corroded_weakened) + " (rate: " + to_string(m_corroded_rate) + ")"; }
     if (m_subdued) { desc += ", subdued " + to_string(m_subdued); }
@@ -366,6 +369,7 @@ void Hand::reset(std::mt19937& re)
     deck->shuffle(re);
     commander.set(deck->shuffled_commander);
     total_cards_destroyed = 0;
+    total_nonsummon_cards_destroyed = 0;
     if (commander.skill(Skill::stasis))
     {
         stasis_faction_bitmap |= (1u << commander.m_card->m_faction);
@@ -848,6 +852,7 @@ void remove_hp(Field* fd, CardStatus* status, unsigned dmg)
         _DEBUG_ASSERT(status->m_card->m_type != CardType::commander);
         fd->killed_units.push_back(status);
         ++fd->players[status->m_player]->total_cards_destroyed;
+	if(!status->m_summoned)++fd->players[status->m_player]->total_nonsummon_cards_destroyed;
         if (__builtin_expect((status->m_player == 0) && (fd->players[0]->deck->vip_cards.count(status->m_card->m_id)), false))
         {
             fd->players[0]->commander.m_hp = 0;
@@ -2161,12 +2166,17 @@ CardStatus* check_and_perform_summon(Field* fd, CardStatus* src)
     {
         const Card* summoned_card(fd->cards.by_id(summon_card_id));
         _DEBUG_MSG(1, "%s summons %s\n", status_description(src).c_str(), summoned_card->m_name.c_str());
+	CardStatus* summoned_status = nullptr;
         switch (summoned_card->m_type)
         {
         case CardType::assault:
-            return PlayCard(summoned_card, fd, src->m_player, src).op<CardType::assault>();
+            summoned_status = PlayCard(summoned_card, fd, src->m_player, src).op<CardType::assault>();
+	    summoned_status->m_summoned=true;
+	    return summoned_status;
         case CardType::structure:
-            return PlayCard(summoned_card, fd, src->m_player, src).op<CardType::structure>();
+            summoned_status = PlayCard(summoned_card, fd, src->m_player, src).op<CardType::structure>();
+	    summoned_status->m_summoned=true;
+	    return summoned_status;
         default:
             _DEBUG_MSG(0, "Unknown card type: #%u %s: %u\n",
                 summoned_card->m_id, card_description(fd->cards, summoned_card).c_str(),
@@ -2958,7 +2968,7 @@ Results<uint64_t> play(Field* fd)
         case OptimizationMode::campaign:
             {
                 unsigned total_dominions_destroyed = (p[0]->deck->alpha_dominion != nullptr) - p[0]->structures.count(is_it_dominion);
-                unsigned campaign_score = 100 - 10 * (p[0]->total_cards_destroyed - total_dominions_destroyed);
+                unsigned campaign_score = 100 - 10 * (p[0]->total_nonsummon_cards_destroyed - total_dominions_destroyed);
                 return {1, 0, 0, (points_score_type)campaign_score};
             }
 #ifndef NQUEST
