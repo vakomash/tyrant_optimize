@@ -23,7 +23,7 @@ inline bool is_alive(CardStatus* c) { return (c->m_hp > 0); }
 inline bool can_act(CardStatus* c) { return is_alive(c) && !c->m_jammed; }
 inline bool is_active(CardStatus* c) { return can_act(c) && (c->m_delay == 0); }
 inline bool is_active_next_turn(CardStatus* c) { return can_act(c) && (c->m_delay <= 1); }
-inline bool will_activate_this_turn(CardStatus* c) { return is_active(c) && ((c->m_step == CardStep::none) || (c->m_step == CardStep::attacking && c->has_skill(Skill::flurry) && action_index < c->skill_base_value(Skill::flurry)));}
+inline bool will_activate_this_turn(CardStatus* c) { return is_active(c) && ((c->m_step == CardStep::none) || (c->m_step == CardStep::attacking && c->has_skill(Skill::flurry) && c->m_action_index < c->skill_base_value(Skill::flurry)));}
 // Can be healed / repaired
 inline bool can_be_healed(CardStatus* c) { return is_alive(c) && (c->m_hp < c->max_hp()); }
 // Strange Transmission [Gilians] features
@@ -185,6 +185,7 @@ inline void CardStatus::set(const Card& card)
 {
     m_card = &card;
     m_index = 0;
+	m_action_index=0;
     m_player = 0;
     m_delay = card.m_delay;
     m_hp = card.m_health;
@@ -607,8 +608,9 @@ void evaluate_skills(Field* fd, CardStatus* status, const std::vector<SkillSpec>
 {
     _DEBUG_ASSERT(status);
     unsigned num_actions(1);
-    for (action_index = 0; action_index < num_actions; ++ action_index)
+    for (unsigned action_index(0); action_index < num_actions; ++ action_index)
     {
+		status->m_action_index = action_index;
         fd->prepare_action();
         _DEBUG_ASSERT(fd->skill_queue.size() == 0);
         for (auto & ss: skills)
@@ -778,6 +780,7 @@ inline bool skill_check<Skill::jam>(Field* fd, CardStatus* c, CardStatus* ref)
     if (fd->tapi == ref->m_player)
     { return is_active_next_turn(c); }
 
+	
     // inactive player performs Jam
     return will_activate_this_turn(c);
 }
@@ -1064,7 +1067,6 @@ void turn_end_phase(Field* fd)
 // pre-condition: only valid if m_card->m_counter > 0
 
 // APN - Global Access to check if flurry is active for on attacked
-unsigned action_index{0};
 
 inline unsigned counter_damage(Field* fd, CardStatus* att, CardStatus* def)
 {
@@ -1752,7 +1754,7 @@ inline bool skill_predicate<Skill::weaken>(Field* fd, CardStatus* src, CardStatu
     { return is_active_next_turn(dst); }
 
     // APN - On-Attacked/Death don't target the attacking card  
-
+	
     // inactive player performs Weaken (inverted case (on-death activation))
     return will_activate_this_turn(dst);
 }

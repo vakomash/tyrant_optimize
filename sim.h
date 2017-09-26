@@ -20,7 +20,6 @@ class Field;
 class Achievement;
 
 extern unsigned turn_limit;
-extern unsigned action_index;
 
 //---------------------- Represent Simulation Results ----------------------------
 template<typename result_type>
@@ -157,6 +156,7 @@ struct CardStatus
 {
     const Card* m_card;
     unsigned m_index;
+	unsigned m_action_index;
     unsigned m_player;
     unsigned m_delay;
     unsigned m_hp;
