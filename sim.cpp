@@ -1066,7 +1066,6 @@ void turn_end_phase(Field* fd)
 // Counter damage dealt to the attacker (att) by defender (def)
 // pre-condition: only valid if m_card->m_counter > 0
 
-// APN - Global Access to check if flurry is active for on attacked
 
 inline unsigned counter_damage(Field* fd, CardStatus* att, CardStatus* def)
 {
@@ -1124,25 +1123,23 @@ struct PerformAttack
         // Evaluation order:
         // modify damage
         // deal damage
-        // assaults only: (poison)
+        // assaults only: (poison,inihibit, sabotage)
+		// on-attacked skills
         // counter, berserk
         // assaults only: (leech if still alive)
+		// bge
+		// subdue
 
         modify_attack_damage<def_cardtype>(pre_modifier_dmg);
-        if (!att_dmg) { return 0; }
+        if (!att_dmg) { on_attacked<def_cardtype>();return 0; }
 
         attack_damage<def_cardtype>();
+		
         if (__builtin_expect(fd->end, false)) { return att_dmg; }
         damage_dependant_pre_oa<def_cardtype>();
-        //APN
-        // resolve On-Attacked skills
-        for (const auto& ss: def_status->m_card->m_skills_on_attacked)
-        {
-            _DEBUG_MSG(1, "On Attacked %s: Preparing (tail) skill %s\n",
-                status_description(def_status).c_str(), skill_description(fd->cards, ss).c_str());
-            fd->skill_queue.emplace_back(def_status, ss);
-            resolve_skill(fd);
-        }
+		
+		on_attacked<def_cardtype>();
+		
 
         // Enemy Skill: Counter
         if (def_status->has_skill(Skill::counter))
@@ -1441,6 +1438,19 @@ struct PerformAttack
         resolve_skill(fd);
     }
 
+    template<enum CardType::CardType>
+    void on_attacked() {		
+        //APN
+        // resolve On-Attacked skills
+        for (const auto& ss: def_status->m_card->m_skills_on_attacked)
+        {
+            _DEBUG_MSG(1, "On Attacked %s: Preparing (tail) skill %s\n",
+                status_description(def_status).c_str(), skill_description(fd->cards, ss).c_str());
+            fd->skill_queue.emplace_back(def_status, ss);
+            resolve_skill(fd);
+        }
+	}
+	
     template<enum CardType::CardType>
     void damage_dependant_pre_oa() {}
 
