@@ -1,4 +1,5 @@
 // Guild War BGEs
+Typhon's Blood: Enhance All Refresh 8; Enrage All Bloodthirsty 5; Heal 16
 Sandblast: Entrap All 7; Weaken All 4
 Plasma Burst: Heal 15; Protect 15; Sunder 15
 Landmine: Entrap 18
