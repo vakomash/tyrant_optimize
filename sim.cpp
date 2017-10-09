@@ -914,7 +914,7 @@ void turn_start_phase(Field* fd)
                 if (status->m_delay == 0)
                 {
                     check_and_perform_valor(fd, status);
-                    check_and_perform_summon(fd, status);
+                    if(status->m_card->m_skill_trigger[Skill::summon] == Skill::Trigger::activate)check_and_perform_summon(fd, status);
                 }
             }
             else
