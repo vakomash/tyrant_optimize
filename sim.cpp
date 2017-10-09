@@ -941,7 +941,7 @@ void turn_start_phase(Field* fd)
                 --status->m_delay;
                 if (status->m_delay == 0)
                 {
-                    check_and_perform_summon(fd, status);
+                    if(status->m_card->m_skill_trigger[Skill::summon] == Skill::Trigger::activate)check_and_perform_summon(fd, status);
                 }
             }
             else
@@ -1882,7 +1882,7 @@ inline void perform_skill<Skill::rush>(Field* fd, CardStatus* src, CardStatus* d
     if (dst->m_delay == 0)
     {
         check_and_perform_valor(fd, dst);
-        check_and_perform_summon(fd, dst);
+        if(dst->m_card->m_skill_trigger[Skill::summon] == Skill::Trigger::activate)check_and_perform_summon(fd, dst);
     }
 }
 
