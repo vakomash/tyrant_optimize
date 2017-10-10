@@ -3,9 +3,17 @@
 SendMode Input  ; Recommended for new scripts due to its superior speed and reliability.
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 
+VersionOfTUO := "v2.54.10"
+MaxCardsSections := 100
+
 BGEffects := "none|Cold-Sleep|Blood-Vengeance|Oath-of-Loyalty|Furiosity|TemporalBacklash|CriticalReach|Devour|HaltedOrders|ZealotsPreservation|Virulence|Enfeeble all X|Enhance all S X|Evolve n S1 S2|Heal all X|Mortar X|Protect all X|Rally all X|Siege all X|Strike all X|Weaken all X|Brigade|Bloodlust X|Counterflux|Divert|EnduringRage|Fortification|Heroism|Metamorphosis|Megamorphosis|Revenge X|TurningTides"
 IniFileName := "data\SimpleTUOptimizeStarter.ini"
 IniSection := "onLoad"
+
+if (!DllCall("LoadLibrary", "str", "wininet"))
+    return 
+if (!(h := DllCall("wininet\InternetOpen", "str", a, "uint", 1, "ptr", 0, "ptr", 0, "uint", 0, "ptr"))) 
+	return
 
 IniRead, IniMyDeck, %IniFileName%, %IniSection%, MyDeck, Cyrus, Medic, Revolver, Imperial APC, Medic, Imperial APC
 IniRead, IniMySiege, %IniFileName%, %IniSection%, MySiege, %A_Space%
@@ -94,7 +102,7 @@ Gui, Add, Edit, vSimOptions r1 xs w600, %IniSimOptions%
 Gui, Add, Button, default r2 w100 x100 y+15 section, Simulate
 Gui, Add, Checkbox, vx86 Checked%Inix86%, x86 (32-bit)
 Gui, Add, Button, r2 w100 ys xs+200, Exit
-Gui, Show,, Simple Tyrant Unleashed Optimize Starter v2.54.7
+Gui, Show,, Simple Tyrant Unleashed Optimize Starter %VersionOfTUO%
 return
 
 ButtonSimulate:
@@ -180,14 +188,12 @@ if ErrorLevel
     MsgBox, Error downloading levels.xml.
     had_error := true
 }
-Loop, 14
+Loop, %MaxCardsSections%
 {
-    UrlDownloadToFile, *0 http://mobile.tyrantonline.com/assets/cards_section_%A_Index%.xml, data\cards_section_%A_Index%.xml
-    if ErrorLevel
-    {
-        MsgBox, Error downloading cards_section_%A_Index%.xml.
-        had_error := true
-    }
+	URL = http://mobile.tyrantonline.com/assets/cards_section_%A_Index%.xml
+	CardsFile = data\cards_section_%A_Index%.xml
+	if (!DownloadCards(URL, CardsFile))
+		break
 }
 UrlDownloadToFile, *0 https://raw.githubusercontent.com/APN-Pucky/tyrant_optimize/merged/data/raids.xml, data\raids.xml
 if ErrorLevel
@@ -233,14 +239,12 @@ if ErrorLevel
     MsgBox, Error downloading levels.xml.
     had_error := true
 }
-Loop, 13
+Loop, %MaxCardsSections%
 {
-    UrlDownloadToFile, *0 http://mobile-dev.tyrantonline.com/assets/cards_section_%A_Index%.xml, data\cards_section_%A_Index%.xml
-    if ErrorLevel
-    {
-        MsgBox, Error downloading cards_section_%A_Index%.xml.
-        had_error := true
-    }
+	URL = http://mobile-dev.tyrantonline.com/assets/cards_section_%A_Index%.xml
+	CardsFile = data\cards_section_%A_Index%.xml
+	if (!DownloadCards(URL, CardsFile))
+		break
 }
 UrlDownloadToFile, *0 https://raw.githubusercontent.com/APN-Pucky/tyrant_optimize/merged/data/raids.xml, data\raids.xml
 if ErrorLevel
@@ -305,3 +309,23 @@ while true
       break
 }
 ExitApp
+
+DownloadCards(url,file) { 
+	UrlDownloadToFile, *0 %url%, %file%
+	if ErrorLevel
+	{
+		MsgBox, Error downloading %file%.
+		had_error := true
+	} 
+	else 
+	{
+		FileReadLine,VAR1,%file%,3
+		If InStr(VAR1, "File Not Found")
+		{
+			FileDelete, %file%
+			return 0
+		}
+	}
+	return 1
+}
+
