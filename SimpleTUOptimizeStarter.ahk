@@ -10,11 +10,6 @@ BGEffects := "none|Cold-Sleep|Blood-Vengeance|Oath-of-Loyalty|Furiosity|Temporal
 IniFileName := "data\SimpleTUOptimizeStarter.ini"
 IniSection := "onLoad"
 
-if (!DllCall("LoadLibrary", "str", "wininet"))
-    return 
-if (!(h := DllCall("wininet\InternetOpen", "str", a, "uint", 1, "ptr", 0, "ptr", 0, "uint", 0, "ptr"))) 
-	return
-
 IniRead, IniMyDeck, %IniFileName%, %IniSection%, MyDeck, Cyrus, Medic, Revolver, Imperial APC, Medic, Imperial APC
 IniRead, IniMySiege, %IniFileName%, %IniSection%, MySiege, %A_Space%
 IniRead, IniEnemiesDeck, %IniFileName%, %IniSection%, EnemiesDeck, Mission #94
