@@ -776,6 +776,7 @@ inline bool skill_check<Skill::overload>(Field* fd, CardStatus* c, CardStatus* r
 template<>
 inline bool skill_check<Skill::jam>(Field* fd, CardStatus* c, CardStatus* ref)
 {
+    if(__builtin_expect(fd->bg_effects[fd->tapi][PassiveBGE::ironwill], false) && c->has_skill(Skill::armor))return false;
     // active player performs Jam
     if (fd->tapi == ref->m_player)
     { return is_active_next_turn(c); }
@@ -1757,6 +1758,7 @@ inline bool skill_predicate<Skill::rush>(Field* fd, CardStatus* src, CardStatus*
 template<>
 inline bool skill_predicate<Skill::weaken>(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s)
 {
+    if(__builtin_expect(fd->bg_effects[fd->tapi][PassiveBGE::ironwill], false) && dst->has_skill(Skill::armor))return false;
     if (!dst->attack_power()) { return false; }
 
     // active player performs Weaken (normal case)

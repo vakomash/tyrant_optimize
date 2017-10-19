@@ -1451,6 +1451,7 @@ void print_available_effects()
         "  Oath-Of-Loyalty\n"
         "  Blood-Vengeance\n"
         "  Cold-Sleep\n"
+	"  Iron-Wil\n"
         ;
 }
 void usage(int argc, char** argv)
