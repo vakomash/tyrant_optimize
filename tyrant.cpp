@@ -60,12 +60,12 @@ unsigned const upgrade_cost[]{0, 5, 15, 30, 75, 150};
 std::map<const Card*, unsigned> dominion_cost[3][7];
 std::map<const Card*, unsigned> dominion_refund[3][7];
 
-unsigned min_possible_score[]{0, 0, 0, 10, 5, 5, 5, 0
+unsigned min_possible_score[]{0, 0, 0, 20, 20, 5, 5, 5, 0
 #ifndef NQUEST
 , 0
 #endif
 };
-unsigned max_possible_score[]{100, 100, 100, 100, 85, 85, 100, 100
+unsigned max_possible_score[]{100, 100, 100, 208, 208, 85, 85, 100, 100
 #ifndef NQUEST
 , 100
 #endif

@@ -1,7 +1,7 @@
 #ifndef TYRANT_H_INCLUDED
 #define TYRANT_H_INCLUDED
 
-#define TYRANT_OPTIMIZER_VERSION "2.54.10"
+#define TYRANT_OPTIMIZER_VERSION "2.55.0"
 
 #include <string>
 #include <sstream>
@@ -343,6 +343,7 @@ enum class OptimizationMode
     winrate,
     defense,
     war,
+	war_defense,
     brawl,
     brawl_defense,
     raid,

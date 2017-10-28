@@ -2543,6 +2543,11 @@ inline unsigned evaluate_brawl_score(Field* fd, unsigned player)
         - (unsigned)((fd->turn+7)/8);
 }
 
+inline unsigned evaluate_war_score(Field* fd, unsigned player)
+{
+	return 208 - ((unsigned)(fd->turn)/2)*4;
+}
+
 //------------------------------------------------------------------------------
 Results<uint64_t> play(Field* fd)
 {
@@ -2949,12 +2954,19 @@ Results<uint64_t> play(Field* fd)
         switch (fd->optimization_mode)
         {
         case OptimizationMode::raid: return {0, 0, 1, (points_score_type)raid_damage};
-        case OptimizationMode::brawl: return {0, 0, 1, 5};
+        case OptimizationMode::brawl: return {0, 0, 1, (points_score_type) 5};
         case OptimizationMode::brawl_defense:
             {
                 unsigned enemy_brawl_score = evaluate_brawl_score(fd, 1);
                 unsigned max_score = max_possible_score[(size_t)OptimizationMode::brawl_defense];
                 return {0, 0, 1, (points_score_type)(max_score - enemy_brawl_score)};
+            }
+		case OptimizationMode::war: return {0,0,1, (points_score_type) 20};
+        case OptimizationMode::war_defense:
+            {
+                unsigned enemy_war_score = evaluate_war_score(fd, 1);
+                unsigned max_score = max_possible_score[(size_t)OptimizationMode::war_defense];
+                return {0, 0, 1, (points_score_type)(max_score - enemy_war_score)};
             }
 #ifndef NQUEST
         case OptimizationMode::quest: return {0, 0, 1, (points_score_type)(fd->quest.must_win ? 0 : quest_score)};
@@ -2985,6 +2997,17 @@ Results<uint64_t> play(Field* fd)
                 unsigned campaign_score = 100 - 10 * (p[0]->total_nonsummon_cards_destroyed - total_dominions_destroyed);
                 return {1, 0, 0, (points_score_type)campaign_score};
             }
+		case OptimizationMode::war: 
+			{
+                unsigned war_score = evaluate_war_score(fd, 0);
+				return {1,0,0, (points_score_type) war_score};
+			}
+        case OptimizationMode::war_defense:
+            {
+                unsigned max_score = max_possible_score[(size_t)OptimizationMode::war_defense];
+                unsigned min_score = min_possible_score[(size_t)OptimizationMode::war_defense];
+                return {1, 0, 0, (points_score_type)(max_score - min_score)};
+            }
 #ifndef NQUEST
         case OptimizationMode::quest: return {1, 0, 0, (points_score_type)(fd->quest.win_score + quest_score)};
 #endif
@@ -3004,6 +3027,13 @@ Results<uint64_t> play(Field* fd)
             {
                 unsigned max_score = max_possible_score[(size_t)OptimizationMode::brawl_defense];
                 unsigned min_score = min_possible_score[(size_t)OptimizationMode::brawl_defense];
+                return {1, 0, 0, (points_score_type)(max_score - min_score)};
+            }
+		case OptimizationMode::war: return {0,1,0, (points_score_type) 20};
+        case OptimizationMode::war_defense:
+            {
+                unsigned max_score = max_possible_score[(size_t)OptimizationMode::war_defense];
+                unsigned min_score = min_possible_score[(size_t)OptimizationMode::war_defense];
                 return {1, 0, 0, (points_score_type)(max_score - min_score)};
             }
 #ifndef NQUEST

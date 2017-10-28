@@ -928,6 +928,7 @@ void print_score_info(const EvaluatedResults& results, std::vector<long double>&
             case OptimizationMode::brawl:
             case OptimizationMode::brawl_defense:
             case OptimizationMode::war:
+			case OptimizationMode::war_defense:
 #ifndef NQUEST
             case OptimizationMode::quest:
 #endif
@@ -983,6 +984,7 @@ void print_results(const EvaluatedResults& results, std::vector<long double>& fa
         case OptimizationMode::brawl:
         case OptimizationMode::brawl_defense:
         case OptimizationMode::war:
+		case OptimizationMode::war_defense:
 #ifndef NQUEST
         case OptimizationMode::quest:
 #endif
@@ -1032,6 +1034,7 @@ void print_deck_inline(const unsigned deck_cost, const FinalResults<long double>
         case OptimizationMode::brawl:
         case OptimizationMode::brawl_defense:
         case OptimizationMode::war:
+		case OptimizationMode::war_defense:
 #ifndef NQUEST
         case OptimizationMode::quest:
 #endif
@@ -1756,12 +1759,12 @@ int main(int argc, char** argv)
         else if (strcmp(argv[argIndex], "gw") == 0)
         {
             gamemode = surge;
-            optimization_mode = OptimizationMode::winrate;
+            optimization_mode = OptimizationMode::war;
         }
         else if (strcmp(argv[argIndex], "gw-defense") == 0)
         {
             gamemode = fight;
-            optimization_mode = OptimizationMode::defense;
+            optimization_mode = OptimizationMode::war_defense;
         }
         // Others
         else if (strcmp(argv[argIndex], "keep-commander") == 0 || strcmp(argv[argIndex], "-c") == 0)
