@@ -547,6 +547,8 @@ void claim_cards(const std::vector<const Card*> & card_list)
     for (const auto & it: num_cards)
     {
         const Card * card = it.first;
+		if(card->m_category == CardCategory::dominion_material)continue;
+		if(card->m_category == CardCategory::dominion_alpha)continue;
         unsigned num_to_claim = safe_minus(it.second, owned_cards[card->m_id]);
         if (num_to_claim > 0)
         {
@@ -1227,12 +1229,12 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
             {
                 // skip non-top-level dominions anyway
                 // (will check it later and downgrade if necessary according to amount of material (shards))
-                if (!card->is_top_level_card())
+                /*if (!card->is_top_level_card())
                 { continue; }
 
                 // skip basic dominions
                 if ((card->m_id == 50001) || (card->m_id == 50002))
-                { continue; }
+                { continue; }*/
             }
 
             // handle normal cards
@@ -1250,25 +1252,29 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
             }
         }
 
+		//if (card->m_category == CardCategory::dominion_alpha)
+        //{std::cout << "PREPRESKIP:" << card->m_name << std::endl;}
+	
         // skip sub-dominion cards anyway
-        if ((card->m_category == CardCategory::dominion_alpha) && is_in_recipe(owned_alpha_dominion, card))
-        { continue; }
-
+        /*if ((card->m_category == CardCategory::dominion_alpha) && is_in_recipe(owned_alpha_dominion, card))
+        { continue; }*/
+	
+		//if (card->m_category == CardCategory::dominion_alpha )
+        //{std::cout << "PRESKIP:" << card->m_name << std::endl;}
+	
+		if(use_owned_cards && card->m_category == CardCategory::dominion_alpha && !owned_cards[card->m_id])
+		{
+			if(use_dominion_defusing && card->m_used_for_cards.size()==0)
+			{
+				
+			}
+			else
+			{continue;}
+		}
         // skip unavailable cards anyway when ownedcards is used
-        if (use_owned_cards && !is_owned_or_can_be_fused(card))
+        if (use_owned_cards && !(card->m_category == CardCategory::dominion_alpha) && !is_owned_or_can_be_fused(card))
         {
-            bool success = false;
-            if (card->m_category == CardCategory::dominion_alpha)
-            {
-                while (!card->is_low_level_card() && !success)
-                {
-                    card = card->downgraded();
-                    if (is_in_recipe(owned_alpha_dominion, card)) { break; }
-                    success = is_owned_or_can_be_fused(card);
-                }
-            }
-            if (!success)
-            { continue; }
+			continue;
         }
 
         // enqueue candidate according to category & type
@@ -2112,9 +2118,9 @@ int main(int argc, char** argv)
                 }
                 else
                 {
-                    std::cerr << "Warning: ownedcards already contains alpha dominion (" << owned_alpha_dominion->m_name
+                    /*std::cerr << "Warning: ownedcards already contains alpha dominion (" << owned_alpha_dominion->m_name
                         << "): removing additional " << owned_card->m_name << std::endl;
-                    need_remove = true;
+                    need_remove = true;*/
                 }
             }
             if (need_remove) { owned_it = _owned_cards.erase(owned_it); }
