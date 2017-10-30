@@ -222,14 +222,23 @@ inline void CardStatus::set(const Card& card)
 //------------------------------------------------------------------------------
 inline unsigned CardStatus::attack_power() const
 {
-    signed attack =
-        (signed)safe_minus(
+    signed attack = calc_attack_power();
+	if(__builtin_expect(attack <0,false))
+	{
+		std::cout << m_card->m_name << " " << m_card->m_attack  << " " << attack << " " << m_temp_attack_buff << " " << m_corroded_weakened << std::endl;	
+	}
+    _DEBUG_ASSERT(attack >= 0);
+    return (unsigned)attack;
+}
+
+inline signed CardStatus::calc_attack_power() const
+{
+	return 
+		(signed)safe_minus(
             m_card->m_attack + safe_minus(m_perm_attack_buff, m_subdued),
             m_corroded_weakened
         )
         + m_temp_attack_buff;
-    _DEBUG_ASSERT(attack >= 0);
-    return (unsigned)attack;
 }
 //------------------------------------------------------------------------------
 std::string card_name_by_id_safe(const Cards& cards, const unsigned card_id)
@@ -1262,7 +1271,12 @@ struct PerformAttack
                 status_description(def_status).c_str(),
                 status_description(att_status).c_str(), subdue_value);
             att_status->m_subdued += subdue_value;
-            if (att_status->m_hp > att_status->max_hp())
+			//fix negative attack
+			if(att_status->calc_attack_power()<0)
+			{
+				att_status->m_temp_attack_buff -= att_status->calc_attack_power();
+			}
+			if (att_status->m_hp > att_status->max_hp())
             {
                 _DEBUG_MSG(1, "%s loses %u HP due to subdue (max hp: %u)\n",
                     status_description(att_status).c_str(),
