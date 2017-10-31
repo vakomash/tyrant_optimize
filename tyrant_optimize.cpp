@@ -1001,6 +1001,16 @@ void print_results(const EvaluatedResults& results, std::vector<long double>& fa
                 auto opp_win_points = final.losses ? max_score - ((final.points - (max_score - min_score) * (1.0 - final.losses)) / final.losses) : final.points;
                 std::cout << " [" << opp_win_points << " per opp win]";
             }
+			else if (optimization_mode == OptimizationMode::war)
+			{
+				auto win_points = final.wins ? ((final.points - min_score * (1.0 - final.wins)) / final.wins) : final.points;
+                std::cout << " [" << win_points << " per win]";
+			}
+			else if (optimization_mode == OptimizationMode::war_defense)
+			{
+				auto opp_win_points = final.losses ? max_score - ((final.points - (max_score - min_score) * (1.0 - final.losses)) / final.losses) : final.points;
+                std::cout << " [" << opp_win_points << " per opp win]";
+			}
             std::cout << " (";
             for (const auto & val: results.first)
             {
@@ -1068,6 +1078,16 @@ void print_deck_inline(const unsigned deck_cost, const FinalResults<long double>
         std::cout << " [" << win_points << " per win]";
     }
     else if (optimization_mode == OptimizationMode::brawl_defense)
+    {
+        auto opp_win_points = score.losses ? max_score - ((score.points - (max_score - min_score) * (1.0 - score.losses)) / score.losses) : score.points;
+        std::cout << " [" << opp_win_points << " per opp win]";
+    }
+	else if (optimization_mode == OptimizationMode::war)
+    {
+        auto win_points = score.wins ? ((score.points - min_score * (1.0 - score.wins)) / score.wins) : score.points;
+        std::cout << " [" << win_points << " per win]";
+    }
+	else if (optimization_mode == OptimizationMode::war_defense)
     {
         auto opp_win_points = score.losses ? max_score - ((score.points - (max_score - min_score) * (1.0 - score.losses)) / score.losses) : score.points;
         std::cout << " [" << opp_win_points << " per opp win]";
