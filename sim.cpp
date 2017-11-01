@@ -994,6 +994,28 @@ inline bool skill_check<Skill::drain>(Field* fd, CardStatus* c, CardStatus* ref)
     return can_be_healed(c);
 }
 
+unsigned remove_absorption(Field* fd, CardStatus* status, unsigned dmg)
+{
+	unsigned remaining_dmg(0);
+	if(__builtin_expect(status->m_absorption == 0,true))
+	{
+		//skip
+	}
+	else if(dmg > status->m_absorption)
+	{
+		_DEBUG_MSG(0, "%s absorbs %u damage\n", status_description(status).c_str(), status->m_absorption);
+		remaining_dmg = dmg - status->m_absorption;
+		status->m_absorption = 0;
+	}
+	else
+	{
+		_DEBUG_MSG(0, "%s absorbs %u damage\n", status_description(status).c_str(), dmg);
+		status->m_absorption -= dmg;
+		remaining_dmg = 0;
+	}
+	return remaining_dmg;
+}
+
 void remove_hp(Field* fd, CardStatus* status, unsigned dmg)
 {
     if (__builtin_expect(!dmg, false)) { return; }
@@ -1022,7 +1044,7 @@ void remove_hp(Field* fd, CardStatus* status, unsigned dmg)
         _DEBUG_ASSERT(status->m_card->m_type != CardType::commander);
         fd->killed_units.push_back(status);
         ++fd->players[status->m_player]->total_cards_destroyed;
-	if(!status->m_summoned)++fd->players[status->m_player]->total_nonsummon_cards_destroyed;
+		if(!status->m_summoned)++fd->players[status->m_player]->total_nonsummon_cards_destroyed;
         if (__builtin_expect((status->m_player == 0) && (fd->players[0]->deck->vip_cards.count(status->m_card->m_id)), false))
         {
             fd->players[0]->commander.m_hp = 0;
@@ -1198,7 +1220,8 @@ void turn_end_phase(Field* fd)
             }
             if (status.m_poisoned > 0)
             {
-                unsigned poison_dmg = safe_minus(status.m_poisoned + status.m_enfeebled, status.protected_value());
+				unsigned poison_dmg = remove_absorption(fd,&status,status.m_poisoned + status.m_enfeebled);
+                poison_dmg = safe_minus(poison_dmg, status.protected_value());
                 if (poison_dmg > 0)
                 {
 #ifndef NQUEST
@@ -1242,7 +1265,8 @@ void turn_end_phase(Field* fd)
 inline unsigned counter_damage(Field* fd, CardStatus* att, CardStatus* def)
 {
     _DEBUG_ASSERT(att->m_card->m_type == CardType::assault);
-    return safe_minus(def->skill(Skill::counter) + att->m_enfeebled, att->protected_value());
+	
+    return safe_minus(remove_absorption(fd,att,def->skill(Skill::counter) + att->m_enfeebled), att->protected_value());
 }
 
 inline CardStatus* select_first_enemy_wall(Field* fd)
@@ -1749,7 +1773,9 @@ bool attack_phase(Field* fd)
                 _DEBUG_MSG(1, "%s swipes %s for %u damage\n",
                     status_description(att_status).c_str(),
                     status_description(adj_status).c_str(), swipe_dmg);
-                remove_hp(fd, adj_status, swipe_dmg);
+				unsigned remaining_dmg = remove_absorption(fd,adj_status,swipe_value + drain_value + def_status->m_enfeebled);
+				remaining_dmg = safe_minus(remaining_dmg,def_status->protected_value());
+                remove_hp(fd, adj_status, remaining_dmg);
                 drain_total_dmg += swipe_dmg;
             }
             if (drain_value && skill_check<Skill::drain>(fd, att_status, nullptr))
@@ -2014,11 +2040,12 @@ inline void perform_skill<Skill::mortar>(Field* fd, CardStatus* src, CardStatus*
 {
     if (dst->m_card->m_type == CardType::structure)
     {
-        remove_hp(fd, dst, s.x);
+        remove_hp(fd, dst, remove_absorption(fd,dst,s.x));
     }
     else
     {
-        unsigned strike_dmg = safe_minus((s.x + 1) / 2 + dst->m_enfeebled, src->m_overloaded ? 0 : dst->protected_value());
+		unsigned strike_dmg = remove_absorption(fd,dst,(s.x + 1) / 2 + dst->m_enfeebled);
+        strike_dmg = safe_minus(strike_dmg, src->m_overloaded ? 0 : dst->protected_value());
         remove_hp(fd, dst, strike_dmg);
     }
 }
@@ -2077,13 +2104,14 @@ inline void perform_skill<Skill::rush>(Field* fd, CardStatus* src, CardStatus* d
 template<>
 inline void perform_skill<Skill::siege>(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s)
 {
-    remove_hp(fd, dst, s.x);
+    remove_hp(fd, dst, remove_absorption(fd,dst,s.x));
 }
 
 template<>
 inline void perform_skill<Skill::strike>(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s)
 {
-    unsigned strike_dmg = safe_minus(s.x + dst->m_enfeebled, src->m_overloaded ? 0 : dst->protected_value());
+	unsigned strike_dmg = remove_absorption(fd,dst,s.x+ dst->m_enfeebled);
+    strike_dmg = safe_minus(strike_dmg , src->m_overloaded ? 0 : dst->protected_value());
     remove_hp(fd, dst, strike_dmg);
 }
 
