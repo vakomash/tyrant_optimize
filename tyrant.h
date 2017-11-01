@@ -44,7 +44,7 @@ enum Skill
     mimic,
 
     // Defensive:
-    armor, avenge, corrosive, counter, evade, subdue,
+    armor, avenge, corrosive, counter, evade, subdue, absorb,
     payback, revenge, tribute, refresh, wall, barrier,
 
     // Combat-Modifier:

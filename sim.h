@@ -160,6 +160,7 @@ struct CardStatus
     unsigned m_player;
     unsigned m_delay;
     unsigned m_hp;
+	unsigned m_absorption;
     CardStep m_step;
     unsigned m_perm_health_buff;
     unsigned m_perm_attack_buff;
