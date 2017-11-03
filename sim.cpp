@@ -721,7 +721,7 @@ struct PlayCard
 		for (CardStatus* status_i : fd->tap->assaults.m_indirect)
 		{
 			if (status_i == status || !is_alive(status_i)) { continue; } // except itself
-			std::cout << status_description(status_i).c_str();
+			//std::cout << status_description(status_i).c_str();
 			_DEBUG_ASSERT(is_alive(status_i));
             if (bge_megamorphosis || (status_i->m_card->m_faction == card->m_faction))
             {
