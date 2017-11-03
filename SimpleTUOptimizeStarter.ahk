@@ -3,11 +3,13 @@
 SendMode Input  ; Recommended for new scripts due to its superior speed and reliability.
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 
-VersionOfTUO := "v2.xx.0"
+VersionOfStarter := "v2.56.0"
+
+VersionOfTUO := ""
 file = %A_temp%\version.tmp
 RunWait, %comspec% /c "tuo.exe -version > %file%",, Hide
-FileReadLine,VersionTmp,%file%,1
-VersionOfTUO := SubStr(VersionTmp, 28)
+FileReadLine,VersionOfTUO,%file%,1
+;VersionOfTUO := SubStr(VersionOfTUO, 28)
 FileDelete, %file%
 
 MaxCardsSections := 100
@@ -103,7 +105,7 @@ Gui, Add, Edit, vSimOptions r1 xs w600, %IniSimOptions%
 Gui, Add, Button, default r2 w100 x100 y+15 section, Simulate
 Gui, Add, Checkbox, vx86 Checked%Inix86%, x86 (32-bit)
 Gui, Add, Button, r2 w100 ys xs+200, Exit
-Gui, Show,, Simple Tyrant Unleashed Optimize Starter %VersionOfTUO%
+Gui, Show,, Simple TUO Starter %VersionOfStarter% (version of %VersionOfTUO%)
 return
 
 ButtonSimulate:
