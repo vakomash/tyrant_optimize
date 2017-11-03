@@ -2802,14 +2802,14 @@ Results<uint64_t> play(Field* fd)
             fd->prepare_action();
 
             // Play selected card
-            CardStatus* played_status = nullptr;
+            //CardStatus* played_status = nullptr;
             switch (played_card->m_type)
             {
             case CardType::assault:
-                played_status = PlayCard(played_card, fd, fd->tapi, &fd->tap->commander).op<CardType::assault>();
+                PlayCard(played_card, fd, fd->tapi, &fd->tap->commander).op<CardType::assault>();
                 break;
             case CardType::structure:
-                played_status = PlayCard(played_card, fd, fd->tapi, &fd->tap->commander).op<CardType::structure>();
+                PlayCard(played_card, fd, fd->tapi, &fd->tap->commander).op<CardType::structure>();
                 break;
             case CardType::commander:
             case CardType::num_cardtypes:
@@ -2819,7 +2819,8 @@ Results<uint64_t> play(Field* fd)
                 break;
             }
             resolve_skill(fd); // resolve postponed skills recursively
-			_DEBUG_MSG(3,"Card played: %s", status_description(played_status).c_str());
+			//status_description(played_status)
+			//_DEBUG_MSG(3,"Card played: %s", status_description(played_status).c_str());
             // End 'Play Card' phase action
             fd->finalize_action();
 
