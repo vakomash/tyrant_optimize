@@ -8,6 +8,7 @@ Absorb skills
 Summon-0-delay card  => new card with summon /valor
 bg_effects fd->tapi vs card->tapi
 on-death-attacked-summoned cards valid strike/enf.. targets
+enfeeble active how long and on whoms turn
 
 //Impl
 
