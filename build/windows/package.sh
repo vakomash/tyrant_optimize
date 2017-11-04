@@ -9,7 +9,7 @@ set -xue
 
 export TUO_FILE_ZIP="tuo.${TRAVIS_TAG}_32+64_bit.zip" 
 
-ls -la
+#ls -la
 
 zip -r "$TUO_FILE_ZIP" data/ SimpleTUOptimizeStarter.ahk SimpleTUOptimizeStarter.exe "$TUO_FILE_32" "$TUO_FILE_64" 
 
