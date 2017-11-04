@@ -1003,13 +1003,13 @@ unsigned remove_absorption(Field* fd, CardStatus* status, unsigned dmg)
 	}
 	else if(dmg > status->m_absorption)
 	{
-		_DEBUG_MSG(0, "%s absorbs %u damage\n", status_description(status).c_str(), status->m_absorption);
+		_DEBUG_MSG(1, "%s absorbs %u damage\n", status_description(status).c_str(), status->m_absorption);
 		remaining_dmg = dmg - status->m_absorption;
 		status->m_absorption = 0;
 	}
 	else
 	{
-		_DEBUG_MSG(0, "%s absorbs %u damage\n", status_description(status).c_str(), dmg);
+		_DEBUG_MSG(1, "%s absorbs %u damage\n", status_description(status).c_str(), dmg);
 		status->m_absorption -= dmg;
 		remaining_dmg = 0;
 	}
@@ -1767,16 +1767,17 @@ bool attack_phase(Field* fd)
                 if (from_idx == host_idx) { continue; }
                 CardStatus* adj_status = &def_assaults[from_idx];
                 if (!is_alive(adj_status)) { continue; }
-                unsigned swipe_dmg = safe_minus(
-                    swipe_value + drain_value + def_status->m_enfeebled,
-                    def_status->protected_value());
-                _DEBUG_MSG(1, "%s swipes %s for %u damage\n",
+                //unsigned swipe_dmg = safe_minus(
+                //    swipe_value + drain_value + def_status->m_enfeebled,
+                //    def_status->protected_value());
+                unsigned remaining_dmg = remove_absorption(fd,adj_status,swipe_value + drain_value + adj_status->m_enfeebled);
+		remaining_dmg = safe_minus(remaining_dmg,adj_status->protected_value());
+		 _DEBUG_MSG(1, "%s swipes %s for %u damage\n",
                     status_description(att_status).c_str(),
-                    status_description(adj_status).c_str(), swipe_dmg);
-				unsigned remaining_dmg = remove_absorption(fd,adj_status,swipe_value + drain_value + def_status->m_enfeebled);
-				remaining_dmg = safe_minus(remaining_dmg,def_status->protected_value());
+                    status_description(adj_status).c_str(), remaining_dmg);
+		
                 remove_hp(fd, adj_status, remaining_dmg);
-                drain_total_dmg += swipe_dmg;
+                drain_total_dmg += remaining_dmg;
             }
             if (drain_value && skill_check<Skill::drain>(fd, att_status, nullptr))
             {
