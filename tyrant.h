@@ -1,7 +1,9 @@
 #ifndef TYRANT_H_INCLUDED
 #define TYRANT_H_INCLUDED
 
-#define TYRANT_OPTIMIZER_VERSION "2.56.0"
+#ifndef TYRANT_OPTIMIZER_VERSION
+#define TYRANT_OPTIMIZER_VERSION "NO VERSION"
+#endif
 
 #include <string>
 #include <sstream>
@@ -425,5 +427,6 @@ extern std::string debug_str;
 #define _DEBUG_SELECTION(format, args...)
 #define _DEBUG_ASSERT(expr)
 #endif
+
 
 #endif

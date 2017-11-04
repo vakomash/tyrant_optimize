@@ -3,7 +3,7 @@ SRCS := $(wildcard *.cpp)
 OBJS := $(patsubst %.cpp,obj/%.o,$(SRCS))
 INCS := $(wildcard *.h)
 
-CPPFLAGS := -Wall -Werror -std=c++11 -stdlib=libc++ -Ofast -I/usr/local/include -DNDEBUG -DNQUEST
+CPPFLAGS := -Wall -Werror -std=c++11 -stdlib=libc++ -Ofast -I/usr/local/include -DNDEBUG -DNQUEST -DTYRANT_OPTIMIZER_VERSION='"$(shell git describe --tags --abbrev=0 --dirty)"'
 LDFLAGS :=  -L/usr/local/lib -lboost_system-mt -lboost_thread-mt -lboost_filesystem-mt -lboost_regex-mt  -Bstatic
 
 all: $(MAIN)
@@ -14,6 +14,8 @@ obj/%.o: %.cpp ${INCS}
 
 $(MAIN): $(OBJS)
 	$(CXX) -o $@ $(OBJS) $(LDFLAGS)
+
+reuild: clean all
 
 clean:
 	rm -f $(MAIN) obj/*.o

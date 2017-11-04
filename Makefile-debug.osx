@@ -3,7 +3,7 @@ SRCS := $(wildcard *.cpp)
 OBJS := $(patsubst %.cpp,obj-debug/%.o,$(SRCS))
 INCS := $(wildcard *.h)
 
-CPPFLAGS := -Wall -Werror -std=c++11 -stdlib=libc++ -O3 -I/usr/local/include 
+CPPFLAGS := -Wall -Werror -std=c++11 -stdlib=libc++ -O3 -I/usr/local/include  -DTYRANT_OPTIMIZER_VERSION='"$(shell git describe --tags --abbrev=0 --dirty)-debug"'
 LDFLAGS :=  -L/usr/local/lib -lboost_system-mt -lboost_thread-mt -lboost_filesystem-mt -lboost_regex-mt  -Bstatic
 
 all: $(MAIN)
