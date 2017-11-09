@@ -648,21 +648,6 @@
 	<!-- TODO remove after event -->
 	<raid>
 		<id>41</id>
-		<name>The Doors Raid</name>
-		<commander>25782</commander>
-		<fortress_card id="18348"/>
-		<levels>26</levels>
-		<deck>
-			<always_include>
-				<card replicates="4">55790</card>
-				<card replicates="3">55800</card>
-				<card replicates="3">55810</card>
-			</always_include>
-		</deck>
-	</raid>
-	
-	<raid>
-		<id>42</id>
 		<name>Door of Khensu Raid</name>
 		<commander>25782</commander>
 		<fortress_card id="18348"/>
@@ -675,7 +660,26 @@
 			</always_include>
 		</deck>
 	</raid>
-
+<raid>
+  <id>42</id> 
+  <name>Enclave Advisors Raid</name>
+  <levels>26</levels>
+  <commander>25810</commander>
+  <fortress_pool amount="2">
+   <card replicates="1">18424</card>
+   <card replicates="1">18434</card>
+   <card replicates="1">18444</card>
+   <card replicates="1">18454</card>
+  </fortress_pool>
+  <deck>
+   <card_pool amount="10">
+    <card replicates="3">56504</card>
+    <card replicates="3">56514</card>
+    <card replicates="3">56524</card>
+    <card replicates="3">56534</card>
+   </card_pool>
+  </deck>
+ </raid>
 <!-- END of Raids -->
 
 
