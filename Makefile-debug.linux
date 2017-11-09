@@ -25,5 +25,7 @@ obj-debug/%.o: %.cpp $(INCS) obj-debug/.stamp
 $(MAIN): $(OBJS)
 	$(CXX) -o $@ $(OBJS) $(LDFLAGS)
 
+rebuild: clean all
+
 clean:
 	rm -rf $(MAIN) obj-debug/*.o

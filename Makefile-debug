@@ -22,5 +22,7 @@ obj-debug/%.o: %.cpp $(INCS)
 $(MAIN): $(OBJS)
 	$(CXX) -o $@ $(OBJS) $(LDFLAGS)
 
+rebuild: clean all
+
 clean:
 	del /q $(MAIN).exe obj-debug\*.o

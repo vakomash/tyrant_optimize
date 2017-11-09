@@ -1,4 +1,4 @@
-MAIN := tuodebug
+MAIN := tuodebug.osx
 SRCS := $(wildcard *.cpp)
 OBJS := $(patsubst %.cpp,obj-debug/%.o,$(SRCS))
 INCS := $(wildcard *.h)
@@ -12,7 +12,7 @@ endif
 endif
 
 CPPFLAGS := -Wall -Werror -std=c++11 -stdlib=libc++ -Ofast -I/usr/local/include -DTYRANT_OPTIMIZER_VERSION='"$(VERSION)--debug"'
-LDFLAGS :=  -L/usr/local/lib -lboost_system-mt -lboost_thread-mt -lboost_filesystem-mt -lboost_regex-mt  -Bstatic
+LDFLAGS :=  -L/usr/local/lib -lboost_system-mt -lboost_thread-mt -lboost_filesystem-mt -lboost_regex-mt
 
 all: $(MAIN)
 
@@ -22,6 +22,8 @@ obj-debug/%.o: %.cpp ${INCS}
 
 $(MAIN): $(OBJS)
 	$(CXX) -o $@ $(OBJS) $(LDFLAGS)
+
+rebuild: clean all
 
 clean:
 	rm -f $(MAIN) obj-debug/*.o

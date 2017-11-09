@@ -9,9 +9,19 @@ matrix:
     dist: trusty
     sudo: required
     compiler: gcc
+  - env: 
+    - TUO_PLATFORM='macXX'
+    - TUO_FILE_ZIP='tuo.osx'
+    - TUO_FILE_32='tuo.osx'
+    - TUO_FILE_64='tuo.osx'
+    os: osx
+    osx_image: xcode7.2
+    compiler: clang
+  
 before_install:
   - TUO_TARGET="${TUO_PLATFORM::${#TUO_PLATFORM}-2}"
   - "./build/${TUO_TARGET}/requirements.sh"
+  
 install:
   - source ./build/${TUO_TARGET}/build.sh
 script:
