@@ -996,7 +996,7 @@ inline bool skill_check<Skill::drain>(Field* fd, CardStatus* c, CardStatus* ref)
 
 unsigned remove_absorption(Field* fd, CardStatus* status, unsigned dmg)
 {
-	unsigned remaining_dmg(0);
+	unsigned remaining_dmg(dmg);
 	if(__builtin_expect(status->m_absorption == 0,true))
 	{
 		//skip

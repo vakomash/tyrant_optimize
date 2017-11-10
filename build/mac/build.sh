@@ -2,7 +2,12 @@
 
 set -xue
 
-cmake . -Bbuild-dir -DVERSION:STRING="${TRAVIS_TAG}-build-${TRAVIS_BUILD_NUMBER}"
-cmake --build build-dir 
+make rebuild -f Makefile.osx VERSION=$TRAVIS_TAG;
+
+./tuo.osx -version
+
+cp tuo.osx $TUO_FILE_32
+
+cp tuo.osx $TUO_FILE_64
 
 set +xue
