@@ -3,7 +3,7 @@ matrix:
   include:
   - env:
     - TUO_PLATFORM='windowsXX'
-    - TUO_FILE_32='tuo_x86.exe'
+    - TUO_FILE_32='tuo-x86.exe'
     - TUO_FILE_64='tuo.exe'
     os: linux
     dist: trusty
