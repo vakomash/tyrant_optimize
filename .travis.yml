@@ -3,19 +3,12 @@ matrix:
   include:
   - env:
     - TUO_PLATFORM='windowsXX'
-    - TUO_FILE_32='tuo_x86.exe'
+    - TUO_FILE_32='tuo-x86.exe'
     - TUO_FILE_64='tuo.exe'
     os: linux
     dist: trusty
     sudo: required
     compiler: gcc
-  - env: 
-    - TUO_PLATFORM='macXX'
-    - TUO_FILE_32='tuo_x86.osx'
-    - TUO_FILE_64='tuo.osx'
-    os: osx
-    osx_image: xcode7.2
-    compiler: clang
   
 before_install:
   - TUO_TARGET="${TUO_PLATFORM::${#TUO_PLATFORM}-2}"
