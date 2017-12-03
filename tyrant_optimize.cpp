@@ -26,6 +26,7 @@
 #include <string>
 #include <tuple>
 #include <vector>
+#include <math.h>
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
@@ -79,6 +80,9 @@ namespace {
 #endif
     std::unordered_set<unsigned> allowed_candidates;
     std::unordered_set<unsigned> disallowed_candidates;
+
+    long double temperature = 1000;
+    long double coolingRate = 0.001;
 }
 
 using namespace std::placeholders;
@@ -714,6 +718,8 @@ struct SimulationData
             }
             res.emplace_back(result);
         }
+	
+	//std::cout << std::endl<<  "Deck hash: " << your_hand.deck->hash() << "#"<< std::endl;
         return(res);
     }
 };
@@ -1272,15 +1278,6 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
             }
         }
 
-		//if (card->m_category == CardCategory::dominion_alpha)
-        //{std::cout << "PREPRESKIP:" << card->m_name << std::endl;}
-	
-        // skip sub-dominion cards anyway
-        /*if ((card->m_category == CardCategory::dominion_alpha) && is_in_recipe(owned_alpha_dominion, card))
-        { continue; }*/
-	
-		//if (card->m_category == CardCategory::dominion_alpha )
-        //{std::cout << "PRESKIP:" << card->m_name << std::endl;}
 	
 		if(use_owned_cards && card->m_category == CardCategory::dominion_alpha && !owned_cards[card->m_id])
 		{
@@ -1454,6 +1451,7 @@ inline FinalResults<long double> fitness(Deck* d1,
 
     // check previous simulations
     auto && cur_deck = d1->hash();
+    //std::cout << "Deck hash: " << d1->hash() << " with ";
     auto && emplace_rv = evaluated_decks.insert({cur_deck, zero_results});
     auto & prev_results = emplace_rv.first->second;
     if (!emplace_rv.second)
@@ -1462,38 +1460,50 @@ inline FinalResults<long double> fitness(Deck* d1,
     }
 
     // Evaluate new deck
-    auto compare_results = proc.evaluate(best_score.n_sims, prev_results);
+    
+    auto compare_results= proc.evaluate(best_score.n_sims, prev_results);
+
     auto current_score = compute_score(compare_results, proc.factors);
 
+    //best_score = current_score;
+    //auto best_deck = d1->clone();
+    //print_score_info(compare_results, proc.factors);
+    //print_deck_inline(get_deck_cost(best_deck), best_score, best_deck);
     return current_score;
 }
 
-void simmulated_annealing(unsigned num_min_iterations, unsigned num_iterations, Deck* d1, Process& proc, Requirement & requirement
+inline long double acceptanceProbability(long double old_score, long double new_score, long double temperature)
+{
+	if(new_score > old_score)
+	{
+		return 1;
+	}
+	//return 0;
+	return exp((new_score-old_score)/temperature*1000);
+}
+
+void simulated_annealing(unsigned num_min_iterations, unsigned num_iterations, Deck* cur_deck, Process& proc, Requirement & requirement
 #ifndef NQUEST
     , Quest & quest
 #endif
 )
 {
     EvaluatedResults zero_results = { EvaluatedResults::first_type(proc.enemy_decks.size()), 0 };
-    std::string best_deck = d1->hash();
-    std::unordered_map<std::string, EvaluatedResults> evaluated_decks{{best_deck, zero_results}};
+    //std::string best_deck = d1->hash();
+    std::unordered_map<std::string, EvaluatedResults> evaluated_decks{{cur_deck->hash(), zero_results}};
     EvaluatedResults& results = proc.evaluate(num_min_iterations, evaluated_decks.begin()->second);
     print_score_info(results, proc.factors);
     FinalResults<long double> best_score = compute_score(results, proc.factors);
-    const Card* best_commander = d1->commander;
-    const Card* best_alpha_dominion = d1->alpha_dominion;
-    std::vector<const Card*> best_cards = d1->cards;
-    unsigned deck_cost = get_deck_cost(d1);
+    //const Card* best_commander = d1->commander;
+    const Card* best_alpha_dominion = cur_deck->alpha_dominion;
+    std::vector<const Card*> best_cards = cur_deck->cards;
+    unsigned deck_cost = get_deck_cost(cur_deck);
     fund = std::max(fund, deck_cost);
-    print_deck_inline(deck_cost, best_score, d1);
+    print_deck_inline(deck_cost, best_score, cur_deck);
     std::mt19937& re = proc.threads_data[0]->re;
-    unsigned best_gap = check_requirement(d1, requirement
-#ifndef NQUEST
-        , quest
-#endif
-    );
-    bool is_random = d1->strategy == DeckStrategy::random;
-    bool deck_has_been_improved = true;
+    
+
+    bool is_random = cur_deck->strategy == DeckStrategy::random;
     unsigned long skipped_simulations = 0;
     std::vector<const Card*> all_candidates;
 
@@ -1547,15 +1557,6 @@ void simmulated_annealing(unsigned num_min_iterations, unsigned num_iterations, 
             }
         }
 
-		//if (card->m_category == CardCategory::dominion_alpha)
-        //{std::cout << "PREPRESKIP:" << card->m_name << std::endl;}
-	
-        // skip sub-dominion cards anyway
-        /*if ((card->m_category == CardCategory::dominion_alpha) && is_in_recipe(owned_alpha_dominion, card))
-        { continue; }*/
-	
-		//if (card->m_category == CardCategory::dominion_alpha )
-        //{std::cout << "PRESKIP:" << card->m_name << std::endl;}
 	
 		if(use_owned_cards && card->m_category == CardCategory::dominion_alpha && !owned_cards[card->m_id])
 		{
@@ -1575,7 +1576,7 @@ void simmulated_annealing(unsigned num_min_iterations, unsigned num_iterations, 
         all_candidates.emplace_back(card);
     }
     // append NULL as void card as well
-    card_candidates.emplace_back(nullptr);
+    all_candidates.emplace_back(nullptr);
 
     // add current alpha dominion to candidates if necessary
     // or setup first candidate into the deck if no alpha dominion defined
@@ -1583,21 +1584,9 @@ void simmulated_annealing(unsigned num_min_iterations, unsigned num_iterations, 
     {
         if (best_alpha_dominion)
         {
-            if (!std::count(alpha_dominion_candidates.begin(), alpha_dominion_candidates.end(), best_alpha_dominion))
+            if (!std::count(all_candidates.begin(), all_candidates.end(), best_alpha_dominion))
             {
-                alpha_dominion_candidates.emplace_back(best_alpha_dominion);
-            }
-        }
-        else if (!alpha_dominion_candidates.empty())
-        {
-            best_alpha_dominion = d1->alpha_dominion = alpha_dominion_candidates[0];
-        }
-        if (debug_print > 0)
-        {
-            for (const Card* dom_card : alpha_dominion_candidates)
-            {
-                std::cout << " ** next Alpha Dominion candidate: " << dom_card->m_name
-                    << " ($: " << alpha_dominion_cost(dom_card) << ")" << std::endl;
+                all_candidates.emplace_back(best_alpha_dominion);
             }
         }
     }
@@ -1608,38 +1597,36 @@ void simmulated_annealing(unsigned num_min_iterations, unsigned num_iterations, 
     }
 
     //TODO better temp+cooling + conditions
+    //TODO stoch
     //TODO test
     //TODO add prints
+	
+    
 
-    long double temperature = 10000;
-    long double coolingRate = 0.003;
+    Deck* prev_deck = cur_deck->clone();
+    //Deck* cur_deck = d1->clone();
+    Deck* best_deck = cur_deck->clone();
 
-    Deck* prev_deck = d1->clone();
-    Deck* cur_deck = d1->clone();
-    Deck* best_deck = d1->clone();
-
-    FinalResult<long double> prev_score = best_score;
-    FinalResult<long double> cur_score = best_score;
+    FinalResults<long double> prev_score = best_score;
+    FinalResults<long double> cur_score = best_score;
 
     deck_cost = 0;
 
     unsigned from_slot(freezed_cards);
-
+    if(debug_print >0)std::cout << "Starting Anneal" << std::endl;
     while(temperature > 1 && !(best_score.points - target_score > -1e-9))
     {
-	cur_deck = prev_deck->clone();
+	cur_deck->commander = prev_deck->commander;
+	cur_deck->alpha_dominion = prev_deck->alpha_dominion;
+	cur_deck->cards = prev_deck->cards;
 	from_slot = std::max(freezed_cards, (from_slot+1) % std::min<unsigned>(max_deck_len, cur_deck->cards.size() +1));
-	Card* candidate = all_candidates.at(std::uniform_int_distribution<unsigned>(0,all_candidates.size()-1)(re));
-	if(candidate->m_type == CardType::commander)
+	const Card* candidate = all_candidates.at(std::uniform_int_distribution<unsigned>(0,all_candidates.size()-1)(re));
+    	//if(debug_print >0)std::cout << "Anneal Switch" << std::endl;
+	
+	if((!candidate || (candidate->m_category == CardCategory::normal && candidate->m_type != CardType::commander && candidate->m_category != CardCategory::dominion_alpha)))
 	{
-		cur_deck->commander = candidate;
-	}
-	else if(candidate->m_type == CardType::dominion_alpha)
-	{
-		cur_deck->alpha_dominion = candidate;
-	}
-	else if(candidate->m_type == CardType::normal)
-	{
+		//if(debug_print >0)std::cout << "Anneal NORMAL" << std::endl;
+		unsigned to_slot = std::uniform_int_distribution<unsigned>(is_random ? from_slot : candidate ? freezed_cards : (cur_deck->cards.size() -1),(is_random ? (from_slot+1) : (cur_deck->cards.size() + ( from_slot < cur_deck->cards.size() ? 0 : 1)))-1)(re);
 		if(candidate ? 
 			(from_slot < cur_deck->cards.size() && (from_slot == to_slot && candidate == cur_deck->cards[to_slot]))
 			:
@@ -1647,25 +1634,51 @@ void simmulated_annealing(unsigned num_min_iterations, unsigned num_iterations, 
 		{
 			continue;
 		}
-		std::vector<std::pair<signed, const Card * >> cards_put, cards_in;
+		std::vector<std::pair<signed, const Card * >> cards_out, cards_in;
 
-		to_slot = std::uniform_int_distribution<unsigned>(is_random ? from_slot : candidate ? freezed_cards : (cur_deck->cards.size() -1),(is_random ? (from_slot+1) : (cur_deck->cards.size() + ( from_slot < cur_deck->cards.size() ? 0 : 1)))-1)(re);
+		
 		if (!adjust_deck(cur_deck, from_slot, to_slot, candidate, fund, re, deck_cost, cards_out, cards_in))
     		{ continue;}
 	}
+	else if(candidate->m_type == CardType::commander)
+	{
+		//if(debug_print >0)std::cout << "Anneal COM" << std::endl;
+		cur_deck->commander = candidate;
+	}
+	else if(candidate->m_category == CardCategory::dominion_alpha)
+	{
+		//if(debug_print >0)std::cout << "Anneal DOM" << std::endl;
+		cur_deck->alpha_dominion = candidate;
+	}
+	//if(debug_print >0)std::cout << "Anneal Sim" << std::endl;
+	//same deck skip
+	if(cur_deck->hash().compare(prev_deck->hash())==0)continue;
 	cur_score = fitness(cur_deck, best_score, evaluated_decks, zero_results, skipped_simulations, proc);
-	if(cur_score.points >= prev_score.points || /*stoch*/)
+	
+	//if(debug_print >0)std::cout << "Anneal Eval" << std::endl;
+	if(acceptanceProbability(prev_score.points, cur_score.points , temperature) > std::uniform_real_distribution<double>(0,1)(re))
 	{
 		if(cur_score.points > best_score.points)
 		{
 			best_score = cur_score;
 			best_deck = cur_deck->clone();
+			//print_score_info(compare_results, proc.factors);
+			std::cout << "BEST DECK: (" << temperature << ") :";
+        		print_deck_inline(get_deck_cost(best_deck), best_score, best_deck);
 		}
+		if(debug_print>0)std::cout << "UPDATED DECK (" << temperature << ") :";
+        	if(debug_print>0)print_deck_inline(get_deck_cost(cur_deck), cur_score, cur_deck);
 		prev_score = cur_score;
 		prev_deck = cur_deck->clone();
 	}
 	temperature *=1-coolingRate;
     }
+    unsigned simulations = 0;
+    for (auto evaluation: evaluated_decks)
+    { simulations += evaluation.second.second; }
+    std::cout << "Evaluated " << evaluated_decks.size() << " decks (" << simulations << " + " << skipped_simulations << " simulations)." << std::endl;
+    std::cout << "Optimized Deck: ";
+    print_deck_inline(get_deck_cost(best_deck), best_score, best_deck);
 
 }
 
@@ -2230,12 +2243,14 @@ int main(int argc, char** argv)
             opt_do_optimization = true;
             argIndex += 1;
         }
-	else if ( strcmp(arg[argIndex], "anneal") == 0)
+	else if ( strcmp(argv[argIndex], "anneal") == 0)
 	{
             opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 1]), anneal));
+	    temperature = std::stod(argv[argIndex+2]);
+	    coolingRate = std::stod(argv[argIndex+3]);
             if (std::get<1>(opt_todo.back()) < 10) { opt_num_threads = 1; }
             opt_do_optimization = true;
-	    argIndex += 1;
+	    argIndex += 3;
 	}
         else if (strcmp(argv[argIndex], "reorder") == 0)
         {
@@ -2873,7 +2888,7 @@ int main(int argc, char** argv)
             break;
         }
 	case anneal: {
-	    simmulated_annealing(std::get<0>(op), std::get<1>(op), your_deck, p, requirement
+	    simulated_annealing(std::get<0>(op), std::get<1>(op), your_deck, p, requirement
 #ifndef NQUEST
                 , quest
 #endif
