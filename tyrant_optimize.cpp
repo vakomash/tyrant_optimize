@@ -1478,8 +1478,9 @@ inline long double acceptanceProbability(long double old_score, long double new_
 	{
 		return 1;
 	}
-	//return 0;
-	return exp((new_score-old_score)/temperature*1000);
+	//100/max_score normalizes the acceptance probability with the used mode/score-range
+	//1000 is factor to set the temperature lower (can be changed indirect by setting begin-temperature and its decrease)
+	return exp(((new_score-old_score)/temperature*1000*100)/max_possible_score[(size_t)optimization_mode]);
 }
 
 void simulated_annealing(unsigned num_min_iterations, unsigned num_iterations, Deck* cur_deck, Process& proc, Requirement & requirement
