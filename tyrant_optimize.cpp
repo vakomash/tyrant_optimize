@@ -1597,15 +1597,10 @@ void simulated_annealing(unsigned num_min_iterations, unsigned num_iterations, D
         std::cout << "Setting up owned Alpha Dominion into a deck: " << best_alpha_dominion->m_name << std::endl;
     }
 
-    //TODO better temp+cooling + conditions
-    //TODO stoch
-    //TODO test
-    //TODO add prints
 	
     
 
     Deck* prev_deck = cur_deck->clone();
-    //Deck* cur_deck = d1->clone();
     Deck* best_deck = cur_deck->clone();
 
     FinalResults<long double> prev_score = best_score;
@@ -1622,11 +1617,11 @@ void simulated_annealing(unsigned num_min_iterations, unsigned num_iterations, D
 	cur_deck->cards = prev_deck->cards;
 	from_slot = std::max(freezed_cards, (from_slot+1) % std::min<unsigned>(max_deck_len, cur_deck->cards.size() +1));
 	const Card* candidate = all_candidates.at(std::uniform_int_distribution<unsigned>(0,all_candidates.size()-1)(re));
-    	//if(debug_print >0)std::cout << "Anneal Switch" << std::endl;
+    
 	
 	if((!candidate || (candidate->m_category == CardCategory::normal && candidate->m_type != CardType::commander && candidate->m_category != CardCategory::dominion_alpha)))
 	{
-		//if(debug_print >0)std::cout << "Anneal NORMAL" << std::endl;
+
 		unsigned to_slot = std::uniform_int_distribution<unsigned>(is_random ? from_slot : candidate ? freezed_cards : (cur_deck->cards.size() -1),(is_random ? (from_slot+1) : (cur_deck->cards.size() + ( from_slot < cur_deck->cards.size() ? 0 : 1)))-1)(re);
 		if(candidate ? 
 			(from_slot < cur_deck->cards.size() && (from_slot == to_slot && candidate == cur_deck->cards[to_slot]))
@@ -1643,32 +1638,27 @@ void simulated_annealing(unsigned num_min_iterations, unsigned num_iterations, D
 	}
 	else if(candidate->m_type == CardType::commander)
 	{
-		//if(debug_print >0)std::cout << "Anneal COM" << std::endl;
 		cur_deck->commander = candidate;
 	}
 	else if(candidate->m_category == CardCategory::dominion_alpha)
 	{
-		//if(debug_print >0)std::cout << "Anneal DOM" << std::endl;
 		cur_deck->alpha_dominion = candidate;
 	}
-	//if(debug_print >0)std::cout << "Anneal Sim" << std::endl;
 	//same deck skip
 	if(cur_deck->hash().compare(prev_deck->hash())==0)continue;
 	cur_score = fitness(cur_deck, best_score, evaluated_decks, zero_results, skipped_simulations, proc);
-	
-	//if(debug_print >0)std::cout << "Anneal Eval" << std::endl;
+
 	if(acceptanceProbability(prev_score.points, cur_score.points , temperature) > std::uniform_real_distribution<double>(0,1)(re))
 	{
 		if(cur_score.points > best_score.points)
 		{
 			best_score = cur_score;
 			best_deck = cur_deck->clone();
-			//print_score_info(compare_results, proc.factors);
-			std::cout << "BEST DECK: (" << temperature << ") :";
-        		print_deck_inline(get_deck_cost(best_deck), best_score, best_deck);
+			std::cout << "Deck improved: " << best_deck->hash() << ": (temp=" << temperature << ") :";
+            print_deck_inline(get_deck_cost(best_deck), best_score, best_deck);
 		}
-		if(debug_print>0)std::cout << "UPDATED DECK (" << temperature << ") :";
-        	if(debug_print>0)print_deck_inline(get_deck_cost(cur_deck), cur_score, cur_deck);
+		if(debug_print>0)std::cout << "UPDATED DECK: " << cur_deck->hash() << ": (temp=" << temperature << ") :";
+    	if(debug_print>0)print_deck_inline(get_deck_cost(cur_deck), cur_score, cur_deck);
 		prev_score = cur_score;
 		prev_deck = cur_deck->clone();
 	}
