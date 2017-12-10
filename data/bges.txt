@@ -51,7 +51,8 @@ Phobos Station: Orbital Bombardment
 Orbital Bombardment: Strike all 3; Siege all 5
 // --
 The Spire: Imperial Domain
-Imperial Domain: Heal all 7// --
+Imperial Domain: Heal all 7
+// --
 SkyCom Complex: Network Interference
 Network Interference: Weaken all 6
 // --
@@ -96,8 +97,9 @@ Storm Shelters: Enhance all Evade 3
 Red Maw Base: Red Maw Barracks
 Red Maw Barracks: Rally all 5
 // --
-Tyrolian Outpost: Reforged Plating
-Reforged Plating: Iron Will// --
+Tyrolian Outpost: Iron Will
+Reforged Plating: Enhance all Armor 6
+// --
 Ashrock Redoubt: Counterflux
 
 // Activation Skills
