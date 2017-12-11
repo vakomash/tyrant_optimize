@@ -1488,6 +1488,7 @@ struct PerformAttack
         auto& att_assaults = fd->tap->assaults; // (active) attacker assaults
         auto& def_assaults = fd->tip->assaults; // (inactive) defender assaults
         unsigned legion_value = 0;
+		unsigned coalition_value = 0;
 
         // Enhance damage (if additional damage isn't prevented)
         if (! att_status->m_sundered)
@@ -1523,7 +1524,7 @@ struct PerformAttack
                 }
                 _DEBUG_ASSERT(factions_bitmap);
                 unsigned uniq_factions = byte_bits_count(factions_bitmap);
-                unsigned coalition_value = coalition_base * uniq_factions;
+                coalition_value = coalition_base * uniq_factions;
 #ifndef NDEBUG
                 if (debug_print > 0) { desc += "+" + to_string(coalition_value) + "(coalition/x" + to_string(uniq_factions) + ")"; }
 #endif
@@ -1628,6 +1629,15 @@ struct PerformAttack
             _DEBUG_MSG(1, "Brigade: %s heals itself for %u\n",
                 status_description(att_status).c_str(), legion_value);
             att_status->add_hp(legion_value);
+        }
+		
+		// Passive BGE: Unity
+        if (__builtin_expect(fd->bg_effects[fd->tapi][PassiveBGE::unity] && coalition_value, false)
+            && can_be_healed(att_status))
+        {
+            _DEBUG_MSG(1, "Unity: %s heals itself for %u\n",
+                status_description(att_status).c_str(), (coalition_value + 1)/2);
+            att_status->add_hp((coalition_value + 1)/2);
         }
     }
 

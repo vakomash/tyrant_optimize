@@ -1710,7 +1710,8 @@ void print_available_effects()
         "  Oath-Of-Loyalty\n"
         "  Blood-Vengeance\n"
         "  Cold-Sleep\n"
-	"  Iron-Wil\n"
+		"  Iron-Will\n"
+		"  Unity\n"
         ;
 }
 void usage(int argc, char** argv)
