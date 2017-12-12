@@ -259,6 +259,20 @@ inline PassiveBGE::PassiveBGE passive_bge_name_to_id(const std::string& name_)
     return PassiveBGE::no_bge;
 }
 
+inline Faction faction_name_to_id(const std::string& name_)
+{
+    std::string name(name_);
+    name.erase(std::remove_if(name.begin(), name.end(), boost::is_any_of("-")), name.end()); //Mostly useless
+    for (unsigned i(allfactions); i < num_factions; ++i)
+    {
+        if (boost::iequals(faction_names[i], name))
+        {
+            return static_cast<Faction>(i);
+        }
+    }
+    return allfactions;
+}
+
 inline void map_keys_to_set(const std::unordered_map<unsigned, unsigned>& m, std::unordered_set<unsigned>& s)
 {
     for (auto it = m.begin(); it != m.end(); ++it)

@@ -56,6 +56,7 @@ namespace {
     std::unordered_map<unsigned, unsigned> owned_cards;
     const Card* owned_alpha_dominion{nullptr};
     bool use_owned_cards{true};
+	Faction faction = allfactions;
     unsigned min_deck_len{1};
     unsigned max_deck_len{10};
     unsigned freezed_cards{0};
@@ -1293,6 +1294,11 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
         {
 			continue;
         }
+		//mono
+		if(faction != allfactions && card->m_faction != faction)
+		{
+			continue;
+		}
 
         // enqueue candidate according to category & type
         if (card->m_type == CardType::commander)
@@ -2056,6 +2062,11 @@ int main(int argc, char** argv)
         {
             opt_keep_commander = true;
         }
+		else if (strcmp(argv[argIndex], "mono") == 0 || strcmp(argv[argIndex], "-m") == 0)
+        {
+			faction = faction_name_to_id(argv[argIndex + 1]);
+			argIndex += 1;
+		}
         else if (strcmp(argv[argIndex], "effect") == 0 || strcmp(argv[argIndex], "-e") == 0)
         {
             opt_effects[2].push_back(argv[argIndex + 1]);
