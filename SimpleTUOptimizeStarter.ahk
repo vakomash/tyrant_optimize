@@ -3,7 +3,7 @@
 SendMode Input  ; Recommended for new scripts due to its superior speed and reliability.
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 
-VersionOfStarter := "v2.58.1"
+VersionOfStarter := "v2.58.3"
 
 VersionOfTUO := ""
 file = %A_temp%\version.tmp
