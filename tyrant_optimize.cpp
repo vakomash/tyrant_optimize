@@ -1583,6 +1583,12 @@ void simulated_annealing(unsigned num_min_iterations, unsigned num_iterations, D
         {
 			continue;
         }
+		
+		//mono
+		if(faction != allfactions && card->m_faction != faction)
+		{
+			continue;
+		}
 
         all_candidates.emplace_back(card);
     }
