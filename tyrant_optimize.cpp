@@ -1502,7 +1502,11 @@ void simulated_annealing(unsigned num_min_iterations, unsigned num_iterations, D
     fund = std::max(fund, deck_cost);
     print_deck_inline(deck_cost, best_score, cur_deck);
     std::mt19937& re = proc.threads_data[0]->re;
-    
+    unsigned cur_gap = check_requirement(cur_deck, requirement
+#ifndef NQUEST
+        , quest
+#endif
+    );
 
     bool is_random = cur_deck->strategy == DeckStrategy::random;
     unsigned long skipped_simulations = 0;
@@ -1606,9 +1610,14 @@ void simulated_annealing(unsigned num_min_iterations, unsigned num_iterations, D
     FinalResults<long double> prev_score = best_score;
     FinalResults<long double> cur_score = best_score;
 
+	unsigned best_gap = cur_gap;
+	
     deck_cost = 0;
 
     unsigned from_slot(freezed_cards);
+	unsigned from_slot_tmp(freezed_cards);
+	unsigned to_slot(1);
+	
     if(debug_print >0)std::cout << "Starting Anneal" << std::endl;
     while(temperature > 1 && !(best_score.points - target_score > -1e-9))
     {
@@ -1622,7 +1631,7 @@ void simulated_annealing(unsigned num_min_iterations, unsigned num_iterations, D
 	if((!candidate || (candidate->m_category == CardCategory::normal && candidate->m_type != CardType::commander && candidate->m_category != CardCategory::dominion_alpha)))
 	{
 
-		unsigned to_slot = std::uniform_int_distribution<unsigned>(is_random ? from_slot : candidate ? freezed_cards : (cur_deck->cards.size() -1),(is_random ? (from_slot+1) : (cur_deck->cards.size() + ( from_slot < cur_deck->cards.size() ? 0 : 1)))-1)(re);
+		to_slot = std::uniform_int_distribution<unsigned>(is_random ? from_slot : candidate ? freezed_cards : (cur_deck->cards.size() -1),(is_random ? (from_slot+1) : (cur_deck->cards.size() + ( from_slot < cur_deck->cards.size() ? 0 : 1)))-1)(re);
 		if(candidate ? 
 			(from_slot < cur_deck->cards.size() && (from_slot == to_slot && candidate == cur_deck->cards[to_slot]))
 			:
@@ -1630,22 +1639,40 @@ void simulated_annealing(unsigned num_min_iterations, unsigned num_iterations, D
 		{
 			continue;
 		}
-		std::vector<std::pair<signed, const Card * >> cards_out, cards_in;
-
-		
-		if (!adjust_deck(cur_deck, from_slot, to_slot, candidate, fund, re, deck_cost, cards_out, cards_in))
-    		{ continue;}
+		from_slot_tmp = from_slot;
 	}
-	else if(candidate->m_type == CardType::commander)
+	else if(candidate->m_type == CardType::commander && requirement.num_cards.count(cur_deck->commander) == 0)
 	{
 		cur_deck->commander = candidate;
+		from_slot_tmp = -1;
+		to_slot = -1;
 	}
-	else if(candidate->m_category == CardCategory::dominion_alpha)
+	else if(candidate->m_category == CardCategory::dominion_alpha && use_dominion_climbing)
 	{
 		cur_deck->alpha_dominion = candidate;
+		from_slot_tmp = -1;
+		to_slot = -1;
 	}
+	else{
+		continue;
+	}
+	
+	std::vector<std::pair<signed, const Card * >> cards_out, cards_in;
+	if (!adjust_deck(cur_deck, from_slot_tmp, to_slot, candidate, fund, re, deck_cost, cards_out, cards_in))
+    	{ continue;}
+	cur_gap = check_requirement(cur_deck, requirement
+#ifndef NQUEST
+        , quest
+#endif
+		);
+	if ((cur_gap > 0) && (cur_gap >= best_gap))
+		{ continue; }
+	
 	//same deck skip
 	if(cur_deck->hash().compare(prev_deck->hash())==0)continue;
+	
+	
+	
 	cur_score = fitness(cur_deck, best_score, evaluated_decks, zero_results, skipped_simulations, proc);
 
 	if(acceptanceProbability(prev_score.points, cur_score.points , temperature) > std::uniform_real_distribution<double>(0,1)(re))
@@ -1654,6 +1681,7 @@ void simulated_annealing(unsigned num_min_iterations, unsigned num_iterations, D
 		{
 			best_score = cur_score;
 			best_deck = cur_deck->clone();
+			best_gap = cur_gap;
 			std::cout << "Deck improved: " << best_deck->hash() << ": (temp=" << temperature << ") :";
             print_deck_inline(get_deck_cost(best_deck), best_score, best_deck);
 		}
