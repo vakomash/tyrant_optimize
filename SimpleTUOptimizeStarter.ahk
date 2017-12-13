@@ -3,7 +3,7 @@
 SendMode Input  ; Recommended for new scripts due to its superior speed and reliability.
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 
-VersionOfStarter := "v2.58.3"
+VersionOfStarter := "v2.58.4"
 
 VersionOfTUO := ""
 file = %A_temp%\version.tmp
@@ -82,7 +82,7 @@ if (IniEffectNum = 0) {
 }
 
 Gui, Add, ComboBox, vEffect xs Choose%IniEffectNum% section, %BGEffects%
-Gui, Add, DDL, altsubmit vMode Choose%IniMode%, Battle / Mission|Battle (defense)|GW / CQ / Surge|GW (defense)|Brawl|Brawl (defense)|Raid|Campaign
+Gui, Add, DDL, altsubmit vMode Choose%IniMode%, Battle / Mission|Battle (defense)|GW|GW (defense)|Brawl|Brawl (defense)|Raid|Campaign|CQ / Surge
 Gui, Add, DDL, altsubmit vOperation Group Choose%IniOperation% xs, Climb|Sim|Reorder|Climbex|Anneal
 
 Gui, Add, Text, ys, Endgame:
@@ -124,7 +124,7 @@ GuiControl, , Edit11, %SimOptions% ; this will put the content of the variable i
 Gui, Submit, NoHide ; save the changes and not hide the windows)
 
 selTUO := (x86 ? "tuo-x86" : "tuo")
-selMode := (Mode == 1 ? "pvp" : Mode == 2 ? "pvp-defense" : Mode == 3 ? "gw" : Mode == 4 ? "gw-defense" :Mode == 5 ? "brawl" : Mode == 6 ? "brawl-defense" : Mode == 7 ? "raid" : "campaign")
+selMode := (Mode == 1 ? "pvp" : Mode == 2 ? "pvp-defense" : Mode == 3 ? "gw" : Mode == 4 ? "gw-defense" :Mode == 5 ? "brawl" : Mode == 6 ? "brawl-defense" : Mode == 7 ? "raid" : Mode == 8 ? "campaign" : "surge")
 selOrder := (Order == 1 ? "random" : "ordered")
 selOperation :=  (Operation == 1 ? "climb" : Operation == 2 ? "sim" : Operation == 3 ? "reorder": Operation == 4 ? "climbex" : "anneal")
 selMySiege := (MySiege == "" ? "" : "yf """ MySiege """ ")
