@@ -56,7 +56,7 @@ namespace {
     std::unordered_map<unsigned, unsigned> owned_cards;
     const Card* owned_alpha_dominion{nullptr};
     bool use_owned_cards{true};
-    std::vector<const Faction> factions;
+    std::vector<Faction> factions;
     unsigned min_deck_len{1};
     unsigned max_deck_len{10};
     unsigned freezed_cards{0};
