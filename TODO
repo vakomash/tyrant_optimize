@@ -4,22 +4,22 @@ Tributed On-Attacked-Rally during enemy turn on a cooldown card -> (Impact by no
 //Testing
 
 //Check
-mimiced no on-play skill
+mimic no on-play skills
 Summon-0-delay card  => new card with summon /valor
 bg_effects fd->tapi vs card->tapi
 on-death-attacked-summoned cards valid strike/enf.. targets
 enfeeble active how long and on whoms turn
 
 //Impl
-simmmulated anneal
+
 //Var
 
 
 //Ideas
 rule/enemy-based order
-state-attackig += state-skills-active
-faction limited simming (+- Prog)
-limmit amount of card occurrences
+state-attacking += state-skills-active
+
+limit amount of card occurrences
 tuo on android
 * with armv7 compilation and terminal
 * NDK + boost direct implementation
