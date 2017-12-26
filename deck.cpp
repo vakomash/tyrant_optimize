@@ -694,7 +694,7 @@ void Deck::shuffle(std::mt19937& re)
             }
             std::shuffle(shufflable_iter, pool->end(), re);
         }
-#if 0
+#if 0 
         if (!given_hand.empty())
         {
             for (auto card: cards) std::cout << ", " << card->m_name;

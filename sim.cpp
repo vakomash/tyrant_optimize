@@ -15,6 +15,7 @@
 #include "deck.h"
 
 bool check_and_perform_valor(Field* fd, CardStatus* src);
+bool check_and_perform_bravery(Field* fd, CardStatus* src);
 CardStatus* check_and_perform_summon(Field* fd, CardStatus* src);
 
 //------------------------------------------------------------------------------
@@ -185,11 +186,11 @@ inline void CardStatus::set(const Card& card)
 {
     m_card = &card;
     m_index = 0;
-	m_action_index=0;
+    m_action_index=0;
     m_player = 0;
     m_delay = card.m_delay;
     m_hp = card.m_health;
-	m_absorption = 0;
+    m_absorption = 0;
     m_step = CardStep::none;
     m_perm_health_buff = 0;
     m_perm_attack_buff = 0;
@@ -700,29 +701,30 @@ struct PlayCard
 		
         unsigned played_faction_mask(0);
         unsigned same_faction_cards_count(0);
-		bool bge_megamorphosis = fd->bg_effects[fd->tapi][PassiveBGE::megamorphosis];
-		//played_status = status;
-		//played_card = card;
+	bool bge_megamorphosis = fd->bg_effects[fd->tapi][PassiveBGE::megamorphosis];
+	//played_status = status;
+	//played_card = card;
 		
+	check_and_perform_bravery(fd,status);
         if (status->m_delay == 0)
         {
             check_and_perform_valor(fd, status);
         }
 		
-		//refresh/init absorb
-		if(status->has_skill(Skill::absorb))
-		{
-			status->m_absorption = status->skill_base_value(Skill::absorb);
-		}
+	//refresh/init absorb
+	if(status->has_skill(Skill::absorb))
+	{
+	    status->m_absorption = status->skill_base_value(Skill::absorb);
+	}
 		
 		
-		// 1. Evaluate skill Allegiance & count assaults with same faction (structures will be counted later)
+	// 1. Evaluate skill Allegiance & count assaults with same faction (structures will be counted later)
         // 2. Passive BGE Cold Sleep
-		for (CardStatus* status_i : fd->tap->assaults.m_indirect)
-		{
-			if (status_i == status || !is_alive(status_i)) { continue; } // except itself
-			//std::cout << status_description(status_i).c_str();
-			_DEBUG_ASSERT(is_alive(status_i));
+	for (CardStatus* status_i : fd->tap->assaults.m_indirect)
+	{
+	    if (status_i == status || !is_alive(status_i)) { continue; } // except itself
+		//std::cout << status_description(status_i).c_str();
+		_DEBUG_ASSERT(is_alive(status_i));
             if (bge_megamorphosis || (status_i->m_card->m_faction == card->m_faction))
             {
                 ++ same_faction_cards_count;
@@ -744,10 +746,10 @@ struct PlayCard
             }
         }
 
-		// Setup faction marks (bitmap) for stasis (skill Stasis / Passive BGE TemporalBacklash)
-		// unless Passive BGE Megamorphosis is enabled
+	// Setup faction marks (bitmap) for stasis (skill Stasis / Passive BGE TemporalBacklash)
+	// unless Passive BGE Megamorphosis is enabled
         if (__builtin_expect(!bge_megamorphosis, true))
-		{
+	{
             played_faction_mask = (1u << card->m_faction);
 
             // do played card have stasis? mark this faction for stasis check
@@ -759,7 +761,7 @@ struct PlayCard
         }
 
         // Evaluate Passive BGE Oath-of-Loyalty
-		unsigned allegiance_value;
+	unsigned allegiance_value;
         if (__builtin_expect(fd->bg_effects[fd->tapi][PassiveBGE::oath_of_loyalty], false)
 			&& ((allegiance_value = status->skill(Skill::allegiance)) > 0))
         {
@@ -1099,11 +1101,12 @@ void turn_start_phase(Field* fd)
         {
             CardStatus * status = &assaults[index];
             status->m_index = index;
-			//refresh absorb
-			if(status->has_skill(Skill::absorb))
-			{
-				status->m_absorption = status->skill_base_value(Skill::absorb);
-			}
+	    //refresh absorb
+            if(status->has_skill(Skill::absorb))
+	    {
+		status->m_absorption = status->skill_base_value(Skill::absorb);
+	    }
+	    check_and_perform_bravery(fd,status);
             if (status->m_delay > 0)
             {
                 _DEBUG_MSG(1, "%s reduces its timer\n", status_description(status).c_str());
@@ -1419,7 +1422,7 @@ struct PerformAttack
         // Passive BGE: Heroism
         unsigned valor_value;
         if (__builtin_expect(fd->bg_effects[fd->tapi][PassiveBGE::heroism], false)
-            && ((valor_value = att_status->skill(Skill::valor)) > 0)
+            && ((valor_value = att_status->skill(Skill::valor) + att_status->skill(Skill::bravery)) > 0)
             && !att_status->m_sundered
             && (def_cardtype == CardType::assault) && (def_status->m_hp <= 0))
         {
@@ -2388,6 +2391,38 @@ bool check_and_perform_valor(Field* fd, CardStatus* src)
     return false;
 }
 
+bool check_and_perform_bravery(Field* fd, CardStatus* src)
+{
+    unsigned bravery_value = src->skill(Skill::bravery);
+    if (bravery_value && !src->m_sundered && skill_check<Skill::bravery>(fd, src, nullptr))
+    {
+        unsigned opponent_player = opponent(src->m_player);
+        const CardStatus * dst = fd->players[opponent_player]->assaults.size() > src->m_index ?
+            &fd->players[opponent_player]->assaults[src->m_index] :
+            nullptr;
+        if (dst == nullptr || dst->m_hp <= 0)
+        {
+            _DEBUG_MSG(1, "%s loses Bravery (no blocker)\n", status_description(src).c_str());
+            return false;
+        }
+        else if (dst->attack_power() <= src->attack_power())
+        {
+            _DEBUG_MSG(1, "%s loses Bravery (weak blocker %s)\n", status_description(src).c_str(), status_description(dst).c_str());
+            return false;
+        }
+#ifndef NQUEST
+        if (src->m_player == 0)
+        {
+            fd->inc_counter(QuestType::skill_use, Skill::bravery);
+        }
+#endif
+        _DEBUG_MSG(1, "%s activates Bravery %u\n", status_description(src).c_str(), bravery_value);
+        src->m_perm_attack_buff += bravery_value;
+        return true;
+    }
+    return false;
+}
+
 CardStatus* check_and_perform_summon(Field* fd, CardStatus* src)
 {
     unsigned summon_card_id = src->m_card->m_skill_value[Skill::summon];
@@ -2845,7 +2880,7 @@ Results<uint64_t> play(Field* fd)
         {
             for (CardStatus * dst: fd->tap->assaults.m_indirect)
             {
-                unsigned bge_value = (dst->skill(Skill::valor) + 1) / 2;
+                unsigned bge_value = (dst->skill(Skill::valor) + dst->skill(Skill::bravery)+ 1) / 2;
                 if (bge_value <= 0)
                 { continue; }
                 SkillSpec ss_protect{Skill::protect, bge_value, allfactions, 0, 0, Skill::no_skill, Skill::no_skill, false, 0,};

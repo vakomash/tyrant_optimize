@@ -56,7 +56,7 @@ enum Skill
     berserk, inhibit, sabotage, leech, poison,
 
     // Triggered:
-    allegiance, flurry, valor, stasis, summon,
+    allegiance, flurry, valor, stasis, summon, bravery,
 
     // End of skills
     num_skills
@@ -65,7 +65,6 @@ enum Trigger
 {
     activate,
     play,
-    //APN
     attacked,
     death,
     num_triggers
@@ -188,6 +187,7 @@ inline bool is_defensive_skill(Skill::Skill skill_id)
     case Skill::counter:
     case Skill::evade:
     case Skill::subdue:
+    case Skill::absorb:
     case Skill::payback:
     case Skill::revenge:
     case Skill::tribute:
@@ -203,6 +203,7 @@ inline bool is_combat_modifier_skill(Skill::Skill skill_id)
 {
     switch(skill_id)
     {
+    case Skill::coalition:
     case Skill::legion:
     case Skill::pierce:
     case Skill::rupture:
@@ -239,6 +240,7 @@ inline bool is_triggered_skill(Skill::Skill skill_id)
     case Skill::valor:
     case Skill::stasis:
     case Skill::summon:
+    case Skill::bravery:
         return true;
     default:
         return false;

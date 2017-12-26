@@ -32,7 +32,7 @@ const std::string skill_names[Skill::num_skills] =
     "Berserk", "Inhibit", "Sabotage", "Leech", "Poison",
 
     // Triggered:
-    "Allegiance", "Flurry", "Valor", "Stasis", "Summon",
+    "Allegiance", "Flurry", "Valor", "Stasis", "Summon", "Bravery",
 };
 
 const std::string skill_trigger_names[Skill::num_triggers] =
