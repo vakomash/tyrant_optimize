@@ -1046,7 +1046,7 @@ void remove_hp(Field* fd, CardStatus* status, unsigned dmg)
         _DEBUG_ASSERT(status->m_card->m_type != CardType::commander);
         fd->killed_units.push_back(status);
         ++fd->players[status->m_player]->total_cards_destroyed;
-		if(!status->m_summoned)++fd->players[status->m_player]->total_nonsummon_cards_destroyed;
+	if(!status->m_summoned)++fd->players[status->m_player]->total_nonsummon_cards_destroyed;
         if (__builtin_expect((status->m_player == 0) && (fd->players[0]->deck->vip_cards.count(status->m_card->m_id)), false))
         {
             fd->players[0]->commander.m_hp = 0;
@@ -1092,6 +1092,9 @@ void turn_start_phase(Field* fd)
 {
     // Active player's commander card:
     cooldown_skills(&fd->tap->commander);
+    //grab structs before new one get summoned
+    auto& structures(fd->tap->structures);     
+    unsigned end(structures.size());
     // Active player's assault cards:
     // update index
     // reduce delay; reduce skill cooldown
@@ -1127,8 +1130,7 @@ void turn_start_phase(Field* fd)
     // update index
     // reduce delay; reduce skill cooldown
     {
-        auto& structures(fd->tap->structures);
-        for(unsigned index(0), end(structures.size()); index < end; ++index)
+        for(unsigned index(0); index < end; ++index)
         {
             CardStatus * status = &structures[index];
             status->m_index = index;
