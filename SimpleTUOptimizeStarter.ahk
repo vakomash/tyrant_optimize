@@ -30,6 +30,9 @@ IniRead, IniEffect, %IniFileName%, %IniSection%, Effect, 1
 IniRead, IniMode, %IniFileName%, %IniSection%, Mode, 1
 IniRead, IniOrder, %IniFileName%, %IniSection%, Order, 1
 IniRead, IniOperation, %IniFileName%, %IniSection%, Operation, 1
+IniRead, IniDominion, %IniFileName%, %IniSection%, Dominion, 1
+IniRead, IniMono, %IniFileName%, %IniSection%, Mono, 1
+IniRead, IniCommander, %IniFileName%, %IniSection%, Commander, 0
 IniRead, IniEndgame, %IniFileName%, %IniSection%, Endgame, 1
 IniRead, IniFund, %IniFileName%, %IniSection%, Fund, 0
 IniRead, Inix86, %IniFileName%, %IniSection%, x86, 0
@@ -52,6 +55,7 @@ Gui, Add, Text, r1, Quest:
 Gui, Add, Text, r1, Effect:
 Gui, Add, Text, r1, Mode:
 Gui, Add, Text, r1, Operation:
+Gui, Add, Text, r1, Dominion:
 Gui, Add, Text, r1, Flags:
 
 Gui, Add, Edit, vMyDeck ym w600 r5, %IniMyDeck%
@@ -84,22 +88,27 @@ if (IniEffectNum = 0) {
 Gui, Add, ComboBox, vEffect xs Choose%IniEffectNum% section, %BGEffects%
 Gui, Add, DDL, altsubmit vMode Choose%IniMode%, Battle / Mission|Battle (defense)|GW|GW (defense)|Brawl|Brawl (defense)|Raid|Campaign|CQ / Surge
 Gui, Add, DDL, altsubmit vOperation Group Choose%IniOperation% xs, Climb|Sim|Reorder|Climbex|Anneal
+Gui, Add, DDL, altsubmit vDominion Group Choose%IniDominion% xs, none|dom+|dom-
 
 Gui, Add, Text, ys, Endgame:
 Gui, Add, Text, r1, Order:
 Gui, Add, Text, r1, Iterations:
+Gui, Add, Text, r1, Monofaction:
 
 Gui, Add, DDL, altsubmit vEndgame ys Choose%IniEndgame%, none|0 - Maxed Units|1 - Maxed Fused|2 - Maxed Quads
 Gui, Add, DDL, altsubmit vOrder Group Choose%IniOrder%, Random|Ordered (honor 3-card hand)
 Gui, Add, Edit, vIterations w100 r1, %IniIterations%
+Gui, Add, DDL, altsubmit vMono Group Choose%IniMono%, none|imperial|raider|bloodthirsty|xeno|righteous|progenitor
 
 Gui, Add, Text, ys, Fund:
 Gui, Add, Text, r1,
 Gui, Add, Text, , Threads:
+;Gui, Add, Text, , Lock commander:
 
 Gui, Add, Edit, vFund number r1 ys w50, %IniFund%
 Gui, Add, Text, r1,
 Gui, Add, Edit, vThreads number w20, %IniThreads%
+Gui, Add, Checkbox, vCommander Checked%IniCommander%, Commander lock
 
 Gui, Add, Edit, vSimOptions r1 xs w600, %IniSimOptions%
 Gui, Add, Button, default r2 w100 x100 y+15 section, Simulate
@@ -146,7 +155,10 @@ selSimOptions := ( SimOptions == "" ? "" : SimOptions " ")
 EndgameVal := Endgame -2
 selEndgame := (Endgame <= 1 ? "" : "endgame " EndgameVal " ")
 selFund := (Fund == "" ? "" : "fund " Fund " ")
-execString = %selTUO% "%MyDeck%" "%EnemiesDeck%" %selMode% %selOrder% %selMySiege%%selEnemySiege%%selVIP%%selQuest%%selEffect%%selThreads%%selEndgame%%selFund%%selSimOptions%%selOperation% %Iterations%
+selDominion := (Dominion == 1 ? "" : Dominion == 2 ? "dom+ " : Dominion == 3 ? "dom- " : "")
+selMono := (Mono == 1 ? "" : Mono == 2 ? "-m imperial " : Mono == 3 ? "-m raider " : Mono == 4 ? "-m bloodthirsty " : Mono == 5 ? "-m xeno " : Mono == 6 ? "-m righteous " : Mono == 7 ? "-m progenitor " : "")
+selCommander := (Commander ? "-c " : "")
+execString = %selTUO% "%MyDeck%" "%EnemiesDeck%" %selMode% %selOrder% %selMySiege%%selEnemySiege%%selVIP%%selQuest%%selEffect%%selThreads%%selEndgame%%selFund%%selSimOptions%%selOperation% %Iterations% %selCommander%%selDominion%%selMono%
 Run, cmd.exe /c title TUOptimizeOutput && echo %execString% && %execString% & pause
 Gui, Show
 return
@@ -297,7 +309,10 @@ IniWrite, %Effect%, %IniFileName%, %IniSection%, Effect
 IniWrite, %Mode%, %IniFileName%, %IniSection%, Mode
 IniWrite, %Order%, %IniFileName%, %IniSection%, Order
 IniWrite, %Operation%, %IniFileName%, %IniSection%, Operation
+IniWrite, %Dominion%, %IniFileName%, %IniSection%, Dominion
 IniWrite, %Iterations%, %IniFileName%, %IniSection%, Iterations
+IniWrite, %Mono%, %IniFileName%, %IniSection%, Mono
+IniWrite, %Commander%,  %IniFileName%, %IniSection%, Commander
 IniWrite, %Threads%, %IniFileName%, %IniSection%, Threads
 IniWrite, %SimOptions%, %IniFileName%, %IniSection%, SimOptions
 IniWrite, %Endgame%, %IniFileName%, %IniSection%, Endgame
