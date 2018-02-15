@@ -681,25 +681,8 @@
   </deck>
  </raid>
  
- <raid> 
-  <id>43</id> 
-  <name>Kathy Raid</name>
-  <levels>26</levels>
-  <commander>25844</commander>
-  <fortress_pool amount="1">
-   <card replicates="1">18512</card>
-  </fortress_pool>
-  <deck>
-   <card_pool amount="10">
-    <card replicates="4">57150</card>
-    <card replicates="2">57160</card>
-    <card replicates="4">57170</card>
-   </card_pool>
-  </deck>
- </raid>
- 
  <raid>
-  <id>44</id> 
+  <id>43</id> 
   <name>Knights of the Pantheons Raid</name>
   <levels>26</levels>
   <commander>25844</commander>
@@ -712,7 +695,23 @@
    </card_pool>
   </deck>
  </raid>
- <!-- remove Kathy raid and change pantheon to id 43 -->
+	
+<raid>
+  <id>44</id>
+  <name>Mechmaster Yurich Raid</name>
+  <levels>26</levels>
+  <commander>25884</commander>
+  <fortress_card id="18564"/>
+  <deck>
+   <always_include>
+    <card replicates="2">57838</card>
+    <card replicates="2">57848</card>
+    <card replicates="2">57858</card>
+    <card replicates="2">57868</card>
+    <card replicates="2">57878</card>
+   </always_include>
+  </deck>
+ </raid>
 <!-- END of Raids -->
 
 
