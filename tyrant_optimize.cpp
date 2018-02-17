@@ -67,8 +67,8 @@ namespace {
     bool use_top_level_card{true};
     bool use_top_level_commander{true};
     bool mode_open_the_deck{false};
-    bool use_dominion_climbing{false};
-    bool use_dominion_defusing{false};
+    bool use_owned_dominions{true};
+    bool use_maxed_dominions{false};
     unsigned use_fused_card_level{0};
     unsigned use_fused_commander_level{0};
     bool show_ci{false};
@@ -264,7 +264,7 @@ bool is_owned_or_can_be_fused(const Card* card)
     {
         if (it.second > owned_cards[it.first->m_id])
         {
-            if ((card->m_category == CardCategory::dominion_alpha) && use_dominion_defusing
+            if ((card->m_category == CardCategory::dominion_alpha) && use_maxed_dominions
                 && !is_in_recipe(card, owned_alpha_dominion))
             {
                 if (it.first->m_id != 50002)
@@ -1241,7 +1241,7 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
         { continue; }
 
         // skip dominions when their climbing is disabled
-        if ((card->m_category == CardCategory::dominion_alpha) && (!use_dominion_climbing))
+        if ((card->m_category == CardCategory::dominion_alpha) && (!use_owned_dominions))
         { continue; }
 
         // try to skip a card unless it's allowed
@@ -1282,7 +1282,7 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
 	
 		if(use_owned_cards && card->m_category == CardCategory::dominion_alpha && !owned_cards[card->m_id])
 		{
-			if(use_dominion_defusing && card->m_used_for_cards.size()==0)
+			if(use_maxed_dominions && card->m_used_for_cards.size()==0)
 			{
 				
 			}
@@ -1319,7 +1319,7 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
 
     // add current alpha dominion to candidates if necessary
     // or setup first candidate into the deck if no alpha dominion defined
-    if (use_dominion_climbing)
+    if (use_owned_dominions)
     {
         if (best_alpha_dominion)
         {
@@ -1340,12 +1340,13 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
                     << " ($: " << alpha_dominion_cost(dom_card) << ")" << std::endl;
             }
         }
+		if (!best_alpha_dominion && owned_alpha_dominion)
+		{
+			best_alpha_dominion = owned_alpha_dominion;
+			std::cout << "Setting up owned Alpha Dominion into a deck: " << best_alpha_dominion->m_name << std::endl;
+		}
     }
-    if (!best_alpha_dominion && owned_alpha_dominion)
-    {
-        best_alpha_dominion = owned_alpha_dominion;
-        std::cout << "Setting up owned Alpha Dominion into a deck: " << best_alpha_dominion->m_name << std::endl;
-    }
+    
 
     // << main climbing loop >>
     for (unsigned from_slot(freezed_cards), dead_slot(freezed_cards); ;
@@ -1396,7 +1397,7 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
         }
 
         // alpha dominion
-        if (use_dominion_climbing && !alpha_dominion_candidates.empty())
+        if (use_owned_dominions && !alpha_dominion_candidates.empty())
         {
             // << alpha dominion candidate loop >>
             for (const Card* alpha_dominion_candidate: alpha_dominion_candidates)
@@ -1502,7 +1503,7 @@ void simulated_annealing(unsigned num_min_iterations, unsigned num_iterations, D
     print_score_info(results, proc.factors);
     FinalResults<long double> best_score = compute_score(results, proc.factors);
     //const Card* best_commander = d1->commander;
-    const Card* best_alpha_dominion = cur_deck->alpha_dominion;
+    //const Card* best_alpha_dominion = cur_deck->alpha_dominion;
     std::vector<const Card*> best_cards = cur_deck->cards;
     unsigned deck_cost = get_deck_cost(cur_deck);
     fund = std::max(fund, deck_cost);
@@ -1530,7 +1531,7 @@ void simulated_annealing(unsigned num_min_iterations, unsigned num_iterations, D
         { continue; }
 
         // skip dominions when their climbing is disabled
-        if ((card->m_category == CardCategory::dominion_alpha) && (!use_dominion_climbing))
+        if ((card->m_category == CardCategory::dominion_alpha) && (!use_owned_dominions))
         { continue; }
 
         // try to skip a card unless it's allowed
@@ -1571,7 +1572,7 @@ void simulated_annealing(unsigned num_min_iterations, unsigned num_iterations, D
 	
 		if(use_owned_cards && card->m_category == CardCategory::dominion_alpha && !owned_cards[card->m_id])
 		{
-			if(use_dominion_defusing && card->m_used_for_cards.size()==0)
+			if(use_maxed_dominions && card->m_used_for_cards.size()==0)
 			{
 				
 			}
@@ -1597,21 +1598,22 @@ void simulated_annealing(unsigned num_min_iterations, unsigned num_iterations, D
 
     // add current alpha dominion to candidates if necessary
     // or setup first candidate into the deck if no alpha dominion defined
-    if (use_dominion_climbing)
+    if (use_owned_dominions)
     {
-        if (best_alpha_dominion)
+        if (cur_deck->alpha_dominion)
         {
-            if (!std::count(all_candidates.begin(), all_candidates.end(), best_alpha_dominion))
+            if (!std::count(all_candidates.begin(), all_candidates.end(), cur_deck->alpha_dominion))
             {
-                all_candidates.emplace_back(best_alpha_dominion);
+                all_candidates.emplace_back(cur_deck->alpha_dominion);
             }
         }
+		if (!cur_deck->alpha_dominion && owned_alpha_dominion)
+		{
+			cur_deck->alpha_dominion = owned_alpha_dominion;
+			std::cout << "Setting up owned Alpha Dominion into a deck: " << cur_deck->alpha_dominion->m_name << std::endl;
+		}
     }
-    if (!best_alpha_dominion && owned_alpha_dominion)
-    {
-        best_alpha_dominion = owned_alpha_dominion;
-        std::cout << "Setting up owned Alpha Dominion into a deck: " << best_alpha_dominion->m_name << std::endl;
-    }
+    
 
 	
     
@@ -1659,7 +1661,7 @@ void simulated_annealing(unsigned num_min_iterations, unsigned num_iterations, D
 		from_slot_tmp = -1;
 		to_slot = -1;
 	}
-	else if(candidate->m_category == CardCategory::dominion_alpha && use_dominion_climbing)
+	else if(candidate->m_category == CardCategory::dominion_alpha && use_owned_dominions)
 	{
 		cur_deck->alpha_dominion = candidate;
 		from_slot_tmp = -1;
@@ -2122,14 +2124,20 @@ int main(int argc, char** argv)
             fund = atoi(argv[argIndex+1]);
             argIndex += 1;
         }
-        else if (strcmp(argv[argIndex], "dom+") == 0 || strcmp(argv[argIndex], "dominion+") == 0)
+		else if (strcmp(argv[argIndex], "dom-none") == 0)
         {
-            use_dominion_climbing = true;
+            use_owned_dominions = false;
+            use_maxed_dominions = false;
         }
-        else if (strcmp(argv[argIndex], "dom-") == 0 || strcmp(argv[argIndex], "dominion-") == 0)
+        else if (strcmp(argv[argIndex], "dom+") == 0 || strcmp(argv[argIndex], "dominion+") == 0 || strcmp(argv[argIndex], "dom-owned") == 0)
         {
-            use_dominion_climbing = true;
-            use_dominion_defusing = true;
+            use_owned_dominions = true;
+            use_maxed_dominions = false;
+        }
+        else if (strcmp(argv[argIndex], "dom-") == 0 || strcmp(argv[argIndex], "dominion-") == 0 || strcmp(argv[argIndex], "dom-maxed") == 0)
+        {
+            use_owned_dominions = true;
+            use_maxed_dominions = true;
         }
         else if (strcmp(argv[argIndex], "random") == 0)
         {
@@ -2431,11 +2439,11 @@ int main(int argc, char** argv)
             if (need_remove) { owned_it = _owned_cards.erase(owned_it); }
             else { ++owned_it; }
         }
-        if (!owned_alpha_dominion && use_dominion_climbing)
+        if (!owned_alpha_dominion && use_owned_dominions)
         {
-            owned_alpha_dominion = all_cards.by_id(50002);
-            std::cerr << "Warning: dominion climbing enabled and no alpha dominion found in owned cards, adding default "
-                << owned_alpha_dominion->m_name << std::endl;
+            //owned_alpha_dominion = all_cards.by_id(50002);
+            //std::cerr << "Warning: dominion climbing enabled and no alpha dominion found in owned cards, adding default "
+            //    << owned_alpha_dominion->m_name << std::endl;
         }
         if (owned_alpha_dominion)
         { _owned_cards[owned_alpha_dominion->m_id] = 1; }
@@ -2938,7 +2946,7 @@ int main(int argc, char** argv)
             use_owned_cards = true;
             use_top_level_card = false;
             use_top_level_commander = false;
-            use_dominion_climbing = false;
+            use_owned_dominions = false;
             if (min_deck_len == 1 && max_deck_len == 10)
             {
                 min_deck_len = max_deck_len = your_deck->cards.size();

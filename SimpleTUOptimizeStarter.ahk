@@ -88,7 +88,7 @@ if (IniEffectNum = 0) {
 Gui, Add, ComboBox, vEffect xs Choose%IniEffectNum% section, %BGEffects%
 Gui, Add, DDL, altsubmit vMode Choose%IniMode%, Battle / Mission|Battle (defense)|GW|GW (defense)|Brawl|Brawl (defense)|Raid|Campaign|CQ / Surge
 Gui, Add, DDL, altsubmit vOperation Group Choose%IniOperation% xs, Climb|Sim|Reorder|Climbex|Anneal
-Gui, Add, DDL, altsubmit vDominion Group Choose%IniDominion% xs, none|dom+|dom-
+Gui, Add, DDL, altsubmit vDominion Group Choose%IniDominion% xs, dom-owned|dom-maxed|dom-none
 
 Gui, Add, Text, ys, Endgame:
 Gui, Add, Text, r1, Order:
@@ -155,7 +155,7 @@ selSimOptions := ( SimOptions == "" ? "" : SimOptions " ")
 EndgameVal := Endgame -2
 selEndgame := (Endgame <= 1 ? "" : "endgame " EndgameVal " ")
 selFund := (Fund == "" ? "" : "fund " Fund " ")
-selDominion := (Dominion == 1 ? "" : Dominion == 2 ? "dom+ " : Dominion == 3 ? "dom- " : "")
+selDominion := (Dominion == 3 ? "dom-none " : Dominion == 1 ? "dom-owned " : Dominion == 2 ? "dom-maxed " : "")
 selMono := (Mono == 1 ? "" : Mono == 2 ? "-m imperial " : Mono == 3 ? "-m raider " : Mono == 4 ? "-m bloodthirsty " : Mono == 5 ? "-m xeno " : Mono == 6 ? "-m righteous " : Mono == 7 ? "-m progenitor " : "")
 selCommander := (Commander ? "-c " : "")
 execString = %selTUO% "%MyDeck%" "%EnemiesDeck%" %selMode% %selOrder% %selMySiege%%selEnemySiege%%selVIP%%selQuest%%selEffect%%selThreads%%selEndgame%%selFund%%selSimOptions%%selOperation% %Iterations% %selCommander%%selDominion%%selMono%
