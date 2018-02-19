@@ -1134,6 +1134,11 @@ void turn_start_phase(Field* fd)
         {
             CardStatus * status = &structures[index];
             status->m_index = index;
+	    //refresh absorb
+            if(status->has_skill(Skill::absorb))
+	    {
+		status->m_absorption = status->skill_base_value(Skill::absorb);
+	    }
             if (status->m_delay > 0)
             {
                 _DEBUG_MSG(1, "%s reduces its timer\n", status_description(status).c_str());
