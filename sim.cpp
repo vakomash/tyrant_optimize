@@ -701,67 +701,66 @@ struct PlayCard
 		
         unsigned played_faction_mask(0);
         unsigned same_faction_cards_count(0);
-	bool bge_megamorphosis = fd->bg_effects[fd->tapi][PassiveBGE::megamorphosis];
-	//played_status = status;
-	//played_card = card;
+		bool bge_megamorphosis = fd->bg_effects[fd->tapi][PassiveBGE::megamorphosis];
+		//played_status = status;
+		//played_card = card;
 		
-	check_and_perform_bravery(fd,status);
+		check_and_perform_bravery(fd,status);
         if (status->m_delay == 0)
         {
             check_and_perform_valor(fd, status);
         }
 		
-	//refresh/init absorb
-	if(status->has_skill(Skill::absorb))
-	{
-	    status->m_absorption = status->skill_base_value(Skill::absorb);
-	}
+		//refresh/init absorb
+		if(status->has_skill(Skill::absorb))
+		{
+			status->m_absorption = status->skill_base_value(Skill::absorb);
+		}
 		
 		
-	// 1. Evaluate skill Allegiance & count assaults with same faction (structures will be counted later)
-        // 2. Passive BGE Cold Sleep
-	for (CardStatus* status_i : fd->tap->assaults.m_indirect)
-	{
-	    if (status_i == status || !is_alive(status_i)) { continue; } // except itself
-		//std::cout << status_description(status_i).c_str();
-		_DEBUG_ASSERT(is_alive(status_i));
-            if (bge_megamorphosis || (status_i->m_card->m_faction == card->m_faction))
-            {
-                ++ same_faction_cards_count;
-                unsigned allegiance_value = status_i->skill(Skill::allegiance);
-                if (__builtin_expect(allegiance_value, false) && !status->m_summoned)
-                {
-                    _DEBUG_MSG(1, "%s activates Allegiance %u\n", status_description(status_i).c_str(), allegiance_value);
-                    if (! status_i->m_sundered)
-                    { status_i->m_perm_attack_buff += allegiance_value; }
-                    status_i->ext_hp(allegiance_value);
-                }
-            }
-            if (__builtin_expect(fd->bg_effects[fd->tapi][PassiveBGE::coldsleep], false)
-                && status_i->m_protected_stasis && can_be_healed(status_i))
-            {
-                unsigned bge_value = (status_i->m_protected_stasis + 1) / 2;
-                _DEBUG_MSG(1, "Cold Sleep: %s heals itself for %u\n", status_description(status_i).c_str(), bge_value);
-                status_i->add_hp(bge_value);
-            }
-        }
+		// 1. Evaluate skill Allegiance & count assaults with same faction (structures will be counted later)
+			// 2. Passive BGE Cold Sleep
+		for (CardStatus* status_i : fd->tap->assaults.m_indirect)
+		{
+			if (status_i == status || !is_alive(status_i)) { continue; } // except itself
+			//std::cout << status_description(status_i).c_str();
+			_DEBUG_ASSERT(is_alive(status_i));
+			if (bge_megamorphosis || (status_i->m_card->m_faction == card->m_faction))
+			{
+				++ same_faction_cards_count;
+				unsigned allegiance_value = status_i->skill(Skill::allegiance);
+				if (__builtin_expect(allegiance_value, false) && !status->m_summoned)
+				{
+					_DEBUG_MSG(1, "%s activates Allegiance %u\n", status_description(status_i).c_str(), allegiance_value);
+					if (! status_i->m_sundered)
+					{ status_i->m_perm_attack_buff += allegiance_value; }
+					status_i->ext_hp(allegiance_value);
+				}
+			}
+			if (__builtin_expect(fd->bg_effects[fd->tapi][PassiveBGE::coldsleep], false)
+					&& status_i->m_protected_stasis && can_be_healed(status_i))
+			{
+				unsigned bge_value = (status_i->m_protected_stasis + 1) / 2;
+				_DEBUG_MSG(1, "Cold Sleep: %s heals itself for %u\n", status_description(status_i).c_str(), bge_value);
+				status_i->add_hp(bge_value);
+			}
+		}
 
-	// Setup faction marks (bitmap) for stasis (skill Stasis / Passive BGE TemporalBacklash)
-	// unless Passive BGE Megamorphosis is enabled
-        if (__builtin_expect(!bge_megamorphosis, true))
-	{
-            played_faction_mask = (1u << card->m_faction);
-
-            // do played card have stasis? mark this faction for stasis check
-            if (__builtin_expect(status->skill(Skill::stasis), false)
-                || __builtin_expect(fd->bg_effects[fd->tapi][PassiveBGE::temporalbacklash] && status->skill(Skill::counter), false))
-            {
-                fd->tap->stasis_faction_bitmap |= played_faction_mask;
-            }
-        }
+		// Setup faction marks (bitmap) for stasis (skill Stasis / Passive BGE TemporalBacklash)
+		// unless Passive BGE Megamorphosis is enabled
+		if (__builtin_expect(!bge_megamorphosis, true))
+		{
+			played_faction_mask = (1u << card->m_faction);
+			// do played card have stasis? mark this faction for stasis check
+			if (__builtin_expect(status->skill(Skill::stasis), false)
+				|| __builtin_expect(fd->bg_effects[fd->tapi][PassiveBGE::temporalbacklash] && status->skill(Skill::counter), false))
+			{
+				fd->tap->stasis_faction_bitmap |= played_faction_mask;
+			}
+		}
 
         // Evaluate Passive BGE Oath-of-Loyalty
-	unsigned allegiance_value;
+		unsigned allegiance_value;
         if (__builtin_expect(fd->bg_effects[fd->tapi][PassiveBGE::oath_of_loyalty], false)
 			&& ((allegiance_value = status->skill(Skill::allegiance)) > 0))
         {
@@ -2824,7 +2823,22 @@ Results<uint64_t> play(Field* fd)
         { PlayCard(fd->players[ai]->deck->alpha_dominion, fd, ai, &fd->players[ai]->commander).op<CardType::structure>(); }
         for (const Card* played_card: fd->players[ai]->deck->shuffled_forts)
         {
-            PlayCard(played_card, fd, ai, &fd->players[ai]->commander).op<CardType::structure>();
+            
+			switch (played_card->m_type)
+            {
+            case CardType::assault:
+                PlayCard(played_card, fd, ai, &fd->players[ai]->commander).op<CardType::assault>();
+                break;
+            case CardType::structure:
+                PlayCard(played_card, fd, ai, &fd->players[ai]->commander).op<CardType::structure>();
+                break;
+            case CardType::commander:
+            case CardType::num_cardtypes:
+                _DEBUG_MSG(0, "Unknown card type: #%u %s: %u\n",
+                    played_card->m_id, card_description(fd->cards, played_card).c_str(), played_card->m_type);
+                assert(false);
+                break;
+            }
         }
         std::swap(fd->tapi, fd->tipi);
         std::swap(fd->tap, fd->tip);
