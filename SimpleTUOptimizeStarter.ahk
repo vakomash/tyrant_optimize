@@ -3,7 +3,7 @@
 SendMode Input  ; Recommended for new scripts due to its superior speed and reliability.
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 
-VersionOfStarter := "v2.58.9"
+VersionOfStarter := "v2.58.10"
 
 VersionOfTUO := ""
 file = %A_temp%\version.tmp
@@ -26,7 +26,7 @@ IniRead, IniVIP, %IniFileName%, %IniSection%, VIP, %A_Space%
 IniRead, IniIterations, %IniFileName%, %IniSection%, Iterations, 10000
 IniRead, IniThreads, %IniFileName%, %IniSection%, Threads, 4
 IniRead, IniSimOptions, %IniFileName%, %IniSection%, SimOptions, %A_Space%
-IniRead, IniEffect, %IniFileName%, %IniSection%, Effect, 1
+IniRead, IniEffect, %IniFileName%, %IniSection%, Effect, none
 IniRead, IniMode, %IniFileName%, %IniSection%, Mode, 1
 IniRead, IniOrder, %IniFileName%, %IniSection%, Order, 1
 IniRead, IniOperation, %IniFileName%, %IniSection%, Operation, 1
