@@ -1326,14 +1326,22 @@ struct PerformAttack
         unsigned pre_modifier_dmg = att_status->attack_power();
 
         // Evaluation order:
+	// check flying
         // modify damage
         // deal damage
         // assaults only: (poison,inihibit, sabotage)
-		// on-attacked skills
+	// on-attacked skills
         // counter, berserk
         // assaults only: (leech if still alive)
-		// bge
-		// subdue
+	// bge
+	// subdue
+	
+	if(__builtin_expect(def_status->has_skill(Skill::flying),false) && fd->flip()) {
+		_DEBUG_MSG(1, "%s flies away from %s\n",
+                	status_description(def_status).c_str(),
+                	status_description(att_status).c_str());
+		return 0;
+	}
 
         modify_attack_damage<def_cardtype>(pre_modifier_dmg);
         if (!att_dmg) { on_attacked<def_cardtype>();return 0; }

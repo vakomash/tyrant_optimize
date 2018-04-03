@@ -39,14 +39,14 @@ enum Skill
     enfeeble, jam, mortar, siege, strike, sunder, weaken,
 
     // Activation (helpful):
-    enhance, evolve, heal, mend, overload, protect, rally,
+    enhance, evolve, heal, mend, overload, protect, rally, fortify,
     enrage, entrap, rush,
 
     // Activation (unclassified/polymorphic):
     mimic,
 
     // Defensive:
-    armor, avenge, corrosive, counter, evade, subdue, absorb,
+    armor, avenge, corrosive, counter, evade, subdue, absorb, flying,
     payback, revenge, tribute, refresh, wall, barrier,
 
     // Combat-Modifier:
@@ -128,6 +128,7 @@ inline bool is_activation_helpful_skill(Skill::Skill skill_id)
     case Skill::evolve:
     case Skill::heal:
     case Skill::mend:
+    case Skill::fortify:
     case Skill::overload:
     case Skill::protect:
     case Skill::rally:
@@ -166,6 +167,7 @@ inline bool is_activation_skill_with_x(Skill::Skill skill_id)
     case Skill::mimic:
     case Skill::heal:
     case Skill::mend:
+    case Skill::fortify:
     case Skill::protect:
     case Skill::rally:
     case Skill::enrage:
@@ -188,6 +190,7 @@ inline bool is_defensive_skill(Skill::Skill skill_id)
     case Skill::evade:
     case Skill::subdue:
     case Skill::absorb:
+    case Skill::flying:
     case Skill::payback:
     case Skill::revenge:
     case Skill::tribute:

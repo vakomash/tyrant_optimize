@@ -15,14 +15,14 @@ const std::string skill_names[Skill::num_skills] =
     "Enfeeble", "Jam", "Mortar", "Siege", "Strike", "Sunder", "Weaken",
 
     // Activation (helpful):
-    "Enhance", "Evolve", "Heal", "Mend", "Overload", "Protect", "Rally",
+    "Enhance", "Evolve", "Heal", "Mend", "Overload", "Protect", "Rally", "Fortify",
     "Enrage", "Entrap", "Rush",
 
     // Activation (unclassified/polymorphic):
     "Mimic",
 
     // Defensive:
-    "Armor", "Avenge", "Corrosive", "Counter", "Evade", "Subdue", "Absorb",
+    "Armor", "Avenge", "Corrosive", "Counter", "Evade", "Subdue", "Absorb", "Flying",
     "Payback", "Revenge", "Tribute", "Refresh", "Wall", "Barrier",
 
     // Combat-Modifier:
