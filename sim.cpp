@@ -2179,7 +2179,7 @@ inline void perform_skill<Skill::mimic>(Field* fd, CardStatus* src, CardStatus* 
         { continue; }
 
         // skip mend for non-assault mimickers
-        if ((skill_id == Skill::mend || skill:id == Skill::fortify) && (src->m_card->m_type != CardType::assault))
+        if ((skill_id == Skill::mend || skill_id == Skill::fortify) && (src->m_card->m_type != CardType::assault))
         { continue; }
 
         mimickable_skills.emplace_back(&ss);
