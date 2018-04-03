@@ -1907,7 +1907,7 @@ inline bool skill_predicate<Skill::mimic>(Field* fd, CardStatus* src, CardStatus
         { continue; }
 
         // skip mend for non-assault mimickers
-        if ((skill_id == Skill::mend) && (src->m_card->m_type != CardType::assault))
+        if ((skill_id == Skill::mend || skill_id == Skill::fortify) && (src->m_card->m_type != CardType::assault))
         { continue; }
 
         // enemy has at least one activation skill that can be mimicked, so enemy is eligible target for Mimic
@@ -1941,7 +1941,8 @@ inline bool skill_predicate<Skill::overload>(Field* fd, CardStatus* src, CardSta
         { return true; }
 
         // unit with an activation helpful skill is valid target only when there are inhibited units
-        if ((evolved_skill_id != Skill::mend)
+	// TODO check mend/fortify valid overload target?!?
+        if ((evolved_skill_id != Skill::mend && evolved_skill_id != Skill::fortify)
             && is_activation_helpful_skill(evolved_skill_id)
             && __builtin_expect(!inhibited_searched, true))
         {
@@ -2064,6 +2065,11 @@ inline void perform_skill<Skill::mend>(Field* fd, CardStatus* src, CardStatus* d
 }
 
 template<>
+inline void perform_skill<Skill::fortify>(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s)
+{
+    dst->ext_hp(s.x);
+}
+template<>
 inline void perform_skill<Skill::mortar>(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s)
 {
     if (dst->m_card->m_type == CardType::structure)
@@ -2173,7 +2179,7 @@ inline void perform_skill<Skill::mimic>(Field* fd, CardStatus* src, CardStatus* 
         { continue; }
 
         // skip mend for non-assault mimickers
-        if ((skill_id == Skill::mend) && (src->m_card->m_type != CardType::assault))
+        if ((skill_id == Skill::mend || skill:id == Skill::fortify) && (src->m_card->m_type != CardType::assault))
         { continue; }
 
         mimickable_skills.emplace_back(&ss);
@@ -2242,6 +2248,28 @@ inline unsigned select_fast<Skill::mend>(Field* fd, CardStatus* src, const std::
     return fd->selection_array.size();
 }
 
+template<>
+inline unsigned select_fast<Skill::fortify>(Field* fd, CardStatus* src, const std::vector<CardStatus*>& cards, const SkillSpec& s)
+{
+    fd->selection_array.clear();
+    bool critical_reach = fd->bg_effects[fd->tapi][PassiveBGE::criticalreach];
+    auto& assaults = fd->players[src->m_player]->assaults;
+    unsigned adj_size = 1 + (unsigned)(critical_reach);
+    unsigned host_idx = src->m_index;
+    unsigned from_idx = safe_minus(host_idx, adj_size);
+    unsigned till_idx = std::min(host_idx + adj_size, safe_minus(assaults.size(), 1));
+    for (; from_idx <= till_idx; ++ from_idx)
+    {
+        if (from_idx == host_idx) { continue; }
+        CardStatus* adj_status = &assaults[from_idx];
+        if (!is_alive(adj_status)) { continue; }
+        if (skill_predicate<Skill::fortify>(fd, src, adj_status, s))
+        {
+            fd->selection_array.push_back(adj_status);
+        }
+    }
+    return fd->selection_array.size();
+}
 inline std::vector<CardStatus*>& skill_targets_hostile_assault(Field* fd, CardStatus* src)
 {
     return(fd->players[opponent(src->m_player)]->assaults.m_indirect);
@@ -2285,6 +2313,9 @@ template<> std::vector<CardStatus*>& skill_targets<Skill::jam>(Field* fd, CardSt
 { return(skill_targets_hostile_assault(fd, src)); }
 
 template<> std::vector<CardStatus*>& skill_targets<Skill::mend>(Field* fd, CardStatus* src)
+{ return(skill_targets_allied_assault(fd, src)); }
+
+template<> std::vector<CardStatus*>& skill_targets<Skill::fortify>(Field* fd, CardStatus* src)
 { return(skill_targets_allied_assault(fd, src)); }
 
 template<> std::vector<CardStatus*>& skill_targets<Skill::overload>(Field* fd, CardStatus* src)
@@ -2498,7 +2529,7 @@ size_t select_targets(Field* fd, CardStatus* src, const SkillSpec& s)
 
         // analyze targets count / skill
         unsigned n_targets = s.n > 0 ? s.n : 1;
-        if (s.all || n_targets >= n_candidates || skill_id == Skill::mend)  // target all or mend
+        if (s.all || n_targets >= n_candidates || skill_id == Skill::mend || skill_id == Skill::fortify)  // target all or mend
         { break; }
 
         // shuffle & trim
@@ -3199,6 +3230,7 @@ void fill_skill_table()
     skill_table[Skill::heal] = perform_targetted_allied_fast<Skill::heal>;
     skill_table[Skill::jam] = perform_targetted_hostile_fast<Skill::jam>;
     skill_table[Skill::mend] = perform_targetted_allied_fast<Skill::mend>;
+    skill_table[Skill::fortify] = perform_targetted_allied_fast<Skill::fortify>;
     skill_table[Skill::overload] = perform_targetted_allied_fast<Skill::overload>;
     skill_table[Skill::protect] = perform_targetted_allied_fast<Skill::protect>;
     skill_table[Skill::rally] = perform_targetted_allied_fast<Skill::rally>;
