@@ -696,22 +696,6 @@
   </deck>
  </raid>
 	
-<raid>
-  <id>44</id>
-  <name>Mechmaster Yurich Raid</name>
-  <levels>26</levels>
-  <commander>25884</commander>
-  <fortress_card id="18564"/>
-  <deck>
-   <always_include>
-    <card replicates="2">57838</card>
-    <card replicates="2">57848</card>
-    <card replicates="2">57858</card>
-    <card replicates="2">57868</card>
-    <card replicates="2">57878</card>
-   </always_include>
-  </deck>
- </raid>
 <!-- Mechmaster Yurich Raid has id 49, version with id 44 will be removed TODO -->
 <raid>
   <id>49</id>
@@ -729,6 +713,24 @@
    </always_include>
   </deck>
  </raid>
+	
+<raid> 
+   <id>50</id> 
+   <name>Kalihmah Raid</name> 
+   <levels>26</levels> 
+   <commander>25928</commander> 
+   <fortress_card id="18598"/> 
+   <deck> 
+    <always_include> 
+ 	 <card_pool amount="10"> 
+  	<card replicates="3">58658</card> 
+ 	 <card replicates="3">58668</card> 
+ 	 <card replicates="3">58678</card> 
+ 	 <card replicates="3">58688</card> 
+ 	 </card_pool> 
+    </always_include> 
+   </deck> 
+  </raid>
 <!-- END of Raids -->
 
 
