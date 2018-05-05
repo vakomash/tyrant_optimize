@@ -46,6 +46,7 @@ Camaraderie: Enhance All Coalition 3
 // Conquest Zones
 // --
 Asphodel Nexus:
+NexusResonance:
 // --
 Phobos Station: Orbital Bombardment
 Orbital Bombardment: Strike all 3; Siege all 5
