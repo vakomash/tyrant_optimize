@@ -1754,6 +1754,7 @@ void print_available_effects()
         "  Cold-Sleep\n"
 		"  Iron-Will\n"
 		"  Unity\n"
+		"  Devotion\n"
         ;
 }
 void usage(int argc, char** argv)
