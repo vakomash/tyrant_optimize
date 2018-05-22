@@ -1245,7 +1245,7 @@ void turn_end_phase(Field* fd)
             }
             if (status.m_poisoned > 0)
             {
-				unsigned poison_dmg = remove_absorption(fd,&status,status.m_poisoned + status.m_enfeebled);
+		unsigned poison_dmg = remove_absorption(fd,&status,status.m_poisoned + status.m_enfeebled);
                 poison_dmg = safe_minus(poison_dmg, status.protected_value());
                 if (poison_dmg > 0)
                 {
@@ -1303,6 +1303,17 @@ inline CardStatus* select_first_enemy_wall(Field* fd)
     }
     return nullptr;
 }
+
+inline CardStatus* select_first_enemy_assault(Field* fd)
+{
+    for(unsigned i(0); i < fd->tip->assaults.size(); ++i)
+    {
+        CardStatus* c(&fd->tip->assaults[i]);
+        if (is_alive(c)) { return c; }
+    }
+    return nullptr;
+}
+
 
 inline bool alive_assault(Storage<CardStatus>& assaults, unsigned index)
 {
@@ -1693,7 +1704,7 @@ struct PerformAttack
             fd->skill_queue.emplace_back(def_status, ss);
             resolve_skill(fd);
         }
-	}
+    }
 	
     template<enum CardType::CardType>
     void damage_dependant_pre_oa() {}
@@ -1795,6 +1806,7 @@ bool attack_phase(Field* fd)
     {
         CardStatus* def_status = &def_assaults[fd->current_ci];
         att_dmg = PerformAttack{fd, att_status, def_status}.op<CardType::assault>();
+	// perform swipe/drain
         unsigned swipe_value = att_status->skill(Skill::swipe);
         unsigned drain_value = att_status->skill(Skill::drain);
         if (swipe_value || drain_value)
@@ -1831,6 +1843,22 @@ bool attack_phase(Field* fd)
             prepend_on_death(fd);
             resolve_skill(fd);
         }
+	// perform hunt
+	unsigned hunt_value = att_status->skill(Skill::hunt);
+	if(hunt_value)
+	{
+	    CardStatus* hunted_status{select_first_enemy_assault(fd)}; 
+    	    if (hunted_status != nullptr)
+    	    {
+		unsigned remaining_dmg = remove_absorption(fd,hunted_status,hunt_value + hunted_status->m_enfeebled);
+		remaining_dmg = safe_minus(remaining_dmg,hunted_status->protected_value());
+		 _DEBUG_MSG(1, "%s hunts %s for %u damage\n",
+                    status_description(att_status).c_str(),
+                    status_description(hunted_status).c_str(), remaining_dmg);
+		
+                remove_hp(fd, hunted_status, remaining_dmg);
+	    }
+	}
     }
     else
     {
@@ -2094,7 +2122,7 @@ inline void perform_skill<Skill::mortar>(Field* fd, CardStatus* src, CardStatus*
     }
     else
     {
-		unsigned strike_dmg = remove_absorption(fd,dst,(s.x + 1) / 2 + dst->m_enfeebled);
+	unsigned strike_dmg = remove_absorption(fd,dst,(s.x + 1) / 2 + dst->m_enfeebled);
         strike_dmg = safe_minus(strike_dmg, src->m_overloaded ? 0 : dst->protected_value());
         remove_hp(fd, dst, strike_dmg);
     }
@@ -2160,7 +2188,7 @@ inline void perform_skill<Skill::siege>(Field* fd, CardStatus* src, CardStatus* 
 template<>
 inline void perform_skill<Skill::strike>(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s)
 {
-	unsigned strike_dmg = remove_absorption(fd,dst,s.x+ dst->m_enfeebled);
+    unsigned strike_dmg = remove_absorption(fd,dst,s.x+ dst->m_enfeebled);
     strike_dmg = safe_minus(strike_dmg , src->m_overloaded ? 0 : dst->protected_value());
     remove_hp(fd, dst, strike_dmg);
 }
