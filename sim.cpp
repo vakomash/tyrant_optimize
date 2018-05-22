@@ -1857,6 +1857,9 @@ bool attack_phase(Field* fd)
                     status_description(hunted_status).c_str(), remaining_dmg);
 		
                 remove_hp(fd, hunted_status, remaining_dmg);
+
+		prepend_on_death(fd);
+            	resolve_skill(fd);
 	    }
 	}
     }
