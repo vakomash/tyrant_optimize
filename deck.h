@@ -7,8 +7,10 @@
 #include <random>
 #include <set>
 #include <vector>
+
 #include "tyrant.h"
 #include "card.h"
+#include "sim.h"
 
 class Cards;
 
@@ -23,6 +25,7 @@ enum DeckStrategy
     random,
     ordered,
     exact_ordered,
+    flexible,
     num_deckstrategies
 };
 }
@@ -97,6 +100,7 @@ public:
     {
     }
 
+
     ~Deck() {}
 
     void set(
@@ -141,7 +145,7 @@ public:
     std::string medium_description() const;
     std::string long_description() const;
     void show_upgrades(std::stringstream &ios, const Card* card, unsigned card_max_level, const char * leading_chars) const;
-    const Card* next();
+    const Card* next(Field* f);
     const Card* upgrade_card(const Card* card, unsigned card_max_level, std::mt19937& re, unsigned &remaining_upgrade_points, unsigned &remaining_upgrade_opportunities);
     void shuffle(std::mt19937& re);
     void place_at_bottom(const Card* card);

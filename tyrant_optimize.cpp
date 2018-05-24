@@ -75,6 +75,7 @@ namespace {
     bool use_harmonic_mean{false};
     unsigned iterations_multiplier{10};
     unsigned sim_seed{0};
+    unsigned flexible_iter{20};
     Requirement requirement;
 #ifndef NQUEST
     Quest quest;
@@ -358,7 +359,7 @@ void append_unless_remove(C & self, C & oppo, typename C::const_reference val)
 bool adjust_deck(Deck * deck, const signed from_slot, const signed to_slot, const Card * card, unsigned fund, std::mt19937 & re, unsigned & deck_cost,
         std::vector<std::pair<signed, const Card *>> & cards_out, std::vector<std::pair<signed, const Card *>> & cards_in)
 {
-    bool is_random = deck->strategy == DeckStrategy::random;
+    bool is_random = (deck->strategy == DeckStrategy::random) || (deck->strategy == DeckStrategy::flexible);
     cards_out.clear();
     cards_in.clear();
     if (from_slot < 0)
@@ -706,7 +707,7 @@ struct SimulationData
 #ifndef NQUEST
                 quest,
 #endif
-                your_bg_effects, enemy_bg_effects, your_bg_skills, enemy_bg_skills);
+                your_bg_effects, enemy_bg_effects, your_bg_skills, enemy_bg_skills, flexible_iter);
             Results<uint64_t> result(play(&fd));
             if (__builtin_expect(mode_open_the_deck, false))
             {
@@ -1222,7 +1223,7 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
         , quest
 #endif
     );
-    bool is_random = d1->strategy == DeckStrategy::random;
+    bool is_random = (d1->strategy == DeckStrategy::random) || (d1->strategy == DeckStrategy::flexible);
     bool deck_has_been_improved = true;
     unsigned long skipped_simulations = 0;
     std::vector<const Card*> commander_candidates;
@@ -2148,6 +2149,15 @@ int main(int argc, char** argv)
         {
             opt_your_strategy = DeckStrategy::ordered;
         }
+	else if (strcmp(argv[argIndex], "flexible") == 0)
+	{
+	    opt_your_strategy = DeckStrategy::flexible;
+	}
+	else if (strcmp(argv[argIndex], "flexible-iter") == 0)
+	{
+            flexible_iter = atoi(argv[argIndex+1]);
+            argIndex += 1;
+	}
         else if (strcmp(argv[argIndex], "exact-ordered") == 0)
         {
             opt_your_strategy = DeckStrategy::exact_ordered;

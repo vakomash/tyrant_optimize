@@ -55,7 +55,7 @@ struct FinalResults
 };
 
 void fill_skill_table();
-Results<uint64_t> play(Field* fd);
+Results<uint64_t> play(Field* fd, bool skip_init=false);
 // Pool-based indexed storage.
 //---------------------- Pool-based indexed storage ----------------------------
 template<typename T>
@@ -68,6 +68,17 @@ public:
         m_pool(sizeof(T))
     {
         m_indirect.reserve(size);
+    }
+    
+    Storage(const Storage &s) :
+	m_pool(sizeof(T))
+    {
+	m_indirect.reserve(s.m_indirect.capacity());
+	for(T* t : s.m_indirect)
+	{
+	     T* c = &add_back();
+	     *c=*t;
+	}
     }
 
     inline T& operator[](size_type i)
@@ -156,11 +167,11 @@ struct CardStatus
 {
     const Card* m_card;
     unsigned m_index;
-	unsigned m_action_index;
+    unsigned m_action_index;
     unsigned m_player;
     unsigned m_delay;
     unsigned m_hp;
-	unsigned m_absorption;
+    unsigned m_absorption;
     CardStep m_step;
     unsigned m_perm_health_buff;
     unsigned m_perm_attack_buff;
@@ -203,7 +214,7 @@ struct CardStatus
     inline unsigned enhanced(Skill::Skill skill) const;
     inline unsigned protected_value() const;
     inline unsigned attack_power() const;
-	inline signed calc_attack_power() const;
+    inline signed calc_attack_power() const;
     inline unsigned max_hp() const;
     inline unsigned add_hp(unsigned value);
     inline unsigned ext_hp(unsigned value);
@@ -276,6 +287,7 @@ public:
     Hand* tip;
     std::vector<CardStatus*> selection_array;
     unsigned turn;
+    unsigned flexible_iter = 20;
     gamemode_t gamemode;
     OptimizationMode optimization_mode;
 #ifndef NQUEST
@@ -317,12 +329,14 @@ public:
             std::array<signed short, PassiveBGE::num_passive_bges>& your_bg_effects_,
             std::array<signed short, PassiveBGE::num_passive_bges>& enemy_bg_effects_,
             std::vector<SkillSpec>& your_bg_skills_,
-            std::vector<SkillSpec>& enemy_bg_skills_) :
+            std::vector<SkillSpec>& enemy_bg_skills_,
+	    unsigned flexible_iter_=20) :
         end{false},
         re(re_),
         cards(cards_),
         players{{&hand1, &hand2}},
         turn(1),
+	flexible_iter(flexible_iter_),
         gamemode(gamemode_),
         optimization_mode(optimization_mode_),
 #ifndef NQUEST

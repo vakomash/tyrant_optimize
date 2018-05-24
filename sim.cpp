@@ -704,67 +704,67 @@ struct PlayCard
     {
         setStorage<type>();
         placeCard<type>();
-		status->m_summoned = summoned;	
+	status->m_summoned = summoned;	
 
         unsigned played_faction_mask(0);
         unsigned same_faction_cards_count(0);
-		bool bge_megamorphosis = fd->bg_effects[fd->tapi][PassiveBGE::megamorphosis];
-		//played_status = status;
-		//played_card = card;
+	bool bge_megamorphosis = fd->bg_effects[fd->tapi][PassiveBGE::megamorphosis];
+	//played_status = status;
+	//played_card = card;
 			
-		check_and_perform_bravery(fd,status);
+	check_and_perform_bravery(fd,status);
         if (status->m_delay == 0)
         {
             check_and_perform_valor(fd, status);
         }
 		
-		//refresh/init absorb
-		if(status->has_skill(Skill::absorb))
-		{
-			status->m_absorption = status->skill_base_value(Skill::absorb);
-		}
+	//refresh/init absorb
+	if(status->has_skill(Skill::absorb))
+	{
+	    status->m_absorption = status->skill_base_value(Skill::absorb);
+	}
 			
 			
-		// 1. Evaluate skill Allegiance & count assaults with same faction (structures will be counted later)
-		// 2. Passive BGE Cold Sleep
-		for (CardStatus* status_i : fd->tap->assaults.m_indirect)
+	// 1. Evaluate skill Allegiance & count assaults with same faction (structures will be counted later)
+	// 2. Passive BGE Cold Sleep
+	for (CardStatus* status_i : fd->tap->assaults.m_indirect)
+	{
+		if (status_i == status || !is_alive(status_i)) { continue; } // except itself
+		//std::cout << status_description(status_i).c_str();
+		_DEBUG_ASSERT(is_alive(status_i));
+		if (bge_megamorphosis || (status_i->m_card->m_faction == card->m_faction))
 		{
-			if (status_i == status || !is_alive(status_i)) { continue; } // except itself
-			//std::cout << status_description(status_i).c_str();
-			_DEBUG_ASSERT(is_alive(status_i));
-			if (bge_megamorphosis || (status_i->m_card->m_faction == card->m_faction))
+			++ same_faction_cards_count;
+			unsigned allegiance_value = status_i->skill(Skill::allegiance);
+			if (__builtin_expect(allegiance_value, false) && !status->m_summoned)
 			{
-				++ same_faction_cards_count;
-				unsigned allegiance_value = status_i->skill(Skill::allegiance);
-				if (__builtin_expect(allegiance_value, false) && !status->m_summoned)
-				{
-					_DEBUG_MSG(1, "%s activates Allegiance %u\n", status_description(status_i).c_str(), allegiance_value);
-					if (! status_i->m_sundered)
-					{ status_i->m_perm_attack_buff += allegiance_value; }
-					status_i->ext_hp(allegiance_value);
-				}
+				_DEBUG_MSG(1, "%s activates Allegiance %u\n", status_description(status_i).c_str(), allegiance_value);
+				if (! status_i->m_sundered)
+				{ status_i->m_perm_attack_buff += allegiance_value; }
+				status_i->ext_hp(allegiance_value);
 			}
-			if (__builtin_expect(fd->bg_effects[fd->tapi][PassiveBGE::coldsleep], false)
+		}
+		if (__builtin_expect(fd->bg_effects[fd->tapi][PassiveBGE::coldsleep], false)
 					&& status_i->m_protected_stasis && can_be_healed(status_i))
-			{
-				unsigned bge_value = (status_i->m_protected_stasis + 1) / 2;
-				_DEBUG_MSG(1, "Cold Sleep: %s heals itself for %u\n", status_description(status_i).c_str(), bge_value);
-				status_i->add_hp(bge_value);
-			}
-		}
-
-		// Setup faction marks (bitmap) for stasis (skill Stasis / Passive BGE TemporalBacklash)
-		// unless Passive BGE Megamorphosis is enabled
-		if (__builtin_expect(!bge_megamorphosis, true))
 		{
-			played_faction_mask = (1u << card->m_faction);
-			// do played card have stasis? mark this faction for stasis check
-			if (__builtin_expect(status->skill(Skill::stasis), false)
-				|| __builtin_expect(fd->bg_effects[fd->tapi][PassiveBGE::temporalbacklash] && status->skill(Skill::counter), false))
-			{
-				fd->tap->stasis_faction_bitmap |= played_faction_mask;
-			}
+			unsigned bge_value = (status_i->m_protected_stasis + 1) / 2;
+			_DEBUG_MSG(1, "Cold Sleep: %s heals itself for %u\n", status_description(status_i).c_str(), bge_value);
+			status_i->add_hp(bge_value);
 		}
+	}
+
+	// Setup faction marks (bitmap) for stasis (skill Stasis / Passive BGE TemporalBacklash)
+	// unless Passive BGE Megamorphosis is enabled
+  	if (__builtin_expect(!bge_megamorphosis, true))
+	{
+		played_faction_mask = (1u << card->m_faction);
+		// do played card have stasis? mark this faction for stasis check
+		if (__builtin_expect(status->skill(Skill::stasis), false)
+			|| __builtin_expect(fd->bg_effects[fd->tapi][PassiveBGE::temporalbacklash] && status->skill(Skill::counter), false))
+		{
+			fd->tap->stasis_faction_bitmap |= played_faction_mask;
+		}
+	}
 
         // Evaluate Passive BGE Oath-of-Loyalty
 		unsigned allegiance_value;
@@ -2888,9 +2888,145 @@ inline unsigned evaluate_war_score(Field* fd, unsigned player)
 	return 208 - ((unsigned)(fd->turn)/2)*4;
 }
 
-//------------------------------------------------------------------------------
-Results<uint64_t> play(Field* fd)
+
+Results<uint64_t> evaluate_sim_result(Field* fd)
 {
+    typedef unsigned points_score_type;
+    const auto & p = fd->players;
+    unsigned raid_damage = 0;
+#ifndef NQUEST
+    unsigned quest_score = 0;
+#endif
+    switch (fd->optimization_mode)
+    {
+        case OptimizationMode::raid:
+            raid_damage = 15
+                + (p[1]->total_cards_destroyed)
+                - (10 * p[1]->commander.m_hp / p[1]->commander.max_hp());
+            break;
+#ifndef NQUEST
+        case OptimizationMode::quest:
+            if (fd->quest.quest_type == QuestType::card_survival)
+            {
+                for (const auto & status: p[0]->assaults.m_indirect)
+                { fd->quest_counter += (fd->quest.quest_key == status->m_card->m_id); }
+                for (const auto & status: p[0]->structures.m_indirect)
+                { fd->quest_counter += (fd->quest.quest_key == status->m_card->m_id); }
+                for (const auto & card: p[0]->deck->shuffled_cards)
+                { fd->quest_counter += (fd->quest.quest_key == card->m_id); }
+            }
+            quest_score = fd->quest.must_fulfill ? (fd->quest_counter >= fd->quest.quest_value ? fd->quest.quest_score : 0) : std::min<unsigned>(fd->quest.quest_score, fd->quest.quest_score * fd->quest_counter / fd->quest.quest_value);
+            _DEBUG_MSG(1, "Quest: %u / %u = %u%%.\n", fd->quest_counter, fd->quest.quest_value, quest_score);
+            break;
+#endif
+        default:
+            break;
+    }
+    // you lose
+    if(!is_alive(&fd->players[0]->commander))
+    {
+        _DEBUG_MSG(1, "You lose.\n");
+        switch (fd->optimization_mode)
+        {
+        case OptimizationMode::raid: return {0, 0, 1, (points_score_type)raid_damage};
+        case OptimizationMode::brawl: return {0, 0, 1, (points_score_type) 5};
+        case OptimizationMode::brawl_defense:
+            {
+                unsigned enemy_brawl_score = evaluate_brawl_score(fd, 1);
+                unsigned max_score = max_possible_score[(size_t)OptimizationMode::brawl_defense];
+                return {0, 0, 1, (points_score_type)(max_score - enemy_brawl_score)};
+            }
+		case OptimizationMode::war: return {0,0,1, (points_score_type) 20};
+        case OptimizationMode::war_defense:
+            {
+                unsigned enemy_war_score = evaluate_war_score(fd, 1);
+                unsigned max_score = max_possible_score[(size_t)OptimizationMode::war_defense];
+                return {0, 0, 1, (points_score_type)(max_score - enemy_war_score)};
+            }
+#ifndef NQUEST
+        case OptimizationMode::quest: return {0, 0, 1, (points_score_type)(fd->quest.must_win ? 0 : quest_score)};
+#endif
+        default: return {0, 0, 1, 0};
+        }
+    }
+    // you win
+    if(!is_alive(&fd->players[1]->commander))
+    {
+        _DEBUG_MSG(1, "You win.\n");
+        switch (fd->optimization_mode)
+        {
+        case OptimizationMode::brawl:
+            {
+                unsigned brawl_score = evaluate_brawl_score(fd, 0);
+                return {1, 0, 0, (points_score_type)brawl_score};
+            }
+        case OptimizationMode::brawl_defense:
+            {
+                unsigned max_score = max_possible_score[(size_t)OptimizationMode::brawl_defense];
+                unsigned min_score = min_possible_score[(size_t)OptimizationMode::brawl_defense];
+                return {1, 0, 0, (points_score_type)(max_score - min_score)};
+            }
+        case OptimizationMode::campaign:
+            {
+                unsigned total_dominions_destroyed = (p[0]->deck->alpha_dominion != nullptr) - p[0]->structures.count(is_it_dominion);
+                unsigned campaign_score = 100 - 10 * (p[0]->total_nonsummon_cards_destroyed - total_dominions_destroyed);
+                return {1, 0, 0, (points_score_type)campaign_score};
+            }
+		case OptimizationMode::war: 
+			{
+                unsigned war_score = evaluate_war_score(fd, 0);
+				return {1,0,0, (points_score_type) war_score};
+			}
+        case OptimizationMode::war_defense:
+            {
+                unsigned max_score = max_possible_score[(size_t)OptimizationMode::war_defense];
+                unsigned min_score = min_possible_score[(size_t)OptimizationMode::war_defense];
+                return {1, 0, 0, (points_score_type)(max_score - min_score)};
+            }
+#ifndef NQUEST
+        case OptimizationMode::quest: return {1, 0, 0, (points_score_type)(fd->quest.win_score + quest_score)};
+#endif
+        default:
+            return {1, 0, 0, 100};
+        }
+    }
+    if (fd->turn > turn_limit)
+    {
+        _DEBUG_MSG(1, "Stall after %u turns.\n", turn_limit);
+        switch (fd->optimization_mode)
+        {
+        case OptimizationMode::defense: return {0, 1, 0, 100};
+        case OptimizationMode::raid: return {0, 1, 0, (points_score_type)raid_damage};
+        case OptimizationMode::brawl: return {0, 1, 0, 5};
+        case OptimizationMode::brawl_defense:
+            {
+                unsigned max_score = max_possible_score[(size_t)OptimizationMode::brawl_defense];
+                unsigned min_score = min_possible_score[(size_t)OptimizationMode::brawl_defense];
+                return {1, 0, 0, (points_score_type)(max_score - min_score)};
+            }
+		case OptimizationMode::war: return {0,1,0, (points_score_type) 20};
+        case OptimizationMode::war_defense:
+            {
+                unsigned max_score = max_possible_score[(size_t)OptimizationMode::war_defense];
+                unsigned min_score = min_possible_score[(size_t)OptimizationMode::war_defense];
+                return {1, 0, 0, (points_score_type)(max_score - min_score)};
+            }
+#ifndef NQUEST
+        case OptimizationMode::quest: return {0, 1, 0, (points_score_type)(fd->quest.must_win ? 0 : quest_score)};
+#endif
+        default: return {0, 1, 0, 0};
+        }
+    }
+
+    // Huh? How did we get here?
+    assert(false);
+    return {0, 0, 0, 0};
+}
+
+//------------------------------------------------------------------------------
+Results<uint64_t> play(Field* fd,bool skip_init)
+{
+    if(!skip_init){ //>>> start skip init
     fd->players[0]->commander.m_player = 0;
     fd->players[1]->commander.m_player = 1;
     fd->tapi = fd->gamemode == surge ? 1 : 0;
@@ -2898,7 +3034,6 @@ Results<uint64_t> play(Field* fd)
     fd->tap = fd->players[fd->tapi];
     fd->tip = fd->players[fd->tipi];
     fd->end = false;
-    typedef unsigned points_score_type;
 
     // Play dominion & fortresses
     for (unsigned _(0), ai(fd->tapi); _ < 2; ++_)
@@ -2908,7 +3043,7 @@ Results<uint64_t> play(Field* fd)
         for (const Card* played_card: fd->players[ai]->deck->shuffled_forts)
         {
             
-			switch (played_card->m_type)
+	    switch (played_card->m_type)
             {
             case CardType::assault:
                 PlayCard(played_card, fd, ai, &fd->players[ai]->commander).op<CardType::assault>();
@@ -2928,9 +3063,12 @@ Results<uint64_t> play(Field* fd)
         std::swap(fd->tap, fd->tip);
         ai = opponent(ai);
     }
+    }//>>> end skip init
 
     while(__builtin_expect(fd->turn <= turn_limit && !fd->end, true))
     {
+        if(!skip_init){ //>>> start skip init
+
         fd->current_phase = Field::playcard_phase;
         // Initialize stuff, remove dead cards
         _DEBUG_MSG(1, "------------------------------------------------------------------------\n"
@@ -2943,9 +3081,11 @@ Results<uint64_t> play(Field* fd)
         fd->finalize_action();
 
         //bool bge_megamorphosis = fd->bg_effects[fd->tapi][PassiveBGE::megamorphosis];
-
+	
+	}//>>> end skip init
+	else { skip_init = false;}
         // Play a card
-        const Card* played_card(fd->tap->deck->next());
+        const Card* played_card(fd->tap->deck->next(fd));
         if (played_card)
         {
 
@@ -3134,136 +3274,9 @@ Results<uint64_t> play(Field* fd)
         std::swap(fd->tap, fd->tip);
         ++fd->turn;
     }
-    const auto & p = fd->players;
-    unsigned raid_damage = 0;
-#ifndef NQUEST
-    unsigned quest_score = 0;
-#endif
-    switch (fd->optimization_mode)
-    {
-        case OptimizationMode::raid:
-            raid_damage = 15
-                + (p[1]->total_cards_destroyed)
-                - (10 * p[1]->commander.m_hp / p[1]->commander.max_hp());
-            break;
-#ifndef NQUEST
-        case OptimizationMode::quest:
-            if (fd->quest.quest_type == QuestType::card_survival)
-            {
-                for (const auto & status: p[0]->assaults.m_indirect)
-                { fd->quest_counter += (fd->quest.quest_key == status->m_card->m_id); }
-                for (const auto & status: p[0]->structures.m_indirect)
-                { fd->quest_counter += (fd->quest.quest_key == status->m_card->m_id); }
-                for (const auto & card: p[0]->deck->shuffled_cards)
-                { fd->quest_counter += (fd->quest.quest_key == card->m_id); }
-            }
-            quest_score = fd->quest.must_fulfill ? (fd->quest_counter >= fd->quest.quest_value ? fd->quest.quest_score : 0) : std::min<unsigned>(fd->quest.quest_score, fd->quest.quest_score * fd->quest_counter / fd->quest.quest_value);
-            _DEBUG_MSG(1, "Quest: %u / %u = %u%%.\n", fd->quest_counter, fd->quest.quest_value, quest_score);
-            break;
-#endif
-        default:
-            break;
-    }
-    // you lose
-    if(!is_alive(&fd->players[0]->commander))
-    {
-        _DEBUG_MSG(1, "You lose.\n");
-        switch (fd->optimization_mode)
-        {
-        case OptimizationMode::raid: return {0, 0, 1, (points_score_type)raid_damage};
-        case OptimizationMode::brawl: return {0, 0, 1, (points_score_type) 5};
-        case OptimizationMode::brawl_defense:
-            {
-                unsigned enemy_brawl_score = evaluate_brawl_score(fd, 1);
-                unsigned max_score = max_possible_score[(size_t)OptimizationMode::brawl_defense];
-                return {0, 0, 1, (points_score_type)(max_score - enemy_brawl_score)};
-            }
-		case OptimizationMode::war: return {0,0,1, (points_score_type) 20};
-        case OptimizationMode::war_defense:
-            {
-                unsigned enemy_war_score = evaluate_war_score(fd, 1);
-                unsigned max_score = max_possible_score[(size_t)OptimizationMode::war_defense];
-                return {0, 0, 1, (points_score_type)(max_score - enemy_war_score)};
-            }
-#ifndef NQUEST
-        case OptimizationMode::quest: return {0, 0, 1, (points_score_type)(fd->quest.must_win ? 0 : quest_score)};
-#endif
-        default: return {0, 0, 1, 0};
-        }
-    }
-    // you win
-    if(!is_alive(&fd->players[1]->commander))
-    {
-        _DEBUG_MSG(1, "You win.\n");
-        switch (fd->optimization_mode)
-        {
-        case OptimizationMode::brawl:
-            {
-                unsigned brawl_score = evaluate_brawl_score(fd, 0);
-                return {1, 0, 0, (points_score_type)brawl_score};
-            }
-        case OptimizationMode::brawl_defense:
-            {
-                unsigned max_score = max_possible_score[(size_t)OptimizationMode::brawl_defense];
-                unsigned min_score = min_possible_score[(size_t)OptimizationMode::brawl_defense];
-                return {1, 0, 0, (points_score_type)(max_score - min_score)};
-            }
-        case OptimizationMode::campaign:
-            {
-                unsigned total_dominions_destroyed = (p[0]->deck->alpha_dominion != nullptr) - p[0]->structures.count(is_it_dominion);
-                unsigned campaign_score = 100 - 10 * (p[0]->total_nonsummon_cards_destroyed - total_dominions_destroyed);
-                return {1, 0, 0, (points_score_type)campaign_score};
-            }
-		case OptimizationMode::war: 
-			{
-                unsigned war_score = evaluate_war_score(fd, 0);
-				return {1,0,0, (points_score_type) war_score};
-			}
-        case OptimizationMode::war_defense:
-            {
-                unsigned max_score = max_possible_score[(size_t)OptimizationMode::war_defense];
-                unsigned min_score = min_possible_score[(size_t)OptimizationMode::war_defense];
-                return {1, 0, 0, (points_score_type)(max_score - min_score)};
-            }
-#ifndef NQUEST
-        case OptimizationMode::quest: return {1, 0, 0, (points_score_type)(fd->quest.win_score + quest_score)};
-#endif
-        default:
-            return {1, 0, 0, 100};
-        }
-    }
-    if (fd->turn > turn_limit)
-    {
-        _DEBUG_MSG(1, "Stall after %u turns.\n", turn_limit);
-        switch (fd->optimization_mode)
-        {
-        case OptimizationMode::defense: return {0, 1, 0, 100};
-        case OptimizationMode::raid: return {0, 1, 0, (points_score_type)raid_damage};
-        case OptimizationMode::brawl: return {0, 1, 0, 5};
-        case OptimizationMode::brawl_defense:
-            {
-                unsigned max_score = max_possible_score[(size_t)OptimizationMode::brawl_defense];
-                unsigned min_score = min_possible_score[(size_t)OptimizationMode::brawl_defense];
-                return {1, 0, 0, (points_score_type)(max_score - min_score)};
-            }
-		case OptimizationMode::war: return {0,1,0, (points_score_type) 20};
-        case OptimizationMode::war_defense:
-            {
-                unsigned max_score = max_possible_score[(size_t)OptimizationMode::war_defense];
-                unsigned min_score = min_possible_score[(size_t)OptimizationMode::war_defense];
-                return {1, 0, 0, (points_score_type)(max_score - min_score)};
-            }
-#ifndef NQUEST
-        case OptimizationMode::quest: return {0, 1, 0, (points_score_type)(fd->quest.must_win ? 0 : quest_score)};
-#endif
-        default: return {0, 1, 0, 0};
-        }
-    }
-
-    // Huh? How did we get here?
-    assert(false);
-    return {0, 0, 0, 0};
+    return evaluate_sim_result(fd);
 }
+
 //------------------------------------------------------------------------------
 void fill_skill_table()
 {
