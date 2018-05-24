@@ -1109,7 +1109,7 @@ void print_deck_inline(const unsigned deck_cost, const FinalResults<long double>
     { std::cout << ", " << deck->alpha_dominion->m_name; }
 
     // print deck cards
-    if (deck->strategy == DeckStrategy::random)
+    if (deck->strategy == DeckStrategy::random || deck->strategy == DeckStrategy::flexible)
     {
         std::sort(deck->cards.begin(), deck->cards.end(), [](const Card* a, const Card* b) { return a->m_id < b->m_id; });
     }
@@ -1516,7 +1516,7 @@ void simulated_annealing(unsigned num_min_iterations, unsigned num_iterations, D
 #endif
     );
 
-    bool is_random = cur_deck->strategy == DeckStrategy::random;
+    bool is_random = (cur_deck->strategy == DeckStrategy::random) || (cur_deck->strategy == DeckStrategy::flexible);
     unsigned long skipped_simulations = 0;
     std::vector<const Card*> all_candidates;
 
