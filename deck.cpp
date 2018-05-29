@@ -360,7 +360,7 @@ std::string Deck::hash() const
     deck_all_cards.emplace_back(commander);
     if (alpha_dominion) { deck_all_cards.emplace_back(alpha_dominion); }
     deck_all_cards.insert(deck_all_cards.end(), cards.begin(), cards.end());
-    if (strategy == DeckStrategy::random)
+    if (strategy == DeckStrategy::random || strategy == DeckStrategy::flexible)
     {
         std::sort(deck_all_cards.end() - cards.size(), deck_all_cards.end(), [](const Card* a, const Card* b) { return a->m_id < b->m_id; });
     }

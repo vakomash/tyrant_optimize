@@ -729,6 +729,22 @@
    </always_include>  
    </deck>  
   </raid>
+	
+<raid>
+	<id>53</id>
+	<name>Grand Imperial Navy Raid</name>
+	<levels>26</levels>
+	<commander>25962</commander>
+	<fortress_card id="18614"/>
+	<deck>
+		<card_pool amount="10">
+			<card replicates="3">59322</card>
+			<card replicates="3">59332</card>
+			<card replicates="3">59342</card>
+			<card replicates="4">59352</card>
+		</card_pool>
+	</deck>
+ </raid>
 <!-- END of Raids -->
 
 

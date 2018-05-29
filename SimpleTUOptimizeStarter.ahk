@@ -97,7 +97,7 @@ Gui, Add, Text, r1, Iterations:
 Gui, Add, Text, r1, Monofaction:
 
 Gui, Add, DDL, altsubmit vEndgame ys Choose%IniEndgame%, none|0 - Maxed Units|1 - Maxed Fused|2 - Maxed Quads
-Gui, Add, DDL, altsubmit vOrder Group Choose%IniOrder%, Random|Ordered (honor 3-card hand)
+Gui, Add, DDL, altsubmit vOrder Group Choose%IniOrder%, Random|Ordered (honor 3-card hand)|Flexible
 Gui, Add, Edit, vIterations w100 r1, %IniIterations%
 Gui, Add, DDL, altsubmit vMono Group Choose%IniMono%, none|imperial|raider|bloodthirsty|xeno|righteous|progenitor
 
@@ -136,7 +136,7 @@ Gui, Submit, NoHide ; save the changes and not hide the windows)
 
 selTUO := (x86 ? (debug ? "tuo-x86-debug" : "tuo-x86") : (debug ? "tuo-debug" : "tuo"))
 selMode := (Mode == 1 ? "pvp" : Mode == 2 ? "pvp-defense" : Mode == 3 ? "gw" : Mode == 4 ? "gw-defense" :Mode == 5 ? "brawl" : Mode == 6 ? "brawl-defense" : Mode == 7 ? "raid" : Mode == 8 ? "campaign" : "surge")
-selOrder := (Order == 1 ? "random" : "ordered")
+selOrder := (Order == 1 ? "random" : Order == 2 ? "ordered" : "flexible")
 selOperation :=  (Operation == 1 ? "climb" : Operation == 2 ? "sim" : Operation == 3 ? "reorder": Operation == 4 ? "climbex" : Operation == 5 ? "anneal" : "debug sim" )
 selMySiege := (MySiege == "" ? "" : "yf """ MySiege """ ")
 selEnemySiege := ( EnemySiege == "" ? "" : "ef """ EnemySiege """ ")

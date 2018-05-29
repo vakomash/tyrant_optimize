@@ -2161,6 +2161,10 @@ int main(int argc, char** argv)
         else if (strcmp(argv[argIndex], "exact-ordered") == 0)
         {
             opt_your_strategy = DeckStrategy::exact_ordered;
+	}
+        else if (strcmp(argv[argIndex], "enemy:flexible") == 0)
+        {
+            opt_enemy_strategy = DeckStrategy::flexible;
         }
         else if (strcmp(argv[argIndex], "enemy:ordered") == 0)
         {
