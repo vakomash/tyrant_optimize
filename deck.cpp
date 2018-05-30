@@ -572,49 +572,49 @@ const Card* Deck::next(Field* f)
     }
     else if (strategy == DeckStrategy::flexible)
     {
-	_DEBUG_MSG(1,">>>>FLEX SIMS>>>>");
-	std::vector<uint64_t> res(std::min<unsigned>(3u,shuffled_cards.size()));
-	unsigned iter = f->flexible_iter;
-	//TODO skip sim for only one card
-	for(unsigned j =0; j < res.size();j++)
-	{
-	for(unsigned i =0; i < iter;i++)
-	{
+		_DEBUG_MSG(1,">>>>FLEX SIMS>>>>\n");
+		std::vector<uint64_t> res(std::min<unsigned>(3u,shuffled_cards.size()));
+		unsigned iter = f->flexible_iter;
+		//TODO skip sim for only one card
+		for(unsigned j =0; j < res.size();j++)
+		{
+			for(unsigned i =0; i < iter;i++)
+			{
+				//copy hand
+				Hand hand1(*f->players[0]);
+				//hand1.deck=hand1.deck->clone();
+				Hand hand2(*f->players[1]);
+				//hand2.deck = hand2.deck->clone();
+				Deck deck1(*hand1.deck);
+				Deck deck2(*hand2.deck);
+				hand1.deck = &deck1;
+				hand2.deck = &deck2;
+				hand1.deck->strategy = DeckStrategy::random;
+				hand2.deck->strategy = DeckStrategy::random;
+				
+				//copy Field
+				Field fd(*f);
+				fd.players = {{&hand1,&hand2}};
+				fd.tap = fd.players[fd.tapi];
+				fd.tip = fd.players[fd.tipi];
+				fd.selection_array.clear();
+				fd.skill_queue.clear();
+				fd.killed_units.clear();
+				fd.damaged_units_to_times.clear();
 
-	    Hand hand1(*f->players[0]);
-	    //hand1.deck=hand1.deck->clone();
-	    Hand hand2(*f->players[1]);
-	    //hand2.deck = hand2.deck->clone();
-	    Deck deck1(*hand1.deck);
-	    Deck deck2(*hand2.deck);
-	    hand1.deck = &deck1;
-	    hand2.deck = &deck2;
-	    hand1.deck->strategy = DeckStrategy::random;
-	    hand2.deck->strategy = DeckStrategy::random;
-	    
-	    //new Field
-	    Field fd(*f);
-	    fd.players = {{&hand1,&hand2}};
-	    fd.tap = fd.players[fd.tapi];
-	    fd.tip = fd.players[fd.tipi];
-	    fd.selection_array.clear();
-	    fd.skill_queue.clear();
-	    fd.killed_units.clear();
-	    fd.damaged_units_to_times.clear();
+				std::swap(fd.tap->deck->shuffled_cards.begin()[0],fd.tap->deck->shuffled_cards.begin()[j]);
+				std::shuffle(++fd.tap->deck->shuffled_cards.begin(),fd.tap->deck->shuffled_cards.end(),f->re);
+				std::shuffle(fd.tip->deck->shuffled_cards.begin(),fd.tip->deck->shuffled_cards.end(),f->re);
 
-	    std::swap(fd.tap->deck->shuffled_cards.begin()[0],fd.tap->deck->shuffled_cards.begin()[j]);
-	    std::shuffle(++fd.tap->deck->shuffled_cards.begin(),fd.tap->deck->shuffled_cards.end(),f->re);
-	    std::shuffle(fd.tip->deck->shuffled_cards.begin(),fd.tip->deck->shuffled_cards.end(),f->re);
+				Results<uint64_t> result(play(&fd,true));
+				res[j]+=result.points;
+			}
+		}
 
-	    Results<uint64_t> result(play(&fd,true));
-	    res[j]+=result.points;
-	}
-	}
-
-	_DEBUG_MSG(1,"<<<<FLEX SIMS<<<<");
-	_DEBUG_MSG(1, "Flexible Order: (%s %llu, %s %llu, %s %llu)\n",shuffled_cards[0]->m_name.c_str(), res[0]/iter,res.size()>1?shuffled_cards[1]->m_name.c_str():"", res.size()>1?res[1]/iter:0,res.size()>2?shuffled_cards[2]->m_name.c_str():"", res.size()>2?res[2]/iter:0);
-	unsigned best_j = std::distance(res.begin(), std::max_element(res.begin(), res.end()));
-	std::swap(shuffled_cards.begin()[0],shuffled_cards.begin()[best_j]);
+		_DEBUG_MSG(1,"<<<<FLEX SIMS<<<<\n");
+		_DEBUG_MSG(1, "Flexible Order: (%s %llu, %s %llu, %s %llu)\n",shuffled_cards[0]->m_name.c_str(), res[0]/iter,res.size()>1?shuffled_cards[1]->m_name.c_str():"", res.size()>1?res[1]/iter:0,res.size()>2?shuffled_cards[2]->m_name.c_str():"", res.size()>2?res[2]/iter:0);
+		unsigned best_j = std::distance(res.begin(), (f->tapi==0)?std::max_element(res.begin(), res.end()):std::min_element(res.begin(), res.end())); //max for own flex. enemy flex should optimize him, so min result is best for him
+		std::swap(shuffled_cards.begin()[0],shuffled_cards.begin()[best_j]);
         const Card* card = shuffled_cards.front();
         shuffled_cards.pop_front();
         return(card);
