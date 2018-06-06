@@ -71,6 +71,7 @@ namespace {
     bool use_maxed_dominions{false};
     unsigned use_fused_card_level{0};
     unsigned use_fused_commander_level{0};
+    bool print_upgraded{false};
     bool show_ci{false};
     bool use_harmonic_mean{false};
     unsigned iterations_multiplier{10};
@@ -938,7 +939,7 @@ void print_score_info(const EvaluatedResults& results, std::vector<long double>&
             case OptimizationMode::brawl:
             case OptimizationMode::brawl_defense:
             case OptimizationMode::war:
-			case OptimizationMode::war_defense:
+	    case OptimizationMode::war_defense:
 #ifndef NQUEST
             case OptimizationMode::quest:
 #endif
@@ -1033,6 +1034,30 @@ void print_results(const EvaluatedResults& results, std::vector<long double>& fa
         default:
             break;
     }
+}
+void print_upgraded_cards(Deck* deck)
+{
+    if(!print_upgraded)return;
+    auto owned_cards_c = owned_cards;
+    std::cout << "Upgraded Cards: ";
+    for (const Card * card : deck->cards)
+    {
+
+        if ((card->m_set == 1000) && (card->m_rarity <= 2) && (card->is_low_level_card()))
+        { continue; }
+
+        if ((card->m_id == 50002) || (card->m_category == CardCategory::dominion_material))
+        { continue; }
+
+        if ((fund || (card->m_category != CardCategory::normal))
+            && (owned_cards_c[card->m_id] == 0))
+        {
+	    //print card
+    	    std::cout << card->m_name << ", ";
+        }
+	if(owned_cards_c[card->m_id] >0)owned_cards_c[card->m_id]--;
+    }
+    std::cout << std::endl;
 }
 //------------------------------------------------------------------------------
 void print_deck_inline(const unsigned deck_cost, const FinalResults<long double> score, Deck * deck)
@@ -1449,6 +1474,7 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
     std::cout << "Evaluated " << evaluated_decks.size() << " decks (" << simulations << " + " << skipped_simulations << " simulations)." << std::endl;
     std::cout << "Optimized Deck: ";
     print_deck_inline(get_deck_cost(d1), best_score, d1);
+    print_upgraded_cards(d1);
 }
 
 inline FinalResults<long double> fitness(Deck* d1,
@@ -1608,11 +1634,11 @@ void simulated_annealing(unsigned num_min_iterations, unsigned num_iterations, D
                 all_candidates.emplace_back(cur_deck->alpha_dominion);
             }
         }
-		if (!cur_deck->alpha_dominion && owned_alpha_dominion)
-		{
-			cur_deck->alpha_dominion = owned_alpha_dominion;
-			std::cout << "Setting up owned Alpha Dominion into a deck: " << cur_deck->alpha_dominion->m_name << std::endl;
-		}
+	if (!cur_deck->alpha_dominion && owned_alpha_dominion)
+	{
+		cur_deck->alpha_dominion = owned_alpha_dominion;
+		std::cout << "Setting up owned Alpha Dominion into a deck: " << cur_deck->alpha_dominion->m_name << std::endl;
+	}
     }
     
 
@@ -1625,13 +1651,13 @@ void simulated_annealing(unsigned num_min_iterations, unsigned num_iterations, D
     FinalResults<long double> prev_score = best_score;
     FinalResults<long double> cur_score = best_score;
 
-	unsigned best_gap = cur_gap;
+    unsigned best_gap = cur_gap;
 	
     deck_cost = 0;
 
     unsigned from_slot(freezed_cards);
-	unsigned from_slot_tmp(freezed_cards);
-	unsigned to_slot(1);
+    unsigned from_slot_tmp(freezed_cards);
+    unsigned to_slot(1);
 	
     if(debug_print >0)std::cout << "Starting Anneal" << std::endl;
     while(temperature > 1 && !(best_score.points - target_score > -1e-9))
@@ -1698,10 +1724,10 @@ void simulated_annealing(unsigned num_min_iterations, unsigned num_iterations, D
 			best_deck = cur_deck->clone();
 			best_gap = cur_gap;
 			std::cout << "Deck improved: " << best_deck->hash() << ": (temp=" << temperature << ") :";
-            print_deck_inline(get_deck_cost(best_deck), best_score, best_deck);
+                        print_deck_inline(get_deck_cost(best_deck), best_score, best_deck);
 		}
 		if(debug_print>0)std::cout << "UPDATED DECK: " << cur_deck->hash() << ": (temp=" << temperature << ") :";
-    	if(debug_print>0)print_deck_inline(get_deck_cost(cur_deck), cur_score, cur_deck);
+    	        if(debug_print>0)print_deck_inline(get_deck_cost(cur_deck), cur_score, cur_deck);
 		prev_score = cur_score;
 		prev_deck = cur_deck->clone();
 	}
@@ -1713,7 +1739,7 @@ void simulated_annealing(unsigned num_min_iterations, unsigned num_iterations, D
     std::cout << "Evaluated " << evaluated_decks.size() << " decks (" << simulations << " + " << skipped_simulations << " simulations)." << std::endl;
     std::cout << "Optimized Deck: ";
     print_deck_inline(get_deck_cost(best_deck), best_score, best_deck);
-
+    print_upgraded_cards(best_deck);
 }
 
 
@@ -2215,6 +2241,10 @@ int main(int argc, char** argv)
             confidence_level = atof(argv[argIndex+1]);
             argIndex += 1;
         }
+	else if (strcmp(argv[argIndex], "+uc") == 0)
+	{
+	    print_upgraded = true;
+	}
         else if (strcmp(argv[argIndex], "+ci") == 0)
         {
             show_ci = true;

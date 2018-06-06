@@ -612,7 +612,7 @@ const Card* Deck::next(Field* f)
 		}
 
 		_DEBUG_MSG(1,"<<<<FLEX SIMS<<<<\n");
-		_DEBUG_MSG(1, "Flexible Order: (%s %llu, %s %llu, %s %llu)\n",shuffled_cards[0]->m_name.c_str(), res[0]/iter,res.size()>1?shuffled_cards[1]->m_name.c_str():"", res.size()>1?res[1]/iter:0,res.size()>2?shuffled_cards[2]->m_name.c_str():"", res.size()>2?res[2]/iter:0);
+		_DEBUG_MSG(1, "Flexible Order: (%s %llu, %s %llu, %s %llu)\n",shuffled_cards[0]->m_name.c_str(),static_cast<unsigned long long>(res[0]/iter),res.size()>1?shuffled_cards[1]->m_name.c_str():"", static_cast<unsigned long long>(res.size()>1?res[1]/iter:0),res.size()>2?shuffled_cards[2]->m_name.c_str():"", static_cast<unsigned long long>(res.size()>2?res[2]/iter:0));
 		unsigned best_j = std::distance(res.begin(), (f->tapi==0)?std::max_element(res.begin(), res.end()):std::min_element(res.begin(), res.end())); //max for own flex. enemy flex should optimize him, so min result is best for him
 		std::swap(shuffled_cards.begin()[0],shuffled_cards.begin()[best_j]);
         const Card* card = shuffled_cards.front();
