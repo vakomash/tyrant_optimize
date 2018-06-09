@@ -1040,7 +1040,9 @@ void print_upgraded_cards(Deck* deck)
     if(!print_upgraded)return;
     auto owned_cards_c = owned_cards;
     std::cout << "Upgraded Cards: ";
-    for (const Card * card : deck->cards)
+    auto cards = deck->cards;
+    cards.insert(cards.begin(), deck->commander);
+    for (const Card * card : cards)
     {
 
         if ((card->m_set == 1000) && (card->m_rarity <= 2) && (card->is_low_level_card()))
