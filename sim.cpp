@@ -426,6 +426,19 @@ SkillSpec apply_sabotage(const SkillSpec& s, unsigned sabotaged_value)
 }
 
 //------------------------------------------------------------------------------
+inline void resolve_scavenge(Storage<CardStatus>& store)
+{
+	for(auto status : store.m_indirect)
+	{
+		if(!is_alive(status))continue;
+		unsigned scavenge_value = status->skill(Skill::scavenge);
+		if(!scavenge_value)continue;
+		status->ext_hp(scavenge_value);
+		_DEBUG_MSG(1, "%s activates Scavenge %u\n",
+                    status_description(status).c_str(), scavenge_value);
+	}
+}
+//------------------------------------------------------------------------------
 void prepend_on_death(Field* fd)
 {
     if (fd->killed_units.empty())
@@ -436,6 +449,13 @@ void prepend_on_death(Field* fd)
     CardStatus* left_virulence_victim = nullptr;
     for (auto status: fd->killed_units)
     {
+	// Skill: Scavenge
+	// Any unit dies => perm-hp-buff
+	resolve_scavenge(fd->players[0]->assaults);
+	resolve_scavenge(fd->players[1]->assaults);
+	resolve_scavenge(fd->players[0]->structures);
+	resolve_scavenge(fd->players[1]->structures);
+
         if (status->m_card->m_type == CardType::assault)
         {
             // Skill: Avenge

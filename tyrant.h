@@ -46,7 +46,7 @@ enum Skill
     mimic,
 
     // Defensive:
-    armor, avenge, corrosive, counter, evade, subdue, absorb, flying,
+    armor, avenge, scavenge, corrosive, counter, evade, subdue, absorb, flying,
     payback, revenge, tribute, refresh, wall, barrier,
 
     // Combat-Modifier:
@@ -185,6 +185,7 @@ inline bool is_defensive_skill(Skill::Skill skill_id)
     {
     case Skill::armor:
     case Skill::avenge:
+    case Skill::scavenge:
     case Skill::corrosive:
     case Skill::counter:
     case Skill::evade:
