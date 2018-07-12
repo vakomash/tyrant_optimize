@@ -745,6 +745,21 @@
 		</card_pool>
 	</deck>
  </raid>
+<raid>
+	<id>54</id>
+	<name>Silus Raid</name>
+	<levels>26</levels>
+	<commander>25996</commander>
+	<deck>
+		<card_pool amount="10">
+			<card replicates="3">59986</card>
+			<card replicates="3">59996</card>
+			<card replicates="3">60006</card>
+			<card replicates="3">60016</card>
+			<card replicates="3">60026</card>
+		</card_pool>
+	</deck>
+</raid>	
 <!-- END of Raids -->
 
 
