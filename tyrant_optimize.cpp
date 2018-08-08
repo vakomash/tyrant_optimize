@@ -84,6 +84,8 @@ namespace {
     std::unordered_set<unsigned> allowed_candidates;
     std::unordered_set<unsigned> disallowed_candidates;
 
+    std::chrono::time_point<std::chrono::system_clock> start_time;
+    long double maximum_time{0};
     long double temperature = 1000;
     long double coolingRate = 0.001;
 }
@@ -995,7 +997,7 @@ void print_results(const EvaluatedResults& results, std::vector<long double>& fa
         case OptimizationMode::brawl:
         case OptimizationMode::brawl_defense:
         case OptimizationMode::war:
-		case OptimizationMode::war_defense:
+	case OptimizationMode::war_defense:
 #ifndef NQUEST
         case OptimizationMode::quest:
 #endif
@@ -1035,6 +1037,7 @@ void print_results(const EvaluatedResults& results, std::vector<long double>& fa
             break;
     }
 }
+
 void print_upgraded_cards(Deck* deck)
 {
     if(!print_upgraded)return;
@@ -1081,7 +1084,7 @@ void print_deck_inline(const unsigned deck_cost, const FinalResults<long double>
         case OptimizationMode::brawl:
         case OptimizationMode::brawl_defense:
         case OptimizationMode::war:
-		case OptimizationMode::war_defense:
+	case OptimizationMode::war_defense:
 #ifndef NQUEST
         case OptimizationMode::quest:
 #endif
@@ -1166,6 +1169,20 @@ void print_deck_inline(const unsigned deck_cost, const FinalResults<long double>
     std::cout << std::endl;
 }
 //------------------------------------------------------------------------------
+inline bool is_timeout_reached()
+{
+	if(__builtin_expect(maximum_time > 0,false))
+	{
+		//std::cout << "Time: "<< (std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now()-start_time)).count() << std::endl;
+		//std::cout << "MAXTIME: "<< maximum_time << std::endl;
+		if((std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now()-start_time)).count() > maximum_time*60*60)
+	{
+		std::cout << "Time expired! Current result:" << std::endl;
+		return true;
+	}
+	}
+	return false;
+}
 inline bool try_improve_deck(Deck* d1, unsigned from_slot, unsigned to_slot, const Card* card_candidate,
         const Card*& best_commander, const Card*& best_alpha_dominion, std::vector<const Card*>& best_cards,
         FinalResults<long double>& best_score, unsigned& best_gap, std::string& best_deck,
@@ -1368,11 +1385,11 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
                     << " ($: " << alpha_dominion_cost(dom_card) << ")" << std::endl;
             }
         }
-		if (!best_alpha_dominion && owned_alpha_dominion)
-		{
-			best_alpha_dominion = owned_alpha_dominion;
-			std::cout << "Setting up owned Alpha Dominion into a deck: " << best_alpha_dominion->m_name << std::endl;
-		}
+	if (!best_alpha_dominion && owned_alpha_dominion)
+	{
+		best_alpha_dominion = owned_alpha_dominion;
+		std::cout << "Setting up owned Alpha Dominion into a deck: " << best_alpha_dominion->m_name << std::endl;
+	}
     }
     
 
@@ -1380,6 +1397,7 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
     for (unsigned from_slot(freezed_cards), dead_slot(freezed_cards); ;
             from_slot = std::max(freezed_cards, (from_slot + 1) % std::min<unsigned>(max_deck_len, best_cards.size() + 1)))
     {
+	if(is_timeout_reached()){ break;}	
         if (deck_has_been_improved)
         {
             dead_slot = from_slot;
@@ -1662,8 +1680,13 @@ void simulated_annealing(unsigned num_min_iterations, unsigned num_iterations, D
     unsigned to_slot(1);
 	
     if(debug_print >0)std::cout << "Starting Anneal" << std::endl;
-    while(temperature > 1 && !(best_score.points - target_score > -1e-9))
+    while(temperature > 1 && !(best_score.points - target_score > -1e-9 || is_timeout_reached()))
     {
+	if(__builtin_expect(maximum_time!= 0,false) && std::chrono::duration_cast<std::chrono::hours>(std::chrono::system_clock::now()-start_time).count() > maximum_time)
+	{
+		std::cout << "Time expired! Current result:";
+		break;	
+	}
 	cur_deck->commander = prev_deck->commander;
 	cur_deck->alpha_dominion = prev_deck->alpha_dominion;
 	cur_deck->cards = prev_deck->cards;
@@ -1781,9 +1804,9 @@ void print_available_effects()
         "  Oath-Of-Loyalty\n"
         "  Blood-Vengeance\n"
         "  Cold-Sleep\n"
-		"  Iron-Will\n"
-		"  Unity\n"
-		"  Devotion\n"
+	"  Iron-Will\n"
+	"  Unity\n"
+	"  Devotion\n"
         ;
 }
 void usage(int argc, char** argv)
@@ -1970,6 +1993,7 @@ bool parse_bge(
             else
             {
                 std::cerr << "Error: unrecognized effect \"" << bge_name << "\".\n";
+                std::cout << "Unrecognized effect \"" << bge_name << "\".\n";
                 print_available_effects();
                 return false;
             }
@@ -1984,6 +2008,7 @@ bool parse_bge(
 
 int main(int argc, char** argv)
 {
+    start_time = std::chrono::system_clock::now();
     if (argc == 2 && strcmp(argv[1], "-version") == 0)
     {
         std::cout << "Tyrant Unleashed Optimizer " << TYRANT_OPTIMIZER_VERSION << std::endl;
@@ -2100,11 +2125,11 @@ int main(int argc, char** argv)
         {
             opt_keep_commander = true;
         }
-		else if (strcmp(argv[argIndex], "mono") == 0 || strcmp(argv[argIndex], "-m") == 0 || strcmp(argv[argIndex], "factions") == 0 || strcmp(argv[argIndex], "-f") == 0)
+	else if (strcmp(argv[argIndex], "mono") == 0 || strcmp(argv[argIndex], "-m") == 0 || strcmp(argv[argIndex], "factions") == 0 || strcmp(argv[argIndex], "-f") == 0)
         {
-			factions.push_back(faction_name_to_id(argv[argIndex + 1]));
-			argIndex += 1;
-		}
+	    factions.push_back(faction_name_to_id(argv[argIndex + 1]));
+	    argIndex += 1;
+	}
         else if (strcmp(argv[argIndex], "effect") == 0 || strcmp(argv[argIndex], "-e") == 0)
         {
             opt_effects[2].push_back(argv[argIndex + 1]);
@@ -2154,7 +2179,7 @@ int main(int argc, char** argv)
             fund = atoi(argv[argIndex+1]);
             argIndex += 1;
         }
-		else if (strcmp(argv[argIndex], "dom-none") == 0)
+	else if (strcmp(argv[argIndex], "dom-none") == 0)
         {
             use_owned_dominions = false;
             use_maxed_dominions = false;
@@ -2236,6 +2261,11 @@ int main(int argc, char** argv)
         else if (strcmp(argv[argIndex], "mis") == 0)
         {
             min_increment_of_score = atof(argv[argIndex+1]);
+            argIndex += 1;
+        }
+	else if (strcmp(argv[argIndex], "timeout") == 0) //set timeout in hours. tuo will stop approx. at the given time.
+        {
+            maximum_time = atof(argv[argIndex+1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "cl") == 0)
