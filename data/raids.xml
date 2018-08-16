@@ -777,6 +777,31 @@
    </card_pool>
   </deck>
  </raid>
+	
+<raid>
+	<id>56</id>
+	<name>Apocalypse Returns Raid</name>
+	<levels>26</levels>
+	<commander>26006</commander>
+	<deck>
+	<always_include>
+		<card>60472</card>
+		<card>60482</card>
+		<card>60492</card>
+		<card>60502</card>
+		<card>60512</card>
+		<card>60522</card>
+	</always_include>
+	<card_pool amount="4">
+		<card replicates="2">60472</card>
+		<card replicates="2">60482</card>
+		<card replicates="2">60492</card>
+		<card replicates="2">60502</card>
+		<card replicates="2">60512</card>
+		<card replicates="2">60522</card>
+	</card_pool>
+	</deck>
+</raid> 
 <!-- END of Raids -->
 
 
