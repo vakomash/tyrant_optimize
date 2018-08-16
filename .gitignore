@@ -9,8 +9,10 @@ data/missions.xml
 data/skills_set.xml
 data/levels.xml
 tuo
+tuoold
 tuodebug
 test/**
+test.sh
 data/customdecks.txt
 data/ownedcards.txt
 out.txt
