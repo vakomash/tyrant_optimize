@@ -65,6 +65,10 @@ void Cards::organize()
     player_commanders.clear();
     player_assaults.clear();
     player_structures.clear();
+    //Test
+    //Round 0: sort cards by id
+    struct { bool operator()(Card* a, Card* b) const {return a->m_id < b->m_id;}} idsort;
+    std::sort(all_cards.begin(),all_cards.end(),idsort);
 
     // Round 1: set cards_by_id
     for (Card* card: all_cards)

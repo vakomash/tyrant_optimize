@@ -1277,8 +1277,9 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
     auto player_assaults_and_structures = proc.cards.player_commanders;
     player_assaults_and_structures.insert(player_assaults_and_structures.end(), proc.cards.player_structures.begin(), proc.cards.player_structures.end());
     player_assaults_and_structures.insert(player_assaults_and_structures.end(), proc.cards.player_assaults.begin(), proc.cards.player_assaults.end());
-    for (const Card* card: player_assaults_and_structures)
+    for (auto it = player_assaults_and_structures.begin(); it != player_assaults_and_structures.end();++it)
     {
+        const Card* card = *it;
         // skip illegal
         if ((card->m_category != CardCategory::dominion_alpha)
                 && (card->m_category != CardCategory::normal))
@@ -1356,6 +1357,12 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
         else if (card->m_category == CardCategory::normal)
         {
             card_candidates.emplace_back(card);
+            if(recent_boost && it + player_assaults_and_structures.size()/20 > player_assaults_and_structures.end()) //4x latest 5%
+            {
+                card_candidates.emplace_back(card);
+                card_candidates.emplace_back(card);
+                card_candidates.emplace_back(card);
+            }
         }
     }
     // append NULL as void card as well
@@ -1391,7 +1398,7 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
         }
     }
 
-    if(recent_boost) std::reverse(card_candidates.begin(), card_candidates.end()); //first card should be latest/NULLPTR
+    std::reverse(card_candidates.begin(), card_candidates.end()); 
 
 
 
@@ -1471,7 +1478,6 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
         //for (const Card* card_candidate: card_candidates)
         for (auto it = card_candidates.begin(); it != card_candidates.end();++it)
         {
-            auto save_score = best_score.points;
             const Card* card_candidate = *it;
             for (unsigned to_slot(is_random ? from_slot : card_candidate ? freezed_cards : (best_cards.size() - 1));
                     to_slot < (is_random ? (from_slot + 1) : (best_cards.size() + (from_slot < best_cards.size() ? 0 : 1)));
@@ -1485,10 +1491,6 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
                 deck_has_been_improved |= try_improve_deck(d1, from_slot, to_slot, card_candidate,
                         best_commander, best_alpha_dominion, best_cards, best_score, best_gap, best_deck,
                         evaluated_decks, zero_results, skipped_simulations, proc);
-                if(recent_boost && best_score.points-save_score > target_score/100 - save_score/100) { //reloop if strong card is found, condition might need optimization
-                    it = card_candidates.begin();
-                    break;
-                }
             }
             if (best_score.points - target_score > -1e-9)
             { break; }
@@ -1580,8 +1582,10 @@ void simulated_annealing(unsigned num_min_iterations, unsigned num_iterations, D
     auto player_assaults_and_structures = proc.cards.player_commanders;
     player_assaults_and_structures.insert(player_assaults_and_structures.end(), proc.cards.player_structures.begin(), proc.cards.player_structures.end());
     player_assaults_and_structures.insert(player_assaults_and_structures.end(), proc.cards.player_assaults.begin(), proc.cards.player_assaults.end());
-    for (const Card* card: player_assaults_and_structures)
+
+    for (auto it = player_assaults_and_structures.begin(); it!=player_assaults_and_structures.end();++it)
     {
+        const Card* card = *it;
         // skip illegal
         if ((card->m_category != CardCategory::dominion_alpha)
                 && (card->m_category != CardCategory::normal))
@@ -1649,6 +1653,13 @@ void simulated_annealing(unsigned num_min_iterations, unsigned num_iterations, D
         }
 
         all_candidates.emplace_back(card);
+        if(recent_boost && it + player_assaults_and_structures.size()/20 > player_assaults_and_structures.end()) //4x latest 5%
+        {
+            all_candidates.emplace_back(card);
+            all_candidates.emplace_back(card);
+            all_candidates.emplace_back(card);
+        }
+
     }
     // append NULL as void card as well
     all_candidates.emplace_back(nullptr);
