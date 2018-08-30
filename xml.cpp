@@ -309,7 +309,7 @@ void parse_card_node(Cards& all_cards, Card* card, xml_node<>* card_node)
         auto x = node_value(skill_node, "x", 0);
         auto y = skill_faction(skill_node);
         auto n = node_value(skill_node, "n", 0);
-        auto c = node_value(skill_node, "c", 0);
+        auto c = node_value(skill_node, "c", skill_id==Skill::flurry?1:0);
         auto s = skill_target_skill(skill_node, "s");
         auto s2 = skill_target_skill(skill_node, "s2");
         bool all = skill_node->first_attribute("all");
