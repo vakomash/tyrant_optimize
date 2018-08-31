@@ -12,7 +12,7 @@ Prereqs:
 For Ubunutu/Debian
 
 1. Install required packages
-  * `apt install g++ make git libboost-all-dev`
+  * `apt install g++ make git libboost-all-dev libomp-dev`
 2. Get the lastest rev. of tuo
   * `git clone git://github.com/APN-Pucky/tyrant_optimize`
 3. Compile!
