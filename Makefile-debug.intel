@@ -1,8 +1,7 @@
-MAIN := tuo
+MAIN := tuodebug
 SRCS := $(wildcard *.cpp)
-OBJS := $(patsubst %.cpp,obj/%.o,$(SRCS))
+OBJS := $(patsubst %.cpp,obj-debug/%.o,$(SRCS))
 INCS := $(wildcard *.h)
-
 ifndef VERSION
 VERSION = $(shell git describe --tags --abbrev=0 --dirty)
 ifeq ($(VERSION),)
@@ -11,16 +10,16 @@ ${warning "VERSION is not set (USING NO VERSION instead), use make VERSION=vX.XX
 endif
 endif
 
-CPPFLAGS := -Wall -Werror -std=gnu++11 -Ofast -DNDEBUG -DNQUEST -DTYRANT_OPTIMIZER_VERSION='"$(VERSION)"' -fopenmp
+CPPFLAGS := -Wall -Werror -std=gnu++11 -Ofast -g -DTYRANT_OPTIMIZER_VERSION='"$(VERSION)--debug"' -fopenmp -xHost -qopenmp
 LDFLAGS := -lboost_system -lboost_thread -lboost_filesystem -lboost_regex -lboost_timer -lomp
 
 all: $(MAIN)
 
-obj/.stamp:
-	mkdir -p obj
-	touch obj/.stamp
+obj-debug/.stamp:
+	mkdir -p obj-debug
+	touch obj-debug/.stamp
 
-obj/%.o: %.cpp $(INCS) obj/.stamp
+obj-debug/%.o: %.cpp $(INCS) obj-debug/.stamp
 	$(CXX) $(CPPFLAGS) -o $@ -c $<
 
 $(MAIN): $(OBJS)
@@ -29,4 +28,4 @@ $(MAIN): $(OBJS)
 rebuild: clean all
 
 clean:
-	rm -rf $(MAIN) obj/*.o
+	rm -rf $(MAIN) obj-debug/*.o

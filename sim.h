@@ -22,6 +22,7 @@ class Achievement;
 extern unsigned turn_limit;
 
 //---------------------- Represent Simulation Results ----------------------------
+
 template<typename result_type>
 struct Results
 {
@@ -39,8 +40,26 @@ struct Results
         return *this;
     }
 };
+/*template<typename result_type>
+struct VecResults
+{
+	std::vector<result_type> * vec;
+	VecResults()
+	VecResults(std::vector<Results<result_type>>* p_vec) : vec(p_vec)
+ 	{
+	}
 
-typedef std::pair<std::vector<Results<int64_t>>, unsigned> EvaluatedResults;
+    	template<typename other_result_type>
+	VecResults& operator+=(const VecResults<other_result_type>& other)
+    	{
+		for(int i =0; i < vec.size();++i)
+		{
+			vec[i] += other[i];
+		}
+        	return *this;
+    	}
+};*/
+typedef std::pair<std::vector<Results<uint64_t>>, unsigned> EvaluatedResults;
 
 template<typename result_type>
 struct FinalResults
