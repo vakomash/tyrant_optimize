@@ -16,4 +16,6 @@ test.sh
 data/customdecks.txt
 data/ownedcards.txt
 out.txt
+*.cmd
+*.dat
 
