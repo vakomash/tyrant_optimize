@@ -1398,7 +1398,7 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
         }
     }
 
-    std::reverse(card_candidates.begin(), card_candidates.end()); 
+    std::reverse(card_candidates.begin(), card_candidates.end());
 
 
 
@@ -1406,7 +1406,7 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
     for (unsigned from_slot(freezed_cards), dead_slot(freezed_cards); ;
             from_slot = std::max(freezed_cards, (from_slot + 1) % std::min<unsigned>(max_deck_len, best_cards.size() + 1)))
     {
-        if(is_timeout_reached()){ break;}	
+        if(is_timeout_reached()){ break;}
         if (deck_has_been_improved)
         {
             dead_slot = from_slot;
@@ -1471,8 +1471,8 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
             d1->cards = best_cards;
         }
 
-        // shuffle candidates, except for recent_boost
-        if(!recent_boost) std::shuffle(card_candidates.begin(), card_candidates.end(), re);
+        // shuffle candidates
+        std::shuffle(card_candidates.begin(), card_candidates.end(), re);
 
         // << card candidate loop >>
         //for (const Card* card_candidate: card_candidates)
@@ -1714,7 +1714,7 @@ void simulated_annealing(unsigned num_min_iterations, unsigned num_iterations, D
         {
 
             to_slot = std::uniform_int_distribution<unsigned>(is_random ? from_slot : candidate ? freezed_cards : (cur_deck->cards.size() -1),(is_random ? (from_slot+1) : (cur_deck->cards.size() + ( from_slot < cur_deck->cards.size() ? 0 : 1)))-1)(re);
-            if(candidate ? 
+            if(candidate ?
                     (from_slot < cur_deck->cards.size() && (from_slot == to_slot && candidate == cur_deck->cards[to_slot]))
                     :
                     (from_slot == best_cards.size()))
