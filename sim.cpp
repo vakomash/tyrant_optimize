@@ -227,7 +227,7 @@ inline unsigned CardStatus::attack_power() const
     signed attack = calc_attack_power();
     if(__builtin_expect(attack <0,false))
     {
-        std::cout << m_card->m_name << " " << m_card->m_attack  << " " << attack << " " << m_temp_attack_buff << " " << m_corroded_weakened << std::endl;	
+        std::cout << m_card->m_name << " " << m_card->m_attack  << " " << attack << " " << m_temp_attack_buff << " " << m_corroded_weakened << std::endl;
     }
     _DEBUG_ASSERT(attack >= 0);
     return (unsigned)attack;
@@ -235,7 +235,7 @@ inline unsigned CardStatus::attack_power() const
 
 inline signed CardStatus::calc_attack_power() const
 {
-    return 
+    return
         (signed)safe_minus(
                 m_card->m_attack + safe_minus(m_perm_attack_buff, m_subdued),
                 m_corroded_weakened
@@ -724,7 +724,7 @@ struct PlayCard
         {
             setStorage<type>();
             placeCard<type>();
-            status->m_summoned = summoned;	
+            status->m_summoned = summoned;
 
             unsigned played_faction_mask(0);
             unsigned same_faction_cards_count(0);
@@ -884,7 +884,7 @@ struct PlayCard
                             faction_names[card->m_faction].c_str());
                 }
 
-            }	
+            }
             //Devotion BGE
             if (__builtin_expect(fd->bg_effects[fd->tapi][PassiveBGE::devotion], false) && !summoned && card->m_category == CardCategory::normal && fd->tap->commander.m_card->m_faction == card->m_faction)
             {
@@ -1128,7 +1128,7 @@ void turn_start_phase(Field* fd)
     // Active player's commander card:
     cooldown_skills(&fd->tap->commander);
     //grab structs before new one get summoned
-    auto& structures(fd->tap->structures);     
+    auto& structures(fd->tap->structures);
     unsigned end(structures.size());
     // Active player's assault cards:
     // update index
@@ -1399,6 +1399,7 @@ struct PerformAttack
             damage_dependant_pre_oa<def_cardtype>();
 
             on_attacked<def_cardtype>();
+            if (!is_alive(att_status)) { return att_dmg; }
 
 
             // Enemy Skill: Counter
@@ -1714,7 +1715,7 @@ struct PerformAttack
         }
 
     template<enum CardType::CardType>
-        void on_attacked() {		
+        void on_attacked() {
             //APN
             // resolve On-Attacked skills
             for (const auto& ss: def_status->m_card->m_skills_on_attacked)
@@ -1867,7 +1868,7 @@ bool attack_phase(Field* fd)
         unsigned hunt_value = att_status->skill(Skill::hunt);
         if(hunt_value)
         {
-            CardStatus* hunted_status{select_first_enemy_assault(fd)}; 
+            CardStatus* hunted_status{select_first_enemy_assault(fd)};
             if (hunted_status != nullptr)
             {
                 unsigned remaining_dmg = remove_absorption(fd,hunted_status,hunt_value + hunted_status->m_enfeebled);
@@ -2063,7 +2064,7 @@ inline bool skill_predicate<Skill::weaken>(Field* fd, CardStatus* src, CardStatu
     if (__builtin_expect((fd->tapi == src->m_player), true))
     { return is_active_next_turn(dst); }
 
-    // APN - On-Attacked/Death don't target the attacking card  
+    // APN - On-Attacked/Death don't target the attacking card
 
     // inactive player performs Weaken (inverted case (on-death activation))
     return will_activate_this_turn(dst);
@@ -2992,7 +2993,7 @@ Results<uint64_t> evaluate_sim_result(Field* fd)
                     unsigned campaign_score = 100 - 10 * (p[0]->total_nonsummon_cards_destroyed - total_dominions_destroyed);
                     return {1, 0, 0, (points_score_type)campaign_score};
                 }
-            case OptimizationMode::war: 
+            case OptimizationMode::war:
                 {
                     unsigned war_score = evaluate_war_score(fd, 0);
                     return {1,0,0, (points_score_type) war_score};
