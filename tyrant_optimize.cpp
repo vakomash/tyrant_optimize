@@ -36,9 +36,7 @@
 #include <boost/thread/barrier.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/thread.hpp>
-#ifndef NDEBUG
-  #include <boost/timer/timer.hpp>
-#endif
+#include <boost/timer/timer.hpp>
 #include <boost/tokenizer.hpp>
 #include "card.h"
 #include "cards.h"
