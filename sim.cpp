@@ -1723,7 +1723,6 @@ struct PerformAttack
                 _DEBUG_MSG(1, "On Attacked %s: Preparing (tail) skill %s\n",
                         status_description(def_status).c_str(), skill_description(fd->cards, ss).c_str());
                 fd->skill_queue.emplace_back(def_status, ss);
-                prepend_on_death(fd);
                 resolve_skill(fd);
             }
         }
