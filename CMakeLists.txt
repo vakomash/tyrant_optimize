@@ -17,7 +17,7 @@ file(GLOB TUO_SOURCES "*.cpp")
 enable_language(CXX)
 add_executable(tuo ${TUO_SOURCES})
 
-find_package(Boost EXACT COMPONENTS system thread filesystem regex REQUIRED)
+find_package(Boost EXACT COMPONENTS system thread filesystem regex timer REQUIRED)
 
 target_link_libraries(tuo ${Boost_LIBRARIES})
 

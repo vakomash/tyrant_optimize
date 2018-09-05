@@ -32,6 +32,7 @@ IniRead, IniOrder, %IniFileName%, %IniSection%, Order, 1
 IniRead, IniOperation, %IniFileName%, %IniSection%, Operation, 1
 IniRead, IniDominion, %IniFileName%, %IniSection%, Dominion, 1
 IniRead, IniMono, %IniFileName%, %IniSection%, Mono, 1
+IniRead, IniStrategy, %IniFileName%, %IniSection%, Strategy, 1
 IniRead, IniCommander, %IniFileName%, %IniSection%, Commander, 0
 IniRead, IniEndgame, %IniFileName%, %IniSection%, Endgame, 1
 IniRead, IniFund, %IniFileName%, %IniSection%, Fund, 0
@@ -57,6 +58,7 @@ Gui, Add, Text, r1, Effect:
 Gui, Add, Text, r1, Mode:
 Gui, Add, Text, r1, Operation:
 Gui, Add, Text, r1, Dominion:
+Gui, Add, Text, r1, Strategy:
 Gui, Add, Text, r1, Flags:
 
 Gui, Add, Edit, vMyDeck ym w600 r5, %IniMyDeck%
@@ -90,6 +92,7 @@ Gui, Add, ComboBox, vEffect xs Choose%IniEffectNum% section, %BGEffects%
 Gui, Add, DDL, altsubmit vMode Choose%IniMode%, Battle / Mission|Battle (defense)|GW|GW (defense)|Brawl|Brawl (defense)|Raid|Campaign|CQ / Surge
 Gui, Add, DDL, altsubmit vOperation Group Choose%IniOperation% xs, Climb|Sim|Reorder|Climbex|Anneal|Debug
 Gui, Add, DDL, altsubmit vDominion Group Choose%IniDominion% xs, dom-owned|dom-maxed|dom-none
+Gui, Add, DDL, altsubmit vStrategy Group Choose%IniStrategy%, none|enfeeble|jam|mortar|siege|strike|sunder|weaken|enhance|evolve|heal|mend|overload|protect|rally|fortify|enrage|entrap|rush|mimic|armor|avenge|scavenge|corrosive|counter|evade|subdue|absorb|flying|payback|revenge|tribute|refresh|wall|barrier|coalition|legion|pierce|rupture|swipe|drain|venom|hunt|berserk|inhibit|sabotage|leech|poison|allegiance|flurry|valor|stasis|summon|bravery
 
 Gui, Add, Text, ys, Endgame:
 Gui, Add, Text, r1, Order:
@@ -159,8 +162,9 @@ selEndgame := (Endgame <= 1 ? "" : "endgame " EndgameVal " ")
 selFund := (Fund == "" ? "" : "fund " Fund " ")
 selDominion := (Dominion == 3 ? "dom-none " : Dominion == 1 ? "dom-owned " : Dominion == 2 ? "dom-maxed " : "")
 selMono := (Mono == 1 ? "" : Mono == 2 ? "-m imperial " : Mono == 3 ? "-m raider " : Mono == 4 ? "-m bloodthirsty " : Mono == 5 ? "-m xeno " : Mono == 6 ? "-m righteous " : Mono == 7 ? "-m progenitor " : "")
+selStrategy := (Strategy == 1 ? "" : Strategy == 2 ? "prefered enfeeble " : Strategy == 3 ? "prefered jam " : Strategy == 4 ? "prefered mortar " : Strategy == 5 ? "prefered siege " : Strategy == 6 ? "prefered strike " : Strategy == 7 ? "prefered sunder " :  Strategy == 8 ? "prefered weaken " : Strategy == 9 ? "prefered enhance" :  Strategy == 10 ? "prefered evolve" :  Strategy == 11 ? "prefered heal" :  Strategy == 12 ? "prefered mend" :  Strategy == 13 ? "prefered overload" :  Strategy == 14 ? "prefered protect" :  Strategy == 15 ? "prefered rally" :  Strategy == 16 ? "prefered fortify" :  Strategy == 17 ? "prefered enrage" :  Strategy == 18 ? "prefered entrap" :  Strategy == 19 ? "prefered rush" :  Strategy == 20 ? "prefered mimic" :  Strategy == 21 ? "prefered armor" :  Strategy == 22 ? "prefered avenge" :  Strategy == 23 ? "prefered scavenge" : Strategy == 24 ? "prefered corrosive" : Strategy == 25 ? "prefered evade" : Strategy == 26 ? "prefered subdue" : Strategy == 27 ? "prefered absorb" : Strategy == 28 ? "prefered flying" : Strategy == 29 ? "prefered payback" : Strategy == 30 ? "prefered revenge" : Strategy == 31 ? "prefered tribute" : Strategy == 32 ? "prefered refresh" : Strategy == 33 ? "prefered wall" : Strategy == 34 ? "prefered barrier" : Strategy == 35 ? "prefered coalition" : Strategy == 36 ? "prefered legion" : Strategy == 37 ? "prefered pierce" : Strategy == 38 ? "prefered rupture" : Strategy == 39 ? "prefered swipe" : Strategy == 40 ? "prefered drain" : Strategy == 41 ? "prefered venom" : Strategy == 42 ? "prefered hunt" : Strategy == 43 ? "prefered berserk" : Strategy == 44 ? "prefered inhibit" : Strategy == 45 ? "prefered sabotage" : Strategy == 46 ? "prefered leech" : Strategy == 47 ? "prefered poison" : Strategy == 48 ? "prefered allegiance" : Strategy == 49 ? "prefered allegiance" : Strategy == 50 ? "prefered flurry" : Strategy == 51 ? "prefered valor" : Strategy == 52 ? "prefered stasis" : Strategy == 53 ? "prefered summon" : Strategy == 54 ? "prefered bravery" : "")
 selCommander := (Commander ? "-c " : "")
-execString = %selTUO% "%MyDeck%" "%EnemiesDeck%" %selMode% %selOrder% %selMySiege%%selEnemySiege%%selVIP%%selQuest%%selEffect%%selThreads%%selEndgame%%selFund%%selSimOptions%%selOperation% %Iterations% %selCommander%%selDominion%%selMono%
+execString = %selTUO% "%MyDeck%" "%EnemiesDeck%" %selMode% %selOrder% %selMySiege%%selEnemySiege%%selVIP%%selQuest%%selEffect%%selThreads%%selEndgame%%selFund%%selSimOptions%%selOperation% %Iterations% %selCommander%%selDominion%%selMono%%selStrategy%
 Run, cmd.exe /c title TUOptimizeOutput && echo %execString% && %execString% & pause
 Gui, Show
 return
@@ -314,6 +318,7 @@ IniWrite, %Operation%, %IniFileName%, %IniSection%, Operation
 IniWrite, %Dominion%, %IniFileName%, %IniSection%, Dominion
 IniWrite, %Iterations%, %IniFileName%, %IniSection%, Iterations
 IniWrite, %Mono%, %IniFileName%, %IniSection%, Mono
+IniWrite, %Strategy%, %IniFileName%, %IniSection%, Strategy
 IniWrite, %Commander%,  %IniFileName%, %IniSection%, Commander
 IniWrite, %Threads%, %IniFileName%, %IniSection%, Threads
 IniWrite, %SimOptions%, %IniFileName%, %IniSection%, SimOptions
@@ -331,14 +336,14 @@ while true
 }
 ExitApp
 
-DownloadCards(url,file) { 
+DownloadCards(url,file) {
 	UrlDownloadToFile, *0 %url%, %file%
 	if ErrorLevel
 	{
 		MsgBox, Error downloading %file%.
 		had_error := true
-	} 
-	else 
+	}
+	else
 	{
 		FileReadLine,VAR1,%file%,3
 		If InStr(VAR1, "File Not Found")
@@ -349,4 +354,3 @@ DownloadCards(url,file) {
 	}
 	return 1
 }
-
