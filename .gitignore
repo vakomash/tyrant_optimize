@@ -19,3 +19,5 @@ out.txt
 *.out
 tuo.exe
 *.ini
+*.swp
+*.stackdump
