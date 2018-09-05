@@ -21,3 +21,7 @@ tuo.exe
 *.ini
 *.swp
 *.stackdump
+build-*
+tuo-debug.exe
+tuo-x86-debug.exe
+tuo-x86.exe
