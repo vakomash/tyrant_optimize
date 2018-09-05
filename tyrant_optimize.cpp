@@ -36,6 +36,9 @@
 #include <boost/thread/barrier.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/thread.hpp>
+#ifndef NDEBUG
+  #include <boost/timer/timer.hpp>
+#endif
 #include <boost/tokenizer.hpp>
 #include "card.h"
 #include "cards.h"
@@ -70,6 +73,7 @@ namespace {
     bool use_owned_dominions{true};
     bool use_maxed_dominions{false};
     bool recent_boost{false};
+    std::vector<Skill::Skill> skills_boost;
     unsigned use_fused_card_level{0};
     unsigned use_fused_commander_level{0};
     bool print_upgraded{false};
@@ -1363,6 +1367,15 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
                 card_candidates.emplace_back(card);
                 card_candidates.emplace_back(card);
             }
+            for(Skill::Skill skill_id : skills_boost)
+            {
+                if(card->m_skill_value[skill_id])
+                {
+                    card_candidates.emplace_back(card);
+                    card_candidates.emplace_back(card);
+                    card_candidates.emplace_back(card);
+                }
+            }
         }
     }
     // append NULL as void card as well
@@ -1658,6 +1671,16 @@ void simulated_annealing(unsigned num_min_iterations, unsigned num_iterations, D
             all_candidates.emplace_back(card);
             all_candidates.emplace_back(card);
             all_candidates.emplace_back(card);
+        }
+        //prefered
+        for(Skill::Skill skill_id : skills_boost)
+        {
+            if(card->m_skill_value[skill_id])
+            {
+                all_candidates.emplace_back(card);
+                all_candidates.emplace_back(card);
+                all_candidates.emplace_back(card);
+            }
         }
 
     }
@@ -2024,6 +2047,9 @@ bool parse_bge(
 
 int main(int argc, char** argv)
 {
+#ifndef NDEBUG
+    boost::timer::auto_cpu_timer t;
+#endif
     start_time = std::chrono::system_clock::now();
     if (argc == 2 && strcmp(argv[1], "-version") == 0)
     {
@@ -2144,6 +2170,11 @@ int main(int argc, char** argv)
         else if (strcmp(argv[argIndex], "mono") == 0 || strcmp(argv[argIndex], "-m") == 0 || strcmp(argv[argIndex], "factions") == 0 || strcmp(argv[argIndex], "-f") == 0)
         {
             factions.push_back(faction_name_to_id(argv[argIndex + 1]));
+            argIndex += 1;
+        }
+        else if (strcmp(argv[argIndex], "strategy") == 0 || strcmp(argv[argIndex], "prefered") == 0)
+        {
+            skills_boost.push_back(skill_name_to_id(argv[argIndex + 1]));
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "effect") == 0 || strcmp(argv[argIndex], "-e") == 0)

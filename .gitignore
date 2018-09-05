@@ -17,3 +17,5 @@ data/customdecks.txt
 data/ownedcards.txt
 out.txt
 *.out
+tuo.exe
+*.ini
