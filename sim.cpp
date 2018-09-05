@@ -1399,6 +1399,7 @@ struct PerformAttack
             damage_dependant_pre_oa<def_cardtype>();
 
             on_attacked<def_cardtype>();
+            if (!is_alive(att_status)) { return att_dmg; }
 
 
             // Enemy Skill: Counter
