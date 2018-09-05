@@ -831,11 +831,11 @@ class Process
 	    std::vector<Results<uint64_t>> results(evaluated_results.first);
 #pragma omp declare reduction \
 	(VecPlus:std::vector<Results<uint64_t>>: omp_out=merge(omp_out,omp_in))
-#pragma omp parallel default(none) shared(thread_num_iterations,threads_data,results)
+#pragma omp parallel default(none) shared(thread_num_iterations,results)
 	    {
 	    	SimulationData* sim = threads_data.at(omp_get_thread_num());
  		sim->set_decks(this->your_deck, this->enemy_decks);
-#pragma omp for reduction(VecPlus:results) 
+#pragma omp for reduction(VecPlus:results) schedule(auto)
 	    	for(unsigned i =0; i < thread_num_iterations;++i) {
 		    	if(results.size()==0)
 				results =sim->evaluate();				//calculate single sim
@@ -852,7 +852,7 @@ class Process
 #endif
 	    return evaluated_results;
 	}
-	std::vector<Results<uint64_t>> merge(std::vector<Results<uint64_t>> out, std::vector<Results<uint64_t>> in)
+	static std::vector<Results<uint64_t>> merge(std::vector<Results<uint64_t>> out, std::vector<Results<uint64_t>> in)
 	{
 		//printf("merging out: %d in: %d \n", (int)out[0].wins, (int)in[0].wins);
 	    	//printf("out%p ",(void *)&out );
@@ -2972,7 +2972,9 @@ int main(int argc, char** argv)
             return 1;
         }
     }
-
+#ifdef _OPENMP
+    omp_set_num_threads(opt_num_threads);
+#endif
     Cards all_cards;
     Decks decks;
     std::unordered_map<std::string, std::string> bge_aliases;
