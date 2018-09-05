@@ -50,8 +50,8 @@ public:
         m_set(0),
         m_skills(),
         m_skills_on_play(),
-	//APN
-	m_skills_on_attacked(),
+	      //APN
+	      m_skills_on_attacked(),
         m_skills_on_death(),
         m_type(CardType::assault),
         m_category(CardCategory::normal),

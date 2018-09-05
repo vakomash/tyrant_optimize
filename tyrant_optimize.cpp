@@ -72,6 +72,7 @@ namespace {
     bool use_owned_dominions{true};
     bool use_maxed_dominions{false};
     bool recent_boost{false};
+    std::vector<Skill::Skill> skills_boost;
     unsigned use_fused_card_level{0};
     unsigned use_fused_commander_level{0};
     bool print_upgraded{false};
@@ -1307,248 +1308,257 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
 #ifndef NQUEST
 			, quest
 #endif
-			);
-	bool is_random = (d1->strategy == DeckStrategy::random) || (d1->strategy == DeckStrategy::flexible);
-	bool deck_has_been_improved = true;
-	unsigned long skipped_simulations = 0;
-	std::vector<const Card*> commander_candidates;
-	std::vector<const Card*> alpha_dominion_candidates;
-	std::vector<const Card*> card_candidates;
+            );
+    bool is_random = (d1->strategy == DeckStrategy::random) || (d1->strategy == DeckStrategy::flexible);
+    bool deck_has_been_improved = true;
+    unsigned long skipped_simulations = 0;
+    std::vector<const Card*> commander_candidates;
+    std::vector<const Card*> alpha_dominion_candidates;
+    std::vector<const Card*> card_candidates;
 
-	// resolve available to player cards
-	auto player_assaults_and_structures = proc.cards.player_commanders;
-	player_assaults_and_structures.insert(player_assaults_and_structures.end(), proc.cards.player_structures.begin(), proc.cards.player_structures.end());
-	player_assaults_and_structures.insert(player_assaults_and_structures.end(), proc.cards.player_assaults.begin(), proc.cards.player_assaults.end());
-	for (auto it = player_assaults_and_structures.begin(); it != player_assaults_and_structures.end();++it)
-	{
-		const Card* card = *it;
-		// skip illegal
-		if ((card->m_category != CardCategory::dominion_alpha)
-				&& (card->m_category != CardCategory::normal))
-		{ continue; }
+    // resolve available to player cards
+    auto player_assaults_and_structures = proc.cards.player_commanders;
+    player_assaults_and_structures.insert(player_assaults_and_structures.end(), proc.cards.player_structures.begin(), proc.cards.player_structures.end());
+    player_assaults_and_structures.insert(player_assaults_and_structures.end(), proc.cards.player_assaults.begin(), proc.cards.player_assaults.end());
+    for (auto it = player_assaults_and_structures.begin(); it != player_assaults_and_structures.end();++it)
+    {
+        const Card* card = *it;
+        // skip illegal
+        if ((card->m_category != CardCategory::dominion_alpha)
+                && (card->m_category != CardCategory::normal))
+        { continue; }
 
-		// skip dominions when their climbing is disabled
-		if ((card->m_category == CardCategory::dominion_alpha) && (!use_owned_dominions))
-		{ continue; }
+        // skip dominions when their climbing is disabled
+        if ((card->m_category == CardCategory::dominion_alpha) && (!use_owned_dominions))
+        { continue; }
 
-		// try to skip a card unless it's allowed
-		if (!allowed_candidates.count(card->m_id))
-		{
-			// skip disallowed always
-			if (disallowed_candidates.count(card->m_id))
-			{ continue; }
+        // try to skip a card unless it's allowed
+        if (!allowed_candidates.count(card->m_id))
+        {
+            // skip disallowed always
+            if (disallowed_candidates.count(card->m_id))
+            { continue; }
 
-			// handle dominions
-			if (card->m_category == CardCategory::dominion_alpha)
-			{
-				// skip non-top-level dominions anyway
-				// (will check it later and downgrade if necessary according to amount of material (shards))
-				/*if (!card->is_top_level_card())
-				  { continue; }
+            // handle dominions
+            if (card->m_category == CardCategory::dominion_alpha)
+            {
+                // skip non-top-level dominions anyway
+                // (will check it later and downgrade if necessary according to amount of material (shards))
+                /*if (!card->is_top_level_card())
+                  { continue; }
 
-				// skip basic dominions
-				if ((card->m_id == 50001) || (card->m_id == 50002))
-				{ continue; }*/
-			}
+                // skip basic dominions
+                if ((card->m_id == 50001) || (card->m_id == 50002))
+                { continue; }*/
+            }
 
-			// handle normal cards
-			else
-			{
-				// skip non-top-level cards (adjust_deck() will try to downgrade them if necessary)
-				bool use_top_level = (card->m_type == CardType::commander) ? use_top_level_commander : use_top_level_card;
-				if (!card->is_top_level_card() and (fund || use_top_level || !owned_cards[card->m_id]))
-				{ continue; }
+            // handle normal cards
+            else
+            {
+                // skip non-top-level cards (adjust_deck() will try to downgrade them if necessary)
+                bool use_top_level = (card->m_type == CardType::commander) ? use_top_level_commander : use_top_level_card;
+                if (!card->is_top_level_card() and (fund || use_top_level || !owned_cards[card->m_id]))
+                { continue; }
 
-				// skip lowest fusion levels
-				unsigned use_fused_level = (card->m_type == CardType::commander) ? use_fused_commander_level : use_fused_card_level;
-				if (card->m_fusion_level < use_fused_level)
-				{ continue; }
-			}
-		}
-
-
-		if(use_owned_cards && card->m_category == CardCategory::dominion_alpha && !owned_cards[card->m_id])
-		{
-			if(use_maxed_dominions && card->m_used_for_cards.size()==0)
-			{
-
-			}
-			else
-			{continue;}
-		}
-		// skip unavailable cards anyway when ownedcards is used
-		if (use_owned_cards && !(card->m_category == CardCategory::dominion_alpha) && !is_owned_or_can_be_fused(card))
-		{
-			continue;
-		}
-		//mono
-		if(!factions.empty() && std::find(factions.begin(), factions.end(), card->m_faction) == factions.end())
-		{
-			continue;
-		}
-
-		// enqueue candidate according to category & type
-		if (card->m_type == CardType::commander)
-		{
-			commander_candidates.emplace_back(card);
-		}
-		else if (card->m_category == CardCategory::dominion_alpha)
-		{
-			alpha_dominion_candidates.emplace_back(card);
-		}
-		else if (card->m_category == CardCategory::normal)
-		{
-			card_candidates.emplace_back(card);
-			if(recent_boost && it + player_assaults_and_structures.size()/20 > player_assaults_and_structures.end()) //4x latest 5%
-			{
-				card_candidates.emplace_back(card);
-				card_candidates.emplace_back(card);
-				card_candidates.emplace_back(card);
-			}
-		}
-	}
-	// append NULL as void card as well
-	card_candidates.emplace_back(nullptr);
-
-	// add current alpha dominion to candidates if necessary
-	// or setup first candidate into the deck if no alpha dominion defined
-	if (use_owned_dominions)
-	{
-		if (best_alpha_dominion)
-		{
-			if (!std::count(alpha_dominion_candidates.begin(), alpha_dominion_candidates.end(), best_alpha_dominion))
-			{
-				alpha_dominion_candidates.emplace_back(best_alpha_dominion);
-			}
-		}
-		else if (!alpha_dominion_candidates.empty())
-		{
-			best_alpha_dominion = d1->alpha_dominion = alpha_dominion_candidates[0];
-		}
-		if (debug_print > 0)
-		{
-			for (const Card* dom_card : alpha_dominion_candidates)
-			{
-				std::cout << " ** next Alpha Dominion candidate: " << dom_card->m_name
-					<< " ($: " << alpha_dominion_cost(dom_card) << ")" << std::endl;
-			}
-		}
-		if (!best_alpha_dominion && owned_alpha_dominion)
-		{
-			best_alpha_dominion = owned_alpha_dominion;
-			std::cout << "Setting up owned Alpha Dominion into a deck: " << best_alpha_dominion->m_name << std::endl;
-		}
-	}
-
-	std::reverse(card_candidates.begin(), card_candidates.end()); 
+                // skip lowest fusion levels
+                unsigned use_fused_level = (card->m_type == CardType::commander) ? use_fused_commander_level : use_fused_card_level;
+                if (card->m_fusion_level < use_fused_level)
+                { continue; }
+            }
+        }
 
 
+        if(use_owned_cards && card->m_category == CardCategory::dominion_alpha && !owned_cards[card->m_id])
+        {
+            if(use_maxed_dominions && card->m_used_for_cards.size()==0)
+            {
 
-	// << main climbing loop >>
-	for (unsigned from_slot(freezed_cards), dead_slot(freezed_cards); ;
-			from_slot = std::max(freezed_cards, (from_slot + 1) % std::min<unsigned>(max_deck_len, best_cards.size() + 1)))
-	{
-		if(is_timeout_reached()){ break;}	
-		if (deck_has_been_improved)
-		{
-			dead_slot = from_slot;
-			deck_has_been_improved = false;
-		}
-		else if (from_slot == dead_slot || best_score.points - target_score > -1e-9)
-		{
-			if (best_score.n_sims >= num_iterations || best_gap > 0)
-			{ break; }
-			auto & prev_results = evaluated_decks[best_deck];
-			skipped_simulations += prev_results.second;
-			// Re-evaluate the best deck
-			d1->commander = best_commander;
-			d1->alpha_dominion = best_alpha_dominion;
-			d1->cards = best_cards;
-			auto evaluate_result = proc.evaluate(std::min(prev_results.second * iterations_multiplier, num_iterations), prev_results);
-			best_score = compute_score(evaluate_result, proc.factors);
-			std::cout << "Results refined: ";
-			print_score_info(evaluate_result, proc.factors);
-			dead_slot = from_slot;
-		}
-		if (best_score.points - target_score > -1e-9)
-		{ continue; }
+            }
+            else
+            {continue;}
+        }
+        // skip unavailable cards anyway when ownedcards is used
+        if (use_owned_cards && !(card->m_category == CardCategory::dominion_alpha) && !is_owned_or_can_be_fused(card))
+        {
+            continue;
+        }
+        //mono
+        if(!factions.empty() && std::find(factions.begin(), factions.end(), card->m_faction) == factions.end())
+        {
+            continue;
+        }
 
-		// commander
-		if (requirement.num_cards.count(best_commander) == 0)
-		{
-			// << commander candidate loop >>
-			for (const Card* commander_candidate: commander_candidates)
-			{
-				if (best_score.points - target_score > -1e-9)
-				{ break; }
-				if (commander_candidate == best_commander)
-				{ continue; }
-				deck_has_been_improved |= try_improve_deck(d1, -1, -1, commander_candidate,
-						best_commander, best_alpha_dominion, best_cards, best_score, best_gap, best_deck,
-						evaluated_decks, zero_results, skipped_simulations, proc);
-			}
-			// Now that all commanders are evaluated, take the best one
-			d1->commander = best_commander;
-			d1->alpha_dominion = best_alpha_dominion;
-			d1->cards = best_cards;
-		}
+        // enqueue candidate according to category & type
+        if (card->m_type == CardType::commander)
+        {
+            commander_candidates.emplace_back(card);
+        }
+        else if (card->m_category == CardCategory::dominion_alpha)
+        {
+            alpha_dominion_candidates.emplace_back(card);
+        }
+        else if (card->m_category == CardCategory::normal)
+        {
+            card_candidates.emplace_back(card);
+            if(recent_boost && it + player_assaults_and_structures.size()/20 > player_assaults_and_structures.end()) //4x latest 5%
+            {
+                card_candidates.emplace_back(card);
+                card_candidates.emplace_back(card);
+                card_candidates.emplace_back(card);
+            }
+            for(Skill::Skill skill_id : skills_boost)
+            {
+                if(card->m_skill_value[skill_id])
+                {
+                    card_candidates.emplace_back(card);
+                    card_candidates.emplace_back(card);
+                    card_candidates.emplace_back(card);
+                }
+            }
+        }
+    }
+    // append NULL as void card as well
+    card_candidates.emplace_back(nullptr);
 
-		// alpha dominion
-		if (use_owned_dominions && !alpha_dominion_candidates.empty())
-		{
-			// << alpha dominion candidate loop >>
-			for (const Card* alpha_dominion_candidate: alpha_dominion_candidates)
-			{
-				if (best_score.points - target_score > -1e-9)
-				{ break; }
-				if (alpha_dominion_candidate == best_alpha_dominion)
-				{ continue; }
-				deck_has_been_improved |= try_improve_deck(d1, -1, -1, alpha_dominion_candidate,
-						best_commander, best_alpha_dominion, best_cards, best_score, best_gap, best_deck,
-						evaluated_decks, zero_results, skipped_simulations, proc);
-			}
-			// Now that all alpha dominions are evaluated, take the best one
-			d1->commander = best_commander;
-			d1->alpha_dominion = best_alpha_dominion;
-			d1->cards = best_cards;
-		}
+    // add current alpha dominion to candidates if necessary
+    // or setup first candidate into the deck if no alpha dominion defined
+    if (use_owned_dominions)
+    {
+        if (best_alpha_dominion)
+        {
+            if (!std::count(alpha_dominion_candidates.begin(), alpha_dominion_candidates.end(), best_alpha_dominion))
+            {
+                alpha_dominion_candidates.emplace_back(best_alpha_dominion);
+            }
+        }
+        else if (!alpha_dominion_candidates.empty())
+        {
+            best_alpha_dominion = d1->alpha_dominion = alpha_dominion_candidates[0];
+        }
+        if (debug_print > 0)
+        {
+            for (const Card* dom_card : alpha_dominion_candidates)
+            {
+                std::cout << " ** next Alpha Dominion candidate: " << dom_card->m_name
+                    << " ($: " << alpha_dominion_cost(dom_card) << ")" << std::endl;
+            }
+        }
+        if (!best_alpha_dominion && owned_alpha_dominion)
+        {
+            best_alpha_dominion = owned_alpha_dominion;
+            std::cout << "Setting up owned Alpha Dominion into a deck: " << best_alpha_dominion->m_name << std::endl;
+        }
+    }
 
-		// shuffle candidates, except for recent_boost
-		if(!recent_boost) std::shuffle(card_candidates.begin(), card_candidates.end(), re);
+    std::reverse(card_candidates.begin(), card_candidates.end());
 
-		// << card candidate loop >>
-		//for (const Card* card_candidate: card_candidates)
-		for (auto it = card_candidates.begin(); it != card_candidates.end();++it)
-		{
-			const Card* card_candidate = *it;
-			for (unsigned to_slot(is_random ? from_slot : card_candidate ? freezed_cards : (best_cards.size() - 1));
-					to_slot < (is_random ? (from_slot + 1) : (best_cards.size() + (from_slot < best_cards.size() ? 0 : 1)));
-					++ to_slot)
-			{
-				if (card_candidate ?
-						(from_slot < best_cards.size() && (from_slot == to_slot && card_candidate == best_cards[to_slot])) // 2 Omega -> 2 Omega
-						:
-						(from_slot == best_cards.size())) // void -> void
-				{ continue; }
-				deck_has_been_improved |= try_improve_deck(d1, from_slot, to_slot, card_candidate,
-						best_commander, best_alpha_dominion, best_cards, best_score, best_gap, best_deck,
-						evaluated_decks, zero_results, skipped_simulations, proc);
-			}
-			if (best_score.points - target_score > -1e-9)
-			{ break; }
 
-		}
-	}
-	d1->commander = best_commander;
-	d1->alpha_dominion = best_alpha_dominion;
-	d1->cards = best_cards;
-	unsigned simulations = 0;
-	for (auto evaluation: evaluated_decks)
-	{ simulations += evaluation.second.second; }
-	std::cout << "Evaluated " << evaluated_decks.size() << " decks (" << simulations << " + " << skipped_simulations << " simulations)." << std::endl;
-	std::cout << "Optimized Deck: ";
-	print_deck_inline(get_deck_cost(d1), best_score, d1);
-	print_upgraded_cards(d1);
+
+    // << main climbing loop >>
+    for (unsigned from_slot(freezed_cards), dead_slot(freezed_cards); ;
+            from_slot = std::max(freezed_cards, (from_slot + 1) % std::min<unsigned>(max_deck_len, best_cards.size() + 1)))
+    {
+        if(is_timeout_reached()){ break;}
+        if (deck_has_been_improved)
+        {
+            dead_slot = from_slot;
+            deck_has_been_improved = false;
+        }
+        else if (from_slot == dead_slot || best_score.points - target_score > -1e-9)
+        {
+            if (best_score.n_sims >= num_iterations || best_gap > 0)
+            { break; }
+            auto & prev_results = evaluated_decks[best_deck];
+            skipped_simulations += prev_results.second;
+            // Re-evaluate the best deck
+            d1->commander = best_commander;
+            d1->alpha_dominion = best_alpha_dominion;
+            d1->cards = best_cards;
+            auto evaluate_result = proc.evaluate(std::min(prev_results.second * iterations_multiplier, num_iterations), prev_results);
+            best_score = compute_score(evaluate_result, proc.factors);
+            std::cout << "Results refined: ";
+            print_score_info(evaluate_result, proc.factors);
+            dead_slot = from_slot;
+        }
+        if (best_score.points - target_score > -1e-9)
+        { continue; }
+
+        // commander
+        if (requirement.num_cards.count(best_commander) == 0)
+        {
+            // << commander candidate loop >>
+            for (const Card* commander_candidate: commander_candidates)
+            {
+                if (best_score.points - target_score > -1e-9)
+                { break; }
+                if (commander_candidate == best_commander)
+                { continue; }
+                deck_has_been_improved |= try_improve_deck(d1, -1, -1, commander_candidate,
+                        best_commander, best_alpha_dominion, best_cards, best_score, best_gap, best_deck,
+                        evaluated_decks, zero_results, skipped_simulations, proc);
+            }
+            // Now that all commanders are evaluated, take the best one
+            d1->commander = best_commander;
+            d1->alpha_dominion = best_alpha_dominion;
+            d1->cards = best_cards;
+        }
+
+        // alpha dominion
+        if (use_owned_dominions && !alpha_dominion_candidates.empty())
+        {
+            // << alpha dominion candidate loop >>
+            for (const Card* alpha_dominion_candidate: alpha_dominion_candidates)
+            {
+                if (best_score.points - target_score > -1e-9)
+                { break; }
+                if (alpha_dominion_candidate == best_alpha_dominion)
+                { continue; }
+                deck_has_been_improved |= try_improve_deck(d1, -1, -1, alpha_dominion_candidate,
+                        best_commander, best_alpha_dominion, best_cards, best_score, best_gap, best_deck,
+                        evaluated_decks, zero_results, skipped_simulations, proc);
+            }
+            // Now that all alpha dominions are evaluated, take the best one
+            d1->commander = best_commander;
+            d1->alpha_dominion = best_alpha_dominion;
+            d1->cards = best_cards;
+        }
+
+        // shuffle candidates
+        std::shuffle(card_candidates.begin(), card_candidates.end(), re);
+
+        // << card candidate loop >>
+        //for (const Card* card_candidate: card_candidates)
+        for (auto it = card_candidates.begin(); it != card_candidates.end();++it)
+        {
+            const Card* card_candidate = *it;
+            for (unsigned to_slot(is_random ? from_slot : card_candidate ? freezed_cards : (best_cards.size() - 1));
+                    to_slot < (is_random ? (from_slot + 1) : (best_cards.size() + (from_slot < best_cards.size() ? 0 : 1)));
+                    ++ to_slot)
+            {
+                if (card_candidate ?
+                        (from_slot < best_cards.size() && (from_slot == to_slot && card_candidate == best_cards[to_slot])) // 2 Omega -> 2 Omega
+                        :
+                        (from_slot == best_cards.size())) // void -> void
+                { continue; }
+                deck_has_been_improved |= try_improve_deck(d1, from_slot, to_slot, card_candidate,
+                        best_commander, best_alpha_dominion, best_cards, best_score, best_gap, best_deck,
+                        evaluated_decks, zero_results, skipped_simulations, proc);
+            }
+            if (best_score.points - target_score > -1e-9)
+            { break; }
+
+        }
+    }
+    d1->commander = best_commander;
+    d1->alpha_dominion = best_alpha_dominion;
+    d1->cards = best_cards;
+    unsigned simulations = 0;
+    for (auto evaluation: evaluated_decks)
+    { simulations += evaluation.second.second; }
+    std::cout << "Evaluated " << evaluated_decks.size() << " decks (" << simulations << " + " << skipped_simulations << " simulations)." << std::endl;
+    std::cout << "Optimized Deck: ";
+    print_deck_inline(get_deck_cost(d1), best_score, d1);
+    print_upgraded_cards(d1);
 }
 
 inline FinalResults<long double> fitness(Deck* d1,
@@ -2064,674 +2074,1122 @@ bool parse_bge(
 	return true;
 }
 
+        // skip dominions when their climbing is disabled
+        if ((card->m_category == CardCategory::dominion_alpha) && (!use_owned_dominions))
+        { continue; }
+
+        // try to skip a card unless it's allowed
+        if (!allowed_candidates.count(card->m_id))
+        {
+            // skip disallowed always
+            if (disallowed_candidates.count(card->m_id))
+            { continue; }
+
+            // handle dominions
+            if (card->m_category == CardCategory::dominion_alpha)
+            {
+                // skip non-top-level dominions anyway
+                // (will check it later and downgrade if necessary according to amount of material (shards))
+                /*if (!card->is_top_level_card())
+                  { continue; }
+
+                // skip basic dominions
+                if ((card->m_id == 50001) || (card->m_id == 50002))
+                { continue; }*/
+            }
+
+            // handle normal cards
+            else
+            {
+                // skip non-top-level cards (adjust_deck() will try to downgrade them if necessary)
+                bool use_top_level = (card->m_type == CardType::commander) ? use_top_level_commander : use_top_level_card;
+                if (!card->is_top_level_card() and (fund || use_top_level || !owned_cards[card->m_id]))
+                { continue; }
+
+                // skip lowest fusion levels
+                unsigned use_fused_level = (card->m_type == CardType::commander) ? use_fused_commander_level : use_fused_card_level;
+                if (card->m_fusion_level < use_fused_level)
+                { continue; }
+            }
+        }
+
+
+        if(use_owned_cards && card->m_category == CardCategory::dominion_alpha && !owned_cards[card->m_id])
+        {
+            if(use_maxed_dominions && card->m_used_for_cards.size()==0)
+            {
+
+            }
+            else
+            {continue;}
+        }
+        // skip unavailable cards anyway when ownedcards is used
+        if (use_owned_cards && !(card->m_category == CardCategory::dominion_alpha) && !is_owned_or_can_be_fused(card))
+        {
+            continue;
+        }
+
+        //mono
+        if(!factions.empty() && std::find(factions.begin(), factions.end(), card->m_faction) == factions.end())
+        {
+            continue;
+        }
+
+        all_candidates.emplace_back(card);
+        if(recent_boost && it + player_assaults_and_structures.size()/20 > player_assaults_and_structures.end()) //4x latest 5%
+        {
+            all_candidates.emplace_back(card);
+            all_candidates.emplace_back(card);
+            all_candidates.emplace_back(card);
+        }
+        //prefered
+        for(Skill::Skill skill_id : skills_boost)
+        {
+            if(card->m_skill_value[skill_id])
+            {
+                all_candidates.emplace_back(card);
+                all_candidates.emplace_back(card);
+                all_candidates.emplace_back(card);
+            }
+        }
+
+    }
+    // append NULL as void card as well
+    all_candidates.emplace_back(nullptr);
+
+    // add current alpha dominion to candidates if necessary
+    // or setup first candidate into the deck if no alpha dominion defined
+    if (use_owned_dominions)
+    {
+        if (cur_deck->alpha_dominion)
+        {
+            if (!std::count(all_candidates.begin(), all_candidates.end(), cur_deck->alpha_dominion))
+            {
+                all_candidates.emplace_back(cur_deck->alpha_dominion);
+            }
+        }
+        if (!cur_deck->alpha_dominion && owned_alpha_dominion)
+        {
+            cur_deck->alpha_dominion = owned_alpha_dominion;
+            std::cout << "Setting up owned Alpha Dominion into a deck: " << cur_deck->alpha_dominion->m_name << std::endl;
+        }
+    }
+
+
+
+
+
+    Deck* prev_deck = cur_deck->clone();
+    Deck* best_deck = cur_deck->clone();
+
+    FinalResults<long double> prev_score = best_score;
+    FinalResults<long double> cur_score = best_score;
+
+    unsigned best_gap = cur_gap;
+
+    deck_cost = 0;
+
+    unsigned from_slot(freezed_cards);
+    unsigned from_slot_tmp(freezed_cards);
+    unsigned to_slot(1);
+
+    if(debug_print >0)std::cout << "Starting Anneal" << std::endl;
+    while(temperature > 1 && !(best_score.points - target_score > -1e-9 || is_timeout_reached()))
+    {
+        cur_deck->commander = prev_deck->commander;
+        cur_deck->alpha_dominion = prev_deck->alpha_dominion;
+        cur_deck->cards = prev_deck->cards;
+        from_slot = std::max(freezed_cards, (from_slot+1) % std::min<unsigned>(max_deck_len, cur_deck->cards.size() +1));
+        const Card* candidate = all_candidates.at(std::uniform_int_distribution<unsigned>(0,all_candidates.size()-1)(re));
+
+
+        if((!candidate || (candidate->m_category == CardCategory::normal && candidate->m_type != CardType::commander && candidate->m_category != CardCategory::dominion_alpha)))
+        {
+
+            to_slot = std::uniform_int_distribution<unsigned>(is_random ? from_slot : candidate ? freezed_cards : (cur_deck->cards.size() -1),(is_random ? (from_slot+1) : (cur_deck->cards.size() + ( from_slot < cur_deck->cards.size() ? 0 : 1)))-1)(re);
+            if(candidate ?
+                    (from_slot < cur_deck->cards.size() && (from_slot == to_slot && candidate == cur_deck->cards[to_slot]))
+                    :
+                    (from_slot == best_cards.size()))
+            {
+                continue;
+            }
+            from_slot_tmp = from_slot;
+        }
+        else if(candidate->m_type == CardType::commander && requirement.num_cards.count(cur_deck->commander) == 0)
+        {
+            cur_deck->commander = candidate;
+            from_slot_tmp = -1;
+            to_slot = -1;
+        }
+        else if(candidate->m_category == CardCategory::dominion_alpha && use_owned_dominions)
+        {
+            cur_deck->alpha_dominion = candidate;
+            from_slot_tmp = -1;
+            to_slot = -1;
+        }
+        else{
+            continue;
+        }
+
+        std::vector<std::pair<signed, const Card * >> cards_out, cards_in;
+        if (!adjust_deck(cur_deck, from_slot_tmp, to_slot, candidate, fund, re, deck_cost, cards_out, cards_in))
+        { continue;}
+        cur_gap = check_requirement(cur_deck, requirement
+#ifndef NQUEST
+                , quest
+#endif
+                );
+        if ((cur_gap > 0) && (cur_gap >= best_gap))
+        { continue; }
+
+        //same deck skip
+        if(cur_deck->hash().compare(prev_deck->hash())==0)continue;
+
+
+
+        cur_score = fitness(cur_deck, best_score, evaluated_decks, zero_results, skipped_simulations, proc);
+
+        if(acceptanceProbability(prev_score.points, cur_score.points , temperature) > std::uniform_real_distribution<double>(0,1)(re))
+        {
+            if(cur_score.points > best_score.points)
+            {
+                best_score = cur_score;
+                best_deck = cur_deck->clone();
+                best_gap = cur_gap;
+                std::cout << "Deck improved: " << best_deck->hash() << ": (temp=" << temperature << ") :";
+                print_deck_inline(get_deck_cost(best_deck), best_score, best_deck);
+            }
+            if(debug_print>0)std::cout << "UPDATED DECK: " << cur_deck->hash() << ": (temp=" << temperature << ") :";
+            if(debug_print>0)print_deck_inline(get_deck_cost(cur_deck), cur_score, cur_deck);
+            prev_score = cur_score;
+            prev_deck = cur_deck->clone();
+        }
+        temperature *=1-coolingRate;
+    }
+    unsigned simulations = 0;
+    for (auto evaluation: evaluated_decks)
+    { simulations += evaluation.second.second; }
+    std::cout << "Evaluated " << evaluated_decks.size() << " decks (" << simulations << " + " << skipped_simulations << " simulations)." << std::endl;
+    std::cout << "Optimized Deck: ";
+    print_deck_inline(get_deck_cost(best_deck), best_score, best_deck);
+    print_upgraded_cards(best_deck);
+}
+
+
+//------------------------------------------------------------------------------
+enum Operation {
+    noop,
+    simulate,
+    climb,
+    anneal,
+    reorder,
+    debug,
+    debuguntil,
+};
+//------------------------------------------------------------------------------
+extern void(*skill_table[Skill::num_skills])(Field*, CardStatus* src_status, const SkillSpec&);
+void print_available_effects()
+{
+    std::cout << "Available effects besides activation skills:\n"
+        "  Bloodlust X\n"
+        "  Brigade\n"
+        "  Counterflux\n"
+        "  Divert\n"
+        "  Enduring-Rage\n"
+        "  Fortification\n"
+        "  Heroism\n"
+        "  Zealots-Preservation\n"
+        "  Metamorphosis\n"
+        "  Megamorphosis\n"
+        "  Revenge X\n"
+        "  Turning-Tides\n"
+        "  Virulence\n"
+        "  Halted-Orders\n"
+        "  Devour X\n"
+        "  Critical-Reach\n"
+        "  Temporal-Backlash\n"
+        "  Furiosity\n"
+        "  Oath-Of-Loyalty\n"
+        "  Blood-Vengeance\n"
+        "  Cold-Sleep\n"
+        "  Iron-Will\n"
+        "  Unity\n"
+        "  Devotion\n"
+        ;
+}
+void usage(int argc, char** argv)
+{
+    std::cout << "Tyrant Unleashed Optimizer (TUO) " << TYRANT_OPTIMIZER_VERSION << "\n"
+        "usage: " << argv[0] << " Your_Deck Enemy_Deck [Flags] [Operations]\n"
+        "\n"
+        "Your_Deck:\n"
+        "  the name/hash/cards of a custom deck.\n"
+        "\n"
+        "Enemy_Deck:\n"
+        "  semicolon separated list of defense decks, syntax:\n"
+        "  deck1[:factor1];deck2[:factor2];...\n"
+        "  where deck is the name/hash/cards of a mission, raid, quest or custom deck, and factor is optional. The default factor is 1.\n"
+        "  example: \'fear:0.2;slowroll:0.8\' means fear is the defense deck 20% of the time, while slowroll is the defense deck 80% of the time.\n"
+        "\n"
+        "Flags:\n"
+        "  -e \"<effect>\": set the battleground effect; you may use -e multiple times.\n"
+        "  -r: the attack deck is played in order instead of randomly (respects the 3 cards drawn limit).\n"
+        "  -s: use surge (default is fight).\n"
+        "  -t <num>: set the number of threads, default is 4.\n"
+        "  win:     simulate/optimize for win rate. default for non-raids.\n"
+        "  defense: simulate/optimize for win rate + stall rate. can be used for defending deck or win rate oriented raid simulations.\n"
+        "  raid:    simulate/optimize for average raid damage (ARD). default for raids.\n"
+        "Flags for climb:\n"
+        "  -c: don't try to optimize the commander.\n"
+        "  -L <min> <max>: restrict deck size between <min> and <max>.\n"
+        "  -o: restrict to the owned cards listed in \"data/ownedcards.txt\".\n"
+        "  -o=<filename>: restrict to the owned cards listed in <filename>.\n"
+        "  fund <num>: invest <num> SP to upgrade cards.\n"
+        "  target <num>: stop as soon as the score reaches <num>.\n"
+        "\n"
+        "Operations:\n"
+        "  sim <num>: simulate <num> battles to evaluate a deck.\n"
+        "  climb <num>: perform hill-climbing starting from the given attack deck, using up to <num> battles to evaluate a deck.\n"
+        "  reorder <num>: optimize the order for given attack deck, using up to <num> battles to evaluate an order.\n"
+#ifndef NDEBUG
+        "  debug: testing purpose only. very verbose output. only one battle.\n"
+        "  debuguntil <min> <max>: testing purpose only. fight until the last fight results in range [<min>, <max>]. recommend to redirect output.\n"
+#endif
+        ;
+}
+
+bool parse_bge(
+        std::string bge_name,
+        unsigned player,
+        const std::unordered_map<std::string, std::string>& bge_aliases,
+        std::array<signed short, PassiveBGE::num_passive_bges>& your_bg_effects,
+        std::array<signed short, PassiveBGE::num_passive_bges>& enemy_bg_effects,
+        std::vector<SkillSpec>& your_bg_skills,
+        std::vector<SkillSpec>& enemy_bg_skills,
+        std::unordered_set<std::string> used_bge_aliases
+        )
+{
+    // skip empty
+    trim(bge_name);
+    if (bge_name.empty()) { return true; }
+
+    // is effect combined?
+    if (bge_name.find_first_of(";|") != std::string::npos)
+    {
+        std::vector<std::string> bges;
+        boost::split(bges, bge_name, boost::is_any_of(";|"));
+        for (auto && next_bge: bges)
+        {
+            if (!parse_bge(next_bge, player, bge_aliases, your_bg_effects, enemy_bg_effects, your_bg_skills, enemy_bg_skills, used_bge_aliases))
+            { return false; }
+        }
+        return true;
+    }
+
+    // try to resolve bge name as alias
+    std::string simple_bge_name = simplify_name(bge_name);
+    const auto bge_alias_itr = bge_aliases.find(simple_bge_name);
+    if (bge_alias_itr != bge_aliases.end())
+    {
+        if (!used_bge_aliases.insert(simple_bge_name).second)
+        {
+            throw std::runtime_error("BGE alias: " + bge_name + ": Circular reference");
+        }
+        return parse_bge(bge_alias_itr->second, player, bge_aliases, your_bg_effects, enemy_bg_effects, your_bg_skills, enemy_bg_skills, used_bge_aliases);
+    }
+
+    // parse as passive or skill based BGE
+    std::vector<std::string> tokens, skill_name_list;
+    boost::split(tokens, bge_name, boost::is_any_of(" "));
+    boost::split(skill_name_list, tokens[0], boost::is_any_of("+"));
+    try
+    {
+        for (auto && skill_name: skill_name_list)
+        {
+            PassiveBGE::PassiveBGE passive_bge_id = passive_bge_name_to_id(skill_name);
+            Skill::Skill skill_id = skill_name_to_id(skill_name);
+            if (passive_bge_id != PassiveBGE::no_bge)
+            {
+                // map bge id to its value (if present otherwise zero)
+                signed short bge_value = (tokens.size() > 1) ? boost::lexical_cast<signed short>(tokens[1]) : -1;
+                if (!bge_value)
+                    throw std::runtime_error("BGE " + skill_name + ": zero value means no BGE");
+                if ((player == 0) or (player == 2))
+                    your_bg_effects[passive_bge_id] = bge_value;
+                if ((player == 1) or (player == 2))
+                    enemy_bg_effects[passive_bge_id] = bge_value;
+            }
+            else if (skill_table[skill_id] != nullptr)
+            {
+                unsigned skill_index = 1;
+                // activation BG skill
+                SkillSpec bg_skill{skill_id, 0, allfactions, 0, 0, Skill::no_skill, Skill::no_skill, false, 0,};
+
+                // skill [ ALL | N ] ...
+                if (skill_index < tokens.size() && boost::to_lower_copy(tokens[skill_index]) == "all")
+                {
+                    bg_skill.all = true;
+                    skill_index += 1;
+                }
+                else if (skill_index + 1 < tokens.size() && isdigit(*tokens[skill_index].c_str()))
+                {
+                    bg_skill.n = boost::lexical_cast<unsigned>(tokens[skill_index]);
+                    skill_index += 1;
+                }
+
+                // skill n [ FACTION ] ...
+                if ((skill_index + 1) < tokens.size())
+                {
+                    for (auto f = allfactions + 1; f < num_factions; ++f)
+                    {
+                        if (boost::to_lower_copy(tokens[skill_index]) == faction_names[f])
+                        {
+                            bg_skill.y = static_cast<Faction>(f);
+                            skill_index += 1;
+                            break;
+                        }
+                    }
+                }
+
+                if (skill_index < tokens.size())
+                {
+                    bg_skill.s = skill_name_to_id(tokens[skill_index]);
+                    if (bg_skill.s != Skill::no_skill)
+                    {
+                        skill_index += 1;
+                        if (skill_index < tokens.size() && (boost::to_lower_copy(tokens[skill_index]) == "to" || boost::to_lower_copy(tokens[skill_index]) == "into"))
+                        {
+                            skill_index += 1;
+                        }
+                        if (skill_index < tokens.size())
+                        {
+                            bg_skill.s2 = skill_name_to_id(tokens[skill_index]);
+                            if (bg_skill.s2 != Skill::no_skill)
+                            {
+                                skill_index += 1;
+                            }
+                        }
+                    }
+                }
+                if (skill_index < tokens.size())
+                {
+                    if (bg_skill.id == Skill::jam || bg_skill.id == Skill::overload)
+                    {
+                        bg_skill.n = boost::lexical_cast<unsigned>(tokens[skill_index]);
+                    }
+                    else
+                    {
+                        bg_skill.x = boost::lexical_cast<unsigned>(tokens[skill_index]);
+                    }
+                }
+                switch (player)
+                {
+                    case 0:
+                        your_bg_skills.push_back(bg_skill);
+                        break;
+                    case 1:
+                        enemy_bg_skills.push_back(bg_skill);
+                        break;
+                    case 2:
+                        your_bg_skills.push_back(bg_skill);
+                        enemy_bg_skills.push_back(bg_skill);
+                        break;
+                    default:
+                        throw std::runtime_error("Bad player number: " + boost::lexical_cast<std::string>(player));
+                }
+            }
+            else
+            {
+                std::cerr << "Error: unrecognized effect \"" << bge_name << "\".\n";
+                std::cout << "Unrecognized effect \"" << bge_name << "\".\n";
+                print_available_effects();
+                return false;
+            }
+        }
+    }
+    catch (const boost::bad_lexical_cast & e)
+    {
+        throw std::runtime_error("Expect a number in effect \"" + bge_name + "\"");
+    }
+    return true;
+}
+
 int main(int argc, char** argv)
 {
-	boost::timer::auto_cpu_timer t;
-	start_time = std::chrono::system_clock::now();
-	if (argc == 2 && strcmp(argv[1], "-version") == 0)
-	{
-		std::cout << "Tyrant Unleashed Optimizer " << TYRANT_OPTIMIZER_VERSION << std::endl;
-		return 0;
-	}
-	if (argc <= 2)
-	{
-		usage(argc, argv);
-		return 255;
-	}
-
-	unsigned opt_num_threads(4);
-	DeckStrategy::DeckStrategy opt_your_strategy(DeckStrategy::random);
-	DeckStrategy::DeckStrategy opt_enemy_strategy(DeckStrategy::random);
-	std::string opt_forts, opt_enemy_forts;
-	std::string opt_doms, opt_enemy_doms;
-	std::string opt_hand, opt_enemy_hand;
-	std::string opt_vip;
-	std::string opt_allow_candidates;
-	std::string opt_disallow_candidates;
-	std::string opt_disallow_recipes;
-#ifndef NQUEST
-	std::string opt_quest;
+#ifndef NDEBUG
+    boost::timer::auto_cpu_timer t;
 #endif
-	std::string opt_target_score;
-	std::vector<std::string> fn_suffix_list{"",};
-	std::vector<std::string> opt_owned_cards_str_list;
-	bool opt_do_optimization(false);
-	bool opt_keep_commander{false};
-	std::vector<std::tuple<unsigned, unsigned, Operation>> opt_todo;
-	std::vector<std::string> opt_effects[3];  // 0-you; 1-enemy; 2-global
-	std::array<signed short, PassiveBGE::num_passive_bges> opt_bg_effects[2];
-	std::vector<SkillSpec> opt_bg_skills[2];
-	std::unordered_set<unsigned> disallowed_recipes;
+    start_time = std::chrono::system_clock::now();
+    if (argc == 2 && strcmp(argv[1], "-version") == 0)
+    {
+        std::cout << "Tyrant Unleashed Optimizer " << TYRANT_OPTIMIZER_VERSION << std::endl;
+        return 0;
+    }
+    if (argc <= 2)
+    {
+        usage(argc, argv);
+        return 255;
+    }
 
-	for (int argIndex = 3; argIndex < argc; ++argIndex)
-	{
-		// Codec
-		if (strcmp(argv[argIndex], "ext_b64") == 0)
-		{
-			hash_to_ids = hash_to_ids_ext_b64;
-			encode_deck = encode_deck_ext_b64;
-		}
-		else if (strcmp(argv[argIndex], "wmt_b64") == 0)
-		{
-			hash_to_ids = hash_to_ids_wmt_b64;
-			encode_deck = encode_deck_wmt_b64;
-		}
-		else if (strcmp(argv[argIndex], "ddd_b64") == 0)
-		{
-			hash_to_ids = hash_to_ids_ddd_b64;
-			encode_deck = encode_deck_ddd_b64;
-		}
-		// Base Game Mode
-		else if (strcmp(argv[argIndex], "fight") == 0)
-		{
-			gamemode = fight;
-		}
-		else if (strcmp(argv[argIndex], "-s") == 0 || strcmp(argv[argIndex], "surge") == 0)
-		{
-			gamemode = surge;
-		}
-		// Base Scoring Mode
-		else if (strcmp(argv[argIndex], "win") == 0)
-		{
-			optimization_mode = OptimizationMode::winrate;
-		}
-		else if (strcmp(argv[argIndex], "defense") == 0)
-		{
-			optimization_mode = OptimizationMode::defense;
-		}
-		else if (strcmp(argv[argIndex], "raid") == 0)
-		{
-			optimization_mode = OptimizationMode::raid;
-		}
-		// Mode Package
-		else if (strcmp(argv[argIndex], "campaign") == 0)
-		{
-			gamemode = surge;
-			optimization_mode = OptimizationMode::campaign;
-		}
-		else if (strcmp(argv[argIndex], "pvp") == 0)
-		{
-			gamemode = fight;
-			optimization_mode = OptimizationMode::winrate;
-		}
-		else if (strcmp(argv[argIndex], "pvp-defense") == 0)
-		{
-			gamemode = surge;
-			optimization_mode = OptimizationMode::defense;
-		}
-		else if (strcmp(argv[argIndex], "brawl") == 0)
-		{
-			gamemode = surge;
-			optimization_mode = OptimizationMode::brawl;
-		}
-		else if (strcmp(argv[argIndex], "brawl-defense") == 0)
-		{
-			gamemode = fight;
-			optimization_mode = OptimizationMode::brawl_defense;
-		}
-		else if (strcmp(argv[argIndex], "gw") == 0)
-		{
-			gamemode = surge;
-			optimization_mode = OptimizationMode::war;
-		}
-		else if (strcmp(argv[argIndex], "gw-defense") == 0)
-		{
-			gamemode = fight;
-			optimization_mode = OptimizationMode::war_defense;
-		}
-		// Others
-		else if (strcmp(argv[argIndex], "keep-commander") == 0 || strcmp(argv[argIndex], "-c") == 0)
-		{
-			opt_keep_commander = true;
-		}
-		else if (strcmp(argv[argIndex], "mono") == 0 || strcmp(argv[argIndex], "-m") == 0 || strcmp(argv[argIndex], "factions") == 0 || strcmp(argv[argIndex], "-f") == 0)
-		{
-			factions.push_back(faction_name_to_id(argv[argIndex + 1]));
-			argIndex += 1;
-		}
-		else if (strcmp(argv[argIndex], "effect") == 0 || strcmp(argv[argIndex], "-e") == 0)
-		{
-			opt_effects[2].push_back(argv[argIndex + 1]);
-			argIndex += 1;
-		}
-		else if (strcmp(argv[argIndex], "ye") == 0 || strcmp(argv[argIndex], "yeffect") == 0)
-		{
-			opt_effects[0].push_back(argv[argIndex + 1]);
-			argIndex += 1;
-		}
-		else if (strcmp(argv[argIndex], "ee") == 0 || strcmp(argv[argIndex], "eeffect") == 0)
-		{
-			opt_effects[1].push_back(argv[argIndex + 1]);
-			argIndex += 1;
-		}
-		else if (strcmp(argv[argIndex], "freeze") == 0 || strcmp(argv[argIndex], "-F") == 0)
-		{
-			freezed_cards = atoi(argv[argIndex + 1]);
-			argIndex += 1;
-		}
-		else if (strcmp(argv[argIndex], "-L") == 0)
-		{
-			min_deck_len = atoi(argv[argIndex + 1]);
-			max_deck_len = atoi(argv[argIndex + 2]);
-			argIndex += 2;
-		}
-		else if (strcmp(argv[argIndex], "-o-") == 0)
-		{
-			use_owned_cards = false;
-		}
-		else if (strcmp(argv[argIndex], "-o") == 0)
-		{
-			opt_owned_cards_str_list.push_back("data/ownedcards.txt");
-			use_owned_cards = true;
-		}
-		else if (strncmp(argv[argIndex], "-o=", 3) == 0)
-		{
-			opt_owned_cards_str_list.push_back(argv[argIndex] + 3);
-			use_owned_cards = true;
-		}
-		else if (strncmp(argv[argIndex], "_", 1) == 0)
-		{
-			fn_suffix_list.push_back(argv[argIndex]);
-		}
-		else if (strcmp(argv[argIndex], "fund") == 0)
-		{
-			fund = atoi(argv[argIndex+1]);
-			argIndex += 1;
-		}
-		else if (strcmp(argv[argIndex], "dom-none") == 0)
-		{
-			use_owned_dominions = false;
-			use_maxed_dominions = false;
-		}
-		else if (strcmp(argv[argIndex], "dom+") == 0 || strcmp(argv[argIndex], "dominion+") == 0 || strcmp(argv[argIndex], "dom-owned") == 0)
-		{
-			use_owned_dominions = true;
-			use_maxed_dominions = false;
-		}
-		else if (strcmp(argv[argIndex], "dom-") == 0 || strcmp(argv[argIndex], "dominion-") == 0 || strcmp(argv[argIndex], "dom-maxed") == 0)
-		{
-			use_owned_dominions = true;
-			use_maxed_dominions = true;
-		}
-		else if (strcmp(argv[argIndex], "random") == 0)
-		{
-			opt_your_strategy = DeckStrategy::random;
-		}
-		else if (strcmp(argv[argIndex], "-r") == 0 || strcmp(argv[argIndex], "ordered") == 0)
-		{
-			opt_your_strategy = DeckStrategy::ordered;
-		}
-		else if (strcmp(argv[argIndex], "flexible") == 0)
-		{
-			opt_your_strategy = DeckStrategy::flexible;
-		}
-		else if (strcmp(argv[argIndex], "flexible-iter") == 0)
-		{
-			flexible_iter = atoi(argv[argIndex+1]);
-			argIndex += 1;
-		}
-		else if (strcmp(argv[argIndex], "exact-ordered") == 0)
-		{
-			opt_your_strategy = DeckStrategy::exact_ordered;
-		}
-		else if (strcmp(argv[argIndex], "enemy:flexible") == 0)
-		{
-			opt_enemy_strategy = DeckStrategy::flexible;
-		}
-		else if (strcmp(argv[argIndex], "enemy:ordered") == 0)
-		{
-			opt_enemy_strategy = DeckStrategy::ordered;
-		}
-		else if (strcmp(argv[argIndex], "enemy:flexible") == 0)
-		{
-			opt_enemy_strategy = DeckStrategy::flexible;
-		}
-		else if (strcmp(argv[argIndex], "enemy:exact-ordered") == 0)
-		{
-			opt_enemy_strategy = DeckStrategy::exact_ordered;
-		}
-		else if (strcmp(argv[argIndex], "endgame") == 0)
-		{
-			use_fused_card_level = atoi(argv[argIndex+1]);
-			argIndex += 1;
-		}
+    unsigned opt_num_threads(4);
+    DeckStrategy::DeckStrategy opt_your_strategy(DeckStrategy::random);
+    DeckStrategy::DeckStrategy opt_enemy_strategy(DeckStrategy::random);
+    std::string opt_forts, opt_enemy_forts;
+    std::string opt_doms, opt_enemy_doms;
+    std::string opt_hand, opt_enemy_hand;
+    std::string opt_vip;
+    std::string opt_allow_candidates;
+    std::string opt_disallow_candidates;
+    std::string opt_disallow_recipes;
 #ifndef NQUEST
-		else if (strcmp(argv[argIndex], "quest") == 0)
-		{
-			opt_quest = argv[argIndex+1];
-			argIndex += 1;
-		}
+    std::string opt_quest;
 #endif
-		else if (strcmp(argv[argIndex], "threads") == 0 || strcmp(argv[argIndex], "-t") == 0)
-		{
-			opt_num_threads = atoi(argv[argIndex+1]);
-			argIndex += 1;
-		}
-		else if (strcmp(argv[argIndex], "target") == 0)
-		{
-			opt_target_score = argv[argIndex+1];
-			argIndex += 1;
-		}
-		else if (strcmp(argv[argIndex], "turnlimit") == 0)
-		{
-			turn_limit = atoi(argv[argIndex+1]);
-			argIndex += 1;
-		}
-		else if (strcmp(argv[argIndex], "mis") == 0)
-		{
-			min_increment_of_score = atof(argv[argIndex+1]);
-			argIndex += 1;
-		}
-		else if (strcmp(argv[argIndex], "timeout") == 0) //set timeout in hours. tuo will stop approx. at the given time.
-		{
-			maximum_time = atof(argv[argIndex+1]);
-			argIndex += 1;
-		}
-		else if (strcmp(argv[argIndex], "cl") == 0)
-		{
-			confidence_level = atof(argv[argIndex+1]);
-			argIndex += 1;
-		}
-		else if (strcmp(argv[argIndex], "+uc") == 0)
-		{
-			print_upgraded = true;
-		}
-		else if (strcmp(argv[argIndex], "+ci") == 0)
-		{
-			show_ci = true;
-		}
-		else if (strcmp(argv[argIndex], "+hm") == 0)
-		{
-			use_harmonic_mean = true;
-		}
-		else if (strcmp(argv[argIndex], "seed") == 0)
-		{
-			sim_seed = atoi(argv[argIndex+1]);
-			argIndex += 1;
-		}
-		else if (strcmp(argv[argIndex], "-v") == 0)
-		{
-			-- debug_print;
-		}
-		else if (strcmp(argv[argIndex], "+v") == 0)
-		{
-			++ debug_print;
-		}
-		else if (strcmp(argv[argIndex], "vip") == 0)
-		{
-			opt_vip = argv[argIndex + 1];
-			argIndex += 1;
-		}
-		else if (strcmp(argv[argIndex], "allow-candidates") == 0)
-		{
-			opt_allow_candidates = argv[argIndex + 1];
-			argIndex += 1;
-		}
-		else if (strcmp(argv[argIndex], "disallow-candidates") == 0)
-		{
-			opt_disallow_candidates = argv[argIndex + 1];
-			argIndex += 1;
-		}
-		else if (strcmp(argv[argIndex], "disallow-recipes") == 0)
-		{
-			opt_disallow_recipes = argv[argIndex + 1];
-			argIndex += 1;
-		}
-		else if (strcmp(argv[argIndex], "hand") == 0)  // set initial hand for test
-		{
-			opt_hand = argv[argIndex + 1];
-			argIndex += 1;
-		}
-		else if (strcmp(argv[argIndex], "enemy:hand") == 0)  // set enemies' initial hand for test
-		{
-			opt_enemy_hand = argv[argIndex + 1];
-			argIndex += 1;
-		}
-		else if (strcmp(argv[argIndex], "yf") == 0 || strcmp(argv[argIndex], "yfort") == 0)  // set forts
-		{
-			opt_forts = std::string(argv[argIndex + 1]);
-			argIndex += 1;
-		}
-		else if (strcmp(argv[argIndex], "ef") == 0 || strcmp(argv[argIndex], "efort") == 0)  // set enemies' forts
-		{
-			opt_enemy_forts = std::string(argv[argIndex + 1]);
-			argIndex += 1;
-		}
-		else if (strcmp(argv[argIndex], "yd") == 0 || strcmp(argv[argIndex], "ydom") == 0)  // set dominions
-		{
-			opt_doms = std::string(argv[argIndex + 1]);
-			argIndex += 1;
-		}
-		else if (strcmp(argv[argIndex], "ed") == 0 || strcmp(argv[argIndex], "edom") == 0)  // set enemies' dominions
-		{
-			opt_enemy_doms = std::string(argv[argIndex + 1]);
-			argIndex += 1;
-		}
-		else if (strcmp(argv[argIndex], "sim") == 0)
-		{
-			opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), 0u, simulate));
-			if (std::get<0>(opt_todo.back()) < 10) { opt_num_threads = 1; }
-			argIndex += 1;
-		}
-		// climbing tasks
-		else if (strcmp(argv[argIndex], "climbex") == 0)
-		{
-			opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 2]), climb));
-			if (std::get<1>(opt_todo.back()) < 10) { opt_num_threads = 1; }
-			opt_do_optimization = true;
-			argIndex += 2;
-		}
-		else if (strcmp(argv[argIndex], "climb") == 0)
-		{
-			opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 1]), climb));
-			if (std::get<1>(opt_todo.back()) < 10) { opt_num_threads = 1; }
-			opt_do_optimization = true;
-			argIndex += 1;
-		}
-		else if ( strcmp(argv[argIndex], "anneal") == 0)
-		{
-			opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 1]), anneal));
-			temperature = std::stod(argv[argIndex+2]);
-			coolingRate = std::stod(argv[argIndex+3]);
-			if (std::get<1>(opt_todo.back()) < 10) { opt_num_threads = 1; }
-			opt_do_optimization = true;
-			argIndex += 3;
-		}
-		else if (strcmp(argv[argIndex], "reorder") == 0)
-		{
-			opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 1]), reorder));
-			if (std::get<1>(opt_todo.back()) < 10) { opt_num_threads = 1; }
-			argIndex += 1;
-		}
-		// climbing options
-		else if (strncmp(argv[argIndex], "climb-opts:", 11) == 0)
-		{
-			std::string climb_opts_str(argv[argIndex] + 11);
-			boost::tokenizer<boost::char_delimiters_separator<char>> climb_opts{climb_opts_str, boost::char_delimiters_separator<char>{false, ",", ""}};
-			for (const auto & opt : climb_opts)
-			{
-				const auto delim_pos = opt.find("=");
-				const bool has_value = (delim_pos != std::string::npos);
-				const std::string & opt_name = has_value ? opt.substr(0, delim_pos) : opt;
-				const std::string opt_value{has_value ? opt.substr(delim_pos + 1) : opt};
-				auto ensure_opt_value = [](const bool has_value, const std::string & opt_name)
-				{
-					if (!has_value)
-					{ throw std::runtime_error("climb-opts:" + opt_name + " requires an argument"); }
-				};
-				if ((opt_name == "iter-mul") or (opt_name == "iterations-multiplier"))
-				{
-					ensure_opt_value(has_value, opt_name);
-					iterations_multiplier = std::stoi(opt_value);
-				}
-				else if ((opt_name == "egc") or (opt_name == "endgame-commander") or (opt_name == "min-commander-fusion-level"))
-				{
-					ensure_opt_value(has_value, opt_name);
-					use_fused_commander_level = std::stoi(opt_value);
-				}
-				else if (opt_name == "use-all-commander-levels")
-				{
-					use_top_level_commander = false;
-				}
-				else if (opt_name == "use-all-card-levels")
-				{
-					use_top_level_card = false;
-				}
-				else if ((opt_name == "recent-boost") or (opt_name == "rb")) //prefer new cards in hill climb and break climb loop faster
-				{
-					recent_boost = true;
-				}
-				else if ((opt_name == "otd") or (opt_name == "open-the-deck"))
-				{
-					mode_open_the_deck = true;
-				}
-				else
-				{
-					std::cerr << "Error: Unknown climb option " << opt_name;
-					if (has_value)
-					{ std::cerr << " (value is: " << opt_value << ")"; }
-					std::cerr << std::endl;
-					return 1;
-				}
-			}
-		}
-		else if (strcmp(argv[argIndex], "debug") == 0)
-		{
-			opt_todo.push_back(std::make_tuple(0u, 0u, debug));
-			opt_num_threads = 1;
-		}
-		else if (strcmp(argv[argIndex], "debuguntil") == 0)
-		{
-			// output the debug info for the first battle that min_score <= score <= max_score.
-			// E.g., 0 0: lose; 100 100: win (non-raid); 20 100: at least 20 damage (raid).
-			opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 2]), debuguntil));
-			opt_num_threads = 1;
-			argIndex += 2;
-		}
-		else
-		{
-			std::cerr << "Error: Unknown option " << argv[argIndex] << std::endl;
-			return 1;
-		}
-	}
+    std::string opt_target_score;
+    std::vector<std::string> fn_suffix_list{"",};
+    std::vector<std::string> opt_owned_cards_str_list;
+    bool opt_do_optimization(false);
+    bool opt_keep_commander{false};
+    std::vector<std::tuple<unsigned, unsigned, Operation>> opt_todo;
+    std::vector<std::string> opt_effects[3];  // 0-you; 1-enemy; 2-global
+    std::array<signed short, PassiveBGE::num_passive_bges> opt_bg_effects[2];
+    std::vector<SkillSpec> opt_bg_skills[2];
+    std::unordered_set<unsigned> disallowed_recipes;
 
-	Cards all_cards;
-	Decks decks;
-	std::unordered_map<std::string, std::string> bge_aliases;
-	load_skills_set_xml(all_cards, "data/skills_set.xml", true);
-	for (unsigned section = 1;
-			load_cards_xml(all_cards, "data/cards_section_" + to_string(section) + ".xml", false);
-			++ section);
-	all_cards.organize();
-	load_levels_xml(all_cards, "data/levels.xml", true);
-	all_cards.fix_dominion_recipes();
-	for (const auto & suffix: fn_suffix_list)
-	{
-		load_decks_xml(decks, all_cards, "data/missions" + suffix + ".xml", "data/raids" + suffix + ".xml", suffix.empty());
-		load_recipes_xml(all_cards, "data/fusion_recipes_cj2" + suffix + ".xml", suffix.empty());
-		read_card_abbrs(all_cards, "data/cardabbrs" + suffix + ".txt");
-	}
-	for (const auto & suffix: fn_suffix_list)
-	{
-		load_custom_decks(decks, all_cards, "data/customdecks" + suffix + ".txt");
-		map_keys_to_set(read_custom_cards(all_cards, "data/allowed_candidates" + suffix + ".txt", false), allowed_candidates);
-		map_keys_to_set(read_custom_cards(all_cards, "data/disallowed_candidates" + suffix + ".txt", false), disallowed_candidates);
-		map_keys_to_set(read_custom_cards(all_cards, "data/disallowed_recipes" + suffix + ".txt", false), disallowed_recipes);
-	}
+    for (int argIndex = 3; argIndex < argc; ++argIndex)
+    {
+        // Codec
+        if (strcmp(argv[argIndex], "ext_b64") == 0)
+        {
+            hash_to_ids = hash_to_ids_ext_b64;
+            encode_deck = encode_deck_ext_b64;
+        }
+        else if (strcmp(argv[argIndex], "wmt_b64") == 0)
+        {
+            hash_to_ids = hash_to_ids_wmt_b64;
+            encode_deck = encode_deck_wmt_b64;
+        }
+        else if (strcmp(argv[argIndex], "ddd_b64") == 0)
+        {
+            hash_to_ids = hash_to_ids_ddd_b64;
+            encode_deck = encode_deck_ddd_b64;
+        }
+        // Base Game Mode
+        else if (strcmp(argv[argIndex], "fight") == 0)
+        {
+            gamemode = fight;
+        }
+        else if (strcmp(argv[argIndex], "-s") == 0 || strcmp(argv[argIndex], "surge") == 0)
+        {
+            gamemode = surge;
+        }
+        // Base Scoring Mode
+        else if (strcmp(argv[argIndex], "win") == 0)
+        {
+            optimization_mode = OptimizationMode::winrate;
+        }
+        else if (strcmp(argv[argIndex], "defense") == 0)
+        {
+            optimization_mode = OptimizationMode::defense;
+        }
+        else if (strcmp(argv[argIndex], "raid") == 0)
+        {
+            optimization_mode = OptimizationMode::raid;
+        }
+        // Mode Package
+        else if (strcmp(argv[argIndex], "campaign") == 0)
+        {
+            gamemode = surge;
+            optimization_mode = OptimizationMode::campaign;
+        }
+        else if (strcmp(argv[argIndex], "pvp") == 0)
+        {
+            gamemode = fight;
+            optimization_mode = OptimizationMode::winrate;
+        }
+        else if (strcmp(argv[argIndex], "pvp-defense") == 0)
+        {
+            gamemode = surge;
+            optimization_mode = OptimizationMode::defense;
+        }
+        else if (strcmp(argv[argIndex], "brawl") == 0)
+        {
+            gamemode = surge;
+            optimization_mode = OptimizationMode::brawl;
+        }
+        else if (strcmp(argv[argIndex], "brawl-defense") == 0)
+        {
+            gamemode = fight;
+            optimization_mode = OptimizationMode::brawl_defense;
+        }
+        else if (strcmp(argv[argIndex], "gw") == 0)
+        {
+            gamemode = surge;
+            optimization_mode = OptimizationMode::war;
+        }
+        else if (strcmp(argv[argIndex], "gw-defense") == 0)
+        {
+            gamemode = fight;
+            optimization_mode = OptimizationMode::war_defense;
+        }
+        // Others
+        else if (strcmp(argv[argIndex], "keep-commander") == 0 || strcmp(argv[argIndex], "-c") == 0)
+        {
+            opt_keep_commander = true;
+        }
+        else if (strcmp(argv[argIndex], "mono") == 0 || strcmp(argv[argIndex], "-m") == 0 || strcmp(argv[argIndex], "factions") == 0 || strcmp(argv[argIndex], "-f") == 0)
+        {
+            factions.push_back(faction_name_to_id(argv[argIndex + 1]));
+            argIndex += 1;
+        }
+        else if (strcmp(argv[argIndex], "strategy") == 0 || strcmp(argv[argIndex], "prefered") == 0)
+        {
+            skills_boost.push_back(skill_name_to_id(argv[argIndex + 1]));
+            argIndex += 1;
+        }
+        else if (strcmp(argv[argIndex], "effect") == 0 || strcmp(argv[argIndex], "-e") == 0)
+        {
+            opt_effects[2].push_back(argv[argIndex + 1]);
+            argIndex += 1;
+        }
+        else if (strcmp(argv[argIndex], "ye") == 0 || strcmp(argv[argIndex], "yeffect") == 0)
+        {
+            opt_effects[0].push_back(argv[argIndex + 1]);
+            argIndex += 1;
+        }
+        else if (strcmp(argv[argIndex], "ee") == 0 || strcmp(argv[argIndex], "eeffect") == 0)
+        {
+            opt_effects[1].push_back(argv[argIndex + 1]);
+            argIndex += 1;
+        }
+        else if (strcmp(argv[argIndex], "freeze") == 0 || strcmp(argv[argIndex], "-F") == 0)
+        {
+            freezed_cards = atoi(argv[argIndex + 1]);
+            argIndex += 1;
+        }
+        else if (strcmp(argv[argIndex], "-L") == 0)
+        {
+            min_deck_len = atoi(argv[argIndex + 1]);
+            max_deck_len = atoi(argv[argIndex + 2]);
+            argIndex += 2;
+        }
+        else if (strcmp(argv[argIndex], "-o-") == 0)
+        {
+            use_owned_cards = false;
+        }
+        else if (strcmp(argv[argIndex], "-o") == 0)
+        {
+            opt_owned_cards_str_list.push_back("data/ownedcards.txt");
+            use_owned_cards = true;
+        }
+        else if (strncmp(argv[argIndex], "-o=", 3) == 0)
+        {
+            opt_owned_cards_str_list.push_back(argv[argIndex] + 3);
+            use_owned_cards = true;
+        }
+        else if (strncmp(argv[argIndex], "_", 1) == 0)
+        {
+            fn_suffix_list.push_back(argv[argIndex]);
+        }
+        else if (strcmp(argv[argIndex], "fund") == 0)
+        {
+            fund = atoi(argv[argIndex+1]);
+            argIndex += 1;
+        }
+        else if (strcmp(argv[argIndex], "dom-none") == 0)
+        {
+            use_owned_dominions = false;
+            use_maxed_dominions = false;
+        }
+        else if (strcmp(argv[argIndex], "dom+") == 0 || strcmp(argv[argIndex], "dominion+") == 0 || strcmp(argv[argIndex], "dom-owned") == 0)
+        {
+            use_owned_dominions = true;
+            use_maxed_dominions = false;
+        }
+        else if (strcmp(argv[argIndex], "dom-") == 0 || strcmp(argv[argIndex], "dominion-") == 0 || strcmp(argv[argIndex], "dom-maxed") == 0)
+        {
+            use_owned_dominions = true;
+            use_maxed_dominions = true;
+        }
+        else if (strcmp(argv[argIndex], "random") == 0)
+        {
+            opt_your_strategy = DeckStrategy::random;
+        }
+        else if (strcmp(argv[argIndex], "-r") == 0 || strcmp(argv[argIndex], "ordered") == 0)
+        {
+            opt_your_strategy = DeckStrategy::ordered;
+        }
+        else if (strcmp(argv[argIndex], "flexible") == 0)
+        {
+            opt_your_strategy = DeckStrategy::flexible;
+        }
+        else if (strcmp(argv[argIndex], "flexible-iter") == 0)
+        {
+            flexible_iter = atoi(argv[argIndex+1]);
+            argIndex += 1;
+        }
+        else if (strcmp(argv[argIndex], "exact-ordered") == 0)
+        {
+            opt_your_strategy = DeckStrategy::exact_ordered;
+        }
+        else if (strcmp(argv[argIndex], "enemy:flexible") == 0)
+        {
+            opt_enemy_strategy = DeckStrategy::flexible;
+        }
+        else if (strcmp(argv[argIndex], "enemy:ordered") == 0)
+        {
+            opt_enemy_strategy = DeckStrategy::ordered;
+        }
+        else if (strcmp(argv[argIndex], "enemy:flexible") == 0)
+        {
+            opt_enemy_strategy = DeckStrategy::flexible;
+        }
+        else if (strcmp(argv[argIndex], "enemy:exact-ordered") == 0)
+        {
+            opt_enemy_strategy = DeckStrategy::exact_ordered;
+        }
+        else if (strcmp(argv[argIndex], "endgame") == 0)
+        {
+            use_fused_card_level = atoi(argv[argIndex+1]);
+            argIndex += 1;
+        }
+#ifndef NQUEST
+        else if (strcmp(argv[argIndex], "quest") == 0)
+        {
+            opt_quest = argv[argIndex+1];
+            argIndex += 1;
+        }
+#endif
+        else if (strcmp(argv[argIndex], "threads") == 0 || strcmp(argv[argIndex], "-t") == 0)
+        {
+            opt_num_threads = atoi(argv[argIndex+1]);
+            argIndex += 1;
+        }
+        else if (strcmp(argv[argIndex], "target") == 0)
+        {
+            opt_target_score = argv[argIndex+1];
+            argIndex += 1;
+        }
+        else if (strcmp(argv[argIndex], "turnlimit") == 0)
+        {
+            turn_limit = atoi(argv[argIndex+1]);
+            argIndex += 1;
+        }
+        else if (strcmp(argv[argIndex], "mis") == 0)
+        {
+            min_increment_of_score = atof(argv[argIndex+1]);
+            argIndex += 1;
+        }
+        else if (strcmp(argv[argIndex], "timeout") == 0) //set timeout in hours. tuo will stop approx. at the given time.
+        {
+            maximum_time = atof(argv[argIndex+1]);
+            argIndex += 1;
+        }
+        else if (strcmp(argv[argIndex], "cl") == 0)
+        {
+            confidence_level = atof(argv[argIndex+1]);
+            argIndex += 1;
+        }
+        else if (strcmp(argv[argIndex], "+uc") == 0)
+        {
+            print_upgraded = true;
+        }
+        else if (strcmp(argv[argIndex], "+ci") == 0)
+        {
+            show_ci = true;
+        }
+        else if (strcmp(argv[argIndex], "+hm") == 0)
+        {
+            use_harmonic_mean = true;
+        }
+        else if (strcmp(argv[argIndex], "seed") == 0)
+        {
+            sim_seed = atoi(argv[argIndex+1]);
+            argIndex += 1;
+        }
+        else if (strcmp(argv[argIndex], "-v") == 0)
+        {
+            -- debug_print;
+        }
+        else if (strcmp(argv[argIndex], "+v") == 0)
+        {
+            ++ debug_print;
+        }
+        else if (strcmp(argv[argIndex], "vip") == 0)
+        {
+            opt_vip = argv[argIndex + 1];
+            argIndex += 1;
+        }
+        else if (strcmp(argv[argIndex], "allow-candidates") == 0)
+        {
+            opt_allow_candidates = argv[argIndex + 1];
+            argIndex += 1;
+        }
+        else if (strcmp(argv[argIndex], "disallow-candidates") == 0)
+        {
+            opt_disallow_candidates = argv[argIndex + 1];
+            argIndex += 1;
+        }
+        else if (strcmp(argv[argIndex], "disallow-recipes") == 0)
+        {
+            opt_disallow_recipes = argv[argIndex + 1];
+            argIndex += 1;
+        }
+        else if (strcmp(argv[argIndex], "hand") == 0)  // set initial hand for test
+        {
+            opt_hand = argv[argIndex + 1];
+            argIndex += 1;
+        }
+        else if (strcmp(argv[argIndex], "enemy:hand") == 0)  // set enemies' initial hand for test
+        {
+            opt_enemy_hand = argv[argIndex + 1];
+            argIndex += 1;
+        }
+        else if (strcmp(argv[argIndex], "yf") == 0 || strcmp(argv[argIndex], "yfort") == 0)  // set forts
+        {
+            opt_forts = std::string(argv[argIndex + 1]);
+            argIndex += 1;
+        }
+        else if (strcmp(argv[argIndex], "ef") == 0 || strcmp(argv[argIndex], "efort") == 0)  // set enemies' forts
+        {
+            opt_enemy_forts = std::string(argv[argIndex + 1]);
+            argIndex += 1;
+        }
+        else if (strcmp(argv[argIndex], "yd") == 0 || strcmp(argv[argIndex], "ydom") == 0)  // set dominions
+        {
+            opt_doms = std::string(argv[argIndex + 1]);
+            argIndex += 1;
+        }
+        else if (strcmp(argv[argIndex], "ed") == 0 || strcmp(argv[argIndex], "edom") == 0)  // set enemies' dominions
+        {
+            opt_enemy_doms = std::string(argv[argIndex + 1]);
+            argIndex += 1;
+        }
+        else if (strcmp(argv[argIndex], "sim") == 0)
+        {
+            opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), 0u, simulate));
+            if (std::get<0>(opt_todo.back()) < 10) { opt_num_threads = 1; }
+            argIndex += 1;
+        }
+        // climbing tasks
+        else if (strcmp(argv[argIndex], "climbex") == 0)
+        {
+            opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 2]), climb));
+            if (std::get<1>(opt_todo.back()) < 10) { opt_num_threads = 1; }
+            opt_do_optimization = true;
+            argIndex += 2;
+        }
+        else if (strcmp(argv[argIndex], "climb") == 0)
+        {
+            opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 1]), climb));
+            if (std::get<1>(opt_todo.back()) < 10) { opt_num_threads = 1; }
+            opt_do_optimization = true;
+            argIndex += 1;
+        }
+        else if ( strcmp(argv[argIndex], "anneal") == 0)
+        {
+            opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 1]), anneal));
+            temperature = std::stod(argv[argIndex+2]);
+            coolingRate = std::stod(argv[argIndex+3]);
+            if (std::get<1>(opt_todo.back()) < 10) { opt_num_threads = 1; }
+            opt_do_optimization = true;
+            argIndex += 3;
+        }
+        else if (strcmp(argv[argIndex], "reorder") == 0)
+        {
+            opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 1]), reorder));
+            if (std::get<1>(opt_todo.back()) < 10) { opt_num_threads = 1; }
+            argIndex += 1;
+        }
+        // climbing options
+        else if (strncmp(argv[argIndex], "climb-opts:", 11) == 0)
+        {
+            std::string climb_opts_str(argv[argIndex] + 11);
+            boost::tokenizer<boost::char_delimiters_separator<char>> climb_opts{climb_opts_str, boost::char_delimiters_separator<char>{false, ",", ""}};
+            for (const auto & opt : climb_opts)
+            {
+                const auto delim_pos = opt.find("=");
+                const bool has_value = (delim_pos != std::string::npos);
+                const std::string & opt_name = has_value ? opt.substr(0, delim_pos) : opt;
+                const std::string opt_value{has_value ? opt.substr(delim_pos + 1) : opt};
+                auto ensure_opt_value = [](const bool has_value, const std::string & opt_name)
+                {
+                    if (!has_value)
+                    { throw std::runtime_error("climb-opts:" + opt_name + " requires an argument"); }
+                };
+                if ((opt_name == "iter-mul") or (opt_name == "iterations-multiplier"))
+                {
+                    ensure_opt_value(has_value, opt_name);
+                    iterations_multiplier = std::stoi(opt_value);
+                }
+                else if ((opt_name == "egc") or (opt_name == "endgame-commander") or (opt_name == "min-commander-fusion-level"))
+                {
+                    ensure_opt_value(has_value, opt_name);
+                    use_fused_commander_level = std::stoi(opt_value);
+                }
+                else if (opt_name == "use-all-commander-levels")
+                {
+                    use_top_level_commander = false;
+                }
+                else if (opt_name == "use-all-card-levels")
+                {
+                    use_top_level_card = false;
+                }
+                else if ((opt_name == "recent-boost") or (opt_name == "rb")) //prefer new cards in hill climb and break climb loop faster
+                {
+                    recent_boost = true;
+                }
+                else if ((opt_name == "otd") or (opt_name == "open-the-deck"))
+                {
+                    mode_open_the_deck = true;
+                }
+                else
+                {
+                    std::cerr << "Error: Unknown climb option " << opt_name;
+                    if (has_value)
+                    { std::cerr << " (value is: " << opt_value << ")"; }
+                    std::cerr << std::endl;
+                    return 1;
+                }
+            }
+        }
+        else if (strcmp(argv[argIndex], "debug") == 0)
+        {
+            opt_todo.push_back(std::make_tuple(0u, 0u, debug));
+            opt_num_threads = 1;
+        }
+        else if (strcmp(argv[argIndex], "debuguntil") == 0)
+        {
+            // output the debug info for the first battle that min_score <= score <= max_score.
+            // E.g., 0 0: lose; 100 100: win (non-raid); 20 100: at least 20 damage (raid).
+            opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 2]), debuguntil));
+            opt_num_threads = 1;
+            argIndex += 2;
+        }
+        else
+        {
+            std::cerr << "Error: Unknown option " << argv[argIndex] << std::endl;
+            return 1;
+        }
+    }
 
-	read_bge_aliases(bge_aliases, "data/bges.txt");
+    Cards all_cards;
+    Decks decks;
+    std::unordered_map<std::string, std::string> bge_aliases;
+    load_skills_set_xml(all_cards, "data/skills_set.xml", true);
+    for (unsigned section = 1;
+            load_cards_xml(all_cards, "data/cards_section_" + to_string(section) + ".xml", false);
+            ++ section);
+    all_cards.organize();
+    load_levels_xml(all_cards, "data/levels.xml", true);
+    all_cards.fix_dominion_recipes();
+    for (const auto & suffix: fn_suffix_list)
+    {
+        load_decks_xml(decks, all_cards, "data/missions" + suffix + ".xml", "data/raids" + suffix + ".xml", suffix.empty());
+        load_recipes_xml(all_cards, "data/fusion_recipes_cj2" + suffix + ".xml", suffix.empty());
+        read_card_abbrs(all_cards, "data/cardabbrs" + suffix + ".txt");
+    }
+    for (const auto & suffix: fn_suffix_list)
+    {
+        load_custom_decks(decks, all_cards, "data/customdecks" + suffix + ".txt");
+        map_keys_to_set(read_custom_cards(all_cards, "data/allowed_candidates" + suffix + ".txt", false), allowed_candidates);
+        map_keys_to_set(read_custom_cards(all_cards, "data/disallowed_candidates" + suffix + ".txt", false), disallowed_candidates);
+        map_keys_to_set(read_custom_cards(all_cards, "data/disallowed_recipes" + suffix + ".txt", false), disallowed_recipes);
+    }
 
-	fill_skill_table();
+    read_bge_aliases(bge_aliases, "data/bges.txt");
 
-	if (opt_do_optimization and use_owned_cards)
-	{
-		if (opt_owned_cards_str_list.empty())
-		{  // load default files only if specify no -o=
-			for (const auto & suffix: fn_suffix_list)
-			{
-				std::string filename = "data/ownedcards" + suffix + ".txt";
-				if (boost::filesystem::exists(filename))
-				{
-					opt_owned_cards_str_list.push_back(filename);
-				}
-			}
-		}
-		std::map<unsigned, unsigned> _owned_cards;
-		for (const auto & oc_str: opt_owned_cards_str_list)
-		{
-			read_owned_cards(all_cards, _owned_cards, oc_str);
-		}
+    fill_skill_table();
 
-		// keep only one copy of alpha dominion
-		for (auto owned_it = _owned_cards.begin(); owned_it != _owned_cards.end(); )
-		{
-			const Card* owned_card = all_cards.by_id(owned_it->first);
-			bool need_remove = (!owned_it->second);
-			if (!need_remove && (owned_card->m_category == CardCategory::dominion_alpha))
-			{
-				if (!owned_alpha_dominion)
-				{
-					owned_alpha_dominion = owned_card;
-				}
-				else
-				{
-					/*std::cerr << "Warning: ownedcards already contains alpha dominion (" << owned_alpha_dominion->m_name
-					  << "): removing additional " << owned_card->m_name << std::endl;
-					  need_remove = true;*/
-				}
-			}
-			if (need_remove) { owned_it = _owned_cards.erase(owned_it); }
-			else { ++owned_it; }
-		}
-		if (!owned_alpha_dominion && use_owned_dominions)
-		{
-			//owned_alpha_dominion = all_cards.by_id(50002);
-			//std::cerr << "Warning: dominion climbing enabled and no alpha dominion found in owned cards, adding default "
-			//    << owned_alpha_dominion->m_name << std::endl;
-		}
-		if (owned_alpha_dominion)
-		{ _owned_cards[owned_alpha_dominion->m_id] = 1; }
+    if (opt_do_optimization and use_owned_cards)
+    {
+        if (opt_owned_cards_str_list.empty())
+        {  // load default files only if specify no -o=
+            for (const auto & suffix: fn_suffix_list)
+            {
+                std::string filename = "data/ownedcards" + suffix + ".txt";
+                if (boost::filesystem::exists(filename))
+                {
+                    opt_owned_cards_str_list.push_back(filename);
+                }
+            }
+        }
+        std::map<unsigned, unsigned> _owned_cards;
+        for (const auto & oc_str: opt_owned_cards_str_list)
+        {
+            read_owned_cards(all_cards, _owned_cards, oc_str);
+        }
 
-		// remap owned cards to unordered map (should be quicker for searching)
-		owned_cards.reserve(_owned_cards.size());
-		for (auto owned_it = _owned_cards.begin(); owned_it != _owned_cards.end(); ++owned_it)
-		{
-			owned_cards[owned_it->first] = owned_it->second;
-		}
-	}
+        // keep only one copy of alpha dominion
+        for (auto owned_it = _owned_cards.begin(); owned_it != _owned_cards.end(); )
+        {
+            const Card* owned_card = all_cards.by_id(owned_it->first);
+            bool need_remove = (!owned_it->second);
+            if (!need_remove && (owned_card->m_category == CardCategory::dominion_alpha))
+            {
+                if (!owned_alpha_dominion)
+                {
+                    owned_alpha_dominion = owned_card;
+                }
+                else
+                {
+                    /*std::cerr << "Warning: ownedcards already contains alpha dominion (" << owned_alpha_dominion->m_name
+                      << "): removing additional " << owned_card->m_name << std::endl;
+                      need_remove = true;*/
+                }
+            }
+            if (need_remove) { owned_it = _owned_cards.erase(owned_it); }
+            else { ++owned_it; }
+        }
+        if (!owned_alpha_dominion && use_owned_dominions)
+        {
+            //owned_alpha_dominion = all_cards.by_id(50002);
+            //std::cerr << "Warning: dominion climbing enabled and no alpha dominion found in owned cards, adding default "
+            //    << owned_alpha_dominion->m_name << std::endl;
+        }
+        if (owned_alpha_dominion)
+        { _owned_cards[owned_alpha_dominion->m_id] = 1; }
 
-	// parse BGEs
-	opt_bg_effects[0].fill(0);
-	opt_bg_effects[1].fill(0);
-	for (int player = 2; player >= 0; -- player)
-	{
-		for (auto && opt_effect: opt_effects[player])
-		{
-			std::unordered_set<std::string> used_bge_aliases;
-			if (!parse_bge(opt_effect, player, bge_aliases, opt_bg_effects[0], opt_bg_effects[1], opt_bg_skills[0], opt_bg_skills[1], used_bge_aliases))
-			{
-				return 1;
-			}
-		}
-	}
+        // remap owned cards to unordered map (should be quicker for searching)
+        owned_cards.reserve(_owned_cards.size());
+        for (auto owned_it = _owned_cards.begin(); owned_it != _owned_cards.end(); ++owned_it)
+        {
+            owned_cards[owned_it->first] = owned_it->second;
+        }
+    }
 
-	std::string your_deck_name{argv[1]};
-	std::string enemy_deck_list{argv[2]};
-	auto && deck_list_parsed = parse_deck_list(enemy_deck_list, decks);
+    // parse BGEs
+    opt_bg_effects[0].fill(0);
+    opt_bg_effects[1].fill(0);
+    for (int player = 2; player >= 0; -- player)
+    {
+        for (auto && opt_effect: opt_effects[player])
+        {
+            std::unordered_set<std::string> used_bge_aliases;
+            if (!parse_bge(opt_effect, player, bge_aliases, opt_bg_effects[0], opt_bg_effects[1], opt_bg_skills[0], opt_bg_skills[1], used_bge_aliases))
+            {
+                return 1;
+            }
+        }
+    }
 
-	Deck* your_deck{nullptr};
-	std::vector<Deck*> enemy_decks;
-	std::vector<long double> enemy_decks_factors;
+    std::string your_deck_name{argv[1]};
+    std::string enemy_deck_list{argv[2]};
+    auto && deck_list_parsed = parse_deck_list(enemy_deck_list, decks);
 
-	try
-	{
-		your_deck = find_deck(decks, all_cards, your_deck_name)->clone();
-	}
-	catch(const std::runtime_error& e)
-	{
-		std::cerr << "Error: Deck " << your_deck_name << ": " << e.what() << std::endl;
-		return 1;
-	}
-	if (your_deck == nullptr)
-	{
-		std::cerr << "Error: Invalid attack deck name/hash " << your_deck_name << ".\n";
-	}
-	else if (!your_deck->variable_cards.empty())
-	{
-		std::cerr << "Error: Invalid attack deck " << your_deck_name << ": has optional cards.\n";
-		your_deck = nullptr;
-	}
-	else if (!your_deck->variable_forts.empty())
-	{
-		std::cerr << "Error: Invalid attack deck " << your_deck_name << ": has optional cards.\n";
-		your_deck = nullptr;
-	}
-	if (your_deck == nullptr)
-	{
-		usage(argc, argv);
-		return 255;
-	}
+    Deck* your_deck{nullptr};
+    std::vector<Deck*> enemy_decks;
+    std::vector<long double> enemy_decks_factors;
 
-	your_deck->strategy = opt_your_strategy;
-	if (!opt_forts.empty())
-	{
-		try
-		{
-			your_deck->add_forts(opt_forts + ",");
-		}
-		catch(const std::runtime_error& e)
-		{
-			std::cerr << "Error: yfort " << opt_forts << ": " << e.what() << std::endl;
-			return 1;
-		}
-	}
-	if (!opt_doms.empty())
-	{
-		try
-		{
-			your_deck->add_dominions(opt_doms + ",", true);
-		}
-		catch(const std::runtime_error& e)
-		{
-			std::cerr << "Error: ydom " << opt_doms << ": " << e.what() << std::endl;
-			return 1;
-		}
-	}
+    try
+    {
+        your_deck = find_deck(decks, all_cards, your_deck_name)->clone();
+    }
+    catch(const std::runtime_error& e)
+    {
+        std::cerr << "Error: Deck " << your_deck_name << ": " << e.what() << std::endl;
+        return 1;
+    }
+    if (your_deck == nullptr)
+    {
+        std::cerr << "Error: Invalid attack deck name/hash " << your_deck_name << ".\n";
+    }
+    else if (!your_deck->variable_cards.empty())
+    {
+        std::cerr << "Error: Invalid attack deck " << your_deck_name << ": has optional cards.\n";
+        your_deck = nullptr;
+    }
+    else if (!your_deck->variable_forts.empty())
+    {
+        std::cerr << "Error: Invalid attack deck " << your_deck_name << ": has optional cards.\n";
+        your_deck = nullptr;
+    }
+    if (your_deck == nullptr)
+    {
+        usage(argc, argv);
+        return 255;
+    }
 
-	try
-	{
-		your_deck->set_vip_cards(opt_vip);
-	}
-	catch(const std::runtime_error& e)
-	{
-		std::cerr << "Error: vip " << opt_vip << ": " << e.what() << std::endl;
-		return 1;
-	}
+    your_deck->strategy = opt_your_strategy;
+    if (!opt_forts.empty())
+    {
+        try
+        {
+            your_deck->add_forts(opt_forts + ",");
+        }
+        catch(const std::runtime_error& e)
+        {
+            std::cerr << "Error: yfort " << opt_forts << ": " << e.what() << std::endl;
+            return 1;
+        }
+    }
+    if (!opt_doms.empty())
+    {
+        try
+        {
+            your_deck->add_dominions(opt_doms + ",", true);
+        }
+        catch(const std::runtime_error& e)
+        {
+            std::cerr << "Error: ydom " << opt_doms << ": " << e.what() << std::endl;
+            return 1;
+        }
+    }
 
-	// parse allowed candidates from options
-	try
-	{
-		auto && id_marks = string_to_ids(all_cards, opt_allow_candidates, "allowed-candidates");
-		for (const auto & cid : id_marks.first)
-		{
-			allowed_candidates.insert(cid);
-		}
-	}
-	catch(const std::runtime_error& e)
-	{
-		std::cerr << "Error: allow-candidates " << opt_allow_candidates << ": " << e.what() << std::endl;
-		return 1;
-	}
+    try
+    {
+        your_deck->set_vip_cards(opt_vip);
+    }
+    catch(const std::runtime_error& e)
+    {
+        std::cerr << "Error: vip " << opt_vip << ": " << e.what() << std::endl;
+        return 1;
+    }
 
-	// parse disallowed candidates from options
-	try
-	{
-		auto && id_marks = string_to_ids(all_cards, opt_disallow_candidates, "disallowed-candidates");
-		for (const auto & cid : id_marks.first)
-		{
-			disallowed_candidates.insert(cid);
-		}
-	}
-	catch(const std::runtime_error& e)
-	{
-		std::cerr << "Error: disallow-candidates " << opt_disallow_candidates << ": " << e.what() << std::endl;
-		return 1;
-	}
+    // parse allowed candidates from options
+    try
+    {
+        auto && id_marks = string_to_ids(all_cards, opt_allow_candidates, "allowed-candidates");
+        for (const auto & cid : id_marks.first)
+        {
+            allowed_candidates.insert(cid);
+        }
+    }
+    catch(const std::runtime_error& e)
+    {
+        std::cerr << "Error: allow-candidates " << opt_allow_candidates << ": " << e.what() << std::endl;
+        return 1;
+    }
 
-	// parse & drop disallowed recipes
-	try
-	{
-		auto && id_dis_recipes = string_to_ids(all_cards, opt_disallow_recipes, "disallowed-recipes");
-		for (auto & cid : id_dis_recipes.first)
-		{ all_cards.erase_fusion_recipe(cid); }
-	}
-	catch(const std::runtime_error& e)
-	{
-		std::cerr << "Error: disallow-recipes " << opt_disallow_recipes << ": " << e.what() << std::endl;
-		return 1;
-	}
-	for (auto cid : disallowed_recipes)
-	{ all_cards.erase_fusion_recipe(cid); }
+    // parse disallowed candidates from options
+    try
+    {
+        auto && id_marks = string_to_ids(all_cards, opt_disallow_candidates, "disallowed-candidates");
+        for (const auto & cid : id_marks.first)
+        {
+            disallowed_candidates.insert(cid);
+        }
+    }
+    catch(const std::runtime_error& e)
+    {
+        std::cerr << "Error: disallow-candidates " << opt_disallow_candidates << ": " << e.what() << std::endl;
+        return 1;
+    }
+
+    // parse & drop disallowed recipes
+    try
+    {
+        auto && id_dis_recipes = string_to_ids(all_cards, opt_disallow_recipes, "disallowed-recipes");
+        for (auto & cid : id_dis_recipes.first)
+        { all_cards.erase_fusion_recipe(cid); }
+    }
+    catch(const std::runtime_error& e)
+    {
+        std::cerr << "Error: disallow-recipes " << opt_disallow_recipes << ": " << e.what() << std::endl;
+        return 1;
+    }
+    for (auto cid : disallowed_recipes)
+    { all_cards.erase_fusion_recipe(cid); }
 
 #ifndef NQUEST
 	if (!opt_quest.empty())
