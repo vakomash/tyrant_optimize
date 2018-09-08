@@ -26,7 +26,7 @@ const std::string skill_names[Skill::num_skills] =
     "Payback", "Revenge", "Tribute", "Refresh", "Wall", "Barrier",
 
     // Combat-Modifier:
-    "Coalition", "Legion", "Pierce", "Rupture", "Swipe", "Drain", "Venom", "Hunt", 
+    "Coalition", "Legion", "Pierce", "Rupture", "Swipe", "Drain", "Venom", "Hunt",
 
     // Damage-Dependant:
     "Berserk", "Inhibit", "Sabotage", "Leech", "Poison",
@@ -49,7 +49,7 @@ const std::string passive_bge_names[PassiveBGE::num_passive_bges] =
     "Bloodlust", "Brigade", "Counterflux", "Divert", "EnduringRage", "Fortification", "Heroism",
     "ZealotsPreservation", "Metamorphosis", "Megamorphosis", "Revenge", "TurningTides", "Virulence",
     "HaltedOrders", "Devour", "CriticalReach", "TemporalBacklash", "Furiosity", "OathOfLoyalty",
-    "BloodVengeance", "ColdSleep", "IronWill", "Unity", "Devotion", 
+    "BloodVengeance", "ColdSleep", "IronWill", "Unity", "Devotion", "Crackdown",
 };
 
 const std::string cardtype_names[CardType::num_cardtypes]{"Commander", "Assault", "Structure", };
