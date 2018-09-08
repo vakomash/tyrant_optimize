@@ -50,7 +50,7 @@ enum Skill
     payback, revenge, tribute, refresh, wall, barrier,
 
     // Combat-Modifier:
-    coalition, legion, pierce, rupture, swipe, drain, venom, hunt, 
+    coalition, legion, pierce, rupture, swipe, drain, venom, hunt,
 
     // Damage-Dependent:
     berserk, inhibit, sabotage, leech, poison,
@@ -84,7 +84,7 @@ enum PassiveBGE
     bloodlust, brigade, counterflux, divert, enduringrage, fortification, heroism,
     zealotspreservation, metamorphosis, megamorphosis, revenge, turningtides, virulence,
     haltedorders, devour, criticalreach, temporalbacklash, furiosity, oath_of_loyalty,
-    bloodvengeance, coldsleep,ironwill,unity,devotion,
+    bloodvengeance, coldsleep,ironwill,unity,devotion,crackdown,
 
     // End of BGEs
     num_passive_bges

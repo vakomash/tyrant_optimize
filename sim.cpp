@@ -1257,7 +1257,7 @@ void turn_end_phase(Field* fd)
             {
                 continue;
             }
-            unsigned refresh_value = status.skill(Skill::refresh);
+            unsigned refresh_value = status.skill(Skill::refresh) + __builtin_expect(fd->bg_effects[fd->tapi][PassiveBGE::crackdown],false)?(status.skill(Skill::subdue)+1)/2:0; //BGE: crackdown refresh+=subdue/2
             if (refresh_value && skill_check<Skill::refresh>(fd, &status, nullptr))
             {
                 _DEBUG_MSG(1, "%s refreshes %u health\n", status_description(&status).c_str(), refresh_value);

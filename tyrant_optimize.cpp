@@ -1844,6 +1844,7 @@ void print_available_effects()
         "  Iron-Will\n"
         "  Unity\n"
         "  Devotion\n"
+        "  Crackdown\n"
         ;
 }
 void usage(int argc, char** argv)
