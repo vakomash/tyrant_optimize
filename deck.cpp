@@ -313,6 +313,18 @@ void Deck::add_forts(const std::string& deck_string)
     }
 }
 
+void Deck::add_pool_forts(const std::string& deck_string, unsigned amount)
+{
+    auto && id_marks = string_to_ids(all_cards, deck_string, "fortress_cards");
+    unsigned replicates{1};
+    std::vector<const Card*> cards;
+    for (auto id: id_marks.first)
+    {
+        cards.push_back(all_cards.by_id(id));
+    }
+    variable_forts.push_back(std::make_tuple(amount,replicates,cards));
+}
+
 void Deck::add_dominions(const std::string& deck_string, bool override_dom)
 {
     auto && id_marks = string_to_ids(all_cards, deck_string, "dominion_cards");
@@ -591,7 +603,7 @@ const Card* Deck::next(Field* f)
 				hand2.deck = &deck2;
 				hand1.deck->strategy = DeckStrategy::random;
 				hand2.deck->strategy = DeckStrategy::random;
-				
+
 				//copy Field
 				Field fd(*f);
 				fd.players = {{&hand1,&hand2}};
@@ -651,7 +663,7 @@ void Deck::shuffle(std::mt19937& re)
     boost::insert(shuffled_cards, shuffled_cards.end(), cards);
     if (!variable_forts.empty())
     {
-        if (strategy != DeckStrategy::random)
+        if (decktype == DeckType::raid && strategy != DeckStrategy::random)
         {
             throw std::runtime_error("Support only random strategy for raid/quest deck.");
         }
@@ -670,7 +682,7 @@ void Deck::shuffle(std::mt19937& re)
     }
     if (!variable_cards.empty())
     {
-        if (strategy != DeckStrategy::random)
+        if (decktype == DeckType::raid && strategy != DeckStrategy::random)
         {
             throw std::runtime_error("Support only random strategy for raid/quest deck.");
         }
@@ -745,7 +757,7 @@ void Deck::shuffle(std::mt19937& re)
             }
             std::shuffle(shufflable_iter, pool->end(), re);
         }
-#if 0 
+#if 0
         if (!given_hand.empty())
         {
             for (auto card: cards) std::cout << ", " << card->m_name;
@@ -789,4 +801,3 @@ Deck* Decks::find_deck_by_name(const std::string& deck_name)
     auto it = by_name.find(simplify_name(deck_name));
     return it == by_name.end() ? nullptr : it->second;
 }
-

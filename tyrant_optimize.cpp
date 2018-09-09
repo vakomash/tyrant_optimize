@@ -94,6 +94,8 @@ namespace {
     long double maximum_time{0};
     long double temperature = 1000;
     long double coolingRate = 0.001;
+    unsigned yfpool{0};
+    unsigned efpool{0};
 }
 
 using namespace std::placeholders;
@@ -2383,9 +2385,19 @@ int main(int argc, char** argv)
             opt_forts = std::string(argv[argIndex + 1]);
             argIndex += 1;
         }
+        else if (strcmp(argv[argIndex], "yfpool") == 0 || strcmp(argv[argIndex], "yfortpool") == 0)  // set forts
+        {
+            yfpool = std::stoi(argv[argIndex + 1]);
+            argIndex += 1;
+        }
         else if (strcmp(argv[argIndex], "ef") == 0 || strcmp(argv[argIndex], "efort") == 0)  // set enemies' forts
         {
             opt_enemy_forts = std::string(argv[argIndex + 1]);
+            argIndex += 1;
+        }
+        else if (strcmp(argv[argIndex], "efpool") == 0 || strcmp(argv[argIndex], "efortpool") == 0)  // set forts
+        {
+            efpool = std::stoi(argv[argIndex + 1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "yd") == 0 || strcmp(argv[argIndex], "ydom") == 0)  // set dominions
@@ -2658,7 +2670,10 @@ int main(int argc, char** argv)
     {
         try
         {
-            your_deck->add_forts(opt_forts + ",");
+            if(!yfpool)
+              your_deck->add_forts(opt_forts + ",");
+            else
+              your_deck->add_pool_forts(opt_forts + ",",yfpool);
         }
         catch(const std::runtime_error& e)
         {
@@ -2949,7 +2964,11 @@ int main(int argc, char** argv)
         {
             try
             {
-                enemy_deck->add_forts(opt_enemy_forts + ",");
+                if(!efpool)
+                  enemy_deck->add_forts(opt_enemy_forts + ",");
+                else
+                  enemy_deck->add_pool_forts(opt_enemy_forts + ",",efpool);
+
             }
             catch(const std::runtime_error& e)
             {

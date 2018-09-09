@@ -136,6 +136,7 @@ public:
     void set_vip_cards(const std::string& deck_string_);
     void set_given_hand(const std::string& deck_string_);
     void add_forts(const std::string& deck_string_);
+    void add_pool_forts(const std::string& deck_string_,unsigned amount);
     void add_dominions(const std::string& deck_string_, bool override_dom);
     void add_dominion(const Card* dom_card, bool override_dom);
 
