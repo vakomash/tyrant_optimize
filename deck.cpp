@@ -587,7 +587,17 @@ const Card* Deck::next(Field* f)
     		_DEBUG_MSG(1,">>>>FLEX SIMS>>>>\n");
     		std::vector<uint64_t> res(std::min<unsigned>(3u,shuffled_cards.size()));
     		unsigned iter = f->flexible_iter;
-        if(res.size()==1) //no need for flex here
+        
+        bool all_same{true};
+        for(unsigned j =1; j < res.size();j++)
+        {
+            if(shuffled_cards.begin()[0]->m_id!=shuffled_cards.begin()[j]->m_id)
+            {
+                all_same=false;
+                break;
+            }
+        }
+        if(all_same) //no need for flex here, three same or only one card
         {
           const Card* card = shuffled_cards.front();
           shuffled_cards.pop_front();
