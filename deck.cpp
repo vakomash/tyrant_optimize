@@ -593,20 +593,19 @@ const Card* Deck::next(Field* f)
           shuffled_cards.pop_front();
           return(card);
         }
-    	for(unsigned j =0; j < res.size();j++)
-    	{
-           bool repeat{false};
-           for(unsigned k=0;k<j;++k) //check previous flex sims
-       	   {
-	   	printf("%u\n",j);
-	   	printf("%u\n",k);
-       	   	if(shuffled_cards.begin()[j]->m_id==shuffled_cards.begin()[k]->m_id)
-         	{
-         	    res[j]=res[k];
-         	    repeat=true;
-         	 }
-            }
-            if(repeat)continue;
+    	  for(unsigned j =0; j < res.size();j++)
+    	  {
+          bool repeat{false};
+          for(unsigned k=0;k<j;++k) //check previous flex sims
+       	  {
+       	   	 if(shuffled_cards.begin()[j]->m_id==shuffled_cards.begin()[k]->m_id)
+         	   {
+         	     res[j]=res[k]; //copy prev result
+         	     repeat=true;
+               break;
+         	   }
+          }
+          if(repeat)continue; //skip resim
     			for(unsigned i =0; i < iter;i++)
     			{
     				//copy hand
