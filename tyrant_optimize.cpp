@@ -71,7 +71,10 @@ namespace {
     bool use_owned_dominions{true};
     bool use_maxed_dominions{false};
     bool recent_boost{false};
+    unsigned recent_boost_times{3};
+    unsigned recent_boost_percent{5};
     std::vector<Skill::Skill> skills_boost;
+    unsigned skills_boost_times{3};
     unsigned use_fused_card_level{0};
     unsigned use_fused_commander_level{0};
     bool print_upgraded{false};
@@ -1359,19 +1362,17 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
         else if (card->m_category == CardCategory::normal)
         {
             card_candidates.emplace_back(card);
-            if(recent_boost && it + player_assaults_and_structures.size()/20 > player_assaults_and_structures.end()) //4x latest 5%
+            if(recent_boost && it + player_assaults_and_structures.size()*100/recent_boost_percent > player_assaults_and_structures.end()) //latest 5%
             {
-                card_candidates.emplace_back(card);
-                card_candidates.emplace_back(card);
-                card_candidates.emplace_back(card);
+                for(unsigned k=0; k < recent_boost_times;++k)
+                  card_candidates.emplace_back(card);
             }
             for(Skill::Skill skill_id : skills_boost)
             {
                 if(card->m_skill_value[skill_id])
                 {
-                    card_candidates.emplace_back(card);
-                    card_candidates.emplace_back(card);
-                    card_candidates.emplace_back(card);
+                    for(unsigned k =0;k<skills_boost_times;++k)
+                      card_candidates.emplace_back(card);
                 }
             }
         }
@@ -1664,20 +1665,18 @@ void simulated_annealing(unsigned num_min_iterations, unsigned num_iterations, D
         }
 
         all_candidates.emplace_back(card);
-        if(recent_boost && it + player_assaults_and_structures.size()/20 > player_assaults_and_structures.end()) //4x latest 5%
+        if(recent_boost && it + player_assaults_and_structures.size()*100/recent_boost_percent > player_assaults_and_structures.end())
         {
-            all_candidates.emplace_back(card);
-            all_candidates.emplace_back(card);
-            all_candidates.emplace_back(card);
+          for(unsigned k=0; k < recent_boost_times;++k)
+                  all_candidates.emplace_back(card);
         }
         //prefered
         for(Skill::Skill skill_id : skills_boost)
         {
             if(card->m_skill_value[skill_id])
             {
-                all_candidates.emplace_back(card);
-                all_candidates.emplace_back(card);
-                all_candidates.emplace_back(card);
+              for(unsigned k =0;k<skills_boost_times;++k)
+                      all_candidates.emplace_back(card);
             }
         }
 
@@ -2176,6 +2175,11 @@ int main(int argc, char** argv)
             skills_boost.push_back(skill_name_to_id(argv[argIndex + 1]));
             argIndex += 1;
         }
+        else if (strcmp(argv[argIndex], "strategy-times") == 0 || strcmp(argv[argIndex], "prefered-times") == 0)
+        {
+            skills_boost_times= std::stoi(argv[argIndex + 1]);
+            argIndex += 1;
+        }
         else if (strcmp(argv[argIndex], "effect") == 0 || strcmp(argv[argIndex], "-e") == 0)
         {
             opt_effects[2].push_back(argv[argIndex + 1]);
@@ -2467,6 +2471,16 @@ int main(int argc, char** argv)
                 else if ((opt_name == "recent-boost") or (opt_name == "rb")) //prefer new cards in hill climb and break climb loop faster
                 {
                     recent_boost = true;
+                }
+                else if ((opt_name == "recent-boost-times") or (opt_name == "rbt")) //prefer new cards in hill climb and break climb loop faster
+                {
+                    ensure_opt_value(has_value, opt_name);
+                    recent_boost_times = std::stoi(opt_value);
+                }
+                else if ((opt_name == "recent-boost-percent") or (opt_name == "rbp")) //prefer new cards in hill climb and break climb loop faster
+                {
+                    ensure_opt_value(has_value, opt_name);
+                    recent_boost_percent = std::stoi(opt_value);
                 }
                 else if ((opt_name == "otd") or (opt_name == "open-the-deck"))
                 {
