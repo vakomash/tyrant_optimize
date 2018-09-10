@@ -1,4 +1,4 @@
-MAIN := tuodebug.exe
+MAIN := tuo-debug.exe
 SRCS := $(wildcard *.cpp)
 OBJS := $(patsubst %.cpp,obj-debug/%.o,$(SRCS))
 INCS := $(wildcard *.h)
@@ -10,7 +10,7 @@ ${warning "VERSION is not set (USING NO VERSION instead), use make VERSION=vX.XX
 endif
 endif
 
-CPPFLAGS := -Wall -Werror -std=gnu++11 -Ofast -DNTIMER -DTYRANT_OPTIMIZER_VERSION='"$(VERSION)--debug"'
+CPPFLAGS := -Wall -Werror -std=gnu++11 -Ofast -g -DNTIMER -DTYRANT_OPTIMIZER_VERSION='"$(VERSION)--debug"'
 LDFLAGS := -lboost_system -lboost_thread -lboost_filesystem -lboost_regex -lboost_timer
 
 all: $(MAIN)
@@ -25,4 +25,4 @@ $(MAIN): $(OBJS)
 rebuild: clean all
 
 clean:
-	del /q $(MAIN).exe obj-debug\*.o
+	rm -rf $(MAIN).exe obj-debug/*.o
