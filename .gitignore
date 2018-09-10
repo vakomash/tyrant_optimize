@@ -25,5 +25,6 @@ tuo.exe
 *.stackdump
 build-*
 tuo-debug.exe
+tuodebug.exe
 tuo-x86-debug.exe
 tuo-x86.exe
