@@ -57,7 +57,6 @@ namespace {
     std::unordered_map<unsigned, unsigned> owned_cards;
     const Card* owned_alpha_dominion{nullptr};
     bool use_owned_cards{true};
-    std::vector<Faction> factions;
     unsigned min_deck_len{1};
     unsigned max_deck_len{10};
     unsigned freezed_cards{0};
@@ -70,11 +69,6 @@ namespace {
     bool mode_open_the_deck{false};
     bool use_owned_dominions{true};
     bool use_maxed_dominions{false};
-    bool recent_boost{false};
-    unsigned recent_boost_times{3};
-    unsigned recent_boost_percent{5};
-    std::vector<Skill::Skill> skills_boost;
-    unsigned skills_boost_times{3};
     unsigned use_fused_card_level{0};
     unsigned use_fused_commander_level{0};
     bool print_upgraded{false};
@@ -96,6 +90,16 @@ namespace {
     long double coolingRate = 0.001;
     unsigned yfpool{0};
     unsigned efpool{0};
+
+    std::vector<Faction> factions;
+    bool invert_factions{false};
+    bool only_recent{false};
+    bool prefered_recent{false};
+    unsigned recent_percent{5};
+    std::vector<Skill::Skill> skills;
+    bool invert_skills{false};
+    std::vector<Skill::Skill> prefered_skills;
+    unsigned prefered_factor{3};
 }
 
 using namespace std::placeholders;
@@ -1263,10 +1267,11 @@ inline std::vector<std::vector<const Card*>> get_candidate_lists(Process& proc)
             continue;
         }
         //mono
-        if(!factions.empty() && std::find(factions.begin(), factions.end(), card->m_faction) == factions.end())
+        if(!factions.empty() && (std::find(factions.begin(), factions.end(), card->m_faction) == factions.end()) != invert_factions) //XOR
         {
             continue;
         }
+
 
         // enqueue candidate according to category & type
         if (card->m_type == CardType::commander)
@@ -1279,20 +1284,35 @@ inline std::vector<std::vector<const Card*>> get_candidate_lists(Process& proc)
         }
         else if (card->m_category == CardCategory::normal)
         {
-            card_candidates.emplace_back(card);
-            if(recent_boost && it + player_assaults_and_structures.size()*100/recent_boost_percent > player_assaults_and_structures.end()) //latest 5%
+            bool contains{false};
+            if(!skills.empty())
             {
-                for(unsigned k=0; k < recent_boost_times;++k)
+              for(Skill::Skill skill_id : skills)
+              {
+                  if(card->m_skill_value[skill_id])
+                  {
+                    contains = true;
+                    break;
+                  }
+              }
+              if(!contains != invert_skills) continue; //XOR
+            }
+            if(only_recent && it + player_assaults_and_structures.size()*100/recent_percent > player_assaults_and_structures.end())continue; //latest %
+            if(prefered_recent && it + player_assaults_and_structures.size()*100/recent_percent > player_assaults_and_structures.end()) //latest %
+            {
+                for(unsigned k=0; k < prefered_factor;++k)
                   card_candidates.emplace_back(card);
             }
-            for(Skill::Skill skill_id : skills_boost)
+            for(Skill::Skill skill_id : prefered_skills)
             {
                 if(card->m_skill_value[skill_id])
                 {
-                    for(unsigned k =0;k<skills_boost_times;++k)
+                    for(unsigned k =0;k<prefered_factor;++k)
                       card_candidates.emplace_back(card);
                 }
             }
+
+            card_candidates.emplace_back(card);
         }
     }
     card_candidates.emplace_back(nullptr);
@@ -1974,7 +1994,7 @@ bool parse_bge(
 
 int main(int argc, char** argv)
 {
-#ifndef NDEBUG
+#ifndef NTIMER
     boost::timer::auto_cpu_timer t;
 #endif
     start_time = std::chrono::system_clock::now();
@@ -2099,14 +2119,50 @@ int main(int argc, char** argv)
             factions.push_back(faction_name_to_id(argv[argIndex + 1]));
             argIndex += 1;
         }
-        else if (strcmp(argv[argIndex], "strategy") == 0 || strcmp(argv[argIndex], "prefered") == 0)
+        else if (strcmp(argv[argIndex], "no-mono") == 0 || strcmp(argv[argIndex], "no-factions") == 0)
         {
-            skills_boost.push_back(skill_name_to_id(argv[argIndex + 1]));
+            factions.push_back(faction_name_to_id(argv[argIndex + 1]));
+            invert_factions = true;
             argIndex += 1;
         }
-        else if (strcmp(argv[argIndex], "strategy-times") == 0 || strcmp(argv[argIndex], "prefered-times") == 0)
+        else if (strcmp(argv[argIndex], "strategy") == 0 || strcmp(argv[argIndex], "skill") == 0)
         {
-            skills_boost_times= std::stoi(argv[argIndex + 1]);
+            if(strcmp(argv[argIndex], "recent") == 0)
+            {
+                only_recent = true;
+            }
+            else
+            {
+                skills.push_back(skill_name_to_id(argv[argIndex + 1]));
+            }
+            argIndex += 1;
+        }
+        else if (strcmp(argv[argIndex], "no-strategy") == 0 || strcmp(argv[argIndex], "no-skill") == 0)
+        {
+            skills.push_back(skill_name_to_id(argv[argIndex + 1]));
+            invert_skills=true;
+            argIndex += 1;
+        }
+        else if (strcmp(argv[argIndex], "prefered-strategy") == 0 || strcmp(argv[argIndex], "prefered-skill") == 0)
+        {
+            if(strcmp(argv[argIndex], "recent") == 0)
+            {
+                prefered_recent = true;
+            }
+            else
+            {
+                prefered_skills.push_back(skill_name_to_id(argv[argIndex + 1]));
+            }
+            argIndex += 1;
+        }
+        else if (strcmp(argv[argIndex], "prefered-factor") == 0)
+        {
+            prefered_factor= std::stoi(argv[argIndex + 1]);
+            argIndex += 1;
+        }
+        else if (strcmp(argv[argIndex], "recent-percent") == 0)
+        {
+            recent_percent= std::stoi(argv[argIndex + 1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "effect") == 0 || strcmp(argv[argIndex], "-e") == 0)
@@ -2409,17 +2465,17 @@ int main(int argc, char** argv)
                 }
                 else if ((opt_name == "recent-boost") or (opt_name == "rb")) //prefer new cards in hill climb and break climb loop faster
                 {
-                    recent_boost = true;
+                    prefered_recent = true;
                 }
                 else if ((opt_name == "recent-boost-times") or (opt_name == "rbt")) //prefer new cards in hill climb and break climb loop faster
                 {
                     ensure_opt_value(has_value, opt_name);
-                    recent_boost_times = std::stoi(opt_value);
+                    prefered_factor = std::stoi(opt_value);
                 }
                 else if ((opt_name == "recent-boost-percent") or (opt_name == "rbp")) //prefer new cards in hill climb and break climb loop faster
                 {
                     ensure_opt_value(has_value, opt_name);
-                    recent_boost_percent = std::stoi(opt_value);
+                    recent_percent = std::stoi(opt_value);
                 }
                 else if ((opt_name == "otd") or (opt_name == "open-the-deck"))
                 {
