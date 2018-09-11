@@ -745,7 +745,6 @@ struct SimulationData
                 res.emplace_back(result);
             }
         }
-        std:: cout << std::uniform_int_distribution<unsigned>(0, 1000)(re) << std::endl;
         //std::cout << std::endl<<  "Deck hash: " << your_hand.deck->hash() << "#"<< std::endl;
         return(res);
     }
