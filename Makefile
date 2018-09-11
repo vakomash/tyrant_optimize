@@ -19,7 +19,7 @@ ifeq ($(detected_OS),Linux)  # Mac OS X
 endif
 main:
 		$(MAKE) -f make/Makefile.${OS} all
-		
+
 all: main debug
 
 debug:
@@ -27,7 +27,7 @@ debug:
 
 ahk: SimpleTUOptimizeStarter.ahk
 		$(AHK2EXE) //in SimpleTUOptimizeStarter.ahk //out SimpleTUOptimizeStarter.exe
-		$(AHK2EXE) //in SimpleTUOptimizeStarter.ahk //out SimpleTUOptimizeStarter.exe //bin $(AHK32BIT)
+		$(AHK2EXE) //in SimpleTUOptimizeStarter.ahk //out SimpleTUOptimizeStarter-x86.exe //bin $(AHK32BIT)
 clean:
 		$(MAKE) -f make/Makefile.${OS} clean
 		$(MAKE) -f make/Makefile-debug.${OS} clean

@@ -16,7 +16,7 @@ For Ubunutu/Debian
 2. Get the lastest rev. of tuo
   * `git clone git://github.com/APN-Pucky/tyrant_optimize`
 3. Compile!
-  * `cd tyrant_optimize && make -f Makefile.linux`
+  * `cd tyrant_optimize && make`
 4. Update the card data files
   * `./update_xml.sh`
 
@@ -56,7 +56,3 @@ maximum level. Always put a `-1` on cards that aren’t upgraded (ex.:
 two stock Omegas must be written like this: `Omega-1 #2` )
 * If you have one fully upgraded Omega, you don’t need to write `Omega-6`, `Omega` is enough.
 * If you don’t specify a card copies number, it is assumed that you have only one copy from that card.
-
-
-
-
