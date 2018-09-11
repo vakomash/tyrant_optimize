@@ -25,4 +25,4 @@ $(MAIN): $(OBJS)
 rebuild: clean all
 
 clean:
-	rm -rf $(MAIN).exe obj-debug/*.o
+	rm -rf $(MAIN) obj-debug/*.o

@@ -736,6 +736,7 @@ struct SimulationData
             res.emplace_back(result);
         }
 
+
         //std::cout << std::endl<<  "Deck hash: " << your_hand.deck->hash() << "#"<< std::endl;
         return(res);
     }
