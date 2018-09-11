@@ -72,6 +72,7 @@ namespace {
     unsigned use_fused_card_level{0};
     unsigned use_fused_commander_level{0};
     bool print_upgraded{false};
+    bool simplify_output{false};
     bool show_ci{false};
     bool use_harmonic_mean{false};
     unsigned iterations_multiplier{10};
@@ -982,22 +983,25 @@ void print_results(const EvaluatedResults& results, std::vector<long double>& fa
     std::cout << "win%: " << final.wins * 100.0 << " (";
     for (const auto & val : results.first)
     {
-        std::cout << val.wins << " ";
+        if(!simplify_output)std::cout << val.wins << " ";
     }
+    if(simplify_output)std::cout << "...";
     std::cout << "/ " << results.second << ")" << std::endl;
 
     std::cout << "stall%: " << final.draws * 100.0 << " (";
     for (const auto & val : results.first)
     {
-        std::cout << val.draws << " ";
+        if(!simplify_output)std::cout << val.draws << " ";
     }
+    if(simplify_output)std::cout << "...";
     std::cout << "/ " << results.second << ")" << std::endl;
 
     std::cout << "loss%: " << final.losses * 100.0 << " (";
     for (const auto & val : results.first)
     {
-        std::cout << val.losses << " ";
+        if(!simplify_output)std::cout << val.losses << " ";
     }
+    if(simplify_output)std::cout << "...";
     std::cout << "/ " << results.second << ")" << std::endl;
 
 #ifndef NQUEST
@@ -1046,8 +1050,9 @@ void print_results(const EvaluatedResults& results, std::vector<long double>& fa
             std::cout << " (";
             for (const auto & val: results.first)
             {
-                std::cout << val.points << " ";
+                if(!simplify_output)std::cout << val.points << " ";
             }
+            if(simplify_output)std::cout << "...";
             std::cout << "/ " << results.second << ")" << std::endl;
             if (show_ci)
             {
@@ -2317,6 +2322,10 @@ int main(int argc, char** argv)
         {
             confidence_level = atof(argv[argIndex+1]);
             argIndex += 1;
+        }
+        else if (strcmp(argv[argIndex], "+so") == 0)
+        {
+            simplify_output = true;
         }
         else if (strcmp(argv[argIndex], "+uc") == 0)
         {
