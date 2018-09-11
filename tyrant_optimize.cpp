@@ -652,8 +652,8 @@ struct SimulationData
     std::mt19937 re;
     const Cards& cards;
     const Decks& decks;
-    std::shared_ptr<Deck> your_deck;
-    Hand your_hand;
+    std::vector<std::shared_ptr<Deck>> your_decks;
+    std::vector<Hand*> your_hands;
     std::vector<std::shared_ptr<Deck>> enemy_decks;
     std::vector<Hand*> enemy_hands;
     std::vector<long double> factors;
@@ -664,7 +664,7 @@ struct SimulationData
     std::array<signed short, PassiveBGE::num_passive_bges> your_bg_effects, enemy_bg_effects;
     std::vector<SkillSpec> your_bg_skills, enemy_bg_skills;
 
-    SimulationData(unsigned seed, const Cards& cards_, const Decks& decks_, unsigned num_enemy_decks_, std::vector<long double> factors_, gamemode_t gamemode_,
+    SimulationData(unsigned seed, const Cards& cards_, const Decks& decks_, unsigned num_your_decks_,unsigned num_enemy_decks_, std::vector<long double> factors_, gamemode_t gamemode_,
 #ifndef NQUEST
             Quest & quest_,
 #endif
@@ -675,8 +675,7 @@ struct SimulationData
         re(seed),
         cards(cards_),
         decks(decks_),
-        your_deck(),
-        your_hand(nullptr),
+        your_decks(num_your_decks_),
         enemy_decks(num_enemy_decks_),
         factors(factors_),
         gamemode(gamemode_),
@@ -688,6 +687,10 @@ struct SimulationData
         your_bg_skills(your_bg_skills_),
         enemy_bg_skills(enemy_bg_skills_)
         {
+            for (size_t i = 0; i < num_your_decks_; ++i)
+            {
+                your_hands.emplace_back(new Hand(nullptr));
+            }
             for (size_t i = 0; i < num_enemy_decks_; ++i)
             {
                 enemy_hands.emplace_back(new Hand(nullptr));
@@ -697,12 +700,16 @@ struct SimulationData
     ~SimulationData()
     {
         for (auto hand: enemy_hands) { delete(hand); }
+        for (auto hand: your_hands) { delete(hand); }
     }
 
-    void set_decks(const Deck* const your_deck_, std::vector<Deck*> const & enemy_decks_)
+    void set_decks(std::vector<Deck*> const your_decks_, std::vector<Deck*> const & enemy_decks_)
     {
-        your_deck.reset(your_deck_->clone());
-        your_hand.deck = your_deck.get();
+        for (unsigned i(0); i < your_decks_.size(); ++i)
+        {
+            your_decks[i].reset(your_decks_[i]->clone());
+            your_hands[i]->deck = your_decks[i].get();
+        }
         for (unsigned i(0); i < enemy_decks_.size(); ++i)
         {
             enemy_decks[i].reset(enemy_decks_[i]->clone());
@@ -714,28 +721,31 @@ struct SimulationData
     {
         std::vector<Results<uint64_t>> res;
         res.reserve(enemy_hands.size());
-        for (Hand* enemy_hand: enemy_hands)
+        for(Hand* your_hand : your_hands)
         {
-            your_hand.reset(re);
-            enemy_hand->reset(re);
-            Field fd(re, cards, your_hand, *enemy_hand, gamemode, optimization_mode,
-#ifndef NQUEST
-                    quest,
-#endif
-                    your_bg_effects, enemy_bg_effects, your_bg_skills, enemy_bg_skills, flexible_iter);
-            Results<uint64_t> result(play(&fd));
-            if (__builtin_expect(mode_open_the_deck, false))
+            for (Hand* enemy_hand: enemy_hands)
             {
-                // are there remaining (unopened) cards?
-                if (fd.players[1]->deck->shuffled_cards.size())
+                your_hand->reset(re);
+                enemy_hand->reset(re);
+                Field fd(re, cards, *your_hand, *enemy_hand, gamemode, optimization_mode,
+    #ifndef NQUEST
+                        quest,
+#endif
+                        your_bg_effects, enemy_bg_effects, your_bg_skills, enemy_bg_skills, flexible_iter);
+                Results<uint64_t> result(play(&fd));
+                if (__builtin_expect(mode_open_the_deck, false))
                 {
-                    // apply min score (there are unopened cards, so mission failed)
-                    result.points = min_possible_score[(size_t)optimization_mode];
+                    // are there remaining (unopened) cards?
+                    if (fd.players[1]->deck->shuffled_cards.size())
+                    {
+                        // apply min score (there are unopened cards, so mission failed)
+                        result.points = min_possible_score[(size_t)optimization_mode];
+                    }
                 }
+                res.emplace_back(result);
             }
-            res.emplace_back(result);
         }
-
+        std:: cout << std::uniform_int_distribution<unsigned>(0, 1000)(re) << std::endl;
         //std::cout << std::endl<<  "Deck hash: " << your_hand.deck->hash() << "#"<< std::endl;
         return(res);
     }
@@ -758,7 +768,7 @@ class Process
         boost::mutex shared_mutex;
         const Cards& cards;
         const Decks& decks;
-        Deck* your_deck;
+        const std::vector<Deck*> your_decks;
         const std::vector<Deck*> enemy_decks;
         std::vector<long double> factors;
         gamemode_t gamemode;
@@ -768,7 +778,7 @@ class Process
         std::array<signed short, PassiveBGE::num_passive_bges> your_bg_effects, enemy_bg_effects;
         std::vector<SkillSpec> your_bg_skills, enemy_bg_skills;
 
-        Process(unsigned num_threads_, const Cards& cards_, const Decks& decks_, Deck* your_deck_, std::vector<Deck*> enemy_decks_, std::vector<long double> factors_, gamemode_t gamemode_,
+        Process(unsigned num_threads_, const Cards& cards_, const Decks& decks_, std::vector<Deck*> your_decks_, std::vector<Deck*> enemy_decks_, std::vector<long double> factors_, gamemode_t gamemode_,
 #ifndef NQUEST
                 Quest & quest_,
 #endif
@@ -779,7 +789,7 @@ class Process
             main_barrier(num_threads+1),
             cards(cards_),
             decks(decks_),
-            your_deck(your_deck_),
+            your_decks(your_decks_),
             enemy_decks(enemy_decks_),
             factors(factors_),
             gamemode(gamemode_),
@@ -799,7 +809,7 @@ class Process
                 }
                 for (unsigned i(0); i < num_threads; ++i)
                 {
-                    threads_data.push_back(new SimulationData(seed + i, cards, decks, enemy_decks.size(), factors, gamemode,
+                    threads_data.push_back(new SimulationData(seed + i, cards, decks,your_decks.size(), enemy_decks.size(), factors, gamemode,
 #ifndef NQUEST
                                 quest,
 #endif
@@ -860,7 +870,7 @@ void thread_evaluate(boost::barrier& main_barrier,
     while (true)
     {
         main_barrier.wait();
-        sim.set_decks(p.your_deck, p.enemy_decks);
+        sim.set_decks(p.your_decks, p.enemy_decks);
         if (destroy_threads)
         { return; }
         while (true)
@@ -2026,6 +2036,7 @@ int main(int argc, char** argv)
     std::vector<std::string> fn_suffix_list{"",};
     std::vector<std::string> opt_owned_cards_str_list;
     bool opt_do_optimization(false);
+    bool opt_do_reorder(false);
     bool opt_keep_commander{false};
     std::vector<std::tuple<unsigned, unsigned, Operation>> opt_todo;
     std::vector<std::string> opt_effects[3];  // 0-you; 1-enemy; 2-global
@@ -2427,6 +2438,7 @@ int main(int argc, char** argv)
         {
             opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 1]), reorder));
             if (std::get<1>(opt_todo.back()) < 10) { opt_num_threads = 1; }
+            opt_do_reorder = true;
             argIndex += 1;
         }
         // climbing options
@@ -2611,81 +2623,6 @@ int main(int argc, char** argv)
         }
     }
 
-    std::string your_deck_name{argv[1]};
-    std::string enemy_deck_list{argv[2]};
-    auto && deck_list_parsed = parse_deck_list(enemy_deck_list, decks);
-
-    Deck* your_deck{nullptr};
-    std::vector<Deck*> enemy_decks;
-    std::vector<long double> enemy_decks_factors;
-
-    try
-    {
-        your_deck = find_deck(decks, all_cards, your_deck_name)->clone();
-    }
-    catch(const std::runtime_error& e)
-    {
-        std::cerr << "Error: Deck " << your_deck_name << ": " << e.what() << std::endl;
-        return 1;
-    }
-    if (your_deck == nullptr)
-    {
-        std::cerr << "Error: Invalid attack deck name/hash " << your_deck_name << ".\n";
-    }
-    else if (!your_deck->variable_cards.empty())
-    {
-        std::cerr << "Error: Invalid attack deck " << your_deck_name << ": has optional cards.\n";
-        your_deck = nullptr;
-    }
-    else if (!your_deck->variable_forts.empty())
-    {
-        std::cerr << "Error: Invalid attack deck " << your_deck_name << ": has optional cards.\n";
-        your_deck = nullptr;
-    }
-    if (your_deck == nullptr)
-    {
-        usage(argc, argv);
-        return 255;
-    }
-
-    your_deck->strategy = opt_your_strategy;
-    if (!opt_forts.empty())
-    {
-        try
-        {
-            if(!yfpool)
-              your_deck->add_forts(opt_forts + ",");
-            else
-              your_deck->add_pool_forts(opt_forts + ",",yfpool);
-        }
-        catch(const std::runtime_error& e)
-        {
-            std::cerr << "Error: yfort " << opt_forts << ": " << e.what() << std::endl;
-            return 1;
-        }
-    }
-    if (!opt_doms.empty())
-    {
-        try
-        {
-            your_deck->add_dominions(opt_doms + ",", true);
-        }
-        catch(const std::runtime_error& e)
-        {
-            std::cerr << "Error: ydom " << opt_doms << ": " << e.what() << std::endl;
-            return 1;
-        }
-    }
-
-    try
-    {
-        your_deck->set_vip_cards(opt_vip);
-    }
-    catch(const std::runtime_error& e)
-    {
-        std::cerr << "Error: vip " << opt_vip << ": " << e.what() << std::endl;
-        return 1;
-    }
 
     // parse allowed candidates from options
     try
@@ -2870,33 +2807,105 @@ int main(int argc, char** argv)
     }
 #endif
 
-    try
-    {
-        your_deck->set_given_hand(opt_hand);
-    }
-    catch(const std::runtime_error& e)
-    {
-        std::cerr << "Error: hand " << opt_hand << ": " << e.what() << std::endl;
-        return 1;
-    }
+    //std::string your_deck_name{argv[1]};
+    std::string your_deck_list{argv[1]};
+    std::string enemy_deck_list{argv[2]};
+    auto && your_deck_list_parsed = parse_deck_list(your_deck_list, decks);
+    auto && enemy_deck_list_parsed = parse_deck_list(enemy_deck_list, decks);
 
-    if (opt_keep_commander)
+    //Deck* your_deck{nullptr};
+    std::vector<Deck*> your_decks;
+    std::vector<Deck*> enemy_decks;
+    std::vector<long double> your_decks_factors;
+    std::vector<long double> enemy_decks_factors;
+    for(auto deck_parsed : your_deck_list_parsed)
     {
-        requirement.num_cards[your_deck->commander] = 1;
-    }
-    for (auto && card_mark: your_deck->card_marks)
-    {
-        auto && card = card_mark.first < 0 ? your_deck->commander : your_deck->cards[card_mark.first];
-        auto mark = card_mark.second;
-        if ((mark == '!') && ((card_mark.first >= 0) || !opt_keep_commander))
+        Deck* your_deck{nullptr};
+        try
         {
-            requirement.num_cards[card] += 1;
+            your_deck = find_deck(decks, all_cards, deck_parsed.first)->clone();
         }
+        catch(const std::runtime_error& e)
+        {
+            std::cerr << "Error: Deck " <<  deck_parsed.first << ": " << e.what() << std::endl;
+            return 1;
+        }
+        if (your_deck == nullptr)
+        {
+            std::cerr << "Error: Invalid attack deck name/hash " << deck_parsed.first << ".\n";
+        }
+        else if (!your_deck->variable_cards.empty())
+        {
+            std::cerr << "Error: Invalid attack deck " << deck_parsed.first  << ": has optional cards.\n";
+            your_deck = nullptr;
+        }
+        else if (!your_deck->variable_forts.empty())
+        {
+            std::cerr << "Error: Invalid attack deck " << deck_parsed.first << ": has optional cards.\n";
+            your_deck = nullptr;
+        }
+        if (your_deck == nullptr)
+        {
+            usage(argc, argv);
+            return 255;
+        }
+
+        your_deck->strategy = opt_your_strategy;
+        if (!opt_forts.empty())
+        {
+            try
+            {
+                if(!yfpool)
+                  your_deck->add_forts(opt_forts + ",");
+                else
+                  your_deck->add_pool_forts(opt_forts + ",",yfpool);
+            }
+            catch(const std::runtime_error& e)
+            {
+                std::cerr << "Error: yfort " << opt_forts << ": " << e.what() << std::endl;
+                return 1;
+            }
+        }
+        if (!opt_doms.empty())
+        {
+            try
+            {
+                your_deck->add_dominions(opt_doms + ",", true);
+            }
+            catch(const std::runtime_error& e)
+            {
+                std::cerr << "Error: ydom " << opt_doms << ": " << e.what() << std::endl;
+                return 1;
+            }
+        }
+
+        try
+        {
+            your_deck->set_vip_cards(opt_vip);
+        }
+        catch(const std::runtime_error& e)
+        {
+            std::cerr << "Error: vip " << opt_vip << ": " << e.what() << std::endl;
+            return 1;
+        }
+
+        try
+        {
+            your_deck->set_given_hand(opt_hand);
+        }
+        catch(const std::runtime_error& e)
+        {
+            std::cerr << "Error: hand " << opt_hand << ": " << e.what() << std::endl;
+            return 1;
+        }
+
+        your_decks.push_back(your_deck);
+        your_decks_factors.push_back(deck_parsed.second);
     }
 
     target_score = opt_target_score.empty() ? max_possible_score[(size_t)optimization_mode] : boost::lexical_cast<long double>(opt_target_score);
 
-    for (auto deck_parsed: deck_list_parsed)
+    for (auto deck_parsed: enemy_deck_list_parsed)
     {
         Deck* enemy_deck{nullptr};
         try
@@ -2971,33 +2980,58 @@ int main(int argc, char** argv)
         enemy_decks.push_back(enemy_deck);
         enemy_decks_factors.push_back(deck_parsed.second);
     }
-
-    // Force to claim cards in your initial deck.
-    if (opt_do_optimization and use_owned_cards)
-    {
-        claim_cards({your_deck->commander});
-        claim_cards(your_deck->cards);
-        if (your_deck->alpha_dominion)
-            claim_cards({your_deck->alpha_dominion});
+    if((opt_do_optimization || opt_do_reorder) && your_decks.size() != 1) {
+        std::cerr << "Optimization only works with a single deck";
+        return 1;
     }
-
-    // shrink any oversized deck to maximum of 10 cards + commander
-    // NOTE: do this AFTER the call to claim_cards so that passing an initial deck of >10 cards
-    //       can be used as a "shortcut" for adding them to owned cards. Also this allows climb
-    //       to figure out which are the best 10, rather than restricting climb to the first 10.
-    if (your_deck->cards.size() > max_deck_len)
+    if(opt_do_optimization || opt_do_reorder)  // => your_decks.site()==1
     {
-        your_deck->shrink(max_deck_len);
-        if (debug_print >= 0)
+        auto your_deck = your_decks[0];
+
+        if (opt_keep_commander)
         {
-            std::cerr << "WARNING: Too many cards in your deck. Trimmed.\n";
+            requirement.num_cards[your_deck->commander] = 1;
         }
+        for (auto && card_mark: your_deck->card_marks)
+        {
+            auto && card = card_mark.first < 0 ? your_deck->commander : your_deck->cards[card_mark.first];
+            auto mark = card_mark.second;
+            if ((mark == '!') && ((card_mark.first >= 0) || !opt_keep_commander))
+            {
+                requirement.num_cards[card] += 1;
+            }
+        }
+        // Force to claim cards in your initial deck.
+        if (opt_do_optimization and use_owned_cards)
+        {
+            claim_cards({your_deck->commander});
+            claim_cards(your_deck->cards);
+            if (your_deck->alpha_dominion)
+                claim_cards({your_deck->alpha_dominion});
+        }
+
+        // shrink any oversized deck to maximum of 10 cards + commander
+        // NOTE: do this AFTER the call to claim_cards so that passing an initial deck of >10 cards
+        //       can be used as a "shortcut" for adding them to owned cards. Also this allows climb
+        //       to figure out which are the best 10, rather than restricting climb to the first 10.
+        if (your_deck->cards.size() > max_deck_len)
+        {
+            your_deck->shrink(max_deck_len);
+            if (debug_print >= 0)
+            {
+                std::cerr << "WARNING: Too many cards in your deck. Trimmed.\n";
+            }
+        }
+        freezed_cards = std::min<unsigned>(freezed_cards, your_deck->cards.size());
     }
-    freezed_cards = std::min<unsigned>(freezed_cards, your_deck->cards.size());
 
     if (debug_print >= 0)
     {
-        std::cout << "Your Deck: " << (debug_print > 0 ? your_deck->long_description() : your_deck->medium_description()) << std::endl;
+        for (unsigned i(0); i < your_decks.size(); ++i)
+        {
+            auto your_deck = your_decks[i];
+            std::cout << "Your Deck: " << (debug_print > 0 ? your_deck->long_description() : your_deck->medium_description()) << std::endl;
+        }
         for (unsigned bg_effect = PassiveBGE::no_bge; bg_effect < PassiveBGE::num_passive_bges; ++bg_effect)
         {
             auto bge_value = opt_bg_effects[0][bg_effect];
@@ -3053,12 +3087,13 @@ int main(int argc, char** argv)
         }
     }
 
-    Process p(opt_num_threads, all_cards, decks, your_deck, enemy_decks, enemy_decks_factors, gamemode,
+    Process p(opt_num_threads, all_cards, decks, your_decks, enemy_decks, enemy_decks_factors, gamemode,
 #ifndef NQUEST
             quest,
 #endif
             opt_bg_effects[0], opt_bg_effects[1], opt_bg_skills[0], opt_bg_skills[1]);
 
+    auto your_deck = your_decks[0];
     for (auto op: opt_todo)
     {
         switch(std::get<2>(op))
@@ -3072,6 +3107,7 @@ int main(int argc, char** argv)
                                break;
                            }
             case climb: {
+                            //TODO check for your_decks.size()==1
                             hill_climbing(std::get<0>(op), std::get<1>(op), your_deck, p, requirement
 #ifndef NQUEST
                                     , quest
@@ -3080,6 +3116,7 @@ int main(int argc, char** argv)
                             break;
                         }
             case anneal: {
+                              //TODO check for your_decks.size()==1
                              simulated_annealing(std::get<0>(op), std::get<1>(op), your_deck, p, requirement
 #ifndef NQUEST
                                      , quest
@@ -3089,6 +3126,7 @@ int main(int argc, char** argv)
 
                          }
             case reorder: {
+                              //TODO check for your_decks.size()==1
                               your_deck->strategy = DeckStrategy::ordered;
                               use_owned_cards = true;
                               use_top_level_card = false;
