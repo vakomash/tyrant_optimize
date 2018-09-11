@@ -1298,8 +1298,8 @@ inline std::vector<std::vector<const Card*>> get_candidate_lists(Process& proc)
               }
               if(!contains != invert_skills) continue; //XOR
             }
-            if(only_recent && it + player_assaults_and_structures.size()*100/recent_percent > player_assaults_and_structures.end())continue; //latest %
-            if(prefered_recent && it + player_assaults_and_structures.size()*100/recent_percent > player_assaults_and_structures.end()) //latest %
+            if(only_recent && !((it + (player_assaults_and_structures.size()*recent_percent/100)  )> player_assaults_and_structures.end()))continue; //latest %
+            if(prefered_recent && it + (player_assaults_and_structures.size()*recent_percent)/100 > player_assaults_and_structures.end()) //latest %
             {
                 for(unsigned k=0; k < prefered_factor;++k)
                   card_candidates.emplace_back(card);
@@ -2128,7 +2128,7 @@ int main(int argc, char** argv)
         }
         else if (strcmp(argv[argIndex], "strategy") == 0 || strcmp(argv[argIndex], "skill") == 0)
         {
-            if(strcmp(argv[argIndex], "recent") == 0)
+            if(strcmp(argv[argIndex+1], "recent") == 0)
             {
                 only_recent = true;
             }
@@ -2146,7 +2146,7 @@ int main(int argc, char** argv)
         }
         else if (strcmp(argv[argIndex], "prefered-strategy") == 0 || strcmp(argv[argIndex], "prefered-skill") == 0)
         {
-            if(strcmp(argv[argIndex], "recent") == 0)
+            if(strcmp(argv[argIndex+1], "recent") == 0)
             {
                 prefered_recent = true;
             }
