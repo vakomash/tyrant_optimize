@@ -720,7 +720,7 @@ struct SimulationData
     inline std::vector<Results<uint64_t>> evaluate()
     {
         std::vector<Results<uint64_t>> res;
-        res.reserve(enemy_hands.size());
+        res.reserve(enemy_hands.size()*your_hands.size());
         for(Hand* your_hand : your_hands)
         {
             for (Hand* enemy_hand: enemy_hands)
@@ -2979,8 +2979,13 @@ int main(int argc, char** argv)
         enemy_decks.push_back(enemy_deck);
         enemy_decks_factors.push_back(deck_parsed.second);
     }
+    std::vector<long double> factors(your_decks_factors.size()*enemy_decks_factors.size());
+    for(unsigned i =0; i < factors.size();++i)
+    {
+        factors[i] = your_decks_factors[i/enemy_decks_factors.size()]*enemy_decks_factors[i%enemy_decks_factors.size()];
+    }
     if((opt_do_optimization || opt_do_reorder) && your_decks.size() != 1) {
-        std::cerr << "Optimization only works with a single deck";
+        std::cerr << "Optimization only works with a single deck" << std::endl;
         return 1;
     }
     if(opt_do_optimization || opt_do_reorder)  // => your_decks.site()==1
@@ -3029,7 +3034,7 @@ int main(int argc, char** argv)
         for (unsigned i(0); i < your_decks.size(); ++i)
         {
             auto your_deck = your_decks[i];
-            std::cout << "Your Deck: " << (debug_print > 0 ? your_deck->long_description() : your_deck->medium_description()) << std::endl;
+            std::cout << "Your Deck:" << your_decks_factors[i] << ": "<< (debug_print > 0 ? your_deck->long_description() : your_deck->medium_description()) << std::endl;
         }
         for (unsigned bg_effect = PassiveBGE::no_bge; bg_effect < PassiveBGE::num_passive_bges; ++bg_effect)
         {
@@ -3086,7 +3091,7 @@ int main(int argc, char** argv)
         }
     }
 
-    Process p(opt_num_threads, all_cards, decks, your_decks, enemy_decks, enemy_decks_factors, gamemode,
+    Process p(opt_num_threads, all_cards, decks, your_decks, enemy_decks, factors, gamemode,
 #ifndef NQUEST
             quest,
 #endif
@@ -3100,7 +3105,7 @@ int main(int argc, char** argv)
             case noop:
                 break;
             case simulate: {
-                               EvaluatedResults results = { EvaluatedResults::first_type(enemy_decks.size()), 0 };
+                               EvaluatedResults results = { EvaluatedResults::first_type(enemy_decks.size()*your_decks.size()), 0 };
                                results = p.evaluate(std::get<0>(op), results);
                                print_results(results, p.factors);
                                break;
