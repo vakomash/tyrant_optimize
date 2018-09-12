@@ -318,6 +318,9 @@ void Deck::add_pool_forts(const std::string& deck_string, unsigned amount)
     auto && id_marks = string_to_ids(all_cards, deck_string, "fortress_cards");
     unsigned replicates{1};
     std::vector<const Card*> cards;
+    if(id_marks.first.size() < amount) {
+        std::cerr << "WARNING: fortress pool bigger than fortress cards";
+    }
     for (auto id: id_marks.first)
     {
         cards.push_back(all_cards.by_id(id));
@@ -587,7 +590,7 @@ const Card* Deck::next(Field* f)
     		_DEBUG_MSG(1,">>>>FLEX SIMS>>>>\n");
     		std::vector<uint64_t> res(std::min<unsigned>(3u,shuffled_cards.size()));
     		unsigned iter = f->flexible_iter;
-        
+
         bool all_same{true};
         for(unsigned j =1; j < res.size();j++)
         {
