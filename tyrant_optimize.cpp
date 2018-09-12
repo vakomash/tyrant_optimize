@@ -950,29 +950,35 @@ void print_score_info(const EvaluatedResults& results, std::vector<long double>&
 {
     auto final = compute_score(results, factors);
     std::cout << final.points << " (";
-    if (show_ci)
+    if(!simplify_output)
     {
-        std::cout << final.points_lower_bound << "-" << final.points_upper_bound << ", ";
-    }
-    for (const auto & val: results.first)
-    {
-        switch(optimization_mode)
+        if (show_ci)
         {
-            case OptimizationMode::raid:
-            case OptimizationMode::campaign:
-            case OptimizationMode::brawl:
-            case OptimizationMode::brawl_defense:
-            case OptimizationMode::war:
-            case OptimizationMode::war_defense:
-#ifndef NQUEST
-            case OptimizationMode::quest:
-#endif
-                std::cout << val.points << " ";
-                break;
-            default:
-                std::cout << val.points / 100 << " ";
-                break;
+            std::cout << final.points_lower_bound << "-" << final.points_upper_bound << ", ";
         }
+        for (const auto & val: results.first)
+        {
+            switch(optimization_mode)
+            {
+                case OptimizationMode::raid:
+                case OptimizationMode::campaign:
+                case OptimizationMode::brawl:
+                case OptimizationMode::brawl_defense:
+                case OptimizationMode::war:
+                case OptimizationMode::war_defense:
+    #ifndef NQUEST
+                case OptimizationMode::quest:
+    #endif
+                    std::cout << val.points << " ";
+                    break;
+                default:
+                    std::cout << val.points / 100 << " ";
+                    break;
+            }
+        }
+    }
+    else {
+      std::cout << "...";
     }
     std::cout << "/ " << results.second << ")" << std::endl;
 }
@@ -981,27 +987,36 @@ void print_results(const EvaluatedResults& results, std::vector<long double>& fa
 {
     auto final = compute_score(results, factors);
     std::cout << "win%: " << final.wins * 100.0 << " (";
-    for (const auto & val : results.first)
+    if(!simplify_output)
     {
-        if(!simplify_output)std::cout << val.wins << " ";
+        for (const auto & val : results.first)
+        {
+            std::cout << val.wins << " ";
+        }
     }
-    if(simplify_output)std::cout << "...";
+    else {std::cout << "...";}
     std::cout << "/ " << results.second << ")" << std::endl;
 
     std::cout << "stall%: " << final.draws * 100.0 << " (";
-    for (const auto & val : results.first)
+    if(!simplify_output)
     {
-        if(!simplify_output)std::cout << val.draws << " ";
+        for (const auto & val : results.first)
+        {
+            std::cout << val.draws << " ";
+        }
     }
-    if(simplify_output)std::cout << "...";
+    else {std::cout << "...";}
     std::cout << "/ " << results.second << ")" << std::endl;
 
     std::cout << "loss%: " << final.losses * 100.0 << " (";
-    for (const auto & val : results.first)
+    if(!simplify_output)
     {
-        if(!simplify_output)std::cout << val.losses << " ";
+        for (const auto & val : results.first)
+        {
+            std::cout << val.losses << " ";
+        }
     }
-    if(simplify_output)std::cout << "...";
+    else {std::cout << "...";}
     std::cout << "/ " << results.second << ")" << std::endl;
 
 #ifndef NQUEST
@@ -1048,11 +1063,14 @@ void print_results(const EvaluatedResults& results, std::vector<long double>& fa
                 std::cout << " [" << opp_win_points << " per opp win]";
             }
             std::cout << " (";
-            for (const auto & val: results.first)
+            if(!simplify_output)
             {
-                if(!simplify_output)std::cout << val.points << " ";
+                for (const auto & val: results.first)
+                {
+                    std::cout << val.points << " ";
+                }
             }
-            if(simplify_output)std::cout << "...";
+            else {std::cout << "...";}
             std::cout << "/ " << results.second << ")" << std::endl;
             if (show_ci)
             {
@@ -1095,6 +1113,7 @@ void print_cards_inline(std::vector<const Card*> cards)
 {
     std::string last_name;
     unsigned num_repeat(0);
+    bool first = true;
     for (const Card* card: cards)
     {
         if (card->m_name == last_name)
@@ -1107,7 +1126,8 @@ void print_cards_inline(std::vector<const Card*> cards)
             {
                 std::cout << " #" << num_repeat;
             }
-            std::cout << ", " << card->m_name;
+            std::cout << (first?"":", ") << card->m_name;
+            first = false;
             last_name = card->m_name;
             num_repeat = 1;
         }
@@ -1118,18 +1138,7 @@ void print_cards_inline(std::vector<const Card*> cards)
     }
     std::cout << std::endl;
 }
-//------------------------------------------------------------------------------
-void print_deck_inline(const unsigned deck_cost, const FinalResults<long double> score, Deck * deck)
-{
-    // print units count
-    std::cout << deck->cards.size() << " units: ";
-
-    // print deck cost (if fund is enabled)
-    if (fund > 0)
-    {
-        std::cout << "$" << deck_cost << " ";
-    }
-
+void print_score_inline(const FinalResults<long double> score) {
     // print optimization result details
     switch(optimization_mode)
     {
@@ -1184,6 +1193,75 @@ void print_deck_inline(const unsigned deck_cost, const FinalResults<long double>
         auto opp_win_points = score.losses ? max_score - ((score.points - (max_score - min_score) * (1.0 - score.losses)) / score.losses) : score.points;
         std::cout << " [" << opp_win_points << " per opp win]";
     }
+}
+//------------------------------------------------------------------------------
+void print_deck_inline(const unsigned deck_cost, const FinalResults<long double> score, Deck * deck)
+{
+    // print units count
+    std::cout << deck->cards.size() << " units: ";
+
+    // print deck cost (if fund is enabled)
+    if (fund > 0)
+    {
+        std::cout << "$" << deck_cost << " ";
+    }
+    print_score_inline(score);
+    /*
+    // print optimization result details
+    switch(optimization_mode)
+    {
+        case OptimizationMode::raid:
+        case OptimizationMode::campaign:
+        case OptimizationMode::brawl:
+        case OptimizationMode::brawl_defense:
+        case OptimizationMode::war:
+        case OptimizationMode::war_defense:
+#ifndef NQUEST
+        case OptimizationMode::quest:
+#endif
+            std::cout << "(" << score.wins * 100 << "% win";
+#ifndef NQUEST
+            if (optimization_mode == OptimizationMode::quest)
+            {
+                std::cout << ", " << (score.points - score.wins * quest.win_score) / (quest.must_win ? score.wins : 1) / quest.quest_score * 100 << "% quest";
+            }
+#endif
+            if (show_ci)
+            {
+                std::cout << ", " << score.points_lower_bound << "-" << score.points_upper_bound;
+            }
+            std::cout << ") ";
+            break;
+        case OptimizationMode::defense:
+            std::cout << "(" << score.draws * 100.0 << "% stall) ";
+            break;
+        default:
+            break;
+    }
+    std::cout << score.points;
+    unsigned min_score = min_possible_score[(size_t)optimization_mode];
+    unsigned max_score = max_possible_score[(size_t)optimization_mode];
+    if (optimization_mode == OptimizationMode::brawl)
+    {
+        auto win_points = score.wins ? ((score.points - min_score * (1.0 - score.wins)) / score.wins) : score.points;
+        std::cout << " [" << win_points << " per win]";
+    }
+    else if (optimization_mode == OptimizationMode::brawl_defense)
+    {
+        auto opp_win_points = score.losses ? max_score - ((score.points - (max_score - min_score) * (1.0 - score.losses)) / score.losses) : score.points;
+        std::cout << " [" << opp_win_points << " per opp win]";
+    }
+    else if (optimization_mode == OptimizationMode::war)
+    {
+        auto win_points = score.wins ? ((score.points - min_score * (1.0 - score.wins)) / score.wins) : score.points;
+        std::cout << " [" << win_points << " per win]";
+    }
+    else if (optimization_mode == OptimizationMode::war_defense)
+    {
+        auto opp_win_points = score.losses ? max_score - ((score.points - (max_score - min_score) * (1.0 - score.losses)) / score.losses) : score.points;
+        std::cout << " [" << opp_win_points << " per opp win]";
+    }
+    */
 
     // print commander
     std::cout << ": " << deck->commander->m_name;
@@ -1197,6 +1275,7 @@ void print_deck_inline(const unsigned deck_cost, const FinalResults<long double>
     {
         std::sort(deck->cards.begin(), deck->cards.end(), [](const Card* a, const Card* b) { return a->m_id < b->m_id; });
     }
+    std::cout << ", ";
     print_cards_inline(deck->cards);
 }
 //------------------------------------------------------------------------------
@@ -1808,19 +1887,24 @@ void recursion(unsigned num_iterations, std::vector<unsigned> used, unsigned poo
             std::vector<const Card*> copy_forts(proc.your_decks[0]->fortress_cards);
             best_forts = copy_forts;
             std::cout << "Forts improved: " << hash << " : ";
-            print_cards_inline(best_forts);
             print_score_info(compare_results, proc.factors);
+            print_score_inline(best_score);
+            std::cout << ": ";
+            print_cards_inline(best_forts);
         }
         used.clear();
         used.shrink_to_fit();
     }
-    for(unsigned i =0;i < forts.size();++i)
+    else
     {
-        if(std::find(used.begin(),used.end(),i)==used.end()) //not contained
+        for(unsigned i =0;i < forts.size();++i)
         {
-            std::vector<unsigned> tmp_used (used);
-            tmp_used.emplace_back(i);
-            recursion(num_iterations,tmp_used,pool,forts,proc,best_score,best_forts,evaluated_decks,zero_results,skipped_simulations);
+            if(std::find(used.begin(),used.end(),i)==used.end()) //not contained
+            {
+                std::vector<unsigned> tmp_used (used);
+                tmp_used.emplace_back(i);
+                recursion(num_iterations,tmp_used,pool,forts,proc,best_score,best_forts,evaluated_decks,zero_results,skipped_simulations);
+            }
         }
     }
 }
@@ -1828,17 +1912,24 @@ void recursion(unsigned num_iterations, std::vector<unsigned> used, unsigned poo
 void forts_climbing(unsigned num_iterations, Process& proc) {
     EvaluatedResults zero_results = { EvaluatedResults::first_type(proc.enemy_decks.size()*proc.your_decks.size()), 0 };
     unsigned pool = std::get<0>(proc.your_decks[0]->variable_forts[0]);
-    std::vector<const Card*> forts(std::get<1>(proc.your_decks[0]->variable_forts[0]));
+    std::vector<const Card*> forts(std::get<2>(proc.your_decks[0]->variable_forts[0]));
     for(unsigned i =0; i < proc.your_decks.size();++i)
     {
           proc.your_decks[i]->variable_forts.clear();
     }
-    std::vector<unsigned> used{pool};
+    std::vector<unsigned> used;
+    used.reserve(pool);
     std::vector<const Card*> best_forts{pool};
     FinalResults<long double> best_score;
     unsigned long skipped_simulations{0};
     std::unordered_map<std::string,EvaluatedResults> evaluated_decks{{"",zero_results}};
     recursion(num_iterations,used,pool,forts, proc,best_score,best_forts,evaluated_decks,zero_results,skipped_simulations);
+    unsigned simulations = 0;
+    for (auto evaluation: evaluated_decks)
+    { simulations += evaluation.second.second; }
+    std::cout << "Evaluated " << evaluated_decks.size() << " decks (" << simulations << " + " << skipped_simulations << " simulations)." << std::endl;
+    std::cout << "Optimized Deck: ";
+    print_cards_inline(best_forts);
 }
 
 
