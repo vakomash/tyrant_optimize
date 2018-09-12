@@ -3295,6 +3295,7 @@ int main(int argc, char** argv)
             case climb_forts: {
                                   forts_climbing(std::get<0>(op),p);
                               }
+                              break;
             case climb: {
                             //TODO check for your_decks.size()==1
                             hill_climbing(std::get<0>(op), std::get<1>(op), your_deck, p, requirement
