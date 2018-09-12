@@ -1063,7 +1063,7 @@ void print_results(const EvaluatedResults& results, std::vector<long double>& fa
             break;
     }
 }
-
+//------------------------------------------------------------------------------
 void print_upgraded_cards(Deck* deck)
 {
     if(!print_upgraded)return;
@@ -1087,6 +1087,34 @@ void print_upgraded_cards(Deck* deck)
             std::cout << card->m_name << ", ";
         }
         if(owned_cards_c[card->m_id] >0)owned_cards_c[card->m_id]--;
+    }
+    std::cout << std::endl;
+}
+//------------------------------------------------------------------------------
+void print_cards_inline(std::vector<const Card*> cards)
+{
+    std::string last_name;
+    unsigned num_repeat(0);
+    for (const Card* card: cards)
+    {
+        if (card->m_name == last_name)
+        {
+            ++ num_repeat;
+        }
+        else
+        {
+            if (num_repeat > 1)
+            {
+                std::cout << " #" << num_repeat;
+            }
+            std::cout << ", " << card->m_name;
+            last_name = card->m_name;
+            num_repeat = 1;
+        }
+    }
+    if (num_repeat > 1)
+    {
+        std::cout << " #" << num_repeat;
     }
     std::cout << std::endl;
 }
@@ -1169,30 +1197,7 @@ void print_deck_inline(const unsigned deck_cost, const FinalResults<long double>
     {
         std::sort(deck->cards.begin(), deck->cards.end(), [](const Card* a, const Card* b) { return a->m_id < b->m_id; });
     }
-    std::string last_name;
-    unsigned num_repeat(0);
-    for (const Card* card: deck->cards)
-    {
-        if (card->m_name == last_name)
-        {
-            ++ num_repeat;
-        }
-        else
-        {
-            if (num_repeat > 1)
-            {
-                std::cout << " #" << num_repeat;
-            }
-            std::cout << ", " << card->m_name;
-            last_name = card->m_name;
-            num_repeat = 1;
-        }
-    }
-    if (num_repeat > 1)
-    {
-        std::cout << " #" << num_repeat;
-    }
-    std::cout << std::endl;
+    print_cards_inline(deck->cards);
 }
 //------------------------------------------------------------------------------
 inline bool is_timeout_reached()
@@ -1765,6 +1770,76 @@ void simulated_annealing(unsigned num_min_iterations, unsigned num_iterations, D
     print_deck_inline(get_deck_cost(best_deck), best_score, best_deck);
     print_upgraded_cards(best_deck);
 }
+unsigned factorial(unsigned n)
+{
+   	unsigned retval = 1;
+   	for (int i = n; i > 1; --i)
+   		   retval *= i;
+   	return retval;
+}
+
+void recursion(unsigned num_iterations, std::vector<unsigned> used, unsigned pool, std::vector<const Card*> forts,Process&proc, FinalResults<long double>& best_score,std::vector<const Card*> & best_forts,std::unordered_map<std::string,EvaluatedResults> & evaluated_decks, EvaluatedResults& zero_results, unsigned long& skipped_simulations)
+{
+    if(used.size()==pool)
+    {
+        for(auto your_deck : proc.your_decks)
+        {
+            your_deck->fortress_cards.clear();
+            for(unsigned i = 0; i < pool;++i)
+            {
+                your_deck->fortress_cards.emplace_back(forts[used[i]]);
+            }
+        }
+        //sim
+        std::stringstream ios;
+        encode_deck_ext_b64(ios,proc.your_decks[0]->fortress_cards);
+        auto hash = ios.str();
+        auto && emplace_rv = evaluated_decks.insert({hash,zero_results});
+        auto & prev_results = emplace_rv.first->second;
+        if(!emplace_rv.second)
+        {
+          skipped_simulations += prev_results.second;
+        }
+        auto compare_results= proc.evaluate(num_iterations, prev_results);
+        auto current_score = compute_score(compare_results, proc.factors);
+
+        if(current_score.points > best_score.points+min_increment_of_score) {
+            best_score = current_score;
+            std::vector<const Card*> copy_forts(proc.your_decks[0]->fortress_cards);
+            best_forts = copy_forts;
+            std::cout << "Forts improved: " << hash << " : ";
+            print_cards_inline(best_forts);
+            print_score_info(compare_results, proc.factors);
+        }
+        used.clear();
+        used.shrink_to_fit();
+    }
+    for(unsigned i =0;i < forts.size();++i)
+    {
+        if(std::find(used.begin(),used.end(),i)==used.end()) //not contained
+        {
+            std::vector<unsigned> tmp_used (used);
+            tmp_used.emplace_back(i);
+            recursion(num_iterations,tmp_used,pool,forts,proc,best_score,best_forts,evaluated_decks,zero_results,skipped_simulations);
+        }
+    }
+}
+
+void forts_climbing(unsigned num_iterations, Process& proc) {
+    EvaluatedResults zero_results = { EvaluatedResults::first_type(proc.enemy_decks.size()*proc.your_decks.size()), 0 };
+    unsigned pool = std::get<0>(proc.your_decks[0]->variable_forts[0]);
+    std::vector<const Card*> forts(std::get<1>(proc.your_decks[0]->variable_forts[0]));
+    for(unsigned i =0; i < proc.your_decks.size();++i)
+    {
+          proc.your_decks[i]->variable_forts.clear();
+    }
+    std::vector<unsigned> used{pool};
+    std::vector<const Card*> best_forts{pool};
+    FinalResults<long double> best_score;
+    unsigned long skipped_simulations{0};
+    std::unordered_map<std::string,EvaluatedResults> evaluated_decks{{"",zero_results}};
+    recursion(num_iterations,used,pool,forts, proc,best_score,best_forts,evaluated_decks,zero_results,skipped_simulations);
+}
 
 
 //------------------------------------------------------------------------------
@@ -1772,6 +1847,7 @@ enum Operation {
     noop,
     simulate,
     climb,
+    climb_forts,
     anneal,
     reorder,
     debug,
@@ -2431,6 +2507,12 @@ int main(int argc, char** argv)
             opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 1]), climb));
             if (std::get<1>(opt_todo.back()) < 10) { opt_num_threads = 1; }
             opt_do_optimization = true;
+            argIndex += 1;
+        }
+        else if (strcmp(argv[argIndex], "climb_forts") == 0)
+        {
+            opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 1]), climb_forts));
+            if (std::get<1>(opt_todo.back()) < 10) { opt_num_threads = 1; }
             argIndex += 1;
         }
         else if ( strcmp(argv[argIndex], "anneal") == 0)
@@ -3119,6 +3201,9 @@ int main(int argc, char** argv)
                                print_results(results, p.factors);
                                break;
                            }
+            case climb_forts: {
+                                  forts_climbing(std::get<0>(op),p);
+                              }
             case climb: {
                             //TODO check for your_decks.size()==1
                             hill_climbing(std::get<0>(op), std::get<1>(op), your_deck, p, requirement
