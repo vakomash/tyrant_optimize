@@ -69,7 +69,7 @@ public:
     {
         m_indirect.reserve(size);
     }
-    
+
     Storage(const Storage &s) :
 	m_pool(sizeof(T))
     {
@@ -288,6 +288,7 @@ public:
     std::vector<CardStatus*> selection_array;
     unsigned turn;
     unsigned flexible_iter = 20;
+    unsigned flexible_turn = 20;
     gamemode_t gamemode;
     OptimizationMode optimization_mode;
 #ifndef NQUEST
@@ -330,13 +331,14 @@ public:
             std::array<signed short, PassiveBGE::num_passive_bges>& enemy_bg_effects_,
             std::vector<SkillSpec>& your_bg_skills_,
             std::vector<SkillSpec>& enemy_bg_skills_,
-	    unsigned flexible_iter_=20) :
+	    unsigned flexible_iter_=20,unsigned flexible_turn_=10) :
         end{false},
         re(re_),
         cards(cards_),
         players{{&hand1, &hand2}},
         turn(1),
-	flexible_iter(flexible_iter_),
+	      flexible_iter(flexible_iter_),
+	      flexible_turn(flexible_turn_),
         gamemode(gamemode_),
         optimization_mode(optimization_mode_),
 #ifndef NQUEST

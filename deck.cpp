@@ -600,7 +600,7 @@ const Card* Deck::next(Field* f)
                 break;
             }
         }
-        if(all_same) //no need for flex here, three same or only one card
+        if(all_same || f->flexible_turn*2<f->turn) //no need for flex here, three same or only one card or flexible_turn reached
         {
           const Card* card = shuffled_cards.front();
           shuffled_cards.pop_front();

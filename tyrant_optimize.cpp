@@ -78,6 +78,7 @@ namespace {
     unsigned iterations_multiplier{10};
     unsigned sim_seed{0};
     unsigned flexible_iter{20};
+    unsigned flexible_turn{10};
     Requirement requirement;
 #ifndef NQUEST
     Quest quest;
@@ -732,7 +733,7 @@ struct SimulationData
     #ifndef NQUEST
                         quest,
 #endif
-                        your_bg_effects, enemy_bg_effects, your_bg_skills, enemy_bg_skills, flexible_iter);
+                        your_bg_effects, enemy_bg_effects, your_bg_skills, enemy_bg_skills, flexible_iter,flexible_turn);
                 Results<uint64_t> result(play(&fd));
                 if (__builtin_expect(mode_open_the_deck, false))
                 {
@@ -2426,6 +2427,11 @@ int main(int argc, char** argv)
         else if (strcmp(argv[argIndex], "flexible-iter") == 0)
         {
             flexible_iter = atoi(argv[argIndex+1]);
+            argIndex += 1;
+        }
+        else if (strcmp(argv[argIndex], "flexible-turn") == 0)
+        {
+            flexible_turn = atoi(argv[argIndex+1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "exact-ordered") == 0)
