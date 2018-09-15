@@ -694,10 +694,8 @@
                 <card replicates="4">57170</card>
             </card_pool>
         </deck>
-    </raid>
-
-    <!-- Mechmaster Yurich Raid has id 49, version with id 44 will be removed TODO -->
-    <raid>
+   </raid>
+ <raid>
         <id>49</id>
         <name>Mechmaster Yurich Raid</name>
         <levels>26</levels>
@@ -802,6 +800,23 @@
             </card_pool>
         </deck>
     </raid> 
+    
+    <raid>
+        <id>57</id>
+        <name>Mechmaster Yurich Retro Raid</name>
+        <levels>26</levels>
+        <commander>25884</commander>
+        <fortress_card id="18564"/>
+        <deck>
+            <always_include>
+                <card replicates="2">57838</card>
+                <card replicates="2">57848</card>
+                <card replicates="2">57858</card>
+                <card replicates="2">57868</card>
+                <card replicates="2">57878</card>
+            </always_include>
+        </deck>
+    </raid>
     <!-- END of Raids -->
 
 
