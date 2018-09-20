@@ -211,6 +211,7 @@ inline void CardStatus::set(const Card& card)
     m_protected_stasis = 0;
     m_enraged = 0;
     m_entrapped = 0;
+    m_marked = 0;
     m_rush_attempted = false;
     m_sundered = false;
     //APN
@@ -330,6 +331,7 @@ std::string CardStatus::description() const
     if (m_protected_stasis) { desc += ", stasis " + to_string(m_protected_stasis); }
     if (m_enraged) { desc += ", enraged " + to_string(m_enraged); }
     if (m_entrapped) { desc += ", entrapped " + to_string(m_entrapped); }
+    if (m_marked) { desc += ", marked " + to_string(m_marked); }
     //    if(m_step != CardStep::none) { desc += ", Step " + to_string(static_cast<int>(m_step)); }
     //APN
     const Skill::Trigger s_triggers[] = { Skill::Trigger::play, Skill::Trigger::activate, Skill::Trigger::death , Skill::Trigger::attacked};
@@ -1558,6 +1560,15 @@ struct PerformAttack
             // Enhance damage (if additional damage isn't prevented)
             if (! att_status->m_sundered)
             {
+                // Skill: Mark
+                unsigned marked_value = def_status->m_marked;
+                if(marked_value)
+                {
+#ifndef NDEBUG
+                    if (debug_print > 0) { desc += "+" + to_string(marked_value) + "(mark)"; }
+#endif
+                    att_dmg += marked_value;
+                }
                 // Skill: Legion
                 unsigned legion_base = att_status->skill(Skill::legion);
                 if (__builtin_expect(legion_base, false))
@@ -1703,6 +1714,12 @@ struct PerformAttack
                 _DEBUG_MSG(1, "Unity: %s heals itself for %u\n",
                         status_description(att_status).c_str(), (coalition_value + 1)/2);
                 att_status->add_hp((coalition_value + 1)/2);
+            }
+            unsigned mark_base = att_status->skill(Skill::mark);
+            if(mark_base && def_status->m_card->m_type == CardType::assault) {
+                _DEBUG_MSG(1, "%s marks %s for %u\n",
+                        status_description(att_status).c_str(), status_description(def_status).c_str(), mark_base);
+                def_status->m_marked += mark_base;
             }
         }
 

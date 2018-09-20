@@ -191,6 +191,7 @@ struct CardStatus
     unsigned m_protected_stasis;
     unsigned m_enraged;
     unsigned m_entrapped;
+    unsigned m_marked;
 
     signed m_primary_skill_offset[Skill::num_skills];
     signed m_evolved_skill_offset[Skill::num_skills];

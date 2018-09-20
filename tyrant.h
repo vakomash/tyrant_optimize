@@ -50,7 +50,7 @@ enum Skill
     payback, revenge, tribute, refresh, wall, barrier,
 
     // Combat-Modifier:
-    coalition, legion, pierce, rupture, swipe, drain, venom, hunt,
+    coalition, legion, pierce, rupture, swipe, drain, venom, hunt,mark,
 
     // Damage-Dependent:
     berserk, inhibit, sabotage, leech, poison,
@@ -215,6 +215,7 @@ inline bool is_combat_modifier_skill(Skill::Skill skill_id)
     case Skill::drain:
     case Skill::venom:
     case Skill::hunt:
+    case Skill::mark:
         return true;
     default:
         return false;
