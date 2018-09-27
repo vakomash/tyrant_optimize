@@ -832,13 +832,13 @@
                 <card>61134</card>
                 <card>61144</card>
                 <card>61154</card>
+            </always_include>
             <card_pool amount="3">
                 <card replicates="2">61114</card>
                 <card replicates="2">61124</card>
                 <card replicates="2">61144</card>
                 <card replicates="2">61154</card>
             </card_pool>
-            </always_include>
         </deck>
     </raid>
     <!-- END of Raids -->
