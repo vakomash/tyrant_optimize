@@ -4,7 +4,7 @@
 // (at your option) any later version.
 
 // This program is distributed in the hope that it will be useful,
-// but WITHstd::cout ANY WARRANTY; withstd::cout even the implied warranty of
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 
@@ -2108,7 +2108,7 @@ void usage(int argc, char** argv)
         "  climb <num>: perform hill-climbing starting from the given attack deck, using up to <num> battles to evaluate a deck.\n"
         "  reorder <num>: optimize the order for given attack deck, using up to <num> battles to evaluate an order.\n"
 #ifndef NDEBUG
-        "  debug: testing purpose only. very verbose std::coutput. only one battle.\n"
+        "  debug: testing purpose only. very verbose output. only one battle.\n"
         "  debuguntil <min> <max>: testing purpose only. fight until the last fight results in range [<min>, <max>]. recommend to redirect std::coutput.\n"
 #endif
         ;
@@ -2256,7 +2256,7 @@ bool parse_bge(
             }
             else
             {
-                std::cerr << "std::cerror: unrecognized effect \"" << bge_name << "\".\n";
+                std::cerr << "Error: unrecognized effect \"" << bge_name << "\".\n";
                 std::cout << "Unrecognized effect \"" << bge_name << "\".\n";
                 print_available_effects();
                 return false;
@@ -2589,7 +2589,7 @@ int main(int argc, char** argv)
             min_increment_of_score = atof(argv[argIndex+1]);
             argIndex += 1;
         }
-        else if (strcmp(argv[argIndex], "timestd::cout") == 0) //set timestd::cout in hours. tuo will stop approx. at the given time.
+        else if (strcmp(argv[argIndex], "timeout") == 0) //set timeout in hours. tuo will stop approx. at the given time.
         {
             maximum_time = atof(argv[argIndex+1]);
             argIndex += 1;
@@ -2785,7 +2785,7 @@ int main(int argc, char** argv)
                 }
                 else
                 {
-                    std::cerr << "std::cerror: Unknown climb option " << opt_name;
+                    std::cerr << "Error: Unknown climb option " << opt_name;
                     if (has_value)
                     { std::cerr << " (value is: " << opt_value << ")"; }
                     std::cerr << std::endl;
@@ -2800,7 +2800,7 @@ int main(int argc, char** argv)
         }
         else if (strcmp(argv[argIndex], "debuguntil") == 0)
         {
-            // std::coutput the debug info for the first battle that min_score <= score <= max_score.
+            // output the debug info for the first battle that min_score <= score <= max_score.
             // E.g., 0 0: lose; 100 100: win (non-raid); 20 100: at least 20 damage (raid).
             opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 2]), debuguntil));
             opt_num_threads = 1;
@@ -2808,7 +2808,7 @@ int main(int argc, char** argv)
         }
         else
         {
-            std::cerr << "std::cerror: Unknown option " << argv[argIndex] << std::endl;
+            std::cerr << "Error: Unknown option " << argv[argIndex] << std::endl;
             return 1;
         }
     }
@@ -2925,7 +2925,7 @@ int main(int argc, char** argv)
     }
     catch(const std::runtime_error& e)
     {
-        std::cerr << "std::cerror: allow-candidates " << opt_allow_candidates << ": " << e.what() << std::endl;
+        std::cerr << "Error: allow-candidates " << opt_allow_candidates << ": " << e.what() << std::endl;
         return 1;
     }
 
@@ -2940,7 +2940,7 @@ int main(int argc, char** argv)
     }
     catch(const std::runtime_error& e)
     {
-        std::cerr << "std::cerror: disallow-candidates " << opt_disallow_candidates << ": " << e.what() << std::endl;
+        std::cerr << "Error: disallow-candidates " << opt_disallow_candidates << ": " << e.what() << std::endl;
         return 1;
     }
 
@@ -2953,7 +2953,7 @@ int main(int argc, char** argv)
     }
     catch(const std::runtime_error& e)
     {
-        std::cerr << "std::cerror: disallow-recipes " << opt_disallow_recipes << ": " << e.what() << std::endl;
+        std::cerr << "Error: disallow-recipes " << opt_disallow_recipes << ": " << e.what() << std::endl;
         return 1;
     }
     for (auto cid : disallowed_recipes)
@@ -2980,7 +2980,7 @@ int main(int argc, char** argv)
                 Skill::Skill skill_id = skill_name_to_id(key_str);
                 if (skill_id == Skill::no_skill)
                 {
-                    std::cerr << "std::cerror: Expect skill in quest \"" << opt_quest << "\".\n";
+                    std::cerr << "Error: Expect skill in quest \"" << opt_quest << "\".\n";
                     return 1;
                 }
                 quest.quest_type = type_str == "su" ? QuestType::skill_use : QuestType::skill_damage;
@@ -3011,7 +3011,7 @@ int main(int argc, char** argv)
                     }
                     if (quest.quest_key == 0)
                     {
-                        std::cerr << "std::cerror: Expect assault, structure or faction in quest \"" << opt_quest << "\".\n";
+                        std::cerr << "Error: Expect assault, structure or faction in quest \"" << opt_quest << "\".\n";
                         return 1;
                     }
                 }
@@ -3030,7 +3030,7 @@ int main(int argc, char** argv)
                 }
                 catch (const std::runtime_error& e)
                 {
-                    std::cerr << "std::cerror: Expect a card in quest \"" << opt_quest << "\".\n";
+                    std::cerr << "Error: Expect a card in quest \"" << opt_quest << "\".\n";
                     return 1;
                 }
             }
@@ -3039,7 +3039,7 @@ int main(int argc, char** argv)
                 Skill::Skill skill_id = skill_name_to_id(key_str);
                 if (skill_id == Skill::no_skill)
                 {
-                    std::cerr << "std::cerror: Expect skill in quest \"" << opt_quest << "\".\n";
+                    std::cerr << "Error: Expect skill in quest \"" << opt_quest << "\".\n";
                     return 1;
                 }
                 unsigned card_id;
@@ -3056,7 +3056,7 @@ int main(int argc, char** argv)
                 }
                 catch (const std::runtime_error& e)
                 {
-                    std::cerr << "std::cerror: Expect a card in quest \"" << opt_quest << "\".\n";
+                    std::cerr << "Error: Expect a card in quest \"" << opt_quest << "\".\n";
                     return 1;
                 }
             }
@@ -3086,12 +3086,12 @@ int main(int argc, char** argv)
         }
         catch (const boost::bad_lexical_cast & e)
         {
-            std::cerr << "std::cerror: Expect a number in quest \"" << opt_quest << "\".\n";
+            std::cerr << "Error: Expect a number in quest \"" << opt_quest << "\".\n";
             return 1;
         }
         catch (const std::runtime_error& e)
         {
-            std::cerr << "std::cerror: quest " << opt_quest << ": " << e.what() << std::endl;
+            std::cerr << "Error: quest " << opt_quest << ": " << e.what() << std::endl;
             return 1;
         }
     }
@@ -3117,21 +3117,21 @@ int main(int argc, char** argv)
         }
         catch(const std::runtime_error& e)
         {
-            std::cerr << "std::cerror: Deck " <<  deck_parsed.first << ": " << e.what() << std::endl;
+            std::cerr << "Error: Deck " <<  deck_parsed.first << ": " << e.what() << std::endl;
             return 1;
         }
         if (your_deck == nullptr)
         {
-            std::cerr << "std::cerror: Invalid attack deck name/hash " << deck_parsed.first << ".\n";
+            std::cerr << "Error: Invalid attack deck name/hash " << deck_parsed.first << ".\n";
         }
         else if (!your_deck->variable_cards.empty())
         {
-            std::cerr << "std::cerror: Invalid attack deck " << deck_parsed.first  << ": has optional cards.\n";
+            std::cerr << "Error: Invalid attack deck " << deck_parsed.first  << ": has optional cards.\n";
             your_deck = nullptr;
         }
         else if (!your_deck->variable_forts.empty())
         {
-            std::cerr << "std::cerror: Invalid attack deck " << deck_parsed.first << ": has optional cards.\n";
+            std::cerr << "Error: Invalid attack deck " << deck_parsed.first << ": has optional cards.\n";
             your_deck = nullptr;
         }
         if (your_deck == nullptr)
@@ -3152,7 +3152,7 @@ int main(int argc, char** argv)
             }
             catch(const std::runtime_error& e)
             {
-                std::cerr << "std::cerror: yfort " << opt_forts << ": " << e.what() << std::endl;
+                std::cerr << "Error: yfort " << opt_forts << ": " << e.what() << std::endl;
                 return 1;
             }
         }
@@ -3164,7 +3164,7 @@ int main(int argc, char** argv)
             }
             catch(const std::runtime_error& e)
             {
-                std::cerr << "std::cerror: ydom " << opt_doms << ": " << e.what() << std::endl;
+                std::cerr << "Error: ydom " << opt_doms << ": " << e.what() << std::endl;
                 return 1;
             }
         }
@@ -3175,7 +3175,7 @@ int main(int argc, char** argv)
         }
         catch(const std::runtime_error& e)
         {
-            std::cerr << "std::cerror: vip " << opt_vip << ": " << e.what() << std::endl;
+            std::cerr << "Error: vip " << opt_vip << ": " << e.what() << std::endl;
             return 1;
         }
 
@@ -3185,7 +3185,7 @@ int main(int argc, char** argv)
         }
         catch(const std::runtime_error& e)
         {
-            std::cerr << "std::cerror: hand " << opt_hand << ": " << e.what() << std::endl;
+            std::cerr << "Error: hand " << opt_hand << ": " << e.what() << std::endl;
             return 1;
         }
 
@@ -3204,12 +3204,12 @@ int main(int argc, char** argv)
         }
         catch(const std::runtime_error& e)
         {
-            std::cerr << "std::cerror: Deck " << deck_parsed.first << ": " << e.what() << std::endl;
+            std::cerr << "Error: Deck " << deck_parsed.first << ": " << e.what() << std::endl;
             return 1;
         }
         if (enemy_deck == nullptr)
         {
-            std::cerr << "std::cerror: Invalid defense deck name/hash " << deck_parsed.first << ".\n";
+            std::cerr << "Error: Invalid defense deck name/hash " << deck_parsed.first << ".\n";
             usage(argc, argv);
             return 1;
         }
@@ -3238,7 +3238,7 @@ int main(int argc, char** argv)
             }
             catch(const std::runtime_error& e)
             {
-                std::cerr << "std::cerror: edom " << opt_enemy_doms << ": " << e.what() << std::endl;
+                std::cerr << "Error: edom " << opt_enemy_doms << ": " << e.what() << std::endl;
                 return 1;
             }
         }
@@ -3254,7 +3254,7 @@ int main(int argc, char** argv)
             }
             catch(const std::runtime_error& e)
             {
-                std::cerr << "std::cerror: efort " << opt_enemy_forts << ": " << e.what() << std::endl;
+                std::cerr << "Error: efort " << opt_enemy_forts << ": " << e.what() << std::endl;
                 return 1;
             }
         }
@@ -3264,7 +3264,7 @@ int main(int argc, char** argv)
         }
         catch(const std::runtime_error& e)
         {
-            std::cerr << "std::cerror: enemy:hand " << opt_enemy_hand << ": " << e.what() << std::endl;
+            std::cerr << "Error: enemy:hand " << opt_enemy_hand << ": " << e.what() << std::endl;
             return 1;
         }
         enemy_decks.push_back(enemy_deck);
@@ -3308,7 +3308,7 @@ int main(int argc, char** argv)
         // shrink any oversized deck to maximum of 10 cards + commander
         // NOTE: do this AFTER the call to claim_cards so that passing an initial deck of >10 cards
         //       can be used as a "shortcut" for adding them to owned cards. Also this allows climb
-        //       to figure std::cout which are the best 10, rather than restricting climb to the first 10.
+        //       to figure out which are the best 10, rather than restricting climb to the first 10.
         if (your_deck->cards.size() > max_deck_len)
         {
             your_deck->shrink(max_deck_len);
