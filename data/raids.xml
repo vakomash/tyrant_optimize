@@ -817,6 +817,30 @@
             </always_include>
         </deck>
     </raid>
+    
+    <raid>
+        <id>58</id>
+        <name>Arkadios Transcendent Raid</name>
+        <levels>26</levels>
+        <commander>26046</commander>
+        <deck>
+            <always_include>
+                <card>61114</card>
+                <card>61124</card>
+                <card>61134</card>
+                <card>61134</card>
+                <card>61134</card>
+                <card>61144</card>
+                <card>61154</card>
+            </always_include>
+            <card_pool amount="3">
+                <card replicates="2">61114</card>
+                <card replicates="2">61124</card>
+                <card replicates="2">61144</card>
+                <card replicates="2">61154</card>
+            </card_pool>
+        </deck>
+    </raid>
     <!-- END of Raids -->
 
 

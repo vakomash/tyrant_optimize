@@ -4,7 +4,7 @@
 // (at your option) any later version.
 
 // This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// but WITHstd::cout ANY WARRANTY; withstd::cout even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 
@@ -46,6 +46,10 @@
 #include "tyrant.h"
 #include "xml.h"
 
+#if defined(ANDROID) || defined(__ANDROID__)
+#include <jni.h>
+#include <android/log.h>
+#endif
 struct Requirement
 {
     std::unordered_map<const Card*, unsigned> num_cards;
@@ -102,8 +106,100 @@ namespace {
     bool invert_skills{false};
     std::vector<Skill::Skill> prefered_skills;
     unsigned prefered_factor{3};
+	
+	#if defined(ANDROID) || defined(__ANDROID__)
+	JNIEnv *envv;
+    jobject objv;
+    #endif
+}
+int main(int argc, char** argv);
+#if defined(ANDROID) || defined(__ANDROID__)
+extern "C" JNIEXPORT void
+
+JNICALL
+Java_de_neuwirthinformatik_Alexander_mTUO_MainActivity_callMain(
+        JNIEnv *env,
+        jobject obj/* this */,jobjectArray stringArray) {
+	envv = env;
+	objv = obj;
+    class androidbuf: public std::streambuf {
+    public:
+        enum { bufsize = 128 }; // ... or some other suitable buffer size
+        androidbuf() { this->setp(buffer, buffer + bufsize - 1); }
+    private:
+        int overflow(int c) {
+            if (c == traits_type::eof()) {
+                *this->pptr() = traits_type::to_char_type(c);
+                this->sbumpc();
+            }
+            return this->sync()? traits_type::eof(): traits_type::not_eof(c);
+        }
+        int sync() {
+            int rc = 0;
+            if (this->pbase() != this->pptr()) {
+                auto sss = std::string(this->pbase(),
+                                       this->pptr() - this->pbase()).c_str();
+                __android_log_print(ANDROID_LOG_INFO,
+                                    "TUO",
+                                    "%s",
+                                    sss);
+                jstring jstr = envv->NewStringUTF(sss);
+                jclass clazz = envv->FindClass("de/neuwirthinformatik/Alexander/mTUO/MainActivity");
+                jmethodID messageMe = envv->GetMethodID(clazz, "messageMe", "(Ljava/lang/String;)V");
+                envv->CallVoidMethod(objv, messageMe, jstr);
+                rc = 0;
+                this->setp(buffer, buffer + bufsize - 1);
+            }
+            return rc;
+        }
+        char buffer[bufsize];
+    };
+    std::cout.rdbuf(new androidbuf);
+    std::cerr.rdbuf(new androidbuf);
+    __android_log_write(ANDROID_LOG_INFO, "TUO", "START");
+    int stringCount = env->GetArrayLength(stringArray);
+    char** param= new char*[stringCount];
+    const char** cparam= new const char*[stringCount];
+	jstring* strs = new jstring[stringCount];
+    for (int i=0; i<stringCount; i++) {
+        strs[i] = (jstring) (*env).GetObjectArrayElement( stringArray, i);
+        cparam[i] = ((*env).GetStringUTFChars( strs[i], NULL));
+		param[i] = const_cast<char*>(cparam[i]);
+    }
+	
+    main(stringCount,param);
+    std::cout << std::flush;
+    __android_log_write(ANDROID_LOG_INFO, "TUO", "END");
+	
+	for (int i=0; i<stringCount; i++) {
+		env->ReleaseStringUTFChars(strs[i], cparam[i]);
+    }
+    //std::string text = "return";
+    //return env->NewStringUTF(text.c_str());
+
 }
 
+extern "C" JNIEXPORT jstring
+
+JNICALL
+Java_de_neuwirthinformatik_Alexander_mTUO_MainActivity_stringFromJNI( JNIEnv* env,
+                                                  jobject thiz,jstring s )
+{
+    std::string str = env->GetStringUTFChars(s,NULL);
+    str+="hello.txt";
+    __android_log_write(ANDROID_LOG_ERROR, "TUO", str.c_str());
+    FILE* file = fopen( str.c_str(),"w+");
+
+    if (file != NULL)
+    {
+        fputs("HELLO WORLD!\n", file);
+        fflush(file);
+        fclose(file);
+    }
+
+    return env->NewStringUTF( "Hello from JNI (with file io)!");
+}
+#endif
 using namespace std::placeholders;
 //------------------------------------------------------------------------------
 std::string card_id_name(const Card* card)
@@ -2012,8 +2108,8 @@ void usage(int argc, char** argv)
         "  climb <num>: perform hill-climbing starting from the given attack deck, using up to <num> battles to evaluate a deck.\n"
         "  reorder <num>: optimize the order for given attack deck, using up to <num> battles to evaluate an order.\n"
 #ifndef NDEBUG
-        "  debug: testing purpose only. very verbose output. only one battle.\n"
-        "  debuguntil <min> <max>: testing purpose only. fight until the last fight results in range [<min>, <max>]. recommend to redirect output.\n"
+        "  debug: testing purpose only. very verbose std::coutput. only one battle.\n"
+        "  debuguntil <min> <max>: testing purpose only. fight until the last fight results in range [<min>, <max>]. recommend to redirect std::coutput.\n"
 #endif
         ;
 }
@@ -2160,7 +2256,7 @@ bool parse_bge(
             }
             else
             {
-                std::cerr << "Error: unrecognized effect \"" << bge_name << "\".\n";
+                std::cerr << "std::cerror: unrecognized effect \"" << bge_name << "\".\n";
                 std::cout << "Unrecognized effect \"" << bge_name << "\".\n";
                 print_available_effects();
                 return false;
@@ -2206,6 +2302,7 @@ int main(int argc, char** argv)
 #endif
     std::string opt_target_score;
     std::vector<std::string> fn_suffix_list{"",};
+    std::string prefix = "";
     std::vector<std::string> opt_owned_cards_str_list;
     bool opt_do_optimization(false);
     bool opt_do_reorder(false);
@@ -2299,7 +2396,9 @@ int main(int argc, char** argv)
         }
         else if (strcmp(argv[argIndex], "mono") == 0 || strcmp(argv[argIndex], "-m") == 0 || strcmp(argv[argIndex], "factions") == 0 || strcmp(argv[argIndex], "-f") == 0)
         {
-            factions.push_back(faction_name_to_id(argv[argIndex + 1]));
+            if(strcmp(argv[argIndex+1],"") != 0) {
+                factions.push_back(faction_name_to_id(argv[argIndex + 1]));
+            }
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "no-mono") == 0 || strcmp(argv[argIndex], "no-factions") == 0)
@@ -2310,13 +2409,12 @@ int main(int argc, char** argv)
         }
         else if (strcmp(argv[argIndex], "strategy") == 0 || strcmp(argv[argIndex], "skill") == 0)
         {
-            if(strcmp(argv[argIndex+1], "recent") == 0)
-            {
-                only_recent = true;
-            }
-            else
-            {
-                skills.push_back(skill_name_to_id(argv[argIndex + 1]));
+            if(strcmp(argv[argIndex+1],"") != 0) {
+                if (strcmp(argv[argIndex + 1], "recent") == 0) {
+                    only_recent = true;
+                } else {
+                    skills.push_back(skill_name_to_id(argv[argIndex + 1]));
+                }
             }
             argIndex += 1;
         }
@@ -2380,7 +2478,7 @@ int main(int argc, char** argv)
         }
         else if (strcmp(argv[argIndex], "-o") == 0)
         {
-            opt_owned_cards_str_list.push_back("data/ownedcards.txt");
+            opt_owned_cards_str_list.push_back(prefix+"data/ownedcards.txt");
             use_owned_cards = true;
         }
         else if (strncmp(argv[argIndex], "-o=", 3) == 0)
@@ -2391,6 +2489,11 @@ int main(int argc, char** argv)
         else if (strncmp(argv[argIndex], "_", 1) == 0)
         {
             fn_suffix_list.push_back(argv[argIndex]);
+        }
+        else if (strcmp(argv[argIndex], "prefix") == 0)
+        {
+            prefix = argv[argIndex+1];
+            argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "fund") == 0)
         {
@@ -2486,7 +2589,7 @@ int main(int argc, char** argv)
             min_increment_of_score = atof(argv[argIndex+1]);
             argIndex += 1;
         }
-        else if (strcmp(argv[argIndex], "timeout") == 0) //set timeout in hours. tuo will stop approx. at the given time.
+        else if (strcmp(argv[argIndex], "timestd::cout") == 0) //set timestd::cout in hours. tuo will stop approx. at the given time.
         {
             maximum_time = atof(argv[argIndex+1]);
             argIndex += 1;
@@ -2682,7 +2785,7 @@ int main(int argc, char** argv)
                 }
                 else
                 {
-                    std::cerr << "Error: Unknown climb option " << opt_name;
+                    std::cerr << "std::cerror: Unknown climb option " << opt_name;
                     if (has_value)
                     { std::cerr << " (value is: " << opt_value << ")"; }
                     std::cerr << std::endl;
@@ -2697,7 +2800,7 @@ int main(int argc, char** argv)
         }
         else if (strcmp(argv[argIndex], "debuguntil") == 0)
         {
-            // output the debug info for the first battle that min_score <= score <= max_score.
+            // std::coutput the debug info for the first battle that min_score <= score <= max_score.
             // E.g., 0 0: lose; 100 100: win (non-raid); 20 100: at least 20 damage (raid).
             opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 2]), debuguntil));
             opt_num_threads = 1;
@@ -2705,7 +2808,7 @@ int main(int argc, char** argv)
         }
         else
         {
-            std::cerr << "Error: Unknown option " << argv[argIndex] << std::endl;
+            std::cerr << "std::cerror: Unknown option " << argv[argIndex] << std::endl;
             return 1;
         }
     }
@@ -2713,28 +2816,28 @@ int main(int argc, char** argv)
     Cards all_cards;
     Decks decks;
     std::unordered_map<std::string, std::string> bge_aliases;
-    load_skills_set_xml(all_cards, "data/skills_set.xml", true);
+    load_skills_set_xml(all_cards, prefix+"data/skills_set.xml", true);
     for (unsigned section = 1;
-            load_cards_xml(all_cards, "data/cards_section_" + to_string(section) + ".xml", false);
+            load_cards_xml(all_cards, prefix+"data/cards_section_" + to_string(section) + ".xml", false);
             ++ section);
     all_cards.organize();
-    load_levels_xml(all_cards, "data/levels.xml", true);
+    load_levels_xml(all_cards, prefix+"data/levels.xml", true);
     all_cards.fix_dominion_recipes();
     for (const auto & suffix: fn_suffix_list)
     {
-        load_decks_xml(decks, all_cards, "data/missions" + suffix + ".xml", "data/raids" + suffix + ".xml", suffix.empty());
-        load_recipes_xml(all_cards, "data/fusion_recipes_cj2" + suffix + ".xml", suffix.empty());
-        read_card_abbrs(all_cards, "data/cardabbrs" + suffix + ".txt");
+        load_decks_xml(decks, all_cards, prefix+"data/missions" + suffix + ".xml", prefix+"data/raids" + suffix + ".xml", suffix.empty());
+        load_recipes_xml(all_cards, prefix+"data/fusion_recipes_cj2" + suffix + ".xml", suffix.empty());
+        read_card_abbrs(all_cards, prefix+"data/cardabbrs" + suffix + ".txt");
     }
     for (const auto & suffix: fn_suffix_list)
     {
-        load_custom_decks(decks, all_cards, "data/customdecks" + suffix + ".txt");
-        map_keys_to_set(read_custom_cards(all_cards, "data/allowed_candidates" + suffix + ".txt", false), allowed_candidates);
-        map_keys_to_set(read_custom_cards(all_cards, "data/disallowed_candidates" + suffix + ".txt", false), disallowed_candidates);
-        map_keys_to_set(read_custom_cards(all_cards, "data/disallowed_recipes" + suffix + ".txt", false), disallowed_recipes);
+        load_custom_decks(decks, all_cards, prefix+"data/customdecks" + suffix + ".txt");
+        map_keys_to_set(read_custom_cards(all_cards, prefix+"data/allowed_candidates" + suffix + ".txt", false), allowed_candidates);
+        map_keys_to_set(read_custom_cards(all_cards, prefix+"data/disallowed_candidates" + suffix + ".txt", false), disallowed_candidates);
+        map_keys_to_set(read_custom_cards(all_cards, prefix+"data/disallowed_recipes" + suffix + ".txt", false), disallowed_recipes);
     }
 
-    read_bge_aliases(bge_aliases, "data/bges.txt");
+    read_bge_aliases(bge_aliases,prefix+ "data/bges.txt");
 
     fill_skill_table();
 
@@ -2744,7 +2847,7 @@ int main(int argc, char** argv)
         {  // load default files only if specify no -o=
             for (const auto & suffix: fn_suffix_list)
             {
-                std::string filename = "data/ownedcards" + suffix + ".txt";
+                std::string filename = prefix+"data/ownedcards" + suffix + ".txt";
                 if (boost::filesystem::exists(filename))
                 {
                     opt_owned_cards_str_list.push_back(filename);
@@ -2822,7 +2925,7 @@ int main(int argc, char** argv)
     }
     catch(const std::runtime_error& e)
     {
-        std::cerr << "Error: allow-candidates " << opt_allow_candidates << ": " << e.what() << std::endl;
+        std::cerr << "std::cerror: allow-candidates " << opt_allow_candidates << ": " << e.what() << std::endl;
         return 1;
     }
 
@@ -2837,7 +2940,7 @@ int main(int argc, char** argv)
     }
     catch(const std::runtime_error& e)
     {
-        std::cerr << "Error: disallow-candidates " << opt_disallow_candidates << ": " << e.what() << std::endl;
+        std::cerr << "std::cerror: disallow-candidates " << opt_disallow_candidates << ": " << e.what() << std::endl;
         return 1;
     }
 
@@ -2850,7 +2953,7 @@ int main(int argc, char** argv)
     }
     catch(const std::runtime_error& e)
     {
-        std::cerr << "Error: disallow-recipes " << opt_disallow_recipes << ": " << e.what() << std::endl;
+        std::cerr << "std::cerror: disallow-recipes " << opt_disallow_recipes << ": " << e.what() << std::endl;
         return 1;
     }
     for (auto cid : disallowed_recipes)
@@ -2877,7 +2980,7 @@ int main(int argc, char** argv)
                 Skill::Skill skill_id = skill_name_to_id(key_str);
                 if (skill_id == Skill::no_skill)
                 {
-                    std::cerr << "Error: Expect skill in quest \"" << opt_quest << "\".\n";
+                    std::cerr << "std::cerror: Expect skill in quest \"" << opt_quest << "\".\n";
                     return 1;
                 }
                 quest.quest_type = type_str == "su" ? QuestType::skill_use : QuestType::skill_damage;
@@ -2908,7 +3011,7 @@ int main(int argc, char** argv)
                     }
                     if (quest.quest_key == 0)
                     {
-                        std::cerr << "Error: Expect assault, structure or faction in quest \"" << opt_quest << "\".\n";
+                        std::cerr << "std::cerror: Expect assault, structure or faction in quest \"" << opt_quest << "\".\n";
                         return 1;
                     }
                 }
@@ -2927,7 +3030,7 @@ int main(int argc, char** argv)
                 }
                 catch (const std::runtime_error& e)
                 {
-                    std::cerr << "Error: Expect a card in quest \"" << opt_quest << "\".\n";
+                    std::cerr << "std::cerror: Expect a card in quest \"" << opt_quest << "\".\n";
                     return 1;
                 }
             }
@@ -2936,7 +3039,7 @@ int main(int argc, char** argv)
                 Skill::Skill skill_id = skill_name_to_id(key_str);
                 if (skill_id == Skill::no_skill)
                 {
-                    std::cerr << "Error: Expect skill in quest \"" << opt_quest << "\".\n";
+                    std::cerr << "std::cerror: Expect skill in quest \"" << opt_quest << "\".\n";
                     return 1;
                 }
                 unsigned card_id;
@@ -2953,7 +3056,7 @@ int main(int argc, char** argv)
                 }
                 catch (const std::runtime_error& e)
                 {
-                    std::cerr << "Error: Expect a card in quest \"" << opt_quest << "\".\n";
+                    std::cerr << "std::cerror: Expect a card in quest \"" << opt_quest << "\".\n";
                     return 1;
                 }
             }
@@ -2983,12 +3086,12 @@ int main(int argc, char** argv)
         }
         catch (const boost::bad_lexical_cast & e)
         {
-            std::cerr << "Error: Expect a number in quest \"" << opt_quest << "\".\n";
+            std::cerr << "std::cerror: Expect a number in quest \"" << opt_quest << "\".\n";
             return 1;
         }
         catch (const std::runtime_error& e)
         {
-            std::cerr << "Error: quest " << opt_quest << ": " << e.what() << std::endl;
+            std::cerr << "std::cerror: quest " << opt_quest << ": " << e.what() << std::endl;
             return 1;
         }
     }
@@ -3014,21 +3117,21 @@ int main(int argc, char** argv)
         }
         catch(const std::runtime_error& e)
         {
-            std::cerr << "Error: Deck " <<  deck_parsed.first << ": " << e.what() << std::endl;
+            std::cerr << "std::cerror: Deck " <<  deck_parsed.first << ": " << e.what() << std::endl;
             return 1;
         }
         if (your_deck == nullptr)
         {
-            std::cerr << "Error: Invalid attack deck name/hash " << deck_parsed.first << ".\n";
+            std::cerr << "std::cerror: Invalid attack deck name/hash " << deck_parsed.first << ".\n";
         }
         else if (!your_deck->variable_cards.empty())
         {
-            std::cerr << "Error: Invalid attack deck " << deck_parsed.first  << ": has optional cards.\n";
+            std::cerr << "std::cerror: Invalid attack deck " << deck_parsed.first  << ": has optional cards.\n";
             your_deck = nullptr;
         }
         else if (!your_deck->variable_forts.empty())
         {
-            std::cerr << "Error: Invalid attack deck " << deck_parsed.first << ": has optional cards.\n";
+            std::cerr << "std::cerror: Invalid attack deck " << deck_parsed.first << ": has optional cards.\n";
             your_deck = nullptr;
         }
         if (your_deck == nullptr)
@@ -3049,7 +3152,7 @@ int main(int argc, char** argv)
             }
             catch(const std::runtime_error& e)
             {
-                std::cerr << "Error: yfort " << opt_forts << ": " << e.what() << std::endl;
+                std::cerr << "std::cerror: yfort " << opt_forts << ": " << e.what() << std::endl;
                 return 1;
             }
         }
@@ -3061,7 +3164,7 @@ int main(int argc, char** argv)
             }
             catch(const std::runtime_error& e)
             {
-                std::cerr << "Error: ydom " << opt_doms << ": " << e.what() << std::endl;
+                std::cerr << "std::cerror: ydom " << opt_doms << ": " << e.what() << std::endl;
                 return 1;
             }
         }
@@ -3072,7 +3175,7 @@ int main(int argc, char** argv)
         }
         catch(const std::runtime_error& e)
         {
-            std::cerr << "Error: vip " << opt_vip << ": " << e.what() << std::endl;
+            std::cerr << "std::cerror: vip " << opt_vip << ": " << e.what() << std::endl;
             return 1;
         }
 
@@ -3082,7 +3185,7 @@ int main(int argc, char** argv)
         }
         catch(const std::runtime_error& e)
         {
-            std::cerr << "Error: hand " << opt_hand << ": " << e.what() << std::endl;
+            std::cerr << "std::cerror: hand " << opt_hand << ": " << e.what() << std::endl;
             return 1;
         }
 
@@ -3101,12 +3204,12 @@ int main(int argc, char** argv)
         }
         catch(const std::runtime_error& e)
         {
-            std::cerr << "Error: Deck " << deck_parsed.first << ": " << e.what() << std::endl;
+            std::cerr << "std::cerror: Deck " << deck_parsed.first << ": " << e.what() << std::endl;
             return 1;
         }
         if (enemy_deck == nullptr)
         {
-            std::cerr << "Error: Invalid defense deck name/hash " << deck_parsed.first << ".\n";
+            std::cerr << "std::cerror: Invalid defense deck name/hash " << deck_parsed.first << ".\n";
             usage(argc, argv);
             return 1;
         }
@@ -3135,7 +3238,7 @@ int main(int argc, char** argv)
             }
             catch(const std::runtime_error& e)
             {
-                std::cerr << "Error: edom " << opt_enemy_doms << ": " << e.what() << std::endl;
+                std::cerr << "std::cerror: edom " << opt_enemy_doms << ": " << e.what() << std::endl;
                 return 1;
             }
         }
@@ -3151,7 +3254,7 @@ int main(int argc, char** argv)
             }
             catch(const std::runtime_error& e)
             {
-                std::cerr << "Error: efort " << opt_enemy_forts << ": " << e.what() << std::endl;
+                std::cerr << "std::cerror: efort " << opt_enemy_forts << ": " << e.what() << std::endl;
                 return 1;
             }
         }
@@ -3161,7 +3264,7 @@ int main(int argc, char** argv)
         }
         catch(const std::runtime_error& e)
         {
-            std::cerr << "Error: enemy:hand " << opt_enemy_hand << ": " << e.what() << std::endl;
+            std::cerr << "std::cerror: enemy:hand " << opt_enemy_hand << ": " << e.what() << std::endl;
             return 1;
         }
         enemy_decks.push_back(enemy_deck);
@@ -3205,7 +3308,7 @@ int main(int argc, char** argv)
         // shrink any oversized deck to maximum of 10 cards + commander
         // NOTE: do this AFTER the call to claim_cards so that passing an initial deck of >10 cards
         //       can be used as a "shortcut" for adding them to owned cards. Also this allows climb
-        //       to figure out which are the best 10, rather than restricting climb to the first 10.
+        //       to figure std::cout which are the best 10, rather than restricting climb to the first 10.
         if (your_deck->cards.size() > max_deck_len)
         {
             your_deck->shrink(max_deck_len);
