@@ -19,7 +19,3 @@ enfeeble active how long and on whoms turn
 rule/enemy-based order
 state-attacking += state-skills-active
 
-limit amount of card occurrences
-tuo on android
-* with armv7 compilation and terminal
-* NDK + boost direct implementation
