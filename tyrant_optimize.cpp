@@ -112,12 +112,67 @@ namespace {
     jobject objv;
     #endif
 }
+
+void init()
+{
+    gamemode = fight;
+    optimization_mode =OptimizationMode::notset;
+    owned_cards.clear();
+    owned_alpha_dominion = nullptr;
+    use_owned_cards=true;
+    min_deck_len=1;
+    max_deck_len=10;
+    freezed_cards=0;
+    fund=0;
+    target_score=100;
+    min_increment_of_score=0;
+    confidence_level=0.99;
+    use_top_level_card=true;
+    use_top_level_commander=true;
+    mode_open_the_deck=false;
+    use_owned_dominions=true;
+    use_maxed_dominions=false;
+    use_fused_card_level=0;
+    use_fused_commander_level=0;
+    print_upgraded=false;
+    simplify_output=false;
+    show_ci=false;
+    use_harmonic_mean=false;
+    iterations_multiplier=10;
+    sim_seed=0;
+    flexible_iter=20;
+    flexible_turn=10;
+    requirement.num_cards.clear();
+#ifndef NQUEST
+    //quest = new Quest(); //TODO Quest bugged in Android now here
+#endif
+    allowed_candidates.clear();
+    disallowed_candidates.clear();
+
+    //std::chrono::time_point<std::chrono::system_clock> start_time;
+    maximum_time=0;
+    temperature = 1000;
+    coolingRate = 0.001;
+    yfpool=0;
+    efpool=0;
+
+    factions.clear();
+    invert_factions=false;
+    only_recent=false;
+    prefered_recent=false;
+    recent_percent=5;
+    skills.clear();
+    invert_skills=false;
+    prefered_skills.clear();
+    prefered_factor=3;
+}
+
 int main(int argc, char** argv);
 #if defined(ANDROID) || defined(__ANDROID__)
 extern "C" JNIEXPORT void
 
 JNICALL
-Java_de_neuwirthinformatik_Alexander_mTUO_MainActivity_callMain(
+Java_de_neuwirthinformatik_Alexander_mTUO_TUOIntentService_callMain(
         JNIEnv *env,
         jobject obj/* this */,jobjectArray stringArray) {
 	envv = env;
@@ -139,13 +194,13 @@ Java_de_neuwirthinformatik_Alexander_mTUO_MainActivity_callMain(
             if (this->pbase() != this->pptr()) {
                 auto sss = std::string(this->pbase(),
                                        this->pptr() - this->pbase()).c_str();
-                __android_log_print(ANDROID_LOG_INFO,
-                                    "TUO",
+                __android_log_print(ANDROID_LOG_DEBUG,
+                                    "TUO_TUO",
                                     "%s",
                                     sss);
                 jstring jstr = envv->NewStringUTF(sss);
-                jclass clazz = envv->FindClass("de/neuwirthinformatik/Alexander/mTUO/MainActivity");
-                jmethodID messageMe = envv->GetMethodID(clazz, "messageMe", "(Ljava/lang/String;)V");
+                jclass clazz = envv->FindClass("de/neuwirthinformatik/Alexander/mTUO/TUOIntentService");
+                jmethodID messageMe = envv->GetMethodID(clazz, "output", "(Ljava/lang/String;)V");
                 envv->CallVoidMethod(objv, messageMe, jstr);
                 rc = 0;
                 this->setp(buffer, buffer + bufsize - 1);
@@ -156,7 +211,7 @@ Java_de_neuwirthinformatik_Alexander_mTUO_MainActivity_callMain(
     };
     std::cout.rdbuf(new androidbuf);
     std::cerr.rdbuf(new androidbuf);
-    __android_log_write(ANDROID_LOG_INFO, "TUO", "START");
+    __android_log_write(ANDROID_LOG_DEBUG, "TUO_TUO", "START");
     int stringCount = env->GetArrayLength(stringArray);
     char** param= new char*[stringCount];
     const char** cparam= new const char*[stringCount];
@@ -169,7 +224,7 @@ Java_de_neuwirthinformatik_Alexander_mTUO_MainActivity_callMain(
 	
     main(stringCount,param);
     std::cout << std::flush;
-    __android_log_write(ANDROID_LOG_INFO, "TUO", "END");
+    __android_log_write(ANDROID_LOG_DEBUG, "TUO_TUO", "END");
 	
 	for (int i=0; i<stringCount; i++) {
 		env->ReleaseStringUTFChars(strs[i], cparam[i]);
@@ -182,12 +237,12 @@ Java_de_neuwirthinformatik_Alexander_mTUO_MainActivity_callMain(
 extern "C" JNIEXPORT jstring
 
 JNICALL
-Java_de_neuwirthinformatik_Alexander_mTUO_MainActivity_stringFromJNI( JNIEnv* env,
+Java_de_neuwirthinformatik_Alexander_mTUO_TUOIntentService_stringFromJNI( JNIEnv* env,
                                                   jobject thiz,jstring s )
 {
     std::string str = env->GetStringUTFChars(s,NULL);
     str+="hello.txt";
-    __android_log_write(ANDROID_LOG_ERROR, "TUO", str.c_str());
+    __android_log_write(ANDROID_LOG_DEBUG, "TUO_TUO", str.c_str());
     FILE* file = fopen( str.c_str(),"w+");
 
     if (file != NULL)
@@ -2286,7 +2341,7 @@ int main(int argc, char** argv)
         usage(argc, argv);
         return 255;
     }
-
+	init();
     unsigned opt_num_threads(4);
     DeckStrategy::DeckStrategy opt_your_strategy(DeckStrategy::random);
     DeckStrategy::DeckStrategy opt_enemy_strategy(DeckStrategy::random);
