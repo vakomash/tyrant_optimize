@@ -2475,20 +2475,24 @@ int main(int argc, char** argv)
         }
         else if (strcmp(argv[argIndex], "no-strategy") == 0 || strcmp(argv[argIndex], "no-skill") == 0)
         {
-            skills.push_back(skill_name_to_id(argv[argIndex + 1]));
-            invert_skills=true;
+            if(strcmp(argv[argIndex+1],"") != 0) {
+            	skills.push_back(skill_name_to_id(argv[argIndex + 1]));
+            	invert_skills=true;
+	    }
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "prefered-strategy") == 0 || strcmp(argv[argIndex], "prefered-skill") == 0)
         {
-            if(strcmp(argv[argIndex+1], "recent") == 0)
-            {
-                prefered_recent = true;
-            }
-            else
-            {
-                prefered_skills.push_back(skill_name_to_id(argv[argIndex + 1]));
-            }
+            if(strcmp(argv[argIndex+1],"") != 0) {
+		    if(strcmp(argv[argIndex+1], "recent") == 0)
+		    {
+			prefered_recent = true;
+		    }
+		    else
+		    {
+			prefered_skills.push_back(skill_name_to_id(argv[argIndex + 1]));
+		    }
+	    }
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "prefered-factor") == 0)
