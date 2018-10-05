@@ -2128,6 +2128,19 @@ void print_available_effects()
         "  Crackdown\n"
         ;
 }
+void check_input_amount(int argc, char** argv, int argIndex,int number)
+{
+	if(argc <=argIndex+number)
+	{	
+		std::cerr << argv[argIndex] << " needs " << number << " paramters" <<std::endl;
+		exit(EXIT_FAILURE);
+	}
+}
+void input_error(std::string msg)
+{
+	std::cerr << msg << std::endl;
+	exit(EXIT_FAILURE);	
+}
 void usage(int argc, char** argv)
 {
     std::cout << "Tyrant Unleashed Optimizer (TUO) " << TYRANT_OPTIMIZER_VERSION << "\n"
@@ -2451,6 +2464,7 @@ int main(int argc, char** argv)
         }
         else if (strcmp(argv[argIndex], "mono") == 0 || strcmp(argv[argIndex], "-m") == 0 || strcmp(argv[argIndex], "factions") == 0 || strcmp(argv[argIndex], "-f") == 0)
         {
+	    check_input_amount(argc,argv,argIndex,1);
             if(strcmp(argv[argIndex+1],"") != 0) {
                 factions.push_back(faction_name_to_id(argv[argIndex + 1]));
             }
@@ -2458,12 +2472,14 @@ int main(int argc, char** argv)
         }
         else if (strcmp(argv[argIndex], "no-mono") == 0 || strcmp(argv[argIndex], "no-factions") == 0)
         {
+	    check_input_amount(argc,argv,argIndex,1);
             factions.push_back(faction_name_to_id(argv[argIndex + 1]));
             invert_factions = true;
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "strategy") == 0 || strcmp(argv[argIndex], "skill") == 0)
         {
+	    check_input_amount(argc,argv,argIndex,1);
             if(strcmp(argv[argIndex+1],"") != 0) {
                 if (strcmp(argv[argIndex + 1], "recent") == 0) {
                     only_recent = true;
@@ -2475,6 +2491,7 @@ int main(int argc, char** argv)
         }
         else if (strcmp(argv[argIndex], "no-strategy") == 0 || strcmp(argv[argIndex], "no-skill") == 0)
         {
+	    check_input_amount(argc,argv,argIndex,1);
             if(strcmp(argv[argIndex+1],"") != 0) {
             	skills.push_back(skill_name_to_id(argv[argIndex + 1]));
             	invert_skills=true;
@@ -2483,6 +2500,7 @@ int main(int argc, char** argv)
         }
         else if (strcmp(argv[argIndex], "prefered-strategy") == 0 || strcmp(argv[argIndex], "prefered-skill") == 0)
         {
+	    check_input_amount(argc,argv,argIndex,1);
             if(strcmp(argv[argIndex+1],"") != 0) {
 		    if(strcmp(argv[argIndex+1], "recent") == 0)
 		    {
@@ -2497,36 +2515,43 @@ int main(int argc, char** argv)
         }
         else if (strcmp(argv[argIndex], "prefered-factor") == 0)
         {
+	    check_input_amount(argc,argv,argIndex,1);
             prefered_factor= std::stoi(argv[argIndex + 1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "recent-percent") == 0)
         {
+	    check_input_amount(argc,argv,argIndex,1);
             recent_percent= std::stoi(argv[argIndex + 1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "effect") == 0 || strcmp(argv[argIndex], "-e") == 0)
         {
+	    check_input_amount(argc,argv,argIndex,1);
             opt_effects[2].push_back(argv[argIndex + 1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "ye") == 0 || strcmp(argv[argIndex], "yeffect") == 0)
         {
+	    check_input_amount(argc,argv,argIndex,1);
             opt_effects[0].push_back(argv[argIndex + 1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "ee") == 0 || strcmp(argv[argIndex], "eeffect") == 0)
         {
+	    check_input_amount(argc,argv,argIndex,1);
             opt_effects[1].push_back(argv[argIndex + 1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "freeze") == 0 || strcmp(argv[argIndex], "-F") == 0)
         {
+	    check_input_amount(argc,argv,argIndex,1);
             freezed_cards = atoi(argv[argIndex + 1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "-L") == 0)
         {
+	    check_input_amount(argc,argv,argIndex,2);
             min_deck_len = atoi(argv[argIndex + 1]);
             max_deck_len = atoi(argv[argIndex + 2]);
             argIndex += 2;
@@ -2551,11 +2576,13 @@ int main(int argc, char** argv)
         }
         else if (strcmp(argv[argIndex], "prefix") == 0)
         {
+	    check_input_amount(argc,argv,argIndex,1);
             prefix = argv[argIndex+1];
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "fund") == 0)
         {
+	    check_input_amount(argc,argv,argIndex,1);
             fund = atoi(argv[argIndex+1]);
             argIndex += 1;
         }
@@ -2588,11 +2615,13 @@ int main(int argc, char** argv)
         }
         else if (strcmp(argv[argIndex], "flexible-iter") == 0)
         {
+	    check_input_amount(argc,argv,argIndex,1);
             flexible_iter = atoi(argv[argIndex+1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "flexible-turn") == 0)
         {
+	    check_input_amount(argc,argv,argIndex,1);
             flexible_turn = atoi(argv[argIndex+1]);
             argIndex += 1;
         }
@@ -2618,28 +2647,33 @@ int main(int argc, char** argv)
         }
         else if (strcmp(argv[argIndex], "endgame") == 0)
         {
+	    check_input_amount(argc,argv,argIndex,1);
             use_fused_card_level = atoi(argv[argIndex+1]);
             argIndex += 1;
         }
 #ifndef NQUEST
         else if (strcmp(argv[argIndex], "quest") == 0)
         {
+	    check_input_amount(argc,argv,argIndex,1);
             opt_quest = argv[argIndex+1];
             argIndex += 1;
         }
 #endif
         else if (strcmp(argv[argIndex], "threads") == 0 || strcmp(argv[argIndex], "-t") == 0)
         {
+	    check_input_amount(argc,argv,argIndex,1);
             opt_num_threads = atoi(argv[argIndex+1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "target") == 0)
         {
+	    check_input_amount(argc,argv,argIndex,1);
             opt_target_score = argv[argIndex+1];
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "turnlimit") == 0)
         {
+	    check_input_amount(argc,argv,argIndex,1);
             turn_limit = atoi(argv[argIndex+1]);
             argIndex += 1;
         }
@@ -2650,11 +2684,13 @@ int main(int argc, char** argv)
         }
         else if (strcmp(argv[argIndex], "timeout") == 0) //set timeout in hours. tuo will stop approx. at the given time.
         {
+	    check_input_amount(argc,argv,argIndex,1);
             maximum_time = atof(argv[argIndex+1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "cl") == 0)
         {
+	    check_input_amount(argc,argv,argIndex,1);
             confidence_level = atof(argv[argIndex+1]);
             argIndex += 1;
         }
@@ -2676,6 +2712,7 @@ int main(int argc, char** argv)
         }
         else if (strcmp(argv[argIndex], "seed") == 0)
         {
+	    check_input_amount(argc,argv,argIndex,1);
             sim_seed = atoi(argv[argIndex+1]);
             argIndex += 1;
         }
@@ -2689,66 +2726,79 @@ int main(int argc, char** argv)
         }
         else if (strcmp(argv[argIndex], "vip") == 0)
         {
+	    check_input_amount(argc,argv,argIndex,1);
             opt_vip = argv[argIndex + 1];
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "allow-candidates") == 0)
         {
+	    check_input_amount(argc,argv,argIndex,1);
             opt_allow_candidates = argv[argIndex + 1];
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "disallow-candidates") == 0)
         {
+	    check_input_amount(argc,argv,argIndex,1);
             opt_disallow_candidates = argv[argIndex + 1];
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "disallow-recipes") == 0)
         {
+	    check_input_amount(argc,argv,argIndex,1);
             opt_disallow_recipes = argv[argIndex + 1];
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "hand") == 0)  // set initial hand for test
         {
+	    check_input_amount(argc,argv,argIndex,1);
             opt_hand = argv[argIndex + 1];
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "enemy:hand") == 0)  // set enemies' initial hand for test
         {
+	    check_input_amount(argc,argv,argIndex,1);
             opt_enemy_hand = argv[argIndex + 1];
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "yf") == 0 || strcmp(argv[argIndex], "yfort") == 0)  // set forts
         {
+	    check_input_amount(argc,argv,argIndex,1);
             opt_forts = std::string(argv[argIndex + 1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "yfpool") == 0 || strcmp(argv[argIndex], "yfortpool") == 0)  // set forts
         {
+	    check_input_amount(argc,argv,argIndex,1);
             yfpool = std::stoi(argv[argIndex + 1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "ef") == 0 || strcmp(argv[argIndex], "efort") == 0)  // set enemies' forts
         {
+	    check_input_amount(argc,argv,argIndex,1);
             opt_enemy_forts = std::string(argv[argIndex + 1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "efpool") == 0 || strcmp(argv[argIndex], "efortpool") == 0)  // set forts
         {
+	    check_input_amount(argc,argv,argIndex,1);
             efpool = std::stoi(argv[argIndex + 1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "yd") == 0 || strcmp(argv[argIndex], "ydom") == 0)  // set dominions
         {
+	    check_input_amount(argc,argv,argIndex,1);
             opt_doms = std::string(argv[argIndex + 1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "ed") == 0 || strcmp(argv[argIndex], "edom") == 0)  // set enemies' dominions
         {
+	    check_input_amount(argc,argv,argIndex,1);
             opt_enemy_doms = std::string(argv[argIndex + 1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "sim") == 0)
         {
+	    check_input_amount(argc,argv,argIndex,1);
             opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), 0u, simulate));
             if (std::get<0>(opt_todo.back()) < 10) { opt_num_threads = 1; }
             argIndex += 1;
@@ -2756,6 +2806,7 @@ int main(int argc, char** argv)
         // climbing tasks
         else if (strcmp(argv[argIndex], "climbex") == 0)
         {
+	    check_input_amount(argc,argv,argIndex,2);
             opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 2]), climb));
             if (std::get<1>(opt_todo.back()) < 10) { opt_num_threads = 1; }
             opt_do_optimization = true;
@@ -2763,6 +2814,7 @@ int main(int argc, char** argv)
         }
         else if (strcmp(argv[argIndex], "climb") == 0)
         {
+	    check_input_amount(argc,argv,argIndex,1);
             opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 1]), climb));
             if (std::get<1>(opt_todo.back()) < 10) { opt_num_threads = 1; }
             opt_do_optimization = true;
@@ -2770,12 +2822,14 @@ int main(int argc, char** argv)
         }
         else if (strcmp(argv[argIndex], "climb_forts") == 0)
         {
+	    check_input_amount(argc,argv,argIndex,1);
             opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 1]), climb_forts));
             if (std::get<1>(opt_todo.back()) < 10) { opt_num_threads = 1; }
             argIndex += 1;
         }
         else if ( strcmp(argv[argIndex], "anneal") == 0)
         {
+	    check_input_amount(argc,argv,argIndex,3);
             opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 1]), anneal));
             temperature = std::stod(argv[argIndex+2]);
             coolingRate = std::stod(argv[argIndex+3]);
@@ -2785,6 +2839,7 @@ int main(int argc, char** argv)
         }
         else if (strcmp(argv[argIndex], "reorder") == 0)
         {
+	    check_input_amount(argc,argv,argIndex,1);
             opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 1]), reorder));
             if (std::get<1>(opt_todo.back()) < 10) { opt_num_threads = 1; }
             opt_do_reorder = true;
@@ -2854,6 +2909,7 @@ int main(int argc, char** argv)
         }
         else if (strcmp(argv[argIndex], "debug") == 0)
         {
+	    check_input_amount(argc,argv,argIndex,1);
             opt_todo.push_back(std::make_tuple(0u, 0u, debug));
             opt_num_threads = 1;
         }
@@ -2861,6 +2917,7 @@ int main(int argc, char** argv)
         {
             // output the debug info for the first battle that min_score <= score <= max_score.
             // E.g., 0 0: lose; 100 100: win (non-raid); 20 100: at least 20 damage (raid).
+	    check_input_amount(argc,argv,argIndex,2);
             opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 2]), debuguntil));
             opt_num_threads = 1;
             argIndex += 2;
