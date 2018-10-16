@@ -2568,7 +2568,9 @@ int main(int argc, char** argv)
         }
         else if (strncmp(argv[argIndex], "-o=", 3) == 0)
         {
-            opt_owned_cards_str_list.push_back(argv[argIndex] + 3);
+            std::string fname{prefix};
+            fname += (argv[argIndex]+3);
+            opt_owned_cards_str_list.push_back(fname);
             use_owned_cards = true;
         }
         else if (strncmp(argv[argIndex], "_", 1) == 0)
