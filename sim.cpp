@@ -2939,7 +2939,7 @@ Results<uint64_t> evaluate_sim_result(Field* fd)
     {
         case OptimizationMode::raid:
             raid_damage = 15
-                + (p[1]->total_cards_destroyed)
+                + (p[1]->total_nonsummon_cards_destroyed)
                 - (10 * p[1]->commander.m_hp / p[1]->commander.max_hp());
             break;
 #ifndef NQUEST
