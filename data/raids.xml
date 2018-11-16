@@ -841,6 +841,21 @@
             </card_pool>
         </deck>
     </raid>
+	<raid>
+    <id>60</id>
+        <name>Return of Razogoth Raid</name>
+        <levels>26</levels>
+        <commander>26080</commander>
+        <deck>
+            <always_include>
+                <card replicates="2">61746</card>
+                <card replicates="2">61756</card>
+                <card replicates="2">61766</card>
+                <card replicates="2">61776</card>
+				<card replicates="2">61786</card>
+            </always_include>
+        </deck>
+    </raid>
     <!-- END of Raids -->
 
 
