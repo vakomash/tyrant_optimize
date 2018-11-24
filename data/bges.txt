@@ -1,11 +1,11 @@
 // Guild War BGEs
 Halcyon's Command: Enhance All Armor 8; Heal All Imperial 10; Enrage Imperial 4
 Typhon's Blood: Enhance All Refresh 8; Enrage All Bloodthirsty 5; Heal 16
-Sandblast: Entrap All 10; Weaken All 7
+Sandblast: Entrap All 10; Weaken All 10
 Plasma Burst: Heal 15; Protect 15; Sunder 15
-Landmine: Entrap 33
-Inspired: Rally all 6
-Blightblast: Enfeeble all 5
+Landmine: Entrap 38
+Inspired: Rally all 7
+Blightblast: Enfeeble all 6
 Bombing Run: Strike all 3
 Triage: Enhance Fortify 9; Heal all 18
 Charged Up: Overload 3
@@ -15,7 +15,7 @@ Paladin's Presence: Protect all 3
 Viral Warfare: Enhance all Poison 3
 Progenitor Tech: Heal+Protect+Rally+Enfeeble+Strike+Weaken all 4
 Diminisher: Sunder all 2
-Divine Blessing: Heal all 9; Rally all 6
+Divine Blessing: Heal all 10; Rally all 7
 Opalescence: Heal+Protect all 2
 Power Source: Overload 1
 Ferocity: Enrage 6
@@ -24,9 +24,9 @@ Artillery: Enhance Mortar 4; Mortar all 18
 //Orbital Cannon: Strike 16
 Orbital Cannon: Enfeeble 14
 Bloodthirst: Enhance All Leech 6
-Emergency Aid: Heal 40
+Emergency Aid: Heal 48
 Extended Reach: Enhance All Swipe 5
-Mirror Madness: Mimic 14
+Mirror Madness: Mimic 16
 Eternal Backlash: Enhance All Counter 6; Entrap 6
 Winter Tempest: Enhance all subdue 10; Protect All 5; Weaken All 7
 Sulfuris Essence: Evolve All Poison Venom; Enhance All Venom 6
