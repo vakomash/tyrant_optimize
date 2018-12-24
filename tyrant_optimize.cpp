@@ -177,10 +177,11 @@ Java_de_neuwirthinformatik_Alexander_mTUO_TUOIntentService_callMain(
         jobject obj/* this */,jobjectArray stringArray) {
 	envv = env;
 	objv = obj;
+	//from: https://stackoverflow.com/questions/8870174/is-stdcout-usable-in-android-ndk and https://gist.github.com/dzhioev/6127982
     class androidbuf: public std::streambuf {
     public:
-        enum { bufsize = 128 }; // ... or some other suitable buffer size
-        androidbuf() { this->setp(buffer, buffer + bufsize - 1); }
+        enum { bufsize = 256 }; // ... or some other suitable buffer size
+        androidbuf() { this->setp(buffer, buffer + bufsize -1); }
     private:
         int overflow(int c) {
             if (c == traits_type::eof()) {
@@ -203,7 +204,7 @@ Java_de_neuwirthinformatik_Alexander_mTUO_TUOIntentService_callMain(
                 jmethodID messageMe = envv->GetMethodID(clazz, "output", "(Ljava/lang/String;)V");
                 envv->CallVoidMethod(objv, messageMe, jstr);
                 rc = 0;
-                this->setp(buffer, buffer + bufsize - 1);
+                this->setp(buffer, buffer + bufsize -1);
             }
             return rc;
         }
