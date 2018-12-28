@@ -53,7 +53,7 @@ enum Skill
     coalition, legion, pierce, rupture, swipe, drain, venom, hunt,mark,
 
     // Damage-Dependent:
-    berserk, inhibit, sabotage, leech, poison,
+    berserk, inhibit, sabotage, leech, poison,disease,
 
     // Triggered:
     allegiance, flurry, valor, stasis, summon, bravery,
@@ -231,6 +231,7 @@ inline bool is_damage_dependent_skill(Skill::Skill skill_id)
     case Skill::sabotage:
     case Skill::leech:
     case Skill::poison:
+    case Skill::disease:
         return true;
     default:
         return false;

@@ -17,7 +17,10 @@
 bool check_and_perform_valor(Field* fd, CardStatus* src);
 bool check_and_perform_bravery(Field* fd, CardStatus* src);
 CardStatus* check_and_perform_summon(Field* fd, CardStatus* src);
-
+//------------------------------------------------------------------------------
+inline unsigned remove_absorption(Field* fd, CardStatus* status, unsigned dmg);
+inline unsigned remove_absorption(CardStatus* status, unsigned dmg);
+inline unsigned remove_disease(CardStatus* status, unsigned heal);
 //------------------------------------------------------------------------------
 inline bool has_attacked(CardStatus* c) { return (c->m_step == CardStep::attacked); }
 inline bool is_alive(CardStatus* c) { return (c->m_hp > 0); }
@@ -45,7 +48,7 @@ inline std::string status_description(const CardStatus* status)
     return status->description();
 }
 //------------------------------------------------------------------------------
-    template <typename CardsIter, typename Functor>
+template <typename CardsIter, typename Functor>
 inline unsigned Field::make_selection_array(CardsIter first, CardsIter last, Functor f)
 {
     this->selection_array.clear();
@@ -168,11 +171,13 @@ inline unsigned CardStatus::max_hp() const
 //------------------------------------------------------------------------------
 inline unsigned CardStatus::add_hp(unsigned value)
 {
+    value = remove_disease(this,value);
     return (m_hp = std::min(m_hp + value, max_hp()));
 }
 //------------------------------------------------------------------------------
 inline unsigned CardStatus::ext_hp(unsigned value)
 {
+    value = remove_disease(this,value);
     m_perm_health_buff += value;
     return add_hp(value);
 }
@@ -212,6 +217,7 @@ inline void CardStatus::set(const Card& card)
     m_enraged = 0;
     m_entrapped = 0;
     m_marked = 0;
+    m_diseased = 0;
     m_rush_attempted = false;
     m_sundered = false;
     //APN
@@ -332,6 +338,7 @@ std::string CardStatus::description() const
     if (m_enraged) { desc += ", enraged " + to_string(m_enraged); }
     if (m_entrapped) { desc += ", entrapped " + to_string(m_entrapped); }
     if (m_marked) { desc += ", marked " + to_string(m_marked); }
+    if (m_diseased) { desc += ", diseased " + to_string(m_diseased); }
     //    if(m_step != CardStep::none) { desc += ", Step " + to_string(static_cast<int>(m_step)); }
     //APN
     const Skill::Trigger s_triggers[] = { Skill::Trigger::play, Skill::Trigger::activate, Skill::Trigger::death , Skill::Trigger::attacked};
@@ -1033,7 +1040,34 @@ inline bool skill_check<Skill::drain>(Field* fd, CardStatus* c, CardStatus* ref)
     return can_be_healed(c);
 }
 
-unsigned remove_absorption(Field* fd, CardStatus* status, unsigned dmg)
+inline unsigned remove_disease(CardStatus* status, unsigned heal)
+{
+    unsigned remaining_heal(heal);
+    if(__builtin_expect(status->m_diseased == 0,true))
+    {
+        //skip
+    }
+    else if (heal > status->m_diseased)
+    {
+        _DEBUG_MSG(1, "%s disease-blocked %u heal\n", status_description(status).c_str(), status->m_diseased);
+        remaining_heal = heal - status->m_diseased;
+        status->m_diseased = 0;
+    }
+    else
+    {
+        _DEBUG_MSG(1, "%s disease-blocked %u heal\n", status_description(status).c_str(), heal);
+        status->m_diseased -= heal;
+        remaining_heal = 0;
+    }
+    return remaining_heal;
+}
+
+// Field is currently not needed for remove_absorption, but is here for similiar structure as remove_hp
+inline unsigned remove_absorption(Field* fd, CardStatus* status, unsigned dmg)
+{
+    return remove_absorption(status,dmg);
+}
+inline unsigned remove_absorption(CardStatus* status, unsigned dmg)
 {
     unsigned remaining_dmg(dmg);
     if(__builtin_expect(status->m_absorption == 0,true))
@@ -1259,7 +1293,8 @@ void turn_end_phase(Field* fd)
             {
                 continue;
             }
-            unsigned refresh_value = status.skill(Skill::refresh) + __builtin_expect(fd->bg_effects[fd->tapi][PassiveBGE::crackdown],false)?(status.skill(Skill::subdue)+1)/2:0; //BGE: crackdown refresh+=subdue/2
+            unsigned refresh_value = status.skill(Skill::refresh) + (__builtin_expect(fd->bg_effects[fd->tapi][PassiveBGE::crackdown],false)?(status.skill(Skill::subdue)+1)/2:0); //BGE: crackdown refresh+=subdue/2
+
             if (refresh_value && skill_check<Skill::refresh>(fd, &status, nullptr))
             {
                 _DEBUG_MSG(1, "%s refreshes %u health\n", status_description(&status).c_str(), refresh_value);
@@ -1715,11 +1750,19 @@ struct PerformAttack
                         status_description(att_status).c_str(), (coalition_value + 1)/2);
                 att_status->add_hp((coalition_value + 1)/2);
             }
+            // Increase Mark-counter
             unsigned mark_base = att_status->skill(Skill::mark);
             if(mark_base && def_status->m_card->m_type == CardType::assault) {
                 _DEBUG_MSG(1, "%s marks %s for %u\n",
                         status_description(att_status).c_str(), status_description(def_status).c_str(), mark_base);
                 def_status->m_marked += mark_base;
+            }
+            // Increase Disease-counter
+            unsigned disease_base = att_status->skill(Skill::disease);
+            if(disease_base && def_status->m_card->m_type == CardType::assault) {
+                _DEBUG_MSG(1, "%s diseases %s for %u\n",
+                        status_description(att_status).c_str(), status_description(def_status).c_str(), disease_base);
+                def_status->m_diseased += disease_base;
             }
         }
 

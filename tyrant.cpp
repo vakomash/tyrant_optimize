@@ -29,7 +29,7 @@ const std::string skill_names[Skill::num_skills] =
     "Coalition", "Legion", "Pierce", "Rupture", "Swipe", "Drain", "Venom", "Hunt","Mark",
 
     // Damage-Dependant:
-    "Berserk", "Inhibit", "Sabotage", "Leech", "Poison",
+    "Berserk", "Inhibit", "Sabotage", "Leech", "Poison","Disease",
 
     // Triggered:
     "Allegiance", "Flurry", "Valor", "Stasis", "Summon", "Bravery",
