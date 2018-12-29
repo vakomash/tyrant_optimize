@@ -1757,13 +1757,7 @@ struct PerformAttack
                         status_description(att_status).c_str(), status_description(def_status).c_str(), mark_base);
                 def_status->m_marked += mark_base;
             }
-            // Increase Disease-counter
-            unsigned disease_base = att_status->skill(Skill::disease);
-            if(disease_base && def_status->m_card->m_type == CardType::assault) {
-                _DEBUG_MSG(1, "%s diseases %s for %u\n",
-                        status_description(att_status).c_str(), status_description(def_status).c_str(), disease_base);
-                def_status->m_diseased += disease_base;
-            }
+
         }
 
     template<enum CardType::CardType>
@@ -1837,6 +1831,13 @@ void PerformAttack::damage_dependant_pre_oa<CardType::assault>()
                 status_description(att_status).c_str(),
                 status_description(def_status).c_str(), sabotage_value);
         def_status->m_sabotaged = sabotage_value;
+    }
+    // Damage-Dependent skill: Increase Disease-counter
+    unsigned disease_base = att_status->skill(Skill::disease);
+    if(disease_base && def_status->m_card->m_type == CardType::assault) {
+        _DEBUG_MSG(1, "%s diseases %s for %u\n",
+        status_description(att_status).c_str(), status_description(def_status).c_str(), disease_base);
+        def_status->m_diseased += disease_base;
     }
 }
 
