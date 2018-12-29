@@ -1040,6 +1040,18 @@ inline bool skill_check<Skill::drain>(Field* fd, CardStatus* c, CardStatus* ref)
     return can_be_healed(c);
 }
 
+    template<>
+inline bool skill_check<Skill::mark>(Field* fd, CardStatus* c, CardStatus* ref)
+{
+    return (ref->m_card->m_type == CardType::assault);
+}
+
+    template<>
+inline bool skill_check<Skill::disease>(Field* fd, CardStatus* c, CardStatus* ref)
+{
+    return (ref->m_card->m_type == CardType::assault);
+}
+
 inline unsigned remove_disease(CardStatus* status, unsigned heal)
 {
     unsigned remaining_heal(heal);
@@ -1750,9 +1762,10 @@ struct PerformAttack
                         status_description(att_status).c_str(), (coalition_value + 1)/2);
                 att_status->add_hp((coalition_value + 1)/2);
             }
+
             // Increase Mark-counter
             unsigned mark_base = att_status->skill(Skill::mark);
-            if(mark_base && def_status->m_card->m_type == CardType::assault) {
+            if(mark_base && skill_check<Skill::mark>(fd,att_status,def_status)) {
                 _DEBUG_MSG(1, "%s marks %s for %u\n",
                         status_description(att_status).c_str(), status_description(def_status).c_str(), mark_base);
                 def_status->m_marked += mark_base;
@@ -1834,7 +1847,7 @@ void PerformAttack::damage_dependant_pre_oa<CardType::assault>()
     }
     // Damage-Dependent skill: Increase Disease-counter
     unsigned disease_base = att_status->skill(Skill::disease);
-    if(disease_base && def_status->m_card->m_type == CardType::assault) {
+    if(disease_base && skill_check<Skill::disease>(fd, att_status, def_status)) {
         _DEBUG_MSG(1, "%s diseases %s for %u\n",
         status_description(att_status).c_str(), status_description(def_status).c_str(), disease_base);
         def_status->m_diseased += disease_base;
