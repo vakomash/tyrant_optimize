@@ -45,16 +45,13 @@
 #include "sim.h"
 #include "tyrant.h"
 #include "xml.h"
+#include "tyrant_optimize.h"
 
 #if defined(ANDROID) || defined(__ANDROID__)
 #include <jni.h>
 #include <android/log.h>
 #endif
-struct Requirement
-{
-    std::unordered_map<const Card*, unsigned> num_cards;
-};
-
+//------------------------------------------------------------------------------
 namespace {
     gamemode_t gamemode{fight};
     OptimizationMode optimization_mode{OptimizationMode::notset};
@@ -84,11 +81,12 @@ namespace {
     unsigned flexible_iter{20};
     unsigned flexible_turn{10};
     Requirement requirement;
+    std::unordered_set<unsigned> allowed_candidates;
+    std::unordered_set<unsigned> disallowed_candidates;
+
 #ifndef NQUEST
     Quest quest;
 #endif
-    std::unordered_set<unsigned> allowed_candidates;
-    std::unordered_set<unsigned> disallowed_candidates;
 
     std::chrono::time_point<std::chrono::system_clock> start_time;
     long double maximum_time{0};
@@ -106,12 +104,12 @@ namespace {
     bool invert_skills{false};
     std::vector<Skill::Skill> prefered_skills;
     unsigned prefered_factor{3};
-	
-	#if defined(ANDROID) || defined(__ANDROID__)
-	JNIEnv *envv;
+
+#if defined(ANDROID) || defined(__ANDROID__)
+	  JNIEnv *envv;
     jobject objv;
-    #endif
-}
+#endif
+};
 
 void init()
 {
@@ -166,8 +164,7 @@ void init()
     prefered_skills.clear();
     prefered_factor=3;
 }
-
-int main(int argc, char** argv);
+#ifndef TEST //no TEST on Android, since it needs to call main
 #if defined(ANDROID) || defined(__ANDROID__)
 extern "C" JNIEXPORT void
 
@@ -216,19 +213,19 @@ Java_de_neuwirthinformatik_Alexander_mTUO_TUOIntentService_callMain(
     int stringCount = env->GetArrayLength(stringArray);
     char** param= new char*[stringCount];
     const char** cparam= new const char*[stringCount];
-	jstring* strs = new jstring[stringCount];
+	  jstring* strs = new jstring[stringCount];
     for (int i=0; i<stringCount; i++) {
         strs[i] = (jstring) (*env).GetObjectArrayElement( stringArray, i);
         cparam[i] = ((*env).GetStringUTFChars( strs[i], NULL));
-		param[i] = const_cast<char*>(cparam[i]);
+		    param[i] = const_cast<char*>(cparam[i]);
     }
-	
+
     main(stringCount,param);
     std::cout << std::flush;
     __android_log_write(ANDROID_LOG_DEBUG, "TUO_TUO", "END");
-	
-	for (int i=0; i<stringCount; i++) {
-		env->ReleaseStringUTFChars(strs[i], cparam[i]);
+
+	  for (int i=0; i<stringCount; i++) {
+		    env->ReleaseStringUTFChars(strs[i], cparam[i]);
     }
     //std::string text = "return";
     //return env->NewStringUTF(text.c_str());
@@ -255,6 +252,7 @@ Java_de_neuwirthinformatik_Alexander_mTUO_TUOIntentService_stringFromJNI( JNIEnv
 
     return env->NewStringUTF( "Hello from JNI (with file io)!");
 }
+#endif
 #endif
 using namespace std::placeholders;
 //------------------------------------------------------------------------------
@@ -798,6 +796,7 @@ volatile bool thread_compare{false};
 volatile bool thread_compare_stop{false}; // written by threads
 volatile bool destroy_threads;
 //------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Per thread data.
 // seed should be unique for each thread.
 // d1 and d2 are intended to point to read-only process-wide data.
@@ -870,38 +869,39 @@ struct SimulationData
             enemy_hands[i]->deck = enemy_decks[i].get();
         }
     }
-
-    inline std::vector<Results<uint64_t>> evaluate()
+inline std::vector<Results<uint64_t>> evaluate()
     {
-        std::vector<Results<uint64_t>> res;
-        res.reserve(enemy_hands.size()*your_hands.size());
-        for(Hand* your_hand : your_hands)
-        {
-            for (Hand* enemy_hand: enemy_hands)
-            {
-                your_hand->reset(re);
-                enemy_hand->reset(re);
-                Field fd(re, cards, *your_hand, *enemy_hand, gamemode, optimization_mode,
-    #ifndef NQUEST
-                        quest,
+      std::vector<Results<uint64_t>> res;
+      res.reserve(enemy_hands.size()*your_hands.size());
+      for(Hand* your_hand : your_hands)
+      {
+          for (Hand* enemy_hand: enemy_hands)
+          {
+              your_hand->reset(re);
+              enemy_hand->reset(re);
+              Field fd(re, cards, *your_hand, *enemy_hand, gamemode, optimization_mode,
+#ifndef NQUEST
+                    quest,
 #endif
-                        your_bg_effects, enemy_bg_effects, your_bg_skills, enemy_bg_skills, flexible_iter,flexible_turn);
-                Results<uint64_t> result(play(&fd));
-                if (__builtin_expect(mode_open_the_deck, false))
-                {
-                    // are there remaining (unopened) cards?
-                    if (fd.players[1]->deck->shuffled_cards.size())
-                    {
-                        // apply min score (there are unopened cards, so mission failed)
-                        result.points = min_possible_score[(size_t)optimization_mode];
-                    }
-                }
-                res.emplace_back(result);
-            }
-        }
-        //std::cout << std::endl<<  "Deck hash: " << your_hand.deck->hash() << "#"<< std::endl;
-        return(res);
-    }
+                    your_bg_effects, enemy_bg_effects, your_bg_skills, enemy_bg_skills, flexible_iter,flexible_turn);
+              Results<uint64_t> result(play(&fd));
+              if (__builtin_expect(mode_open_the_deck, false))
+              {
+                  // are there remaining (unopened) cards?
+                  if (fd.players[1]->deck->shuffled_cards.size())
+                  {
+                      // apply min score (there are unopened cards, so mission failed)
+                      result.points = min_possible_score[(size_t)optimization_mode];
+                  }
+              }
+              std::cout << "ok" << std::endl;
+              res.emplace_back(result);
+         }
+      }
+     //std::cout << std::endl<<  "Deck hash: " << your_hand.deck->hash() << "#"<< std::endl;
+              std::cout << "ok" << std::endl;
+     return(res);
+  }
 };
 //------------------------------------------------------------------------------
 class Process;
@@ -2086,17 +2086,7 @@ void forts_climbing(unsigned num_iterations, Process& proc) {
 }
 
 
-//------------------------------------------------------------------------------
-enum Operation {
-    noop,
-    simulate,
-    climb,
-    climb_forts,
-    anneal,
-    reorder,
-    debug,
-    debuguntil,
-};
+
 //------------------------------------------------------------------------------
 extern void(*skill_table[Skill::num_skills])(Field*, CardStatus* src_status, const SkillSpec&);
 void print_available_effects()
@@ -2132,7 +2122,7 @@ void print_available_effects()
 bool check_input_amount(int argc, char** argv, int argIndex,int number)
 {
 	if(argc <=argIndex+number)
-	{	
+	{
 		std::cerr << argv[argIndex] << " needs " << number << " paramters" <<std::endl;
 		return true;
 	}
@@ -2141,7 +2131,7 @@ bool check_input_amount(int argc, char** argv, int argIndex,int number)
 void input_error(std::string msg)
 {
 	std::cerr << msg << std::endl;
-	exit(EXIT_FAILURE);	
+	exit(EXIT_FAILURE);
 }
 void usage(int argc, char** argv)
 {
@@ -2340,24 +2330,12 @@ bool parse_bge(
     return true;
 }
 
-int main(int argc, char** argv)
+ParsedInput parse_input(int argc, char** argv)
 {
-#ifndef NTIMER
-    boost::timer::auto_cpu_timer t;
-#endif
-    start_time = std::chrono::system_clock::now();
-    if (argc == 2 && strcmp(argv[1], "-version") == 0)
-    {
-        std::cout << "Tyrant Unleashed Optimizer " << TYRANT_OPTIMIZER_VERSION << std::endl;
-        return 0;
-    }
-    if (argc <= 2)
-    {
-        usage(argc, argv);
-        return 255;
-    }
-	init();
-    unsigned opt_num_threads(4);
+    ParsedInput pi,err;
+    err.err = true;
+    pi.err = false;
+    pi.opt_num_threads = 4;
     DeckStrategy::DeckStrategy opt_your_strategy(DeckStrategy::random);
     DeckStrategy::DeckStrategy opt_enemy_strategy(DeckStrategy::random);
     std::string opt_forts, opt_enemy_forts;
@@ -2377,10 +2355,10 @@ int main(int argc, char** argv)
     bool opt_do_optimization(false);
     bool opt_do_reorder(false);
     bool opt_keep_commander{false};
-    std::vector<std::tuple<unsigned, unsigned, Operation>> opt_todo;
+    //std::vector<std::tuple<unsigned, unsigned, Operation>> opt_todo;
     std::vector<std::string> opt_effects[3];  // 0-you; 1-enemy; 2-global
-    std::array<signed short, PassiveBGE::num_passive_bges> opt_bg_effects[2];
-    std::vector<SkillSpec> opt_bg_skills[2];
+    //std::array<signed short, PassiveBGE::num_passive_bges> opt_bg_effects[2];
+    //std::vector<SkillSpec> opt_bg_skills[2];
     std::unordered_set<unsigned> disallowed_recipes;
 
     for (int argIndex = 3; argIndex < argc; ++argIndex)
@@ -2404,11 +2382,11 @@ int main(int argc, char** argv)
         // Base Game Mode
         else if (strcmp(argv[argIndex], "fight") == 0)
         {
-            gamemode = fight;
+            pi.gamemode = fight;
         }
         else if (strcmp(argv[argIndex], "-s") == 0 || strcmp(argv[argIndex], "surge") == 0)
         {
-            gamemode = surge;
+            pi.gamemode = surge;
         }
         // Base Scoring Mode
         else if (strcmp(argv[argIndex], "win") == 0)
@@ -2426,37 +2404,37 @@ int main(int argc, char** argv)
         // Mode Package
         else if (strcmp(argv[argIndex], "campaign") == 0)
         {
-            gamemode = surge;
+            pi.gamemode = surge;
             optimization_mode = OptimizationMode::campaign;
         }
         else if (strcmp(argv[argIndex], "pvp") == 0)
         {
-            gamemode = fight;
+            pi.gamemode = fight;
             optimization_mode = OptimizationMode::winrate;
         }
         else if (strcmp(argv[argIndex], "pvp-defense") == 0)
         {
-            gamemode = surge;
+            pi.gamemode = surge;
             optimization_mode = OptimizationMode::defense;
         }
         else if (strcmp(argv[argIndex], "brawl") == 0)
         {
-            gamemode = surge;
+            pi.gamemode = surge;
             optimization_mode = OptimizationMode::brawl;
         }
         else if (strcmp(argv[argIndex], "brawl-defense") == 0)
         {
-            gamemode = fight;
+            pi.gamemode = fight;
             optimization_mode = OptimizationMode::brawl_defense;
         }
         else if (strcmp(argv[argIndex], "gw") == 0)
         {
-            gamemode = surge;
+            pi.gamemode = surge;
             optimization_mode = OptimizationMode::war;
         }
         else if (strcmp(argv[argIndex], "gw-defense") == 0)
         {
-            gamemode = fight;
+            pi.gamemode = fight;
             optimization_mode = OptimizationMode::war_defense;
         }
         // Others
@@ -2466,7 +2444,7 @@ int main(int argc, char** argv)
         }
         else if (strcmp(argv[argIndex], "mono") == 0 || strcmp(argv[argIndex], "-m") == 0 || strcmp(argv[argIndex], "factions") == 0 || strcmp(argv[argIndex], "-f") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))return err;
             if(strcmp(argv[argIndex+1],"") != 0) {
                 factions.push_back(faction_name_to_id(argv[argIndex + 1]));
             }
@@ -2474,14 +2452,14 @@ int main(int argc, char** argv)
         }
         else if (strcmp(argv[argIndex], "no-mono") == 0 || strcmp(argv[argIndex], "no-factions") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))return err;
             factions.push_back(faction_name_to_id(argv[argIndex + 1]));
             invert_factions = true;
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "strategy") == 0 || strcmp(argv[argIndex], "skill") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))return err;
             if(strcmp(argv[argIndex+1],"") != 0) {
                 if (strcmp(argv[argIndex + 1], "recent") == 0) {
                     only_recent = true;
@@ -2493,7 +2471,7 @@ int main(int argc, char** argv)
         }
         else if (strcmp(argv[argIndex], "no-strategy") == 0 || strcmp(argv[argIndex], "no-skill") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))return err;
             if(strcmp(argv[argIndex+1],"") != 0) {
             	skills.push_back(skill_name_to_id(argv[argIndex + 1]));
             	invert_skills=true;
@@ -2502,7 +2480,7 @@ int main(int argc, char** argv)
         }
         else if (strcmp(argv[argIndex], "prefered-strategy") == 0 || strcmp(argv[argIndex], "prefered-skill") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))return err;
             if(strcmp(argv[argIndex+1],"") != 0) {
 		    if(strcmp(argv[argIndex+1], "recent") == 0)
 		    {
@@ -2517,43 +2495,43 @@ int main(int argc, char** argv)
         }
         else if (strcmp(argv[argIndex], "prefered-factor") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))return err;
             prefered_factor= std::stoi(argv[argIndex + 1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "recent-percent") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))return err;
             recent_percent= std::stoi(argv[argIndex + 1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "effect") == 0 || strcmp(argv[argIndex], "-e") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))return err;
             opt_effects[2].push_back(argv[argIndex + 1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "ye") == 0 || strcmp(argv[argIndex], "yeffect") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))return err;
             opt_effects[0].push_back(argv[argIndex + 1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "ee") == 0 || strcmp(argv[argIndex], "eeffect") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))return err;
             opt_effects[1].push_back(argv[argIndex + 1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "freeze") == 0 || strcmp(argv[argIndex], "-F") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))return err;
             freezed_cards = atoi(argv[argIndex + 1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "-L") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,2))return 1;
+	    if(check_input_amount(argc,argv,argIndex,2))return err;
             min_deck_len = atoi(argv[argIndex + 1]);
             max_deck_len = atoi(argv[argIndex + 2]);
             argIndex += 2;
@@ -2580,13 +2558,13 @@ int main(int argc, char** argv)
         }
         else if (strcmp(argv[argIndex], "prefix") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))return err;
             prefix = argv[argIndex+1];
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "fund") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))return err;
             fund = atoi(argv[argIndex+1]);
             argIndex += 1;
         }
@@ -2619,13 +2597,13 @@ int main(int argc, char** argv)
         }
         else if (strcmp(argv[argIndex], "flexible-iter") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))return err;
             flexible_iter = atoi(argv[argIndex+1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "flexible-turn") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))return err;
             flexible_turn = atoi(argv[argIndex+1]);
             argIndex += 1;
         }
@@ -2651,33 +2629,33 @@ int main(int argc, char** argv)
         }
         else if (strcmp(argv[argIndex], "endgame") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))return err;
             use_fused_card_level = atoi(argv[argIndex+1]);
             argIndex += 1;
         }
 #ifndef NQUEST
         else if (strcmp(argv[argIndex], "quest") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))return err;
             opt_quest = argv[argIndex+1];
             argIndex += 1;
         }
 #endif
         else if (strcmp(argv[argIndex], "threads") == 0 || strcmp(argv[argIndex], "-t") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
-            opt_num_threads = atoi(argv[argIndex+1]);
+	    if(check_input_amount(argc,argv,argIndex,1))return err;
+            pi.opt_num_threads = atoi(argv[argIndex+1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "target") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))return err;
             opt_target_score = argv[argIndex+1];
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "turnlimit") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))return err;
             turn_limit = atoi(argv[argIndex+1]);
             argIndex += 1;
         }
@@ -2688,13 +2666,13 @@ int main(int argc, char** argv)
         }
         else if (strcmp(argv[argIndex], "timeout") == 0) //set timeout in hours. tuo will stop approx. at the given time.
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))return err;
             maximum_time = atof(argv[argIndex+1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "cl") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))return err;
             confidence_level = atof(argv[argIndex+1]);
             argIndex += 1;
         }
@@ -2716,7 +2694,7 @@ int main(int argc, char** argv)
         }
         else if (strcmp(argv[argIndex], "seed") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))return err;
             sim_seed = atoi(argv[argIndex+1]);
             argIndex += 1;
         }
@@ -2730,122 +2708,122 @@ int main(int argc, char** argv)
         }
         else if (strcmp(argv[argIndex], "vip") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))return err;
             opt_vip = argv[argIndex + 1];
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "allow-candidates") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))return err;
             opt_allow_candidates = argv[argIndex + 1];
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "disallow-candidates") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))return err;
             opt_disallow_candidates = argv[argIndex + 1];
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "disallow-recipes") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))return err;
             opt_disallow_recipes = argv[argIndex + 1];
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "hand") == 0)  // set initial hand for test
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))return err;
             opt_hand = argv[argIndex + 1];
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "enemy:hand") == 0)  // set enemies' initial hand for test
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))return err;
             opt_enemy_hand = argv[argIndex + 1];
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "yf") == 0 || strcmp(argv[argIndex], "yfort") == 0)  // set forts
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))return err;
             opt_forts = std::string(argv[argIndex + 1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "yfpool") == 0 || strcmp(argv[argIndex], "yfortpool") == 0)  // set forts
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))return err;
             yfpool = std::stoi(argv[argIndex + 1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "ef") == 0 || strcmp(argv[argIndex], "efort") == 0)  // set enemies' forts
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))return err;
             opt_enemy_forts = std::string(argv[argIndex + 1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "efpool") == 0 || strcmp(argv[argIndex], "efortpool") == 0)  // set forts
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))return err;
             efpool = std::stoi(argv[argIndex + 1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "yd") == 0 || strcmp(argv[argIndex], "ydom") == 0)  // set dominions
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))return err;
             opt_doms = std::string(argv[argIndex + 1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "ed") == 0 || strcmp(argv[argIndex], "edom") == 0)  // set enemies' dominions
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))return err;
             opt_enemy_doms = std::string(argv[argIndex + 1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "sim") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
-            opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), 0u, simulate));
-            if (std::get<0>(opt_todo.back()) < 10) { opt_num_threads = 1; }
+	    if(check_input_amount(argc,argv,argIndex,1))return err;
+            pi.opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), 0u, simulate));
+            if (std::get<0>(pi.opt_todo.back()) < 10) { pi.opt_num_threads = 1; }
             argIndex += 1;
         }
         // climbing tasks
         else if (strcmp(argv[argIndex], "climbex") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,2))return 1;
-            opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 2]), climb));
-            if (std::get<1>(opt_todo.back()) < 10) { opt_num_threads = 1; }
+	    if(check_input_amount(argc,argv,argIndex,2))return err;
+            pi.opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 2]), climb));
+            if (std::get<1>(pi.opt_todo.back()) < 10) { pi.opt_num_threads = 1; }
             opt_do_optimization = true;
             argIndex += 2;
         }
         else if (strcmp(argv[argIndex], "climb") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
-            opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 1]), climb));
-            if (std::get<1>(opt_todo.back()) < 10) { opt_num_threads = 1; }
+	    if(check_input_amount(argc,argv,argIndex,1))return err;
+            pi.opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 1]), climb));
+            if (std::get<1>(pi.opt_todo.back()) < 10) { pi.opt_num_threads = 1; }
             opt_do_optimization = true;
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "climb_forts") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
-            opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 1]), climb_forts));
-            if (std::get<1>(opt_todo.back()) < 10) { opt_num_threads = 1; }
+	    if(check_input_amount(argc,argv,argIndex,1))return err;
+            pi.opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 1]), climb_forts));
+            if (std::get<1>(pi.opt_todo.back()) < 10) { pi.opt_num_threads = 1; }
             argIndex += 1;
         }
         else if ( strcmp(argv[argIndex], "anneal") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,3))return 1;
-            opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 1]), anneal));
+	    if(check_input_amount(argc,argv,argIndex,3))return err;
+            pi.opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 1]), anneal));
             temperature = std::stod(argv[argIndex+2]);
             coolingRate = std::stod(argv[argIndex+3]);
-            if (std::get<1>(opt_todo.back()) < 10) { opt_num_threads = 1; }
+            if (std::get<1>(pi.opt_todo.back()) < 10) { pi.opt_num_threads = 1; }
             opt_do_optimization = true;
             argIndex += 3;
         }
         else if (strcmp(argv[argIndex], "reorder") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
-            opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 1]), reorder));
-            if (std::get<1>(opt_todo.back()) < 10) { opt_num_threads = 1; }
+	    if(check_input_amount(argc,argv,argIndex,1))return err;
+            pi.opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 1]), reorder));
+            if (std::get<1>(pi.opt_todo.back()) < 10) { pi.opt_num_threads = 1; }
             opt_do_reorder = true;
             argIndex += 1;
         }
@@ -2907,54 +2885,54 @@ int main(int argc, char** argv)
                     if (has_value)
                     { std::cerr << " (value is: " << opt_value << ")"; }
                     std::cerr << std::endl;
-                    return 1;
+                    return err;
                 }
             }
         }
         else if (strcmp(argv[argIndex], "debug") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
-            opt_todo.push_back(std::make_tuple(0u, 0u, debug));
-            opt_num_threads = 1;
+	    if(check_input_amount(argc,argv,argIndex,1))return err;
+            pi.opt_todo.push_back(std::make_tuple(0u, 0u, debug));
+            pi.opt_num_threads = 1;
         }
         else if (strcmp(argv[argIndex], "debuguntil") == 0)
         {
             // output the debug info for the first battle that min_score <= score <= max_score.
             // E.g., 0 0: lose; 100 100: win (non-raid); 20 100: at least 20 damage (raid).
-	    if(check_input_amount(argc,argv,argIndex,2))return 1;
-            opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 2]), debuguntil));
-            opt_num_threads = 1;
+	    if(check_input_amount(argc,argv,argIndex,2))return err;
+            pi.opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 2]), debuguntil));
+            pi.opt_num_threads = 1;
             argIndex += 2;
         }
         else
         {
             std::cerr << "Error: Unknown option " << argv[argIndex] << std::endl;
-            return 1;
+            return err;
         }
     }
 
-    Cards all_cards;
-    Decks decks;
+    //Cards pi.all_cards;
+    //Decks decks;
     std::unordered_map<std::string, std::string> bge_aliases;
-    load_skills_set_xml(all_cards, prefix+"data/skills_set.xml", true);
+    load_skills_set_xml(pi.all_cards, prefix+"data/skills_set.xml", true);
     for (unsigned section = 1;
-            load_cards_xml(all_cards, prefix+"data/cards_section_" + to_string(section) + ".xml", false);
+            load_cards_xml(pi.all_cards, prefix+"data/cards_section_" + to_string(section) + ".xml", false);
             ++ section);
-    all_cards.organize();
-    load_levels_xml(all_cards, prefix+"data/levels.xml", true);
-    all_cards.fix_dominion_recipes();
+    pi.all_cards.organize();
+    load_levels_xml(pi.all_cards, prefix+"data/levels.xml", true);
+    pi.all_cards.fix_dominion_recipes();
     for (const auto & suffix: fn_suffix_list)
     {
-        load_decks_xml(decks, all_cards, prefix+"data/missions" + suffix + ".xml", prefix+"data/raids" + suffix + ".xml", suffix.empty());
-        load_recipes_xml(all_cards, prefix+"data/fusion_recipes_cj2" + suffix + ".xml", suffix.empty());
-        read_card_abbrs(all_cards, prefix+"data/cardabbrs" + suffix + ".txt");
+        load_decks_xml(pi.decks, pi.all_cards, prefix+"data/missions" + suffix + ".xml", prefix+"data/raids" + suffix + ".xml", suffix.empty());
+        load_recipes_xml(pi.all_cards, prefix+"data/fusion_recipes_cj2" + suffix + ".xml", suffix.empty());
+        read_card_abbrs(pi.all_cards, prefix+"data/cardabbrs" + suffix + ".txt");
     }
     for (const auto & suffix: fn_suffix_list)
     {
-        load_custom_decks(decks, all_cards, prefix+"data/customdecks" + suffix + ".txt");
-        map_keys_to_set(read_custom_cards(all_cards, prefix+"data/allowed_candidates" + suffix + ".txt", false), allowed_candidates);
-        map_keys_to_set(read_custom_cards(all_cards, prefix+"data/disallowed_candidates" + suffix + ".txt", false), disallowed_candidates);
-        map_keys_to_set(read_custom_cards(all_cards, prefix+"data/disallowed_recipes" + suffix + ".txt", false), disallowed_recipes);
+        load_custom_decks(pi.decks, pi.all_cards, prefix+"data/customdecks" + suffix + ".txt");
+        map_keys_to_set(read_custom_cards(pi.all_cards, prefix+"data/allowed_candidates" + suffix + ".txt", false), allowed_candidates);
+        map_keys_to_set(read_custom_cards(pi.all_cards, prefix+"data/disallowed_candidates" + suffix + ".txt", false), disallowed_candidates);
+        map_keys_to_set(read_custom_cards(pi.all_cards, prefix+"data/disallowed_recipes" + suffix + ".txt", false), disallowed_recipes);
     }
 
     read_bge_aliases(bge_aliases,prefix+ "data/bges.txt");
@@ -2977,13 +2955,13 @@ int main(int argc, char** argv)
         std::map<unsigned, unsigned> _owned_cards;
         for (const auto & oc_str: opt_owned_cards_str_list)
         {
-            read_owned_cards(all_cards, _owned_cards, oc_str);
+            read_owned_cards(pi.all_cards, _owned_cards, oc_str);
         }
 
         // keep only one copy of alpha dominion
         for (auto owned_it = _owned_cards.begin(); owned_it != _owned_cards.end(); )
         {
-            const Card* owned_card = all_cards.by_id(owned_it->first);
+            const Card* owned_card = pi.all_cards.by_id(owned_it->first);
             bool need_remove = (!owned_it->second);
             if (!need_remove && (owned_card->m_category == CardCategory::dominion_alpha))
             {
@@ -3019,16 +2997,16 @@ int main(int argc, char** argv)
     }
 
     // parse BGEs
-    opt_bg_effects[0].fill(0);
-    opt_bg_effects[1].fill(0);
+    pi.opt_bg_effects[0].fill(0);
+    pi.opt_bg_effects[1].fill(0);
     for (int player = 2; player >= 0; -- player)
     {
         for (auto && opt_effect: opt_effects[player])
         {
             std::unordered_set<std::string> used_bge_aliases;
-            if (!parse_bge(opt_effect, player, bge_aliases, opt_bg_effects[0], opt_bg_effects[1], opt_bg_skills[0], opt_bg_skills[1], used_bge_aliases))
+            if (!parse_bge(opt_effect, player, bge_aliases, pi.opt_bg_effects[0], pi.opt_bg_effects[1], pi.opt_bg_skills[0], pi.opt_bg_skills[1], used_bge_aliases))
             {
-                return 1;
+                return err;
             }
         }
     }
@@ -3037,7 +3015,7 @@ int main(int argc, char** argv)
     // parse allowed candidates from options
     try
     {
-        auto && id_marks = string_to_ids(all_cards, opt_allow_candidates, "allowed-candidates");
+        auto && id_marks = string_to_ids(pi.all_cards, opt_allow_candidates, "allowed-candidates");
         for (const auto & cid : id_marks.first)
         {
             allowed_candidates.insert(cid);
@@ -3046,13 +3024,13 @@ int main(int argc, char** argv)
     catch(const std::runtime_error& e)
     {
         std::cerr << "Error: allow-candidates " << opt_allow_candidates << ": " << e.what() << std::endl;
-        return 1;
+        return err;
     }
 
     // parse disallowed candidates from options
     try
     {
-        auto && id_marks = string_to_ids(all_cards, opt_disallow_candidates, "disallowed-candidates");
+        auto && id_marks = string_to_ids(pi.all_cards, opt_disallow_candidates, "disallowed-candidates");
         for (const auto & cid : id_marks.first)
         {
             disallowed_candidates.insert(cid);
@@ -3061,23 +3039,23 @@ int main(int argc, char** argv)
     catch(const std::runtime_error& e)
     {
         std::cerr << "Error: disallow-candidates " << opt_disallow_candidates << ": " << e.what() << std::endl;
-        return 1;
+        return err;
     }
 
     // parse & drop disallowed recipes
     try
     {
-        auto && id_dis_recipes = string_to_ids(all_cards, opt_disallow_recipes, "disallowed-recipes");
+        auto && id_dis_recipes = string_to_ids(pi.all_cards, opt_disallow_recipes, "disallowed-recipes");
         for (auto & cid : id_dis_recipes.first)
-        { all_cards.erase_fusion_recipe(cid); }
+        { pi.all_cards.erase_fusion_recipe(cid); }
     }
     catch(const std::runtime_error& e)
     {
         std::cerr << "Error: disallow-recipes " << opt_disallow_recipes << ": " << e.what() << std::endl;
-        return 1;
+        return err;
     }
     for (auto cid : disallowed_recipes)
-    { all_cards.erase_fusion_recipe(cid); }
+    { pi.all_cards.erase_fusion_recipe(cid); }
 
 #ifndef NQUEST
     if (!opt_quest.empty())
@@ -3101,7 +3079,7 @@ int main(int argc, char** argv)
                 if (skill_id == Skill::no_skill)
                 {
                     std::cerr << "Error: Expect skill in quest \"" << opt_quest << "\".\n";
-                    return 1;
+                    return err;
                 }
                 quest.quest_type = type_str == "su" ? QuestType::skill_use : QuestType::skill_damage;
                 quest.quest_key = skill_id;
@@ -3132,7 +3110,7 @@ int main(int argc, char** argv)
                     if (quest.quest_key == 0)
                     {
                         std::cerr << "Error: Expect assault, structure or faction in quest \"" << opt_quest << "\".\n";
-                        return 1;
+                        return err;
                     }
                 }
             }
@@ -3144,14 +3122,14 @@ int main(int argc, char** argv)
                 char mark;
                 try
                 {
-                    parse_card_spec(all_cards, key_str, card_id, card_num, num_sign, mark);
+                    parse_card_spec(pi.all_cards, key_str, card_id, card_num, num_sign, mark);
                     quest.quest_type = QuestType::card_survival;
                     quest.quest_key = card_id;
                 }
                 catch (const std::runtime_error& e)
                 {
                     std::cerr << "Error: Expect a card in quest \"" << opt_quest << "\".\n";
-                    return 1;
+                    return err;
                 }
             }
             else if (type_str == "suoc" && tokens.size() >= 4)
@@ -3160,7 +3138,7 @@ int main(int argc, char** argv)
                 if (skill_id == Skill::no_skill)
                 {
                     std::cerr << "Error: Expect skill in quest \"" << opt_quest << "\".\n";
-                    return 1;
+                    return err;
                 }
                 unsigned card_id;
                 unsigned card_num;
@@ -3168,7 +3146,7 @@ int main(int argc, char** argv)
                 char mark;
                 try
                 {
-                    parse_card_spec(all_cards, boost::to_lower_copy(tokens[3]), card_id, card_num, num_sign, mark);
+                    parse_card_spec(pi.all_cards, boost::to_lower_copy(tokens[3]), card_id, card_num, num_sign, mark);
                     quest_index += 1;
                     quest.quest_type = QuestType::skill_use;
                     quest.quest_key = skill_id;
@@ -3177,7 +3155,7 @@ int main(int argc, char** argv)
                 catch (const std::runtime_error& e)
                 {
                     std::cerr << "Error: Expect a card in quest \"" << opt_quest << "\".\n";
-                    return 1;
+                    return err;
                 }
             }
             else
@@ -3207,12 +3185,12 @@ int main(int argc, char** argv)
         catch (const boost::bad_lexical_cast & e)
         {
             std::cerr << "Error: Expect a number in quest \"" << opt_quest << "\".\n";
-            return 1;
+            return err;
         }
         catch (const std::runtime_error& e)
         {
             std::cerr << "Error: quest " << opt_quest << ": " << e.what() << std::endl;
-            return 1;
+            return err;
         }
     }
 #endif
@@ -3220,12 +3198,12 @@ int main(int argc, char** argv)
     //std::string your_deck_name{argv[1]};
     std::string your_deck_list{argv[1]};
     std::string enemy_deck_list{argv[2]};
-    auto && your_deck_list_parsed = parse_deck_list(your_deck_list, decks);
-    auto && enemy_deck_list_parsed = parse_deck_list(enemy_deck_list, decks);
+    auto && your_deck_list_parsed = parse_deck_list(your_deck_list, pi.decks);
+    auto && enemy_deck_list_parsed = parse_deck_list(enemy_deck_list, pi.decks);
 
     //Deck* your_deck{nullptr};
-    std::vector<Deck*> your_decks;
-    std::vector<Deck*> enemy_decks;
+    //std::vector<Deck*> pi.your_decks;
+    //std::vector<Deck*> pi.enemy_decks;
     std::vector<long double> your_decks_factors;
     std::vector<long double> enemy_decks_factors;
     for(auto deck_parsed : your_deck_list_parsed)
@@ -3233,17 +3211,17 @@ int main(int argc, char** argv)
         Deck* your_deck{nullptr};
         try
         {
-            your_deck = find_deck(decks, all_cards, deck_parsed.first)->clone();
+            your_deck = find_deck(pi.decks, pi.all_cards, deck_parsed.first)->clone();
         }
         catch(const std::runtime_error& e)
         {
             std::cerr << "Error: Deck " <<  deck_parsed.first << ": " << e.what() << std::endl;
-            return 1;
+            return err;
         }
         if (your_deck == nullptr)
         {
             std::cerr << "Error: Invalid attack deck name/hash " << deck_parsed.first << ".\n";
-            return 1;
+            return err;
         }
         else if (!your_deck->variable_cards.empty())
         {
@@ -3258,7 +3236,7 @@ int main(int argc, char** argv)
         if (your_deck == nullptr)
         {
             usage(argc, argv);
-            return 1;
+            return err;
             //return 255;
         }
 
@@ -3275,7 +3253,7 @@ int main(int argc, char** argv)
             catch(const std::runtime_error& e)
             {
                 std::cerr << "Error: yfort " << opt_forts << ": " << e.what() << std::endl;
-                return 1;
+                return err;
             }
         }
         if (!opt_doms.empty())
@@ -3287,7 +3265,7 @@ int main(int argc, char** argv)
             catch(const std::runtime_error& e)
             {
                 std::cerr << "Error: ydom " << opt_doms << ": " << e.what() << std::endl;
-                return 1;
+                return err;
             }
         }
 
@@ -3298,7 +3276,7 @@ int main(int argc, char** argv)
         catch(const std::runtime_error& e)
         {
             std::cerr << "Error: vip " << opt_vip << ": " << e.what() << std::endl;
-            return 1;
+            return err;
         }
 
         try
@@ -3308,10 +3286,10 @@ int main(int argc, char** argv)
         catch(const std::runtime_error& e)
         {
             std::cerr << "Error: hand " << opt_hand << ": " << e.what() << std::endl;
-            return 1;
+            return err;
         }
 
-        your_decks.push_back(your_deck);
+        pi.your_decks.push_back(your_deck);
         your_decks_factors.push_back(deck_parsed.second);
     }
 
@@ -3322,18 +3300,18 @@ int main(int argc, char** argv)
         Deck* enemy_deck{nullptr};
         try
         {
-            enemy_deck = find_deck(decks, all_cards, deck_parsed.first);
+            enemy_deck = find_deck(pi.decks, pi.all_cards, deck_parsed.first);
         }
         catch(const std::runtime_error& e)
         {
             std::cerr << "Error: Deck " << deck_parsed.first << ": " << e.what() << std::endl;
-            return 1;
+            return err;
         }
         if (enemy_deck == nullptr)
         {
             std::cerr << "Error: Invalid defense deck name/hash " << deck_parsed.first << ".\n";
             usage(argc, argv);
-            return 1;
+            return err;
         }
         if (optimization_mode == OptimizationMode::notset)
         {
@@ -3343,7 +3321,7 @@ int main(int argc, char** argv)
             }
             else if (enemy_deck->decktype == DeckType::campaign)
             {
-                gamemode = surge;
+                pi.gamemode = surge;
                 optimization_mode = OptimizationMode::campaign;
             }
             else
@@ -3361,7 +3339,7 @@ int main(int argc, char** argv)
             catch(const std::runtime_error& e)
             {
                 std::cerr << "Error: edom " << opt_enemy_doms << ": " << e.what() << std::endl;
-                return 1;
+                return err;
             }
         }
         if (!opt_enemy_forts.empty())
@@ -3377,7 +3355,7 @@ int main(int argc, char** argv)
             catch(const std::runtime_error& e)
             {
                 std::cerr << "Error: efort " << opt_enemy_forts << ": " << e.what() << std::endl;
-                return 1;
+                return err;
             }
         }
         try
@@ -3387,23 +3365,23 @@ int main(int argc, char** argv)
         catch(const std::runtime_error& e)
         {
             std::cerr << "Error: enemy:hand " << opt_enemy_hand << ": " << e.what() << std::endl;
-            return 1;
+            return err;
         }
-        enemy_decks.push_back(enemy_deck);
+        pi.enemy_decks.push_back(enemy_deck);
         enemy_decks_factors.push_back(deck_parsed.second);
     }
-    std::vector<long double> factors(your_decks_factors.size()*enemy_decks_factors.size());
-    for(unsigned i =0; i < factors.size();++i)
+    pi.factors.reserve(your_decks_factors.size()*enemy_decks_factors.size());
+    for(unsigned i =0; i < pi.factors.size();++i)
     {
-        factors[i] = your_decks_factors[i/enemy_decks_factors.size()]*enemy_decks_factors[i%enemy_decks_factors.size()];
+        pi.factors[i] = your_decks_factors[i/enemy_decks_factors.size()]*enemy_decks_factors[i%enemy_decks_factors.size()];
     }
-    if((opt_do_optimization || opt_do_reorder) && your_decks.size() != 1) {
+    if((opt_do_optimization || opt_do_reorder) &&  pi.your_decks.size() != 1) {
         std::cerr << "Optimization only works with a single deck" << std::endl;
-        return 1;
+        return err;
     }
     if(opt_do_optimization || opt_do_reorder)  // => your_decks.site()==1
     {
-        auto your_deck = your_decks[0];
+        auto your_deck = pi.your_decks[0];
 
         if (opt_keep_commander)
         {
@@ -3444,14 +3422,14 @@ int main(int argc, char** argv)
 
     if (debug_print >= 0)
     {
-        for (unsigned i(0); i < your_decks.size(); ++i)
+        for (unsigned i(0); i < pi.your_decks.size(); ++i)
         {
-            auto your_deck = your_decks[i];
+            auto your_deck = pi.your_decks[i];
             std::cout << "Your Deck:" << your_decks_factors[i] << ": "<< (debug_print > 0 ? your_deck->long_description() : your_deck->medium_description()) << std::endl;
         }
         for (unsigned bg_effect = PassiveBGE::no_bge; bg_effect < PassiveBGE::num_passive_bges; ++bg_effect)
         {
-            auto bge_value = opt_bg_effects[0][bg_effect];
+            auto bge_value = pi.opt_bg_effects[0][bg_effect];
             if (!bge_value)
                 continue;
             std::cout << "Your BG Effect: " << passive_bge_names[bg_effect];
@@ -3459,20 +3437,20 @@ int main(int argc, char** argv)
                 std::cout << " " << bge_value;
             std::cout << std::endl;
         }
-        for (const auto & bg_skill: opt_bg_skills[0])
+        for (const auto & bg_skill: pi.opt_bg_skills[0])
         {
-            std::cout << "Your BG Skill: " << skill_description(all_cards, bg_skill) << std::endl;
+            std::cout << "Your BG Skill: " << skill_description(pi.all_cards, bg_skill) << std::endl;
         }
 
-        for (unsigned i(0); i < enemy_decks.size(); ++i)
+        for (unsigned i(0); i < pi.enemy_decks.size(); ++i)
         {
-            auto enemy_deck = enemy_decks[i];
+            auto enemy_deck = pi.enemy_decks[i];
             std::cout << "Enemy's Deck:" << enemy_decks_factors[i] << ": "
                 << (debug_print > 0 ? enemy_deck->long_description() : enemy_deck->medium_description()) << std::endl;
         }
         for (unsigned bg_effect = PassiveBGE::no_bge; bg_effect < PassiveBGE::num_passive_bges; ++bg_effect)
         {
-            auto bge_value = opt_bg_effects[1][bg_effect];
+            auto bge_value = pi.opt_bg_effects[1][bg_effect];
             if (!bge_value)
                 continue;
             std::cout << "Enemy's BG Effect: " << passive_bge_names[bg_effect];
@@ -3480,45 +3458,67 @@ int main(int argc, char** argv)
                 std::cout << " " << bge_value;
             std::cout << std::endl;
         }
-        for (const auto & bg_skill: opt_bg_skills[1])
+        for (const auto & bg_skill: pi.opt_bg_skills[1])
         {
-            std::cout << "Enemy's BG Skill: " << skill_description(all_cards, bg_skill) << std::endl;
+            std::cout << "Enemy's BG Skill: " << skill_description(pi.all_cards, bg_skill) << std::endl;
         }
     }
-    if (enemy_decks.size() == 1)
+    if (pi.enemy_decks.size() == 1)
     {
-        auto enemy_deck = enemy_decks[0];
+        auto enemy_deck = pi.enemy_decks[0];
         for (auto x_mult_ss : enemy_deck->effects)
         {
             if (debug_print >= 0)
             {
                 std::cout << "Enemy's X-Mult BG Skill (effective X = round_up[X * " << enemy_deck->level << "]): "
-                    << skill_description(all_cards, x_mult_ss);
+                    << skill_description(pi.all_cards, x_mult_ss);
                 if (x_mult_ss.x) { std::cout << " (eff. X = " << ceil(x_mult_ss.x * enemy_deck->level) << ")"; }
                 std::cout << std::endl;
             }
-            opt_bg_skills[1].push_back({x_mult_ss.id,
+            pi.opt_bg_skills[1].push_back({x_mult_ss.id,
                     (unsigned)ceil(x_mult_ss.x * enemy_deck->level),
                     x_mult_ss.y, x_mult_ss.n, x_mult_ss.c,
                     x_mult_ss.s, x_mult_ss.s2, x_mult_ss.all});
         }
     }
+    return pi;
+}
 
-    Process p(opt_num_threads, all_cards, decks, your_decks, enemy_decks, factors, gamemode,
+#ifndef TEST
+int main(int argc, char** argv)
+{
+#ifndef NTIMER
+    boost::timer::auto_cpu_timer t;
+#endif
+    start_time = std::chrono::system_clock::now();
+    if (argc == 2 && strcmp(argv[1], "-version") == 0)
+    {
+        std::cout << "Tyrant Unleashed Optimizer " << TYRANT_OPTIMIZER_VERSION << std::endl;
+        return 0;
+    }
+    if (argc <= 2)
+    {
+        usage(argc, argv);
+        return 255;
+    }
+	  init();
+    ParsedInput pi(parse_input(argc,argv));
+    if(pi.err)return 1;
+    Process p(pi.opt_num_threads, pi.all_cards, pi.decks, pi.your_decks, pi.enemy_decks, pi.factors, pi.gamemode,
 #ifndef NQUEST
             quest,
 #endif
-            opt_bg_effects[0], opt_bg_effects[1], opt_bg_skills[0], opt_bg_skills[1]);
+            pi.opt_bg_effects[0], pi.opt_bg_effects[1], pi.opt_bg_skills[0], pi.opt_bg_skills[1]);
 
-    auto your_deck = your_decks[0];
-    for (auto op: opt_todo)
+    auto your_deck = pi.your_decks[0];
+    for (auto op: pi.opt_todo)
     {
         switch(std::get<2>(op))
         {
             case noop:
                 break;
             case simulate: {
-                               EvaluatedResults results = { EvaluatedResults::first_type(enemy_decks.size()*your_decks.size()), 0 };
+                               EvaluatedResults results = { EvaluatedResults::first_type(pi.enemy_decks.size()*pi.your_decks.size()), 0 };
                                results = p.evaluate(std::get<0>(op), results);
                                print_results(results, p.factors);
                                break;
@@ -3573,7 +3573,7 @@ int main(int argc, char** argv)
             case debug: {
                             ++ debug_print;
                             debug_str.clear();
-                            EvaluatedResults results{EvaluatedResults::first_type(enemy_decks.size()), 0};
+                            EvaluatedResults results{EvaluatedResults::first_type(pi.enemy_decks.size()), 0};
                             results = p.evaluate(1, results);
                             print_results(results, p.factors);
                             -- debug_print;
@@ -3585,7 +3585,7 @@ int main(int argc, char** argv)
                                  while (true)
                                  {
                                      debug_str.clear();
-                                     EvaluatedResults results{EvaluatedResults::first_type(enemy_decks.size()), 0};
+                                     EvaluatedResults results{EvaluatedResults::first_type(pi.enemy_decks.size()), 0};
                                      results = p.evaluate(1, results);
                                      auto score = compute_score(results, p.factors);
                                      if (score.points >= std::get<0>(op) && score.points <= std::get<1>(op))
@@ -3603,3 +3603,4 @@ int main(int argc, char** argv)
     }
     return 0;
 }
+#endif

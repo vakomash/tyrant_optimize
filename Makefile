@@ -22,6 +22,9 @@ main:
 
 all: main debug
 
+test:
+		$(MAKE) -f make/Makefile-test.${OS} all
+
 debug:
 		$(MAKE) -f make/Makefile-debug.${OS} all
 
@@ -31,6 +34,7 @@ ahk: SimpleTUOptimizeStarter.ahk
 clean:
 		$(MAKE) -f make/Makefile.${OS} clean
 		$(MAKE) -f make/Makefile-debug.${OS} clean
+		$(MAKE) -f make/Makefile-test.${OS} clean
 commit:
 		-git add .
 		-git commit

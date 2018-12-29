@@ -288,6 +288,7 @@ std::string card_description(const Cards& cards, const Card* c)
 //------------------------------------------------------------------------------
 std::string CardStatus::description() const
 {
+    _DEBUG_MSG(0,"decritpion");
     std::string desc = "P" + to_string(m_player) + " ";
     switch(m_card->m_type)
     {
@@ -297,6 +298,7 @@ std::string CardStatus::description() const
         case CardType::num_cardtypes: assert(false); break;
     }
     desc += "[" + m_card->m_name;
+    _DEBUG_MSG(0,"decritpion1");
     switch (m_card->m_type)
     {
         case CardType::assault:
@@ -320,6 +322,7 @@ std::string CardStatus::description() const
             assert(false);
             break;
     }
+    _DEBUG_MSG(0,"decritpion2");
     if (m_delay) { desc += " cd:" + to_string(m_delay); }
     // Status w/o value
     if (m_jammed) { desc += ", jammed"; }
@@ -340,6 +343,7 @@ std::string CardStatus::description() const
     if (m_marked) { desc += ", marked " + to_string(m_marked); }
     if (m_diseased) { desc += ", diseased " + to_string(m_diseased); }
     //    if(m_step != CardStep::none) { desc += ", Step " + to_string(static_cast<int>(m_step)); }
+    _DEBUG_MSG(0,"decritpion3");
     //APN
     const Skill::Trigger s_triggers[] = { Skill::Trigger::play, Skill::Trigger::activate, Skill::Trigger::death , Skill::Trigger::attacked};
     for (const Skill::Trigger& trig: s_triggers)
@@ -352,6 +356,7 @@ std::string CardStatus::description() const
                 (trig == Skill::Trigger::death) ? m_card->m_skills_on_death :
                 std::vector<SkillSpec>());
 
+    _DEBUG_MSG(0,"decritpion4");
         // emulate Berserk/Counter by status Enraged/Entrapped unless such skills exist (only for normal skill triggering)
         if (trig == Skill::Trigger::activate)
         {
@@ -366,11 +371,16 @@ std::string CardStatus::description() const
                 card_skills.emplace_back(ss);
             }
         }
+    _DEBUG_MSG(0,"decritpion11");
         for (const auto& ss : card_skills)
         {
+    _DEBUG_MSG(0,"decritpion22");
             std::string skill_desc;
+    _DEBUG_MSG(0,"decritpion55");
             if (m_evolved_skill_offset[ss.id]) { skill_desc += "->" + skill_names[ss.id + m_evolved_skill_offset[ss.id]]; }
+    _DEBUG_MSG(0,"decritpion5");
             if (m_enhanced_value[ss.id]) { skill_desc += " +" + to_string(m_enhanced_value[ss.id]); }
+    _DEBUG_MSG(0,"decritpion6");
             if (!skill_desc.empty())
             {
                 desc += ", " + (
@@ -379,8 +389,10 @@ std::string CardStatus::description() const
                         (trig == Skill::Trigger::death) ? "(On Death)" :
                         std::string("")) + skill_names[ss.id] + skill_desc;
             }
+    _DEBUG_MSG(0,"decritpion6");
         }
     }
+    _DEBUG_MSG(0,"sus_description");
     return desc + "]";
 }
 //------------------------------------------------------------------------------
@@ -3108,6 +3120,7 @@ Results<uint64_t> evaluate_sim_result(Field* fd)
 //------------------------------------------------------------------------------
 Results<uint64_t> play(Field* fd,bool skip_init)
 {
+    _DEBUG_MSG(0, "%u",fd->flexible_iter);
     if(!skip_init){ //>>> start skip init
         fd->players[0]->commander.m_player = 0;
         fd->players[1]->commander.m_player = 1;
@@ -3153,7 +3166,7 @@ Results<uint64_t> play(Field* fd,bool skip_init)
 
             fd->current_phase = Field::playcard_phase;
             // Initialize stuff, remove dead cards
-            _DEBUG_MSG(1, "------------------------------------------------------------------------\n"
+            _DEBUG_MSG(0, "------------------------------------------------------------------------\n"
                     "TURN %u begins for %s\n", fd->turn, status_description(&fd->tap->commander).c_str());
 
             // reduce timers & perform triggered skills (like Summon)
