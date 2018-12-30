@@ -25,9 +25,9 @@ before_install:
 install:
   - source ./build/${TUO_TARGET}/build.sh
 script:
-  - echo "NOP"
-before_deploy:
   - ./update_xml.sh
+  - source ./build/${TUO_TARGET}/test.sh
+before_deploy:
   - source build/${TUO_TARGET}/package.sh
 deploy:
   provider: releases

@@ -20,7 +20,7 @@ endif
 main:
 		$(MAKE) -f make/Makefile.${OS} all
 
-all: main debug
+all: main debug test
 
 test:
 		$(MAKE) -f make/Makefile-test.${OS} all
