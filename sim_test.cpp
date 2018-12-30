@@ -56,8 +56,8 @@ inline void check_win(Result result) {
       ,result.second);
     //BOOST_CHECK(100==result.points);
 }
-inline void check_win_sim(const char* your_deck, const char* enemy_deck) {
-    const char* argv[] = {"tuo",your_deck,enemy_deck,"sim", "10"}; //TODO hardcoede 10 iterations?
+inline void check_win_sim(const char* your_deck, const char* enemy_deck, const char* bge="") {
+    const char* argv[] = {"tuo",your_deck,enemy_deck,"-e",bge,"sim", "10"}; //TODO hardcoded 10 iterations?
     Result result(run_sim(sizeof(argv)/sizeof(*argv),argv));
     check_win(result);
 }
@@ -80,7 +80,7 @@ BOOST_AUTO_TEST_SUITE_END()
 BOOST_AUTO_TEST_SUITE(test_whole_decks)
 BOOST_AUTO_TEST_CASE(test_m142_m1)
 {
-    check_win_sim("Mission#2","Mission#1");
+    check_win_sim("Mission#142","Mission#1","Strike 10");
 }
 BOOST_AUTO_TEST_SUITE_END()
 #endif
