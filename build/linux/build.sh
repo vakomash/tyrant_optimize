@@ -2,7 +2,9 @@
 
 set -xue
 #$TRAVIS_TAG-build-$TRAVIS_BUILD_NUMBER
-cmake . -Bbuild-dir -DVERSION:STRING="${TRAVIS_TAG}-build-${TRAVIS_BUILD_NUMBER}"
-cmake --build build-dir
+#cmake . -Bbuild-dir -DVERSION:STRING="${TRAVIS_TAG}-build-${TRAVIS_BUILD_NUMBER}"
+#cmake --build build-dir
+
+make debug
 
 set +xue

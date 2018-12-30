@@ -11,6 +11,12 @@ matrix:
     dist: trusty
     sudo: required
     compiler: gcc
+  - env:
+    - TUO_PLATFORM='linuxXX'
+    os: linux
+    dist: trusty
+    sudo: required
+    compiler: gcc
 
 before_install:
   - TUO_TARGET="${TUO_PLATFORM::${#TUO_PLATFORM}-2}"
@@ -39,3 +45,5 @@ deploy:
   skip_cleanup: true
   on:
     tags: true
+    branch: merged
+    condition: "$TUO_TARGET = windows"
