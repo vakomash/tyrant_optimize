@@ -3610,7 +3610,6 @@ int main(int argc,char** argv)
     }
 	init();
   run(argc,argv);
-  run(argc,argv);
   return 0;
 }
 #endif
