@@ -106,7 +106,7 @@ namespace {
     bool invert_skills{false};
     std::vector<Skill::Skill> prefered_skills;
     unsigned prefered_factor{3};
-	
+
 	#if defined(ANDROID) || defined(__ANDROID__)
 	JNIEnv *envv;
     jobject objv;
@@ -167,7 +167,6 @@ void init()
     prefered_factor=3;
 }
 
-int main(int argc, char** argv);
 #if defined(ANDROID) || defined(__ANDROID__)
 extern "C" JNIEXPORT void
 
@@ -222,11 +221,11 @@ Java_de_neuwirthinformatik_Alexander_mTUO_TUOIntentService_callMain(
         cparam[i] = ((*env).GetStringUTFChars( strs[i], NULL));
 		param[i] = const_cast<char*>(cparam[i]);
     }
-	
+
     main(stringCount,param);
     std::cout << std::flush;
     __android_log_write(ANDROID_LOG_DEBUG, "TUO_TUO", "END");
-	
+
 	for (int i=0; i<stringCount; i++) {
 		env->ReleaseStringUTFChars(strs[i], cparam[i]);
     }
@@ -2132,7 +2131,7 @@ void print_available_effects()
 bool check_input_amount(int argc, char** argv, int argIndex,int number)
 {
 	if(argc <=argIndex+number)
-	{	
+	{
 		std::cerr << argv[argIndex] << " needs " << number << " paramters" <<std::endl;
 		return true;
 	}
@@ -2141,7 +2140,7 @@ bool check_input_amount(int argc, char** argv, int argIndex,int number)
 void input_error(std::string msg)
 {
 	std::cerr << msg << std::endl;
-	exit(EXIT_FAILURE);	
+	exit(EXIT_FAILURE);
 }
 void usage(int argc, char** argv)
 {
@@ -2340,23 +2339,9 @@ bool parse_bge(
     return true;
 }
 
-int main(int argc, char** argv)
+FinalResults<long double> run(int argc, char** argv)
 {
-#ifndef NTIMER
-    boost::timer::auto_cpu_timer t;
-#endif
-    start_time = std::chrono::system_clock::now();
-    if (argc == 2 && strcmp(argv[1], "-version") == 0)
-    {
-        std::cout << "Tyrant Unleashed Optimizer " << TYRANT_OPTIMIZER_VERSION << std::endl;
-        return 0;
-    }
-    if (argc <= 2)
-    {
-        usage(argc, argv);
-        return 255;
-    }
-	init();
+    FinalResults<long double> fr;
     unsigned opt_num_threads(4);
     DeckStrategy::DeckStrategy opt_your_strategy(DeckStrategy::random);
     DeckStrategy::DeckStrategy opt_enemy_strategy(DeckStrategy::random);
@@ -2466,7 +2451,7 @@ int main(int argc, char** argv)
         }
         else if (strcmp(argv[argIndex], "mono") == 0 || strcmp(argv[argIndex], "-m") == 0 || strcmp(argv[argIndex], "factions") == 0 || strcmp(argv[argIndex], "-f") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
             if(strcmp(argv[argIndex+1],"") != 0) {
                 factions.push_back(faction_name_to_id(argv[argIndex + 1]));
             }
@@ -2474,14 +2459,14 @@ int main(int argc, char** argv)
         }
         else if (strcmp(argv[argIndex], "no-mono") == 0 || strcmp(argv[argIndex], "no-factions") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
             factions.push_back(faction_name_to_id(argv[argIndex + 1]));
             invert_factions = true;
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "strategy") == 0 || strcmp(argv[argIndex], "skill") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
             if(strcmp(argv[argIndex+1],"") != 0) {
                 if (strcmp(argv[argIndex + 1], "recent") == 0) {
                     only_recent = true;
@@ -2493,7 +2478,7 @@ int main(int argc, char** argv)
         }
         else if (strcmp(argv[argIndex], "no-strategy") == 0 || strcmp(argv[argIndex], "no-skill") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
             if(strcmp(argv[argIndex+1],"") != 0) {
             	skills.push_back(skill_name_to_id(argv[argIndex + 1]));
             	invert_skills=true;
@@ -2502,7 +2487,7 @@ int main(int argc, char** argv)
         }
         else if (strcmp(argv[argIndex], "prefered-strategy") == 0 || strcmp(argv[argIndex], "prefered-skill") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
             if(strcmp(argv[argIndex+1],"") != 0) {
 		    if(strcmp(argv[argIndex+1], "recent") == 0)
 		    {
@@ -2517,43 +2502,43 @@ int main(int argc, char** argv)
         }
         else if (strcmp(argv[argIndex], "prefered-factor") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
             prefered_factor= std::stoi(argv[argIndex + 1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "recent-percent") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
             recent_percent= std::stoi(argv[argIndex + 1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "effect") == 0 || strcmp(argv[argIndex], "-e") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
             opt_effects[2].push_back(argv[argIndex + 1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "ye") == 0 || strcmp(argv[argIndex], "yeffect") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
             opt_effects[0].push_back(argv[argIndex + 1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "ee") == 0 || strcmp(argv[argIndex], "eeffect") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
             opt_effects[1].push_back(argv[argIndex + 1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "freeze") == 0 || strcmp(argv[argIndex], "-F") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
             freezed_cards = atoi(argv[argIndex + 1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "-L") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,2))return 1;
+	    if(check_input_amount(argc,argv,argIndex,2))exit(1);
             min_deck_len = atoi(argv[argIndex + 1]);
             max_deck_len = atoi(argv[argIndex + 2]);
             argIndex += 2;
@@ -2580,13 +2565,13 @@ int main(int argc, char** argv)
         }
         else if (strcmp(argv[argIndex], "prefix") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
             prefix = argv[argIndex+1];
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "fund") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
             fund = atoi(argv[argIndex+1]);
             argIndex += 1;
         }
@@ -2619,13 +2604,13 @@ int main(int argc, char** argv)
         }
         else if (strcmp(argv[argIndex], "flexible-iter") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
             flexible_iter = atoi(argv[argIndex+1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "flexible-turn") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
             flexible_turn = atoi(argv[argIndex+1]);
             argIndex += 1;
         }
@@ -2651,33 +2636,33 @@ int main(int argc, char** argv)
         }
         else if (strcmp(argv[argIndex], "endgame") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
             use_fused_card_level = atoi(argv[argIndex+1]);
             argIndex += 1;
         }
 #ifndef NQUEST
         else if (strcmp(argv[argIndex], "quest") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
             opt_quest = argv[argIndex+1];
             argIndex += 1;
         }
 #endif
         else if (strcmp(argv[argIndex], "threads") == 0 || strcmp(argv[argIndex], "-t") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
             opt_num_threads = atoi(argv[argIndex+1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "target") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
             opt_target_score = argv[argIndex+1];
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "turnlimit") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
             turn_limit = atoi(argv[argIndex+1]);
             argIndex += 1;
         }
@@ -2688,13 +2673,13 @@ int main(int argc, char** argv)
         }
         else if (strcmp(argv[argIndex], "timeout") == 0) //set timeout in hours. tuo will stop approx. at the given time.
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
             maximum_time = atof(argv[argIndex+1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "cl") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
             confidence_level = atof(argv[argIndex+1]);
             argIndex += 1;
         }
@@ -2716,7 +2701,7 @@ int main(int argc, char** argv)
         }
         else if (strcmp(argv[argIndex], "seed") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
             sim_seed = atoi(argv[argIndex+1]);
             argIndex += 1;
         }
@@ -2730,79 +2715,79 @@ int main(int argc, char** argv)
         }
         else if (strcmp(argv[argIndex], "vip") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
             opt_vip = argv[argIndex + 1];
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "allow-candidates") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
             opt_allow_candidates = argv[argIndex + 1];
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "disallow-candidates") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
             opt_disallow_candidates = argv[argIndex + 1];
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "disallow-recipes") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
             opt_disallow_recipes = argv[argIndex + 1];
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "hand") == 0)  // set initial hand for test
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
             opt_hand = argv[argIndex + 1];
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "enemy:hand") == 0)  // set enemies' initial hand for test
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
             opt_enemy_hand = argv[argIndex + 1];
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "yf") == 0 || strcmp(argv[argIndex], "yfort") == 0)  // set forts
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
             opt_forts = std::string(argv[argIndex + 1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "yfpool") == 0 || strcmp(argv[argIndex], "yfortpool") == 0)  // set forts
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
             yfpool = std::stoi(argv[argIndex + 1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "ef") == 0 || strcmp(argv[argIndex], "efort") == 0)  // set enemies' forts
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
             opt_enemy_forts = std::string(argv[argIndex + 1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "efpool") == 0 || strcmp(argv[argIndex], "efortpool") == 0)  // set forts
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
             efpool = std::stoi(argv[argIndex + 1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "yd") == 0 || strcmp(argv[argIndex], "ydom") == 0)  // set dominions
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
             opt_doms = std::string(argv[argIndex + 1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "ed") == 0 || strcmp(argv[argIndex], "edom") == 0)  // set enemies' dominions
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
             opt_enemy_doms = std::string(argv[argIndex + 1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "sim") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
             opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), 0u, simulate));
             if (std::get<0>(opt_todo.back()) < 10) { opt_num_threads = 1; }
             argIndex += 1;
@@ -2810,7 +2795,7 @@ int main(int argc, char** argv)
         // climbing tasks
         else if (strcmp(argv[argIndex], "climbex") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,2))return 1;
+	    if(check_input_amount(argc,argv,argIndex,2))exit(1);
             opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 2]), climb));
             if (std::get<1>(opt_todo.back()) < 10) { opt_num_threads = 1; }
             opt_do_optimization = true;
@@ -2818,7 +2803,7 @@ int main(int argc, char** argv)
         }
         else if (strcmp(argv[argIndex], "climb") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
             opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 1]), climb));
             if (std::get<1>(opt_todo.back()) < 10) { opt_num_threads = 1; }
             opt_do_optimization = true;
@@ -2826,14 +2811,14 @@ int main(int argc, char** argv)
         }
         else if (strcmp(argv[argIndex], "climb_forts") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
             opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 1]), climb_forts));
             if (std::get<1>(opt_todo.back()) < 10) { opt_num_threads = 1; }
             argIndex += 1;
         }
         else if ( strcmp(argv[argIndex], "anneal") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,3))return 1;
+	    if(check_input_amount(argc,argv,argIndex,3))exit(1);
             opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 1]), anneal));
             temperature = std::stod(argv[argIndex+2]);
             coolingRate = std::stod(argv[argIndex+3]);
@@ -2843,7 +2828,7 @@ int main(int argc, char** argv)
         }
         else if (strcmp(argv[argIndex], "reorder") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
             opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 1]), reorder));
             if (std::get<1>(opt_todo.back()) < 10) { opt_num_threads = 1; }
             opt_do_reorder = true;
@@ -2907,13 +2892,13 @@ int main(int argc, char** argv)
                     if (has_value)
                     { std::cerr << " (value is: " << opt_value << ")"; }
                     std::cerr << std::endl;
-                    return 1;
+                    exit(1);
                 }
             }
         }
         else if (strcmp(argv[argIndex], "debug") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))return 1;
+	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
             opt_todo.push_back(std::make_tuple(0u, 0u, debug));
             opt_num_threads = 1;
         }
@@ -2921,7 +2906,7 @@ int main(int argc, char** argv)
         {
             // output the debug info for the first battle that min_score <= score <= max_score.
             // E.g., 0 0: lose; 100 100: win (non-raid); 20 100: at least 20 damage (raid).
-	    if(check_input_amount(argc,argv,argIndex,2))return 1;
+	    if(check_input_amount(argc,argv,argIndex,2))exit(1);
             opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 2]), debuguntil));
             opt_num_threads = 1;
             argIndex += 2;
@@ -2929,7 +2914,7 @@ int main(int argc, char** argv)
         else
         {
             std::cerr << "Error: Unknown option " << argv[argIndex] << std::endl;
-            return 1;
+            exit(1);
         }
     }
 
@@ -3028,7 +3013,7 @@ int main(int argc, char** argv)
             std::unordered_set<std::string> used_bge_aliases;
             if (!parse_bge(opt_effect, player, bge_aliases, opt_bg_effects[0], opt_bg_effects[1], opt_bg_skills[0], opt_bg_skills[1], used_bge_aliases))
             {
-                return 1;
+                exit(1);
             }
         }
     }
@@ -3046,7 +3031,7 @@ int main(int argc, char** argv)
     catch(const std::runtime_error& e)
     {
         std::cerr << "Error: allow-candidates " << opt_allow_candidates << ": " << e.what() << std::endl;
-        return 1;
+        exit(1);
     }
 
     // parse disallowed candidates from options
@@ -3061,7 +3046,7 @@ int main(int argc, char** argv)
     catch(const std::runtime_error& e)
     {
         std::cerr << "Error: disallow-candidates " << opt_disallow_candidates << ": " << e.what() << std::endl;
-        return 1;
+        exit(1);
     }
 
     // parse & drop disallowed recipes
@@ -3074,7 +3059,7 @@ int main(int argc, char** argv)
     catch(const std::runtime_error& e)
     {
         std::cerr << "Error: disallow-recipes " << opt_disallow_recipes << ": " << e.what() << std::endl;
-        return 1;
+        exit(1);
     }
     for (auto cid : disallowed_recipes)
     { all_cards.erase_fusion_recipe(cid); }
@@ -3101,7 +3086,7 @@ int main(int argc, char** argv)
                 if (skill_id == Skill::no_skill)
                 {
                     std::cerr << "Error: Expect skill in quest \"" << opt_quest << "\".\n";
-                    return 1;
+                    exit(1);
                 }
                 quest.quest_type = type_str == "su" ? QuestType::skill_use : QuestType::skill_damage;
                 quest.quest_key = skill_id;
@@ -3132,7 +3117,7 @@ int main(int argc, char** argv)
                     if (quest.quest_key == 0)
                     {
                         std::cerr << "Error: Expect assault, structure or faction in quest \"" << opt_quest << "\".\n";
-                        return 1;
+                        exit(1);
                     }
                 }
             }
@@ -3151,7 +3136,7 @@ int main(int argc, char** argv)
                 catch (const std::runtime_error& e)
                 {
                     std::cerr << "Error: Expect a card in quest \"" << opt_quest << "\".\n";
-                    return 1;
+                    exit(1);
                 }
             }
             else if (type_str == "suoc" && tokens.size() >= 4)
@@ -3160,7 +3145,7 @@ int main(int argc, char** argv)
                 if (skill_id == Skill::no_skill)
                 {
                     std::cerr << "Error: Expect skill in quest \"" << opt_quest << "\".\n";
-                    return 1;
+                    exit(1);
                 }
                 unsigned card_id;
                 unsigned card_num;
@@ -3177,7 +3162,7 @@ int main(int argc, char** argv)
                 catch (const std::runtime_error& e)
                 {
                     std::cerr << "Error: Expect a card in quest \"" << opt_quest << "\".\n";
-                    return 1;
+                    exit(1);
                 }
             }
             else
@@ -3207,12 +3192,12 @@ int main(int argc, char** argv)
         catch (const boost::bad_lexical_cast & e)
         {
             std::cerr << "Error: Expect a number in quest \"" << opt_quest << "\".\n";
-            return 1;
+            exit(1);
         }
         catch (const std::runtime_error& e)
         {
             std::cerr << "Error: quest " << opt_quest << ": " << e.what() << std::endl;
-            return 1;
+            exit(1);
         }
     }
 #endif
@@ -3238,12 +3223,12 @@ int main(int argc, char** argv)
         catch(const std::runtime_error& e)
         {
             std::cerr << "Error: Deck " <<  deck_parsed.first << ": " << e.what() << std::endl;
-            return 1;
+            exit(1);
         }
         if (your_deck == nullptr)
         {
             std::cerr << "Error: Invalid attack deck name/hash " << deck_parsed.first << ".\n";
-            return 1;
+            exit(1);
         }
         else if (!your_deck->variable_cards.empty())
         {
@@ -3258,7 +3243,7 @@ int main(int argc, char** argv)
         if (your_deck == nullptr)
         {
             usage(argc, argv);
-            return 1;
+            exit(1);
             //return 255;
         }
 
@@ -3275,7 +3260,7 @@ int main(int argc, char** argv)
             catch(const std::runtime_error& e)
             {
                 std::cerr << "Error: yfort " << opt_forts << ": " << e.what() << std::endl;
-                return 1;
+                exit(1);
             }
         }
         if (!opt_doms.empty())
@@ -3287,7 +3272,7 @@ int main(int argc, char** argv)
             catch(const std::runtime_error& e)
             {
                 std::cerr << "Error: ydom " << opt_doms << ": " << e.what() << std::endl;
-                return 1;
+                exit(1);
             }
         }
 
@@ -3298,7 +3283,7 @@ int main(int argc, char** argv)
         catch(const std::runtime_error& e)
         {
             std::cerr << "Error: vip " << opt_vip << ": " << e.what() << std::endl;
-            return 1;
+            exit(1);
         }
 
         try
@@ -3308,7 +3293,7 @@ int main(int argc, char** argv)
         catch(const std::runtime_error& e)
         {
             std::cerr << "Error: hand " << opt_hand << ": " << e.what() << std::endl;
-            return 1;
+            exit(1);
         }
 
         your_decks.push_back(your_deck);
@@ -3327,13 +3312,13 @@ int main(int argc, char** argv)
         catch(const std::runtime_error& e)
         {
             std::cerr << "Error: Deck " << deck_parsed.first << ": " << e.what() << std::endl;
-            return 1;
+            exit(1);
         }
         if (enemy_deck == nullptr)
         {
             std::cerr << "Error: Invalid defense deck name/hash " << deck_parsed.first << ".\n";
             usage(argc, argv);
-            return 1;
+            exit(1);
         }
         if (optimization_mode == OptimizationMode::notset)
         {
@@ -3361,7 +3346,7 @@ int main(int argc, char** argv)
             catch(const std::runtime_error& e)
             {
                 std::cerr << "Error: edom " << opt_enemy_doms << ": " << e.what() << std::endl;
-                return 1;
+                exit(1);
             }
         }
         if (!opt_enemy_forts.empty())
@@ -3377,7 +3362,7 @@ int main(int argc, char** argv)
             catch(const std::runtime_error& e)
             {
                 std::cerr << "Error: efort " << opt_enemy_forts << ": " << e.what() << std::endl;
-                return 1;
+                exit(1);
             }
         }
         try
@@ -3387,7 +3372,7 @@ int main(int argc, char** argv)
         catch(const std::runtime_error& e)
         {
             std::cerr << "Error: enemy:hand " << opt_enemy_hand << ": " << e.what() << std::endl;
-            return 1;
+            exit(1);
         }
         enemy_decks.push_back(enemy_deck);
         enemy_decks_factors.push_back(deck_parsed.second);
@@ -3399,7 +3384,7 @@ int main(int argc, char** argv)
     }
     if((opt_do_optimization || opt_do_reorder) && your_decks.size() != 1) {
         std::cerr << "Optimization only works with a single deck" << std::endl;
-        return 1;
+        exit(1);
     }
     if(opt_do_optimization || opt_do_reorder)  // => your_decks.site()==1
     {
@@ -3511,6 +3496,7 @@ int main(int argc, char** argv)
             opt_bg_effects[0], opt_bg_effects[1], opt_bg_skills[0], opt_bg_skills[1]);
 
     auto your_deck = your_decks[0];
+
     for (auto op: opt_todo)
     {
         switch(std::get<2>(op))
@@ -3521,6 +3507,7 @@ int main(int argc, char** argv)
                                EvaluatedResults results = { EvaluatedResults::first_type(enemy_decks.size()*your_decks.size()), 0 };
                                results = p.evaluate(std::get<0>(op), results);
                                print_results(results, p.factors);
+                               fr = compute_score(results,p.factors);
                                break;
                            }
             case climb_forts: {
@@ -3601,5 +3588,29 @@ int main(int argc, char** argv)
                              }
         }
     }
-    return 0;
+    return fr;
 }
+
+#ifndef TEST
+int main(int argc,char** argv)
+{
+#ifndef NTIMER
+    boost::timer::auto_cpu_timer t;
+#endif
+    start_time = std::chrono::system_clock::now();
+    if (argc == 2 && strcmp(argv[1], "-version") == 0)
+    {
+        std::cout << "Tyrant Unleashed Optimizer " << TYRANT_OPTIMIZER_VERSION << std::endl;
+        return 0;
+    }
+    if (argc <= 2)
+    {
+        usage(argc, argv);
+        return 255;
+    }
+	init();
+  run(argc,argv);
+  run(argc,argv);
+  return 0;
+}
+#endif

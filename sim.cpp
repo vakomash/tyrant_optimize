@@ -3369,6 +3369,7 @@ Results<uint64_t> play(Field* fd,bool skip_init)
         std::swap(fd->tap, fd->tip);
         ++fd->turn;
     }
+
     return evaluate_sim_result(fd);
 }
 

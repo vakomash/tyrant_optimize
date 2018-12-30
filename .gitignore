@@ -1,5 +1,6 @@
 obj/**
 obj-debug/**
+obj-test/**
 data/ownedcards_*.txt
 data/customdecks_*.txt
 data/*.etg
@@ -28,3 +29,5 @@ tuo-debug.exe
 tuodebug.exe
 tuo-x86-debug.exe
 tuo-x86.exe
+tuo-test.exe
+tuo-x86-test.exe

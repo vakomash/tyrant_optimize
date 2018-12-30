@@ -14,6 +14,7 @@
 #include <boost/algorithm/string.hpp>
 
 
+
 class Card;
 
 enum Faction
@@ -379,6 +380,7 @@ enum class OptimizationMode
     num_optimization_mode
 };
 
+
 extern unsigned min_possible_score[(size_t)OptimizationMode::num_optimization_mode];
 extern unsigned max_possible_score[(size_t)OptimizationMode::num_optimization_mode];
 
@@ -426,14 +428,15 @@ extern std::string debug_str;
     {                                                                   \
         if(__builtin_expect(debug_print >= v, false))                   \
         {                                                               \
-            if(debug_line) { printf("%i - " format, __LINE__ , ##args); }      \
-            else if(debug_cached) {                                     \
+            if(debug_cached) {                                     \
                 char buf[4096];                                         \
-                snprintf(buf, sizeof(buf), format, ##args);             \
+                if(debug_line){ snprintf(buf, sizeof(buf), "%i - " format, __LINE__, ##args);}  \
+                  else { snprintf(buf, sizeof(buf), format, ##args); }            \
                 debug_str += buf;                                       \
             }                                                           \
-            else { printf(format, ##args); }                            \
-            std::cout << std::flush;                                    \
+            else { if(debug_line){ printf("%i - " format, __LINE__ , ##args);} \
+                   else {printf(format, ##args);}                             \
+            std::cout << std::flush;  }                                  \
         }                                                               \
     }
 #define _DEBUG_SELECTION(format, args...)                               \
