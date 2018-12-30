@@ -25,7 +25,8 @@ struct cout_redirect {
 private:
     std::streambuf * old;
 };
-Result run_sim(int argc,const char** argv)
+
+inline Result run_sim(int argc,const char** argv)
 {
     Result res;
     FinalResults<long double> fr;
@@ -43,7 +44,7 @@ Result run_sim(int argc,const char** argv)
         param[argc+1] = const_cast<char*>("1");
         fr = run(argc+2,param);
     }
-    res= std::make_pair(fr,debug_str + output.str());
+    res= std::make_pair(fr,"\n" + debug_str + output.str());
     return res;
 }
 
@@ -55,8 +56,11 @@ inline void check_win(Result result) {
       ,result.second);
     //BOOST_CHECK(100==result.points);
 }
-
-
+inline void check_win_sim(const char* your_deck, const char* enemy_deck) {
+    const char* argv[] = {"tuo",your_deck,enemy_deck,"sim", "10"}; //TODO hardcoede 10 iterations?
+    Result result(run_sim(sizeof(argv)/sizeof(*argv),argv));
+    check_win(result);
+}
 BOOST_AUTO_TEST_CASE(test_sim_init)
 {
     init();
@@ -66,21 +70,18 @@ BOOST_AUTO_TEST_CASE(test_sim_init)
     BOOST_CHECK(1==1);
 }
 
-BOOST_AUTO_TEST_CASE(test_run_sim2)
+BOOST_AUTO_TEST_SUITE(test_single_units)
+BOOST_AUTO_TEST_CASE(test_obsidian_infantry)
 {
-    const char* argv[] = {"tuo","Darius, Obsidian Overlord","Darius, Infantry","sim", "10"}; //single thread!
-    Result result(run_sim(sizeof(argv)/sizeof(*argv),argv));
-    check_win(result);
+    check_win_sim("Darius,Obsidian Overlord","Darius,Infantry");
 }
-BOOST_AUTO_TEST_CASE(test_run_sim)
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(test_whole_decks)
+BOOST_AUTO_TEST_CASE(test_m142_m1)
 {
-    //const char* argv[] = {"tuo","Mission#10","Mission#10","sim", "10"};
-    //Result result(run_sim(sizeof(argv)/sizeof(*argv),argv));
-    BOOST_CHECK(1==1);
+    check_win_sim("Mission#2","Mission#1");
 }
-BOOST_AUTO_TEST_CASE(test_run_sim3)
-{
-    BOOST_CHECK(1==2);
-}
+BOOST_AUTO_TEST_SUITE_END()
 #endif
 #endif
