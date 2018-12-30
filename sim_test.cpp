@@ -1,3 +1,4 @@
+// exec: ./tuo-test , verbose: ./tuo-test --log_level=all
 #ifdef TEST
 #ifdef NQUEST // only without quests
 #define BOOST_TEST_DYN_LINK
@@ -10,9 +11,9 @@
 #include "tyrant_optimize.h"
 #include "sim.h"
 using namespace std;
-
 typedef std::pair<FinalResults<long double>,std::string> Result;
 
+//pipe output: https://stackoverflow.com/questions/5405016/can-i-check-my-programs-output-with-boost-test
 struct cout_redirect {
     cout_redirect( std::streambuf * new_buffer )
         : old( std::cout.rdbuf( new_buffer ) )
@@ -31,6 +32,7 @@ inline Result run_sim(int argc,const char** argv)
     Result res;
     FinalResults<long double> fr;
     debug_str.clear();
+    //pipe output
     std::stringstream output;
     {
         cout_redirect guard( output.rdbuf( ) );
@@ -67,21 +69,58 @@ BOOST_AUTO_TEST_CASE(test_sim_init)
     debug_print++;
     debug_cached++;
     debug_line =true;
-    BOOST_CHECK(1==1);
+    BOOST_CHECK(1==1);//..
 }
-
+/////////////////////////////////////
+// Test Cases !should! be very close fights for maximum sensitivity of errors
+/////////////////////////////////////
 BOOST_AUTO_TEST_SUITE(test_single_units)
+//single units to avoid randomness
 BOOST_AUTO_TEST_CASE(test_obsidian_infantry)
 {
     check_win_sim("Darius,Obsidian Overlord","Darius,Infantry");
 }
+BOOST_AUTO_TEST_CASE(test_evermourner_evermourner)
+{
+    check_win_sim("Barracus the Traitor, Alpha Hardened, Evermourner","Barracus the Traitor, Alpha Hardened, Evermourner");
+}
+BOOST_AUTO_TEST_CASE(test_hellking_zuruwing)
+{
+    check_win_sim("Nexor the Farseer, Broodmother's Nexus, Hell King Hades","Barracus the Traitor, Alpha Hardened, Zuruwing Flock");
+}
+BOOST_AUTO_TEST_CASE(test_valley_optinax)
+{
+    check_win_sim("Dracorex Hivegod, Alpha Hardened, Valley Glider","Vyander Hazix, Alpha Hardened, Optinax Starcore");
+}
 BOOST_AUTO_TEST_SUITE_END()
-
+//------------------------
+BOOST_AUTO_TEST_SUITE(test_multi_units)
+//multiple units to test, with minimized randomness (same units and non-target skills)
+BOOST_AUTO_TEST_CASE(test_hellkings_ruinmakers)
+{
+    check_win_sim("Nexor the Farseer, Broodmother's Nexus, Hell King Hades#2","Barracus the Traitor, Alpha Hardened, Enyo Ruinmaker");
+}
+BOOST_AUTO_TEST_CASE(test_vermins_samsons)
+{
+    check_win_sim("Dracorex Hivegod, Alpha Hardened, Writhing Vermin-1#4","Tabitha Liberated, Alpha Hardened, Samson the Hunter-1#4");
+}
+BOOST_AUTO_TEST_CASE(test_hellwings_rangers)
+{
+    check_win_sim("Dracorex Hivegod, Alpha Hardened, Scorched Hellwing#2","Nexor the Farseer, Alpha Hardened, Reunited Ranger#2");
+}
+BOOST_AUTO_TEST_CASE(test_rustwranglers_flayers)
+{
+    check_win_sim("Barracus the Traitor, Broodmother's Nexus, Rustwrangler","Dracorex Hivegod, Broodmother's Nexus, Sheol Flayer-1#8");
+}
+BOOST_AUTO_TEST_SUITE_END()
+//------------------------
 BOOST_AUTO_TEST_SUITE(test_whole_decks)
+//full decks that always result in 100% WR
 BOOST_AUTO_TEST_CASE(test_m142_m1)
 {
     check_win_sim("Mission#142","Mission#1","Strike 10");
 }
 BOOST_AUTO_TEST_SUITE_END()
+//------------------------
 #endif
 #endif
