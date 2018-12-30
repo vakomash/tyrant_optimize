@@ -10,6 +10,9 @@ sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys C6BF758A33A3A276
 
 sudo apt-get update
 
+sudo apt-get --yes install \
+    g++ make cmake \
+    libboost-all-dev \
 
 MXE_TARGET=i686-w64-mingw32.static
 MXE2_TARGET=$(echo "$MXE_TARGET" | sed 's/_/-/g')

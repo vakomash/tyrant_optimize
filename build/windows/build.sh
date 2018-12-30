@@ -2,8 +2,12 @@
 
 set -xue
 
+#Linux Build
+make all
+
 MXE_DIR=/usr/lib/mxe
 
+#Windows x86 Build
 MXE_TARGET=i686-w64-mingw32.static
 
 ${MXE_DIR}/usr/bin/${MXE_TARGET}-cmake . -Bbuild-dir32-debug -DVERSION:STRING="${TRAVIS_TAG}--debug"
@@ -16,7 +20,7 @@ cmake --build build-dir32
 mv build-dir32/tuo.exe $TUO_FILE_32
 
 
-
+#Windows x64 Build
 MXE_TARGET=x86_64-w64-mingw32.static
 
 ${MXE_DIR}/usr/bin/${MXE_TARGET}-cmake . -Bbuild-dir64-debug -DVERSION:STRING="${TRAVIS_TAG}--debug"
