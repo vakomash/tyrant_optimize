@@ -92,6 +92,15 @@ BOOST_AUTO_TEST_CASE(test_valley_optinax)
 {
     check_win_sim("Dracorex Hivegod, Alpha Hardened, Valley Glider","Vyander Hazix, Alpha Hardened, Optinax Starcore");
 }
+BOOST_AUTO_TEST_CASE(test_hyper_prixis)
+{
+    check_win_sim("Cassius the Centurion, HyperSec Hunter,Alpha Cooperator ","Typhon the Insane, Alpha Cooperator, Prixis Worldbender");
+}
+BOOST_AUTO_TEST_CASE(test_toxblade_incisor)
+{
+    check_win_sim("Barracus the Traitor, Toxblade Squad,Alpha Cooperator ","Gaia the Purifier, Archmatron's Incisor,Alpha Cooperator");
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 //------------------------
 BOOST_AUTO_TEST_SUITE(test_multi_units)
@@ -112,13 +121,24 @@ BOOST_AUTO_TEST_CASE(test_rustwranglers_flayers)
 {
     check_win_sim("Barracus the Traitor, Broodmother's Nexus, Rustwrangler","Dracorex Hivegod, Broodmother's Nexus, Sheol Flayer-1#8");
 }
+BOOST_AUTO_TEST_CASE(test_voxani_ocelot)
+{
+    check_win_sim("Imperator Halcyon, Voxani Modus,Alpha Cooperator ","Typhon the Insane, Alpha Cooperator, Aerial Ocelot#3");
+}
+BOOST_AUTO_TEST_SUITE_END()
+//------------------------
+BOOST_AUTO_TEST_SUITE(test_bges)
+BOOST_AUTO_TEST_CASE(test_toxblades_incisors_virulence)
+{
+    check_win_sim("Barracus the Traitor, Toxblade Squad,Alpha Cooperator ","Gaia the Purifier, Archmatron's Incisor#2,Alpha Cooperator","Virulence");
+}
 BOOST_AUTO_TEST_SUITE_END()
 //------------------------
 BOOST_AUTO_TEST_SUITE(test_whole_decks)
 //full decks that always result in 100% WR
 BOOST_AUTO_TEST_CASE(test_m142_m1)
 {
-    check_win_sim("Mission#142","Mission#1","Strike 10");
+    check_win_sim("Mission#142","Mission#1");
 }
 BOOST_AUTO_TEST_SUITE_END()
 //------------------------
