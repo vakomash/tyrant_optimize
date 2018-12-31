@@ -22,8 +22,8 @@ script:
   - ./update_xml.sh
   - source ./build/${TUO_TARGET}/test.sh
 after_success:
-  - gcov sim_test.cpp -m -o obj-test
-  - coveralls
+  - gcov *.cpp -l -p -r -o obj-test
+  - coveralls -b . -n
 before_deploy:
   - source build/${TUO_TARGET}/package.sh
 deploy:

@@ -24,6 +24,7 @@ tuo.exe
 *.swp
 *.stackdump
 *.gcov
+.coveralls.yml
 build-*
 tuo-debug.exe
 tuodebug.exe

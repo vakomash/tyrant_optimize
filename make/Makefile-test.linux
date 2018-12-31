@@ -28,4 +28,4 @@ $(MAIN): $(OBJS)
 rebuild: clean all
 
 clean:
-	rm -rf $(MAIN) obj-test/*.o
+	rm -rf $(MAIN) obj-test/*.o *.gcov obj-test/*.gcov *.gcda obj-test/*.gcda *.gcno obj-test/*.gcno
