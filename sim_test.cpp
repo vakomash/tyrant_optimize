@@ -100,6 +100,10 @@ BOOST_AUTO_TEST_CASE(test_toxblade_incisor)
 {
     check_win_sim("Barracus the Traitor, Toxblade Squad,Alpha Cooperator ","Gaia the Purifier, Archmatron's Incisor,Alpha Cooperator");
 }
+BOOST_AUTO_TEST_CASE(test_toxblade_incisor)
+{
+    check_win_sim("Arkadios Ultimate, Coleopt Slash,Alpha Cooperator ","Barracus the Traitor, Examit Tranq,,Alpha Cooperator");
+}
 
 BOOST_AUTO_TEST_SUITE_END()
 //------------------------
@@ -121,9 +125,17 @@ BOOST_AUTO_TEST_CASE(test_rustwranglers_flayers)
 {
     check_win_sim("Barracus the Traitor, Broodmother's Nexus, Rustwrangler","Dracorex Hivegod, Broodmother's Nexus, Sheol Flayer-1#8");
 }
-BOOST_AUTO_TEST_CASE(test_voxani_ocelot)
+BOOST_AUTO_TEST_CASE(test_voxanis_ocelots)
 {
-    check_win_sim("Imperator Halcyon, Voxani Modus,Alpha Cooperator ","Typhon the Insane, Alpha Cooperator, Aerial Ocelot#3");
+    check_win_sim("Imperator Halcyon, Voxani Modus#2,Alpha Cooperator ","Typhon the Insane, Alpha Cooperator, Aerial Ocelot#3");
+}
+BOOST_AUTO_TEST_CASE(test_cataclysmitrices_eons)
+{
+    check_win_sim("Barracus the Traitor, Cataclysmitrice,Alpha Cooperator ","Arkadios Ultimate, Eon United#2, Broodmother's Nexus,");
+}
+BOOST_AUTO_TEST_CASE(test_echos_bonegatherers)
+{
+    check_win_sim("Barracus the Traitor, Echo Huntmaster,Alpha Cooperator ","Arkadios Ultimate, Bonegatherer-1#10, Broodmother's Nexus,");
 }
 BOOST_AUTO_TEST_SUITE_END()
 //------------------------
@@ -131,6 +143,14 @@ BOOST_AUTO_TEST_SUITE(test_bges)
 BOOST_AUTO_TEST_CASE(test_toxblades_incisors_virulence)
 {
     check_win_sim("Barracus the Traitor, Toxblade Squad,Alpha Cooperator ","Gaia the Purifier, Archmatron's Incisor#2,Alpha Cooperator","Virulence");
+}
+BOOST_AUTO_TEST_CASE(test_parapets_darters_virulence)
+{
+    check_win_sim("Barracus the Traitor, Parapet Welder#3,Alpha Cooperator ","Broodmother Queen, Vile Darter#4,Alpha Cooperator","Virulence");
+}
+BOOST_AUTO_TEST_CASE(test_virklaws_parapets_virulence)
+{
+    check_win_sim("Arkadios Ultimate, Virklaw#4,Alpha Cooperator ","Barracus the Traitor, Parapet Welder#2,Alpha Cooperator","Virulence");
 }
 BOOST_AUTO_TEST_SUITE_END()
 //------------------------
