@@ -23,6 +23,7 @@ tuo.exe
 *.ini
 *.swp
 *.stackdump
+*.gcov
 build-*
 tuo-debug.exe
 tuodebug.exe

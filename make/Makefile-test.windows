@@ -10,8 +10,8 @@ ${warning "VERSION is not set (USING NO VERSION instead), use make VERSION=vX.XX
 endif
 endif
 
-CPPFLAGS := -Wall -Werror -std=gnu++11 -Ofast -g -DNTIMER -DTYRANT_OPTIMIZER_VERSION='"$(VERSION)--test"' -DTEST -DNQUEST
-LDFLAGS := -lboost_system -lboost_thread -lboost_filesystem -lboost_regex -lboost_timer -lboost_unit_test_framework
+CPPFLAGS := -Wall -Werror -std=gnu++11 -Ofast -g -DNTIMER -DTYRANT_OPTIMIZER_VERSION='"$(VERSION)--test"' -DTEST -DNQUEST -fprofile-arcs -ftest-coverage
+LDFLAGS := -lboost_system -lboost_thread -lboost_filesystem -lboost_regex -lboost_timer -lboost_unit_test_framework -fprofile-arcs
 
 all: $(MAIN)
 
@@ -25,4 +25,4 @@ $(MAIN): $(OBJS)
 rebuild: clean all
 
 clean:
-	rm -rf $(MAIN) obj-test/*.o
+	rm -rf $(MAIN) obj-test/*.o *.gcov obj-test/*.gcov *.gcda obj-test/*.gcda *.gcno obj-test/*.gcno

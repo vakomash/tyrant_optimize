@@ -16,6 +16,7 @@ on-death-attacked-summoned cards valid strike/enf.. targets
 enfeeble active how long and on whoms turn
 
 //Impl
+Avoid reloading xmls (e.g. all_cards) for each unit_test in tyrant_optimize::run(...).
 
 //Var
 
