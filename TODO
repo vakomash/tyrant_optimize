@@ -3,6 +3,7 @@ Tributed On-Attacked-Rally during enemy turn on a cooldown card -> (Impact by no
 Flying units don't get mark stacks in tuo, but should get them -> no impact
 
 //Testing
+Test cases in an external File to avoid recompilations
 Add more single unit test cases
 Add more whole deck unit test cases
 

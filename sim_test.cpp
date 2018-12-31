@@ -100,9 +100,9 @@ BOOST_AUTO_TEST_CASE(test_toxblade_incisor)
 {
     check_win_sim("Barracus the Traitor, Toxblade Squad,Alpha Cooperator ","Gaia the Purifier, Archmatron's Incisor,Alpha Cooperator");
 }
-BOOST_AUTO_TEST_CASE(test_toxblade_incisor)
+BOOST_AUTO_TEST_CASE(test_coleopt_ezamit)
 {
-    check_win_sim("Arkadios Ultimate, Coleopt Slash,Alpha Cooperator ","Barracus the Traitor, Examit Tranq,,Alpha Cooperator");
+    check_win_sim("Darius Caporegime, Coleopt Slash,Alpha Cooperator ","Barracus the Traitor, Ezamit Tranq,,Alpha Cooperator");
 }
 
 BOOST_AUTO_TEST_SUITE_END()
