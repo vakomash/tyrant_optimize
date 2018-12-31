@@ -23,7 +23,7 @@ script:
   - source ./build/${TUO_TARGET}/test.sh
 after_success:
   - gcov *.cpp -l -p -r -o obj-test
-  - coveralls --exclude-pattern ".*build-dir.*" -b . -n
+  - coveralls --exclude-pattern ".*build-dir.*" --exclude-pattern ".*\.hpp" -b . -n
 before_deploy:
   - source build/${TUO_TARGET}/package.sh
 deploy:
