@@ -59,7 +59,10 @@ inline void check_win(Result result) {
     //BOOST_CHECK(100==result.points);
 }
 inline void check_win_sim(const char* your_deck, const char* enemy_deck, const char* bge="") {
-    const char* argv[] = {"tuo",your_deck,enemy_deck,"-e",bge,"sim", "10"}; //TODO hardcoded 10 iterations?
+    /////////////
+    // Max. Iter == 100, else check_win fails with integer vs double equal in check_win
+    ////////////
+    const char* argv[] = {"tuo",your_deck,enemy_deck,"-e",bge,"sim", "100"}; //TODO hardcoded iterations? //much output on error?!
     Result result(run_sim(sizeof(argv)/sizeof(*argv),argv));
     check_win(result);
 }
@@ -148,9 +151,9 @@ BOOST_AUTO_TEST_CASE(test_parapets_darters_virulence)
 {
     check_win_sim("Barracus the Traitor, Parapet Welder#3,Alpha Cooperator ","Broodmother Queen, Vile Darter#4,Alpha Cooperator","Virulence");
 }
-BOOST_AUTO_TEST_CASE(test_virklaws_parapets_virulence)
+BOOST_AUTO_TEST_CASE(test_virklaws_disciples_virulence)
 {
-    check_win_sim("Arkadios Ultimate, Virklaw#4,Alpha Cooperator ","Barracus the Traitor, Parapet Welder#2,Alpha Cooperator","Virulence");
+    check_win_sim("Gaia the Purifier, Virklaw#4,Alpha Cooperator ","Arkadios Ultimate, Semyaza's Disciple#2,Alpha Cooperator","Virulence");
 }
 BOOST_AUTO_TEST_SUITE_END()
 //------------------------
