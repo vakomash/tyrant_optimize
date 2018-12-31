@@ -1,4 +1,4 @@
-# tyrant_optimize [![Build Status](https://travis-ci.org/APN-Pucky/tyrant_optimize.svg?branch=merged)](https://travis-ci.org/APN-Pucky/tyrant_optimize)
+# tyrant_optimize [![Build Status](https://travis-ci.org/APN-Pucky/tyrant_optimize.svg?branch=merged)](https://travis-ci.org/APN-Pucky/tyrant_optimize) [![Coverage Status](https://coveralls.io/repos/github/APN-Pucky/tyrant_optimize/badge.svg?branch=coveralls)](https://coveralls.io/github/APN-Pucky/tyrant_optimize?branch=coveralls)
 
 ## Get it for [Linux](https://github.com/APN-Pucky/tyrant_optimize/wiki/Linux)
 ## Get it for [Windows](https://github.com/APN-Pucky/tyrant_optimize/wiki/Windows)
