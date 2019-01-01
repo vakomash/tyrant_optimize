@@ -12,6 +12,7 @@ data/levels.xml
 tuo
 tuoold
 tuodebug
+test/**
 data/customdecks.txt
 data/ownedcards.txt
 out.txt

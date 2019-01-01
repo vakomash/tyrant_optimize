@@ -124,28 +124,28 @@ BOOST_AUTO_TEST_CASE(test_sim_init)
 // Test Cases !should! be very close fights for maximum sensitivity of errors
 /////////////////////////////////////
 BOOST_AUTO_TEST_SUITE(test_single_units)
-BOOST_DATA_TEST_CASE(test_single_units,bdata::make(read_test_file("test/test_sinlge_units.csv")),ti)
+BOOST_DATA_TEST_CASE(test_single_units,bdata::make(read_test_file("tests/test_sinlge_units.csv")),ti)
 {
    check_win_sim(ti);
 }
 BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(test_multi_units)
-BOOST_DATA_TEST_CASE(test_multi_units,bdata::make(read_test_file("test/test_multi_units.csv")),ti)
+BOOST_DATA_TEST_CASE(test_multi_units,bdata::make(read_test_file("tests/test_multi_units.csv")),ti)
 {
    check_win_sim(ti);
 }
 BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(test_bges)
-BOOST_DATA_TEST_CASE(test_bges,bdata::make(read_test_file("test/test_bges.csv")),ti)
+BOOST_DATA_TEST_CASE(test_bges,bdata::make(read_test_file("tests/test_bges.csv")),ti)
 {
    check_win_sim(ti);
 }
 BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(test_whole_decks)
-BOOST_DATA_TEST_CASE(test_whole_decks,bdata::make(read_test_file("test/test_whole_decks.csv")),ti)
+BOOST_DATA_TEST_CASE(test_whole_decks,bdata::make(read_test_file("tests/test_whole_decks.csv")),ti)
 {
    check_win_sim(ti);
 }
