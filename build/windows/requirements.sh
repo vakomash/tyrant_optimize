@@ -12,7 +12,7 @@ sudo apt-get update
 #Linux
 sudo apt-get --yes install \
     g++ make cmake \
-    libboost-all-dev \
+    libboost1.67-all-dev \ #libboost-all-dev ?
 #Windows
 MXE_TARGET=i686-w64-mingw32.static
 MXE2_TARGET=$(echo "$MXE_TARGET" | sed 's/_/-/g')
