@@ -11,7 +11,6 @@ sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys C6BF758A33A3A276
 
 sudo apt-get update
 #Linux
-sudo apt-cache search libboost
 sudo apt-get --yes install \
     g++ make cmake \
     libboost1.68-dev \
