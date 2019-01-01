@@ -10,9 +10,10 @@ sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys C6BF758A33A3A276
 
 sudo apt-get update
 #Linux
+sudo apt-cache search libboost
 sudo apt-get --yes install \
     g++ make cmake \
-    libboost1.67-all-dev \ #libboost-all-dev ?
+    libboost-all-dev=1.67 \
 #Windows
 MXE_TARGET=i686-w64-mingw32.static
 MXE2_TARGET=$(echo "$MXE_TARGET" | sed 's/_/-/g')
