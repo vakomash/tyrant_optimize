@@ -3,7 +3,7 @@
 set -xue
 
 #Linux Build
-make test
+make all
 MXE_DIR=/usr/lib/mxe
 
 #Windows x86 Build
