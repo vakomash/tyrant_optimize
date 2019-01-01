@@ -2,7 +2,7 @@
 
 set -xue
 
-sudo add-apt-repository ppa:mhier/libboost-latest
+sudo add-apt-repository -y ppa:mhier/libboost-latest
 sudo apt-get update
 
 echo "deb http://mirror.mxe.cc/repos/apt/ trusty main" \
