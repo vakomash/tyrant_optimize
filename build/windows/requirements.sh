@@ -14,7 +14,7 @@ sudo apt-get update
 sudo apt-cache search libboost
 sudo apt-get --yes install \
     g++ make cmake \
-    libboost1.68 \
+    libboost1.68-dev \
 #Windows
 MXE_TARGET=i686-w64-mingw32.static
 MXE2_TARGET=$(echo "$MXE_TARGET" | sed 's/_/-/g')
