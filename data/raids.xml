@@ -832,25 +832,15 @@
     <!--Carnifex Returns-->
     <deck>
       <always_include>
-        <card>62402</card>
-        <!--Carnifex Technician-->
-        <card>62412</card>
-        <!--Carnifex Kerakal-->
-        <card>62422</card>
-        <!--Carnifex Pryer-->
-        <card>62442</card>
-        <!--Carnifexicast-->
-      </always_include>
-      <card_pool amount="6">
         <card replicates="2">62402</card>
         <!--Carnifex Technician-->
         <card replicates="2">62412</card>
         <!--Carnifex Kerakal-->
         <card replicates="2">62422</card>
         <!--Carnifex Pryer-->
-        <card replicates="2">62442</card>
+        <card replicates="4">62442</card>
         <!--Carnifexicast-->
-      </card_pool>
+      </always_include>
     </deck>
   </raid>
   <!-- END of Raids -->
