@@ -1369,6 +1369,7 @@ void print_sim_card_values(Deck* original_deck, Process& p, unsigned iter) // ru
     results = p.evaluate(iter, results);
     const FinalResults<long  double> fr_base= compute_score(results,p.factors);
     long double base = fr_base.points;
+    std::cout << "Value of Cards: ";
     for (unsigned i =0; i < cards.size();++i)
     {
         auto card = cards[i];
@@ -1385,9 +1386,10 @@ void print_sim_card_values(Deck* original_deck, Process& p, unsigned iter) // ru
             results = p.evaluate(iter, results);
             const FinalResults<long  double> fr= compute_score(results,p.factors);
             score = base - fr.points; //subtract from result to get value
-            std::cout << card->m_name << ": " << score << std::endl;
+            std::cout << card->m_name << " (" << score << "), ";
         }
     }
+    std::cout << std::endl;
 }
 //------------------------------------------------------------------------------
 void print_deck_inline(const unsigned deck_cost, const FinalResults<long double> score, Deck * deck)
