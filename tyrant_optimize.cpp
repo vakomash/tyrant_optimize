@@ -1352,7 +1352,7 @@ void print_score_inline(const FinalResults<long double> score) {
 }
 //------------------------------------------------------------------------------
 // Calculates and prints individual card value in this deck
-void print_sim_card_values(Deck* original_deck,Deck* run_deck, Process& p, unsigned iter) // run_deck == p.your_decks[0]
+void print_sim_card_values(Deck* original_deck, Process& p, unsigned iter) // run_deck == p.your_decks[0]
 {
     if(!print_values)return;
     assert(p.your_decks.size() == 1); // only for single deck
@@ -1367,9 +1367,8 @@ void print_sim_card_values(Deck* original_deck,Deck* run_deck, Process& p, unsig
     sim_deck->alpha_dominion = your_deck->alpha_dominion;
     EvaluatedResults results = { EvaluatedResults::first_type(p.enemy_decks.size()*p.your_decks.size()), 0 };
     results = p.evaluate(iter, results);
-    const FinalResults<long  double> fr1= compute_score(results,p.factors);
-    long double base = fr1.points;
-    //std::cout << "BASE_VAL" << fr1.points << std::endl;
+    const FinalResults<long  double> fr_base= compute_score(results,p.factors);
+    long double base = fr_base.points;
     for (unsigned i =0; i < cards.size();++i)
     {
         auto card = cards[i];
@@ -1380,12 +1379,11 @@ void print_sim_card_values(Deck* original_deck,Deck* run_deck, Process& p, unsig
         {
             last_name = card->m_name;
             //sim it
-            sim_deck->cards = your_deck->cards;
-            sim_deck->cards.erase(sim_deck->cards.begin() + i);
+            sim_deck->cards = your_deck->cards; //reset cards
+            sim_deck->cards.erase(sim_deck->cards.begin() + i); //remove to test card
             EvaluatedResults results = { EvaluatedResults::first_type(p.enemy_decks.size()*p.your_decks.size()), 0 };
             results = p.evaluate(iter, results);
             const FinalResults<long  double> fr= compute_score(results,p.factors);
-            //std::cout << "CARD_VAL" << fr.points<< std::endl;
             score = base - fr.points; //subtract from result to get value
             std::cout << card->m_name << ": " << score << std::endl;
         }
@@ -1850,7 +1848,7 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
     std::cout << "Optimized Deck: ";
     print_deck_inline(get_deck_cost(d1), best_score, d1);
     print_upgraded_cards(d1);
-    print_sim_card_values(d1,d1,proc,num_iterations);
+    print_sim_card_values(d1,proc,num_iterations);
 }
 
 inline FinalResults<long double> fitness(Deck* d1,
@@ -2046,7 +2044,7 @@ void simulated_annealing(unsigned num_min_iterations, unsigned num_iterations, D
     std::cout << "Optimized Deck: ";
     print_deck_inline(get_deck_cost(best_deck), best_score, best_deck);
     print_upgraded_cards(best_deck);
-    print_sim_card_values(best_deck,cur_deck,proc,num_iterations);
+    print_sim_card_values(best_deck,proc,num_iterations);
 }
 unsigned factorial(unsigned n)
 {
@@ -3559,7 +3557,7 @@ FinalResults<long double> run(int argc, char** argv)
                                results = p.evaluate(std::get<0>(op), results);
                                print_results(results, p.factors);
                                fr = compute_score(results,p.factors);
-                               print_sim_card_values(your_deck,your_deck,p,std::get<0>(op));
+                               print_sim_card_values(your_deck,p,std::get<0>(op));
                                break;
                            }
             case climb_forts: {
