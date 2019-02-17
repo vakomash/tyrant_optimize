@@ -2048,6 +2048,14 @@ void simulated_annealing(unsigned num_min_iterations, unsigned num_iterations, D
     print_upgraded_cards(best_deck);
     print_sim_card_values(best_deck,proc,num_iterations);
 }
+void genetic(unsigned num_min_iterations, unsigned num_iterations, Deck* cur_deck, Process& proc, Requirement & requirement
+#ifndef NQUEST
+        , Quest & quest
+#endif
+        )
+{
+
+}
 unsigned factorial(unsigned n)
 {
    	unsigned retval = 1;
@@ -3577,6 +3585,15 @@ FinalResults<long double> run(int argc, char** argv)
                         }
             case anneal: {
                               //TODO check for your_decks.size()==1
+                             simulated_annealing(std::get<0>(op), std::get<1>(op), your_deck, p, requirement
+#ifndef NQUEST
+                                     , quest
+#endif
+                                     );
+                             break;
+
+                         }
+             case genetic: {
                              simulated_annealing(std::get<0>(op), std::get<1>(op), your_deck, p, requirement
 #ifndef NQUEST
                                      , quest

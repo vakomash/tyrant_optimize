@@ -28,3 +28,4 @@ Avoid reloading xmls (e.g. all_cards) for each unit_test in tyrant_optimize::run
 //Ideas
 rule/enemy-based order
 state-attacking += state-skills-active
+separate climb/sim from loading/init in tyrant_optimize.cpp
