@@ -63,7 +63,7 @@ namespace {
     bool use_owned_cards{true};
     unsigned min_deck_len{1};
     unsigned max_deck_len{10};
-    unsigned freezed_cards{0};
+    unsigned opt_freezed_cards{0};
     unsigned fund{0};
     long double target_score{100};
     long double min_increment_of_score{0};
@@ -123,7 +123,7 @@ void init()
     use_owned_cards=true;
     min_deck_len=1;
     max_deck_len=10;
-    freezed_cards=0;
+    opt_freezed_cards=0;
     fund=0;
     target_score=100;
     min_increment_of_score=0;
@@ -258,6 +258,10 @@ Java_de_neuwirthinformatik_Alexander_mTUO_TUOIntentService_stringFromJNI( JNIEnv
 }
 #endif
 using namespace std::placeholders;
+//------------------------------------------------------------------------------
+unsigned freezed_cards(const Deck* your_deck) {
+        return std::min<unsigned>(opt_freezed_cards, your_deck->cards.size());
+}
 //------------------------------------------------------------------------------
 std::string card_id_name(const Card* card)
 {
@@ -1746,8 +1750,8 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
 
 
     // << main climbing loop >>
-    for (unsigned from_slot(freezed_cards), dead_slot(freezed_cards); ;
-            from_slot = std::max(freezed_cards, (from_slot + 1) % std::min<unsigned>(max_deck_len, best_cards.size() + 1)))
+    for (unsigned from_slot(freezed_cards(d1)), dead_slot(freezed_cards(d1)); ;
+            from_slot = std::max(freezed_cards(d1), (from_slot + 1) % std::min<unsigned>(max_deck_len, best_cards.size() + 1)))
     {
         if(is_timeout_reached()){ break;}
         if (deck_has_been_improved)
@@ -1822,7 +1826,7 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
         for (auto it = card_candidates.begin(); it != card_candidates.end();++it)
         {
             const Card* card_candidate = *it;
-            for (unsigned to_slot(is_random ? from_slot : card_candidate ? freezed_cards : (best_cards.size() - 1));
+            for (unsigned to_slot(is_random ? from_slot : card_candidate ? freezed_cards(d1) : (best_cards.size() - 1));
                     to_slot < (is_random ? (from_slot + 1) : (best_cards.size() + (from_slot < best_cards.size() ? 0 : 1)));
                     ++ to_slot)
             {
@@ -1961,8 +1965,8 @@ void simulated_annealing(unsigned num_min_iterations, unsigned num_iterations, D
 
     deck_cost = 0;
 
-    unsigned from_slot(freezed_cards);
-    unsigned from_slot_tmp(freezed_cards);
+    unsigned from_slot(freezed_cards(cur_deck));
+    unsigned from_slot_tmp(freezed_cards(cur_deck));
     unsigned to_slot(1);
 
     if(debug_print >0)std::cout << "Starting Anneal" << std::endl;
@@ -1971,14 +1975,14 @@ void simulated_annealing(unsigned num_min_iterations, unsigned num_iterations, D
         cur_deck->commander = prev_deck->commander;
         cur_deck->alpha_dominion = prev_deck->alpha_dominion;
         cur_deck->cards = prev_deck->cards;
-        from_slot = std::max(freezed_cards, (from_slot+1) % std::min<unsigned>(max_deck_len, cur_deck->cards.size() +1));
+        from_slot = std::max(freezed_cards(cur_deck), (from_slot+1) % std::min<unsigned>(max_deck_len, cur_deck->cards.size() +1));
         const Card* candidate = all_candidates.at(std::uniform_int_distribution<unsigned>(0,all_candidates.size()-1)(re));
 
 
         if((!candidate || (candidate->m_category == CardCategory::normal && candidate->m_type != CardType::commander && candidate->m_category != CardCategory::dominion_alpha)))
         {
 
-            to_slot = std::uniform_int_distribution<unsigned>(is_random ? from_slot : candidate ? freezed_cards : (cur_deck->cards.size() -1),(is_random ? (from_slot+1) : (cur_deck->cards.size() + ( from_slot < cur_deck->cards.size() ? 0 : 1)))-1)(re);
+            to_slot = std::uniform_int_distribution<unsigned>(is_random ? from_slot : candidate ? freezed_cards(cur_deck) : (cur_deck->cards.size() -1),(is_random ? (from_slot+1) : (cur_deck->cards.size() + ( from_slot < cur_deck->cards.size() ? 0 : 1)))-1)(re);
             if(candidate ?
                     (from_slot < cur_deck->cards.size() && (from_slot == to_slot && candidate == cur_deck->cards[to_slot]))
                     :
@@ -2048,12 +2052,18 @@ void simulated_annealing(unsigned num_min_iterations, unsigned num_iterations, D
     print_upgraded_cards(best_deck);
     print_sim_card_values(best_deck,proc,num_iterations);
 }
-void genetic(unsigned num_min_iterations, unsigned num_iterations, Deck* cur_deck, Process& proc, Requirement & requirement
+void genetic_algorithm(unsigned num_min_iterations, unsigned num_iterations, Deck* cur_deck, Process& proc, Requirement & requirement
 #ifndef NQUEST
         , Quest & quest
 #endif
         )
 {
+    //proc.your_decks has the decks but for seperated scores size needs to be 1
+    std::vector<Deck*> deck_pool = proc.your_decks;
+    deck_pool.clear();
+
+    //proc.your_decks.clear();
+    std::cout << deck_pool.size() << std::endl;
 
 }
 unsigned factorial(unsigned n)
@@ -2147,6 +2157,7 @@ enum Operation {
     climb,
     climb_forts,
     anneal,
+    genetic,
     reorder,
     debug,
     debuguntil,
@@ -2588,7 +2599,7 @@ FinalResults<long double> run(int argc, char** argv)
         else if (strcmp(argv[argIndex], "freeze") == 0 || strcmp(argv[argIndex], "-F") == 0)
         {
 	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
-            freezed_cards = atoi(argv[argIndex + 1]);
+            opt_freezed_cards = atoi(argv[argIndex + 1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "-L") == 0)
@@ -2862,7 +2873,7 @@ FinalResults<long double> run(int argc, char** argv)
         }
         else if (strcmp(argv[argIndex], "climb") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
+	         if(check_input_amount(argc,argv,argIndex,1))exit(1);
             opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 1]), climb));
             if (std::get<1>(opt_todo.back()) < 10) { opt_num_threads = 1; }
             opt_do_optimization = true;
@@ -2884,6 +2895,14 @@ FinalResults<long double> run(int argc, char** argv)
             if (std::get<1>(opt_todo.back()) < 10) { opt_num_threads = 1; }
             opt_do_optimization = true;
             argIndex += 3;
+        }
+        else if (strcmp(argv[argIndex], "genetic") == 0)
+        {
+	          if(check_input_amount(argc,argv,argIndex,1))exit(1);
+            opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 1]), genetic));
+            if (std::get<1>(opt_todo.back()) < 10) { opt_num_threads = 1; }
+            opt_do_optimization = true;
+            argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "reorder") == 0)
         {
@@ -3483,7 +3502,6 @@ FinalResults<long double> run(int argc, char** argv)
                 std::cerr << "WARNING: Too many cards in your deck. Trimmed.\n";
             }
         }
-        freezed_cards = std::min<unsigned>(freezed_cards, your_deck->cards.size());
     }
 
     if (debug_print >= 0)
