@@ -262,7 +262,7 @@ using namespace std::placeholders;
 unsigned freezed_cards(const Deck* your_deck) {
         return std::min<unsigned>(opt_freezed_cards, your_deck->cards.size());
 }
-void copy_deck(Deck* dst, Deck* src)
+void copy_deck(Deck* src,Deck* dst)
 {
     dst->commander = src->commander;
     dst->alpha_dominion = src->alpha_dominion;
@@ -2065,12 +2065,138 @@ void simulated_annealing(unsigned num_min_iterations, unsigned num_iterations, D
     print_upgraded_cards(best_deck);
     print_sim_card_values(best_deck,proc,num_iterations);
 }
+
+
+
+bool valid_crossover(Deck* cur_deck)
+{
+    std::map<const Card *, unsigned> num_cards;
+    get_required_cards_before_upgrade(cur_deck->cards, num_cards);//only needed to check card combination
+    for (const auto & it: num_cards)
+    {
+        const Card * card = it.first;
+        unsigned num_to_claim = safe_minus(it.second, owned_cards[card->m_id]);
+        if (num_to_claim > 0)
+        {
+            return false; //invalid
+        }
+    }
+    return true; //valid
+}
+
+void crossover(Deck* src1,Deck* src2, Deck* cur_deck, std::mt19937& re,unsigned best_gap,std::unordered_map<std::string, EvaluatedResults>& evaluated_decks)
+{
+      cur_deck->commander = std::uniform_int_distribution<unsigned>(0, 1)(re)?src1->commander:src2->commander;
+      cur_deck->alpha_dominion = std::uniform_int_distribution<unsigned>(0, 1)(re)?src1->alpha_dominion:src2->alpha_dominion;
+      bool finished = false;
+      unsigned itr = 0;
+      while(!finished && itr < 1000)
+      {
+        itr++;
+        cur_deck->cards.clear();
+        for(unsigned it =0; it < std::max(src1->cards.size(),src2->cards.size());it++)
+        {
+            if(src1->cards.size() <=it)
+            {cur_deck->cards.push_back(src2->cards[it]);}
+            else if(src2->cards.size() <=it)
+            {cur_deck->cards.push_back(src1->cards[it]);}
+            else
+            {
+            cur_deck->cards.push_back(std::uniform_int_distribution<unsigned>(0, 1)(re)?src1->cards[it]:src2->cards[it]);
+            }
+        }
+        if(!valid_crossover(cur_deck)) {continue;} //repeat
+
+        if(evaluated_decks.count(cur_deck->hash())){continue;} // deck already simmed
+        unsigned cur_gap = check_requirement(cur_deck, requirement
+#ifndef NQUEST
+                , quest
+#endif
+                );
+        if ((cur_gap > 0) && (cur_gap >= best_gap))
+        { continue; }
+        finished = true; // exit while
+      }
+}
+
+void mutate(Deck* src, Deck* cur_deck, std::vector<const Card*> all_candidates, std::mt19937& re,unsigned best_gap,std::unordered_map<std::string, EvaluatedResults>& evaluated_decks)
+{
+        copy_deck(src,cur_deck);
+
+        bool is_random = (cur_deck->strategy == DeckStrategy::random) || (cur_deck->strategy == DeckStrategy::flexible); //should be same for all decks from input!?
+
+        unsigned deck_cost = 0;
+
+        unsigned from_slot(freezed_cards(cur_deck));
+        unsigned from_slot_tmp(freezed_cards(cur_deck));
+        unsigned to_slot(1);
+
+        bool finished = false;
+        unsigned itr=0;
+        unsigned itr2=0;
+        while(!finished && itr2 < 100) // restart test rwo
+        {
+          itr2++;
+        copy_deck(src,cur_deck);
+        while(!finished && itr < 10) // 10 times change try
+        {
+        itr++;
+        from_slot = std::max(freezed_cards(cur_deck), (from_slot+1) % std::min<unsigned>(max_deck_len, cur_deck->cards.size() +1));
+        const Card* candidate = all_candidates.at(std::uniform_int_distribution<unsigned>(0,all_candidates.size()-1)(re));
+
+
+        if((!candidate || (candidate->m_category == CardCategory::normal && candidate->m_type != CardType::commander && candidate->m_category != CardCategory::dominion_alpha)))
+        {
+
+            to_slot = std::uniform_int_distribution<unsigned>(is_random ? from_slot : candidate ? freezed_cards(cur_deck) : (cur_deck->cards.size() -1),(is_random ? (from_slot+1) : (cur_deck->cards.size() + ( from_slot < cur_deck->cards.size() ? 0 : 1)))-1)(re);
+            if(candidate ?
+                    (from_slot < cur_deck->cards.size() && (from_slot == to_slot && candidate == cur_deck->cards[to_slot]))
+                    :
+                    (from_slot == cur_deck->cards.size()))
+            {
+                continue;
+            }
+            from_slot_tmp = from_slot;
+        }
+        else if(candidate->m_type == CardType::commander && requirement.num_cards.count(cur_deck->commander) == 0)
+        {
+            cur_deck->commander = candidate;
+            from_slot_tmp = -1;
+            to_slot = -1;
+        }
+        else if(candidate->m_category == CardCategory::dominion_alpha && use_owned_dominions)
+        {
+            cur_deck->alpha_dominion = candidate;
+            from_slot_tmp = -1;
+            to_slot = -1;
+        }
+        else{
+            continue;
+        }
+
+        if(evaluated_decks.count(cur_deck->hash())){continue;} // deck already simmed
+        std::vector<std::pair<signed, const Card * >> cards_out, cards_in;
+        if (!adjust_deck(cur_deck, from_slot_tmp, to_slot, candidate, fund, re, deck_cost, cards_out, cards_in))
+        { continue;}
+        unsigned cur_gap = check_requirement(cur_deck, requirement
+#ifndef NQUEST
+                , quest
+#endif
+                );
+        if ((cur_gap > 0) && (cur_gap >= best_gap))
+        { continue; }
+        finished = true; // exit while
+        }
+        }
+}
 void genetic_algorithm(unsigned num_min_iterations, unsigned num_iterations, std::vector<Deck*> your_decks, Process& proc, Requirement & requirement
 #ifndef NQUEST
         , Quest & quest
 #endif
         )
 {
+    unsigned pool_size = your_decks.size();
+    std::vector<std::pair<Deck*,FinalResults<long double>>> pool;
     Deck* cur_deck = proc.your_decks[0];
 
 
@@ -2079,19 +2205,18 @@ void genetic_algorithm(unsigned num_min_iterations, unsigned num_iterations, std
     std::unordered_map<std::string, EvaluatedResults> evaluated_decks{{cur_deck->hash(), zero_results}};
     EvaluatedResults& results = proc.evaluate(num_min_iterations, evaluated_decks.begin()->second);
     print_score_info(results, proc.factors);
-    FinalResults<long double> best_score = compute_score(results, proc.factors);
+    FinalResults<long double> best_score = compute_score(results, proc.factors); //init sim, todo remove
 
     unsigned deck_cost = get_deck_cost(cur_deck);
     fund = std::max(fund, deck_cost);
     print_deck_inline(deck_cost, best_score, cur_deck);
-    //std::mt19937& re = proc.threads_data[0]->re;
+    std::mt19937& re = proc.threads_data[0]->re;
     unsigned cur_gap = check_requirement(cur_deck, requirement
 #ifndef NQUEST
             , quest
 #endif
             );
 
-    //bool is_random = (cur_deck->strategy == DeckStrategy::random) || (cur_deck->strategy == DeckStrategy::flexible);
     unsigned long skipped_simulations = 0;
     std::vector<const Card*> all_candidates;
 
@@ -2132,24 +2257,73 @@ void genetic_algorithm(unsigned num_min_iterations, unsigned num_iterations, std
     unsigned best_gap = cur_gap;
     for( auto i_deck :your_decks)
     {
-        copy_deck(cur_deck,i_deck);
-        cur_gap = check_requirement(cur_deck, requirement
-#ifndef NQUEST
-                , quest
-#endif
-                );
-        if ((cur_gap > 0) && (cur_gap >= best_gap))
-        { continue; }
+        copy_deck(i_deck,cur_deck);
         cur_score = fitness(cur_deck, best_score, evaluated_decks, zero_results, skipped_simulations, proc,true);
+        pool.push_back(std::make_pair(i_deck,cur_score));
         if(cur_score.points > best_score.points)
         {
             best_score = cur_score;
             best_deck = cur_deck->clone();
-            best_gap = cur_gap;
+            best_gap = check_requirement(cur_deck, requirement
+#ifndef NQUEST
+                , quest
+#endif
+                );
             std::cout << "Deck improved: " << best_deck->hash() <<":";
             print_deck_inline(get_deck_cost(best_deck), best_score, best_deck);
         }
     }
+
+    unsigned generations = 50;
+    for( unsigned gen= 0; gen< generations;gen++ )
+    {
+        std::cout << "GENERATION: " << gen << std::endl;
+
+        //sort
+        auto sort = [](std::pair<Deck*,FinalResults<long double>> l,std::pair<Deck*,FinalResults<long double>> r) {return l.second.points > r.second.points;};
+        std::sort(pool.begin(),pool.end(),sort);
+        //breed
+        for ( unsigned it = 0; it < pool_size/4;it++)
+        { //todo selection random?
+            //crossover(pool[it+pool_size/4*2].first,pool[it+pool_size/4*3].first,pool[it+pool_size/4*3].first,re,best_gap, evaluated_decks);
+            crossover(pool[it].first,pool[it+pool_size/4].first,pool[it+pool_size/4].first,re,best_gap, evaluated_decks);
+            crossover(pool[it].first,pool[(it+pool_size/8)%(pool_size/4)].first,pool[it+pool_size/4*2].first,re,best_gap, evaluated_decks);
+            mutate(pool[it].first,pool[it+pool_size/4*3].first,all_candidates,re,best_gap, evaluated_decks);
+        }
+        //mutate duplicates
+        for ( unsigned it = 0; it < pool_size;it++)
+        {
+            for (unsigned i = it+1; i < pool_size;i++)
+            {
+                if(pool[it].first->hash().substr(8)==pool[i].first->hash().substr(8)) //ignore commander + dominion
+                {
+                    mutate(pool[i].first,pool[i].first,all_candidates,re,best_gap, evaluated_decks);
+                    pool[i].second = pool[pool_size-1].second; //lowest score approx Null
+                }
+            }
+        }
+        //calc fitness
+        for (unsigned it = pool_size/4; it < pool_size; it++)
+        {
+            copy_deck(pool[it].first,cur_deck);
+            cur_score = fitness(cur_deck, best_score, evaluated_decks, zero_results, skipped_simulations, proc,true);
+            pool[it].second = cur_score;
+            if(cur_score.points > best_score.points)
+            {
+              best_score = cur_score;
+              best_deck = cur_deck->clone();
+              best_gap = check_requirement(cur_deck, requirement
+#ifndef NQUEST
+                    , quest
+#endif
+              );
+              std::cout << "Deck improved: " << best_deck->hash() <<":";
+              print_deck_inline(get_deck_cost(best_deck), best_score, best_deck);
+            }
+        }
+    }
+    for (auto a : pool)
+        print_deck_inline(get_deck_cost(a.first),a.second,a.first);
     unsigned simulations = 0;
     for (auto evaluation: evaluated_decks)
     { simulations += evaluation.second.second; }
@@ -2159,6 +2333,7 @@ void genetic_algorithm(unsigned num_min_iterations, unsigned num_iterations, std
     print_upgraded_cards(best_deck);
     print_sim_card_values(best_deck,proc,num_iterations);
 }
+
 
 unsigned factorial(unsigned n)
 {
