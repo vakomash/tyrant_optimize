@@ -108,10 +108,10 @@ namespace {
     std::vector<Skill::Skill> prefered_skills;
     unsigned prefered_factor{3};
 
-	#if defined(ANDROID) || defined(__ANDROID__)
-	JNIEnv *envv;
+#if defined(ANDROID) || defined(__ANDROID__)
+	  JNIEnv *envv;
     jobject objv;
-    #endif
+#endif
 }
 
 void init()
@@ -1687,7 +1687,7 @@ inline bool try_improve_deck(Deck* d1, unsigned from_slot, unsigned to_slot, con
     return false;
 }
 //------------------------------------------------------------------------------
-void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d1, Process& proc, Requirement & requirement
+FinalResults<long double> hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d1, Process& proc, Requirement & requirement
 #ifndef NQUEST
         , Quest & quest
 #endif
@@ -1861,6 +1861,7 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
     print_deck_inline(get_deck_cost(d1), best_score, d1);
     print_upgraded_cards(d1);
     print_sim_card_values(d1,proc,num_iterations);
+    return best_score;
 }
 
 inline FinalResults<long double> fitness(Deck* d1,
@@ -1910,7 +1911,7 @@ inline long double acceptanceProbability(long double old_score, long double new_
     return exp(((new_score-old_score)/temperature*1000*100)/max_possible_score[(size_t)optimization_mode]);
 }
 
-void simulated_annealing(unsigned num_min_iterations, unsigned num_iterations, Deck* cur_deck, Process& proc, Requirement & requirement
+FinalResults<long double> simulated_annealing(unsigned num_min_iterations, unsigned num_iterations, Deck* cur_deck, Process& proc, Requirement & requirement
 #ifndef NQUEST
         , Quest & quest
 #endif
@@ -2064,11 +2065,12 @@ void simulated_annealing(unsigned num_min_iterations, unsigned num_iterations, D
     print_deck_inline(get_deck_cost(best_deck), best_score, best_deck);
     print_upgraded_cards(best_deck);
     print_sim_card_values(best_deck,proc,num_iterations);
+    return best_score;
 }
 
 
 
-bool valid_crossover(Deck* cur_deck)
+bool valid_deck(Deck* cur_deck)
 {
     std::map<const Card *, unsigned> num_cards;
     get_required_cards_before_upgrade(cur_deck->cards, num_cards);//only needed to check card combination
@@ -2090,7 +2092,7 @@ void crossover(Deck* src1,Deck* src2, Deck* cur_deck, std::mt19937& re,unsigned 
       cur_deck->alpha_dominion = std::uniform_int_distribution<unsigned>(0, 1)(re)?src1->alpha_dominion:src2->alpha_dominion;
       bool finished = false;
       unsigned itr = 0;
-      while(!finished && itr < 1000)
+      while(!finished && itr < 100) //todo opt
       {
         itr++;
         cur_deck->cards.clear();
@@ -2105,7 +2107,7 @@ void crossover(Deck* src1,Deck* src2, Deck* cur_deck, std::mt19937& re,unsigned 
             cur_deck->cards.push_back(std::uniform_int_distribution<unsigned>(0, 1)(re)?src1->cards[it]:src2->cards[it]);
             }
         }
-        if(!valid_crossover(cur_deck)) {continue;} //repeat
+        if(!valid_deck(cur_deck)) {continue;} //repeat
 
         if(evaluated_decks.count(cur_deck->hash())){continue;} // deck already simmed
         unsigned cur_gap = check_requirement(cur_deck, requirement
@@ -2117,6 +2119,7 @@ void crossover(Deck* src1,Deck* src2, Deck* cur_deck, std::mt19937& re,unsigned 
         { continue; }
         finished = true; // exit while
       }
+      if(!finished) copy_deck(std::uniform_int_distribution<unsigned>(0, 1)(re)?src1:src2,cur_deck);
 }
 
 void mutate(Deck* src, Deck* cur_deck, std::vector<const Card*> all_candidates, std::mt19937& re,unsigned best_gap,std::unordered_map<std::string, EvaluatedResults>& evaluated_decks)
@@ -2133,15 +2136,13 @@ void mutate(Deck* src, Deck* cur_deck, std::vector<const Card*> all_candidates, 
 
         bool finished = false;
         unsigned itr=0;
-        unsigned itr2=0;
-        while(!finished && itr2 < 100) // restart test rwo
-        {
-          itr2++;
-        copy_deck(src,cur_deck);
-        while(!finished && itr < 10) // 10 times change try
+        while(!finished && itr < 100) // todo opt
         {
         itr++;
-        from_slot = std::max(freezed_cards(cur_deck), (from_slot+1) % std::min<unsigned>(max_deck_len, cur_deck->cards.size() +1));
+        copy_deck(src,cur_deck);
+
+        from_slot = std::uniform_int_distribution<unsigned>(1,std::min<unsigned>(max_deck_len-1, cur_deck->cards.size()))(re);
+
         const Card* candidate = all_candidates.at(std::uniform_int_distribution<unsigned>(0,all_candidates.size()-1)(re));
 
 
@@ -2178,6 +2179,7 @@ void mutate(Deck* src, Deck* cur_deck, std::vector<const Card*> all_candidates, 
         std::vector<std::pair<signed, const Card * >> cards_out, cards_in;
         if (!adjust_deck(cur_deck, from_slot_tmp, to_slot, candidate, fund, re, deck_cost, cards_out, cards_in))
         { continue;}
+        if(!valid_deck(cur_deck)) {continue;} //repeat
         unsigned cur_gap = check_requirement(cur_deck, requirement
 #ifndef NQUEST
                 , quest
@@ -2187,17 +2189,20 @@ void mutate(Deck* src, Deck* cur_deck, std::vector<const Card*> all_candidates, 
         { continue; }
         finished = true; // exit while
         }
-        }
+        if(!finished) copy_deck(src,cur_deck);
 }
-void genetic_algorithm(unsigned num_min_iterations, unsigned num_iterations, std::vector<Deck*> your_decks, Process& proc, Requirement & requirement
+FinalResults<long double> genetic_algorithm(unsigned num_min_iterations, unsigned num_iterations, std::vector<Deck*> your_decks, Process& proc, Requirement & requirement
 #ifndef NQUEST
         , Quest & quest
 #endif
         )
 {
-    unsigned pool_size = your_decks.size();
+    //std::cerr << "START GENETIC" << std::endl;
+    unsigned pool_size = 100; //TODO param
+    //your_decks.size();
     std::vector<std::pair<Deck*,FinalResults<long double>>> pool;
     Deck* cur_deck = proc.your_decks[0];
+
 
 
     EvaluatedResults zero_results = { EvaluatedResults::first_type(proc.enemy_decks.size()), 0 };
@@ -2255,6 +2260,25 @@ void genetic_algorithm(unsigned num_min_iterations, unsigned num_iterations, std
     Deck* best_deck = cur_deck->clone();
     FinalResults<long double> cur_score = best_score;
     unsigned best_gap = cur_gap;
+
+    //fill pool
+    if(your_decks.size()>pool_size) your_decks.resize(pool_size);
+    for ( unsigned it =your_decks.size(); it < pool_size;it++)
+    {
+          unsigned j = std::uniform_int_distribution<unsigned>(0,your_decks.size()-1)(re);
+          unsigned i = std::uniform_int_distribution<unsigned>(0,your_decks.size()-1)(re);
+          Deck* nxt = your_decks[j]->clone();
+          if(std::uniform_int_distribution<unsigned>(0,1)(re))
+          {
+              mutate(your_decks[i],nxt,all_candidates,re,best_gap,evaluated_decks);
+          }
+          else
+          {
+              crossover(your_decks[i],your_decks[j],nxt,re,best_gap,evaluated_decks);
+          }
+          your_decks.push_back(nxt);
+    }
+    //sim pool
     for( auto i_deck :your_decks)
     {
         copy_deck(i_deck,cur_deck);
@@ -2274,7 +2298,7 @@ void genetic_algorithm(unsigned num_min_iterations, unsigned num_iterations, std
         }
     }
 
-    unsigned generations = 50;
+    unsigned generations = 50; //TODO param
     for( unsigned gen= 0; gen< generations;gen++ )
     {
         std::cout << "GENERATION: " << gen << std::endl;
@@ -2297,7 +2321,7 @@ void genetic_algorithm(unsigned num_min_iterations, unsigned num_iterations, std
             {
                 if(pool[it].first->hash().substr(8)==pool[i].first->hash().substr(8)) //ignore commander + dominion
                 {
-                    mutate(pool[i].first,pool[i].first,all_candidates,re,best_gap, evaluated_decks);
+                    mutate(pool[i].first->clone(),pool[i].first,all_candidates,re,best_gap, evaluated_decks);
                     pool[i].second = pool[pool_size-1].second; //lowest score approx Null
                 }
             }
@@ -2332,6 +2356,7 @@ void genetic_algorithm(unsigned num_min_iterations, unsigned num_iterations, std
     print_deck_inline(get_deck_cost(best_deck), best_score, best_deck);
     print_upgraded_cards(best_deck);
     print_sim_card_values(best_deck,proc,num_iterations);
+    return best_score;
 }
 
 
@@ -2395,7 +2420,7 @@ void recursion(unsigned num_iterations, std::vector<unsigned> used, unsigned poo
     }
 }
 
-void forts_climbing(unsigned num_iterations, Process& proc) {
+FinalResults<long double> forts_climbing(unsigned num_iterations, Process& proc) {
     EvaluatedResults zero_results = { EvaluatedResults::first_type(proc.enemy_decks.size()*proc.your_decks.size()), 0 };
     unsigned pool = std::get<0>(proc.your_decks[0]->variable_forts[0]);
     std::vector<const Card*> forts(std::get<2>(proc.your_decks[0]->variable_forts[0]));
@@ -2416,6 +2441,7 @@ void forts_climbing(unsigned num_iterations, Process& proc) {
     std::cout << "Evaluated " << evaluated_decks.size() << " decks (" << simulations << " + " << skipped_simulations << " simulations)." << std::endl;
     std::cout << "Optimized Deck: ";
     print_cards_inline(best_forts);
+    return best_score;
 }
 
 
@@ -2706,6 +2732,7 @@ FinalResults<long double> run(int argc, char** argv)
 
     for (int argIndex = 3; argIndex < argc; ++argIndex)
     {
+
         // Codec
         if (strcmp(argv[argIndex], "ext_b64") == 0)
         {
@@ -3266,7 +3293,6 @@ FinalResults<long double> run(int argc, char** argv)
             exit(1);
         }
     }
-
     Cards all_cards;
     Decks decks;
     std::unordered_map<std::string, std::string> bge_aliases;
@@ -3867,12 +3893,12 @@ FinalResults<long double> run(int argc, char** argv)
                                break;
                            }
             case climb_forts: {
-                                  forts_climbing(std::get<0>(op),p);
+                                  fr=forts_climbing(std::get<0>(op),p);
                                   break;
                               }
             case climb: {
                             //TODO check for your_decks.size()==1
-                            hill_climbing(std::get<0>(op), std::get<1>(op), your_deck, p, requirement
+                            fr=hill_climbing(std::get<0>(op), std::get<1>(op), your_deck, p, requirement
 #ifndef NQUEST
                                     , quest
 #endif
@@ -3881,7 +3907,7 @@ FinalResults<long double> run(int argc, char** argv)
                         }
             case anneal: {
                               //TODO check for your_decks.size()==1
-                             simulated_annealing(std::get<0>(op), std::get<1>(op), your_deck, p, requirement
+                             fr= simulated_annealing(std::get<0>(op), std::get<1>(op), your_deck, p, requirement
 #ifndef NQUEST
                                      , quest
 #endif
@@ -3890,7 +3916,7 @@ FinalResults<long double> run(int argc, char** argv)
 
                          }
              case genetic: {
-                             genetic_algorithm(std::get<0>(op), std::get<1>(op), your_decks, p, requirement
+                             fr=genetic_algorithm(std::get<0>(op), std::get<1>(op), your_decks, p, requirement
 #ifndef NQUEST
                                      , quest
 #endif
@@ -3915,13 +3941,14 @@ FinalResults<long double> run(int argc, char** argv)
                               owned_cards.clear();
                               claim_cards({your_deck->commander});
                               claim_cards(your_deck->cards);
-                              hill_climbing(std::get<0>(op), std::get<1>(op), your_deck, p, requirement
+                              fr=hill_climbing(std::get<0>(op), std::get<1>(op), your_deck, p, requirement
 #ifndef NQUEST
                                       , quest
 #endif
                                       );
                               break;
                           }
+            //fr=nllptr no return
             case debug: {
                             ++ debug_print;
                             debug_str.clear();
@@ -3931,6 +3958,7 @@ FinalResults<long double> run(int argc, char** argv)
                             -- debug_print;
                             break;
                         }
+            //fr=nllptr no return
             case debuguntil: {
                                  ++ debug_print;
                                  ++ debug_cached;

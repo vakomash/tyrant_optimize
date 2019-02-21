@@ -16,6 +16,7 @@ test/**
 data/customdecks.txt
 data/ownedcards.txt
 out.txt
+out.*
 *.cmd
 *.dat
 *.out
