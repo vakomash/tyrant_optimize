@@ -844,7 +844,7 @@
     </deck>
   </raid>
   <raid>
-        <id>65</id>
+        <id>64</id>
         <name>Captain Daedalus Raid</name>
         <fortress_pool amount="2">
                 <card>18840</card>
