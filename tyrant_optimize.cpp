@@ -753,8 +753,8 @@ bool claim_cards_needed(const std::vector<const Card*> & card_list)
     for (const auto & it: num_cards)
     {
         const Card * card = it.first;
-        if(card->m_category == CardCategory::dominion_material)continue;
-        if(card->m_category == CardCategory::dominion_alpha)continue;
+        if(card->m_category == CardCategory::dominion_material && use_maxed_dominions)continue;
+        if( card->m_category == CardCategory::dominion_alpha && use_maxed_dominions)continue;
         unsigned num_to_claim = safe_minus(it.second, owned_cards[card->m_id]);
         if (num_to_claim > 0)
         {
