@@ -1687,18 +1687,81 @@ inline bool try_improve_deck(Deck* d1, unsigned from_slot, unsigned to_slot, con
     return false;
 }
 //------------------------------------------------------------------------------
-FinalResults<long double> hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d1, Process& proc, Requirement & requirement
+/*
+ * Calc value of current set deck in d1 (proc.your_decks[0])
+ */
+inline FinalResults<long double> fitness(Deck* d1,
+        FinalResults<long double>& best_score,
+        std::unordered_map<std::string, EvaluatedResults>& evaluated_decks, EvaluatedResults& zero_results,
+        unsigned long& skipped_simulations, Process& proc, bool compare = false)
+{
+
+    // check previous simulations
+    auto && cur_deck = d1->hash();
+    //std::cout << "Deck hash: " << d1->hash() << " with ";
+    auto && emplace_rv = evaluated_decks.insert({cur_deck, zero_results});
+    auto & prev_results = emplace_rv.first->second;
+    if (!emplace_rv.second)
+    {
+        skipped_simulations += prev_results.second;
+    }
+
+    // Evaluate new deck
+    if (compare) {
+      auto compare_results= proc.compare(best_score.n_sims, prev_results,best_score);
+      auto current_score = compute_score(compare_results, proc.factors);
+      return current_score;
+    }
+    else
+    {
+      auto compare_results= proc.evaluate(best_score.n_sims, prev_results);
+      auto current_score = compute_score(compare_results, proc.factors);
+
+      //best_score = current_score;
+      //auto best_deck = d1->clone();
+      //print_score_info(compare_results, proc.factors);
+      //print_deck_inline(get_deck_cost(best_deck), best_score, best_deck);
+      return current_score;
+    }
+}
+//------------------------------------------------------------------------------
+Deck* filter_best_deck(std::vector<Deck*> your_decks, Deck* d1,
+        FinalResults<long double>& best_score,
+        std::unordered_map<std::string, EvaluatedResults>& evaluated_decks, EvaluatedResults& zero_results,
+        unsigned long& skipped_simulations, Process& proc) {
+    Deck * cur_return = your_decks[0];
+    FinalResults<long double> cur_score;
+    for(unsigned i=1;i < your_decks.size();++i) //start with 1 since first always is simmed already
+    {
+        copy_deck(your_decks[i],d1);
+        cur_score = fitness(d1, best_score, evaluated_decks, zero_results, skipped_simulations, proc,true);
+        if(cur_score.points > best_score.points)
+        {
+            cur_return = your_decks[i];
+            best_score = cur_score;
+        }
+    }
+    return cur_return;
+}
+//------------------------------------------------------------------------------
+FinalResults<long double> hill_climbing(unsigned num_min_iterations, unsigned num_iterations, std::vector<Deck*> your_decks , Process& proc, Requirement & requirement
 #ifndef NQUEST
         , Quest & quest
 #endif
         )
 {
+    Deck * d1 = proc.your_decks[0];
     EvaluatedResults zero_results = { EvaluatedResults::first_type(proc.enemy_decks.size()), 0 };
     std::string best_deck = d1->hash();
     std::unordered_map<std::string, EvaluatedResults> evaluated_decks{{best_deck, zero_results}};
     EvaluatedResults& results = proc.evaluate(num_min_iterations, evaluated_decks.begin()->second);
     print_score_info(results, proc.factors);
     FinalResults<long double> best_score = compute_score(results, proc.factors);
+    unsigned long skipped_simulations = 0;
+
+    // use the best deck from all passed decks
+    copy_deck(filter_best_deck(your_decks, d1, best_score, evaluated_decks, zero_results, skipped_simulations, proc),d1);
+
     const Card* best_commander = d1->commander;
     const Card* best_alpha_dominion = d1->alpha_dominion;
     std::vector<const Card*> best_cards = d1->cards;
@@ -1713,7 +1776,6 @@ FinalResults<long double> hill_climbing(unsigned num_min_iterations, unsigned nu
             );
     bool is_random = (d1->strategy == DeckStrategy::random) || (d1->strategy == DeckStrategy::flexible);
     bool deck_has_been_improved = true;
-    unsigned long skipped_simulations = 0;
     std::vector<const Card*> commander_candidates;
     std::vector<const Card*> alpha_dominion_candidates;
     std::vector<const Card*> card_candidates;
@@ -1864,40 +1926,7 @@ FinalResults<long double> hill_climbing(unsigned num_min_iterations, unsigned nu
     return best_score;
 }
 
-inline FinalResults<long double> fitness(Deck* d1,
-        FinalResults<long double>& best_score,
-        std::unordered_map<std::string, EvaluatedResults>& evaluated_decks, EvaluatedResults& zero_results,
-        unsigned long& skipped_simulations, Process& proc, bool compare = false)
-{
 
-    // check previous simulations
-    auto && cur_deck = d1->hash();
-    //std::cout << "Deck hash: " << d1->hash() << " with ";
-    auto && emplace_rv = evaluated_decks.insert({cur_deck, zero_results});
-    auto & prev_results = emplace_rv.first->second;
-    if (!emplace_rv.second)
-    {
-        skipped_simulations += prev_results.second;
-    }
-
-    // Evaluate new deck
-    if (compare) {
-      auto compare_results= proc.compare(best_score.n_sims, prev_results,best_score);
-      auto current_score = compute_score(compare_results, proc.factors);
-      return current_score;
-    }
-    else
-    {
-      auto compare_results= proc.evaluate(best_score.n_sims, prev_results);
-      auto current_score = compute_score(compare_results, proc.factors);
-
-      //best_score = current_score;
-      //auto best_deck = d1->clone();
-      //print_score_info(compare_results, proc.factors);
-      //print_deck_inline(get_deck_cost(best_deck), best_score, best_deck);
-      return current_score;
-    }
-}
 
 
 inline long double acceptanceProbability(long double old_score, long double new_score, long double temperature)
@@ -1911,12 +1940,13 @@ inline long double acceptanceProbability(long double old_score, long double new_
     return exp(((new_score-old_score)/temperature*1000*100)/max_possible_score[(size_t)optimization_mode]);
 }
 
-FinalResults<long double> simulated_annealing(unsigned num_min_iterations, unsigned num_iterations, Deck* cur_deck, Process& proc, Requirement & requirement
+FinalResults<long double> simulated_annealing(unsigned num_min_iterations, unsigned num_iterations, std::vector<Deck*> your_decks, Process& proc, Requirement & requirement
 #ifndef NQUEST
         , Quest & quest
 #endif
         )
 {
+    Deck* cur_deck = proc.your_decks[0];
     EvaluatedResults zero_results = { EvaluatedResults::first_type(proc.enemy_decks.size()), 0 };
     //std::string best_deck = d1->hash();
     std::unordered_map<std::string, EvaluatedResults> evaluated_decks{{cur_deck->hash(), zero_results}};
@@ -1926,6 +1956,13 @@ FinalResults<long double> simulated_annealing(unsigned num_min_iterations, unsig
     //const Card* best_commander = d1->commander;
     //const Card* best_alpha_dominion = cur_deck->alpha_dominion;
     //std::vector<const Card*> best_cards = cur_deck->cards;
+    unsigned long skipped_simulations = 0;
+
+
+    // use the best deck from all passed decks
+    copy_deck(filter_best_deck(your_decks, cur_deck, best_score, evaluated_decks, zero_results, skipped_simulations, proc),cur_deck);
+
+
     unsigned deck_cost = get_deck_cost(cur_deck);
     fund = std::max(fund, deck_cost);
     print_deck_inline(deck_cost, best_score, cur_deck);
@@ -1937,7 +1974,6 @@ FinalResults<long double> simulated_annealing(unsigned num_min_iterations, unsig
             );
 
     bool is_random = (cur_deck->strategy == DeckStrategy::random) || (cur_deck->strategy == DeckStrategy::flexible);
-    unsigned long skipped_simulations = 0;
     std::vector<const Card*> all_candidates;
 
     auto mixed_candidates = get_candidate_lists(proc);
@@ -3154,7 +3190,7 @@ FinalResults<long double> run(int argc, char** argv)
         }
         else if (strcmp(argv[argIndex], "sim") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
+	          if(check_input_amount(argc,argv,argIndex,1))exit(1);
             opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), 0u, simulate));
             if (std::get<0>(opt_todo.back()) < 10) { opt_num_threads = 1; }
             argIndex += 1;
@@ -3162,10 +3198,11 @@ FinalResults<long double> run(int argc, char** argv)
         // climbing tasks
         else if (strcmp(argv[argIndex], "climbex") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,2))exit(1);
+	          if(check_input_amount(argc,argv,argIndex,2))exit(1);
             opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 2]), climb));
             if (std::get<1>(opt_todo.back()) < 10) { opt_num_threads = 1; }
             opt_do_optimization = true;
+            opt_multi_optimization = true;
             argIndex += 2;
         }
         else if (strcmp(argv[argIndex], "climb") == 0)
@@ -3174,6 +3211,7 @@ FinalResults<long double> run(int argc, char** argv)
             opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 1]), climb));
             if (std::get<1>(opt_todo.back()) < 10) { opt_num_threads = 1; }
             opt_do_optimization = true;
+            opt_multi_optimization = true;
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "climb_forts") == 0)
@@ -3191,6 +3229,7 @@ FinalResults<long double> run(int argc, char** argv)
             coolingRate = std::stod(argv[argIndex+3]);
             if (std::get<1>(opt_todo.back()) < 10) { opt_num_threads = 1; }
             opt_do_optimization = true;
+            opt_multi_optimization = true;
             argIndex += 3;
         }
         else if (strcmp(argv[argIndex], "genetic") == 0)
@@ -3204,7 +3243,7 @@ FinalResults<long double> run(int argc, char** argv)
         }
         else if (strcmp(argv[argIndex], "reorder") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
+	          if(check_input_amount(argc,argv,argIndex,1))exit(1);
             opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 1]), reorder));
             if (std::get<1>(opt_todo.back()) < 10) { opt_num_threads = 1; }
             opt_do_reorder = true;
@@ -3757,6 +3796,7 @@ FinalResults<long double> run(int argc, char** argv)
     {
         factors[i] = your_decks_factors[i/enemy_decks_factors.size()]*enemy_decks_factors[i%enemy_decks_factors.size()];
     }
+
     if((opt_do_optimization || opt_do_reorder ) && (your_decks.size() != 1 && !opt_multi_optimization)) {
         std::cerr << "Optimization only works with a single deck" << std::endl;
         exit(1);
@@ -3898,7 +3938,7 @@ FinalResults<long double> run(int argc, char** argv)
                               }
             case climb: {
                             //TODO check for your_decks.size()==1
-                            fr=hill_climbing(std::get<0>(op), std::get<1>(op), your_deck, p, requirement
+                            fr=hill_climbing(std::get<0>(op), std::get<1>(op), your_decks, p, requirement
 #ifndef NQUEST
                                     , quest
 #endif
@@ -3907,7 +3947,7 @@ FinalResults<long double> run(int argc, char** argv)
                         }
             case anneal: {
                               //TODO check for your_decks.size()==1
-                             fr= simulated_annealing(std::get<0>(op), std::get<1>(op), your_deck, p, requirement
+                             fr= simulated_annealing(std::get<0>(op), std::get<1>(op), your_decks, p, requirement
 #ifndef NQUEST
                                      , quest
 #endif
@@ -3925,8 +3965,7 @@ FinalResults<long double> run(int argc, char** argv)
 
                          }
             case reorder: {
-
-                              //TODO check for your_decks.size()==1
+                              //TODO multi deck mode for reorder
                               your_deck->strategy = DeckStrategy::ordered;
                               use_owned_cards = true;
                               use_top_level_card = false;
@@ -3941,7 +3980,8 @@ FinalResults<long double> run(int argc, char** argv)
                               owned_cards.clear();
                               claim_cards({your_deck->commander});
                               claim_cards(your_deck->cards);
-                              fr=hill_climbing(std::get<0>(op), std::get<1>(op), your_deck, p, requirement
+                              std::vector<Deck*> single_deck =  {your_deck};
+                              fr=hill_climbing(std::get<0>(op), std::get<1>(op), single_deck, p, requirement
 #ifndef NQUEST
                                       , quest
 #endif
