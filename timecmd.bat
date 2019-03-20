@@ -1,6 +1,8 @@
 @echo off
 @setlocal
 
+:: https://stackoverflow.com/a/6209392
+
 set start=%time%
 
 :: Runs your command
