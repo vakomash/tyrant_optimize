@@ -61,6 +61,8 @@ namespace {
     std::unordered_map<unsigned, unsigned> owned_cards;
     const Card* owned_alpha_dominion{nullptr};
     bool use_owned_cards{true};
+    bool opt_skip_unclaimed_decks{false};
+    //bool opt_trim_unclaimed_decks{false};
     unsigned min_deck_len{1};
     unsigned max_deck_len{10};
     unsigned opt_freezed_cards{0};
@@ -130,6 +132,8 @@ void init()
     owned_cards.clear();
     owned_alpha_dominion = nullptr;
     use_owned_cards=true;
+    opt_skip_unclaimed_decks=false;
+    //opt_trim_unclaimed_decks=false;
     min_deck_len=1;
     max_deck_len=10;
     opt_freezed_cards=0;
@@ -740,6 +744,24 @@ unsigned check_requirement(const Deck* deck, const Requirement & requirement
     }
 #endif
     return gap;
+}
+//check if claim_cards is necessary => i.e. can the deck be build from the ownedcards
+bool claim_cards_needed(const std::vector<const Card*> & card_list)
+{
+    std::map<const Card *, unsigned> num_cards;
+    get_required_cards_before_upgrade(card_list, num_cards);
+    for (const auto & it: num_cards)
+    {
+        const Card * card = it.first;
+        if(card->m_category == CardCategory::dominion_material)continue;
+        if(card->m_category == CardCategory::dominion_alpha)continue;
+        unsigned num_to_claim = safe_minus(it.second, owned_cards[card->m_id]);
+        if (num_to_claim > 0)
+        {
+            return true;
+        }
+    }
+    return false;
 }
 
 void claim_cards(const std::vector<const Card*> & card_list)
@@ -2125,19 +2147,11 @@ FinalResults<long double> simulated_annealing(unsigned num_min_iterations, unsig
 
 
 
-bool valid_deck(Deck* cur_deck)
+bool valid_deck(Deck* your_deck)
 {
-    std::map<const Card *, unsigned> num_cards;
-    get_required_cards_before_upgrade(cur_deck->cards, num_cards);//only needed to check card combination
-    for (const auto & it: num_cards)
-    {
-        const Card * card = it.first;
-        unsigned num_to_claim = safe_minus(it.second, owned_cards[card->m_id]);
-        if (num_to_claim > 0)
-        {
-            return false; //invalid
-        }
-    }
+    if(claim_cards_needed({your_deck->commander}))return false;
+    if(claim_cards_needed(your_deck->cards))return false;
+    if(your_deck->alpha_dominion && claim_cards_needed({your_deck->alpha_dominion}))return false;
     return true; //valid
 }
 
@@ -3120,36 +3134,45 @@ FinalResults<long double> run(int argc, char** argv)
 #endif
         else if (strcmp(argv[argIndex], "threads") == 0 || strcmp(argv[argIndex], "-t") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
+	          if(check_input_amount(argc,argv,argIndex,1))exit(1);
             opt_num_threads = atoi(argv[argIndex+1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "target") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
+	          if(check_input_amount(argc,argv,argIndex,1))exit(1);
             opt_target_score = argv[argIndex+1];
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "turnlimit") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
+	          if(check_input_amount(argc,argv,argIndex,1))exit(1);
             turn_limit = atoi(argv[argIndex+1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "mis") == 0)
         {
+	          if(check_input_amount(argc,argv,argIndex,1))exit(1);
             min_increment_of_score = atof(argv[argIndex+1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "timeout") == 0) //set timeout in hours. tuo will stop approx. at the given time.
         {
-	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
+	          if(check_input_amount(argc,argv,argIndex,1))exit(1);
             maximum_time = atof(argv[argIndex+1]);
             argIndex += 1;
         }
+        else if (strcmp(argv[argIndex], "strict-ownedcards") == 0) //won't add missing cards, instead skips faulty decks
+        {
+            opt_skip_unclaimed_decks = true;
+        }
+        /*else if (strcmp(argv[argIndex], "trim-ownedcards") == 0) //won't add missing cards, instead removes missing cards from decks
+        {
+            opt_trim_unclaimed_decks = true;
+        }*/
         else if (strcmp(argv[argIndex], "cl") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
+	          if(check_input_amount(argc,argv,argIndex,1))exit(1);
             confidence_level = atof(argv[argIndex+1]);
             argIndex += 1;
         }
@@ -3801,10 +3824,60 @@ FinalResults<long double> run(int argc, char** argv)
             exit(1);
         }
 
+
+        //add cards from the decks to requirement/inventory
+        if(opt_do_optimization || opt_do_reorder)
+        {
+        if (opt_keep_commander) //TODO this does not work with multi deck mode
+        {
+            requirement.num_cards[your_deck->commander] = 1;
+        }
+        for (auto && card_mark: your_deck->card_marks)
+        {
+            auto && card = card_mark.first < 0 ? your_deck->commander : your_deck->cards[card_mark.first];
+            auto mark = card_mark.second;
+            if ((mark == '!') && ((card_mark.first >= 0) || !opt_keep_commander))
+            {
+                requirement.num_cards[card] += 1;
+            }
+        }
+        if(opt_skip_unclaimed_decks)
+        {
+            //skip decks that can not be build
+            if(claim_cards_needed({your_deck->commander}))continue;
+            if(claim_cards_needed(your_deck->cards))continue;
+            if(your_deck->alpha_dominion && claim_cards_needed({your_deck->alpha_dominion}))continue;
+        }
+        else if ( opt_do_optimization and use_owned_cards)
+        {
+            // Force to claim cards in your initial deck.
+            claim_cards({your_deck->commander});
+            claim_cards(your_deck->cards);
+            if (your_deck->alpha_dominion)
+                claim_cards({your_deck->alpha_dominion});
+        }
+
+        // shrink any oversized deck to maximum of 10 cards + commander
+        // NOTE: do this AFTER the call to claim_cards so that passing an initial deck of >10 cards
+        //       can be used as a "shortcut" for adding them to owned cards. Also this allows climb
+        //       to figure out which are the best 10, rather than restricting climb to the first 10.
+        if (your_deck->cards.size() > max_deck_len)
+        {
+            your_deck->shrink(max_deck_len);
+            if (debug_print >= 0)
+            {
+                std::cerr << "WARNING: Too many cards in your deck. Trimmed.\n";
+            }
+        }
+        }
+
         your_decks.push_back(your_deck);
         your_decks_factors.push_back(deck_parsed.second);
     }
-
+    if(your_decks.size()==0) {
+        std::cerr << "No deck set. Probably due to 'strict-ownedcards' and a deck that is incompatible to the set 'ownedcards'." << std::endl;
+        exit(1);
+    }
     target_score = opt_target_score.empty() ? max_possible_score[(size_t)optimization_mode] : boost::lexical_cast<long double>(opt_target_score);
 
     for (auto deck_parsed: enemy_deck_list_parsed)
@@ -3882,6 +3955,7 @@ FinalResults<long double> run(int argc, char** argv)
         enemy_decks.push_back(enemy_deck);
         enemy_decks_factors.push_back(deck_parsed.second);
     }
+
     std::vector<long double> factors((opt_multi_optimization?1:your_decks_factors.size())*enemy_decks_factors.size());
     for(unsigned i =0; i < factors.size();++i)
     {
@@ -3891,48 +3965,6 @@ FinalResults<long double> run(int argc, char** argv)
     if((opt_do_optimization || opt_do_reorder ) && (your_decks.size() != 1 && !opt_multi_optimization)) {
         std::cerr << "Optimization only works with a single deck" << std::endl;
         exit(1);
-    }
-    if(opt_do_optimization || opt_do_reorder)
-    {
-        //auto your_deck = your_decks[0];
-        for( auto your_deck : your_decks)
-        {
-
-        if (opt_keep_commander)
-        {
-            requirement.num_cards[your_deck->commander] = 1;
-        }
-        for (auto && card_mark: your_deck->card_marks)
-        {
-            auto && card = card_mark.first < 0 ? your_deck->commander : your_deck->cards[card_mark.first];
-            auto mark = card_mark.second;
-            if ((mark == '!') && ((card_mark.first >= 0) || !opt_keep_commander))
-            {
-                requirement.num_cards[card] += 1;
-            }
-        }
-        // Force to claim cards in your initial deck.
-        if (opt_do_optimization and use_owned_cards)
-        {
-            claim_cards({your_deck->commander});
-            claim_cards(your_deck->cards);
-            if (your_deck->alpha_dominion)
-                claim_cards({your_deck->alpha_dominion});
-        }
-
-        // shrink any oversized deck to maximum of 10 cards + commander
-        // NOTE: do this AFTER the call to claim_cards so that passing an initial deck of >10 cards
-        //       can be used as a "shortcut" for adding them to owned cards. Also this allows climb
-        //       to figure out which are the best 10, rather than restricting climb to the first 10.
-        if (your_deck->cards.size() > max_deck_len)
-        {
-            your_deck->shrink(max_deck_len);
-            if (debug_print >= 0)
-            {
-                std::cerr << "WARNING: Too many cards in your deck. Trimmed.\n";
-            }
-        }
-      }
     }
 
     if (debug_print >= 0)
