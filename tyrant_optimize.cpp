@@ -93,8 +93,17 @@ namespace {
 
     std::chrono::time_point<std::chrono::system_clock> start_time;
     long double maximum_time{0};
+    //anneal
     long double temperature = 1000;
     long double coolingRate = 0.001;
+    //genetic
+    unsigned generations = 50;
+    unsigned pool_size = 0;
+    unsigned min_pool_size = 20;
+    double opt_pool_keep = 1;
+    double opt_pool_mutate = 1;
+    double opt_pool_cross = 1;
+    //fort_climb
     unsigned yfpool{0};
     unsigned efpool{0};
 
@@ -155,6 +164,13 @@ void init()
     maximum_time=0;
     temperature = 1000;
     coolingRate = 0.001;
+
+    generations = 50;
+    pool_size = 0;
+    opt_pool_keep = 1;
+    opt_pool_mutate = 1;
+    opt_pool_cross = 1;
+
     yfpool=0;
     efpool=0;
 
@@ -1739,6 +1755,9 @@ Deck* filter_best_deck(std::vector<Deck*> your_decks, Deck* d1,
         {
             cur_return = your_decks[i];
             best_score = cur_score;
+
+            std::cout << "Deck improved: " << d1->hash() <<":";
+            print_deck_inline(get_deck_cost(d1), best_score, d1);
         }
     }
     return cur_return;
@@ -2234,7 +2253,18 @@ FinalResults<long double> genetic_algorithm(unsigned num_min_iterations, unsigne
         )
 {
     //std::cerr << "START GENETIC" << std::endl;
-    unsigned pool_size = 100; //TODO param
+    if(pool_size==0){
+      if(your_decks.size()>20) {
+         pool_size = your_decks.size();
+      }
+      else {
+        pool_size = min_pool_size;
+      }
+    }
+    unsigned pool_cross = pool_size*opt_pool_cross/(opt_pool_mutate+opt_pool_cross+opt_pool_keep);
+    unsigned pool_keep = pool_size*opt_pool_keep/(opt_pool_mutate+opt_pool_cross+opt_pool_keep);
+    unsigned pool_mutate = pool_size-pool_cross-pool_keep;
+
     //your_decks.size();
     std::vector<std::pair<Deck*,FinalResults<long double>>> pool;
     Deck* cur_deck = proc.your_decks[0];
@@ -2334,8 +2364,7 @@ FinalResults<long double> genetic_algorithm(unsigned num_min_iterations, unsigne
         }
     }
 
-    unsigned generations = 50; //TODO param
-    for( unsigned gen= 0; gen< generations;gen++ )
+    for( unsigned gen= 0; gen< generations && !is_timeout_reached() ;gen++ )
     {
         std::cout << "GENERATION: " << gen << std::endl;
 
@@ -2343,12 +2372,26 @@ FinalResults<long double> genetic_algorithm(unsigned num_min_iterations, unsigne
         auto sort = [](std::pair<Deck*,FinalResults<long double>> l,std::pair<Deck*,FinalResults<long double>> r) {return l.second.points > r.second.points;};
         std::sort(pool.begin(),pool.end(),sort);
         //breed
-        for ( unsigned it = 0; it < pool_size/4;it++)
-        { //todo selection random?
+        //cross
+        for ( unsigned it = 0; it < pool_cross;it++)
+        {
+            unsigned i = std::uniform_int_distribution<unsigned>(0,pool_keep-1)(re);
+            unsigned j = std::uniform_int_distribution<unsigned>(pool_keep,pool_size-pool_mutate)(re);
+            //unsigned  k= std::uniform_int_distribution<unsigned>(0,pool_size-pool_mutate)(re);
+            unsigned k = -1;
+            while (k >= pool_size-pool_mutate)
+              k=std::geometric_distribution<unsigned>(0.2)(re); //prefer crossover with strong decks
+            crossover(pool[i].first,pool[k].first,pool[j].first,re,best_gap, evaluated_decks);
             //crossover(pool[it+pool_size/4*2].first,pool[it+pool_size/4*3].first,pool[it+pool_size/4*3].first,re,best_gap, evaluated_decks);
-            crossover(pool[it].first,pool[it+pool_size/4].first,pool[it+pool_size/4].first,re,best_gap, evaluated_decks);
-            crossover(pool[it].first,pool[(it+pool_size/8)%(pool_size/4)].first,pool[it+pool_size/4*2].first,re,best_gap, evaluated_decks);
-            mutate(pool[it].first,pool[it+pool_size/4*3].first,all_candidates,re,best_gap, evaluated_decks);
+            //crossover(pool[it].first,pool[(it+pool_size/8)%(pool_size/4)].first,pool[it+pool_size/4*2].first,re,best_gap, evaluated_decks);
+            //mutate(pool[it].first,pool[it+pool_size/4*3].first,all_candidates,re,best_gap, evaluated_decks);
+        }
+        //mutate pool_keep to replace lowest scores
+        for ( unsigned it = pool_size-pool_mutate; it < pool_size;it++)
+        {
+            unsigned i = std::uniform_int_distribution<unsigned>(0,pool_keep-1)(re);
+            //unsigned j = std::uniform_int_distribution<unsigned>(pool_keep,pool_size-1)(re);
+            mutate(pool[i].first,pool[it].first,all_candidates,re,best_gap, evaluated_decks);
         }
         //mutate duplicates
         for ( unsigned it = 0; it < pool_size;it++)
@@ -2358,12 +2401,14 @@ FinalResults<long double> genetic_algorithm(unsigned num_min_iterations, unsigne
                 if(pool[it].first->hash().substr(8)==pool[i].first->hash().substr(8)) //ignore commander + dominion
                 {
                     mutate(pool[i].first->clone(),pool[i].first,all_candidates,re,best_gap, evaluated_decks);
-                    pool[i].second = pool[pool_size-1].second; //lowest score approx Null
+
+                    FinalResults<long double> nil{0, 0, 0, 0, 0, 0, 1};
+                    pool[i].second = nil; //lowest score approx Null
                 }
             }
         }
         //calc fitness
-        for (unsigned it = pool_size/4; it < pool_size; it++)
+        for (unsigned it = pool_keep; it < pool_size; it++)
         {
             copy_deck(pool[it].first,cur_deck);
             cur_score = fitness(cur_deck, best_score, evaluated_decks, zero_results, skipped_simulations, proc,true);
@@ -2377,13 +2422,39 @@ FinalResults<long double> genetic_algorithm(unsigned num_min_iterations, unsigne
                     , quest
 #endif
               );
-              std::cout << "Deck improved: " << best_deck->hash() <<":";
+              if(it < pool_size-pool_mutate)
+              {
+                if (debug_print >= 0)
+                  std::cout << "Crossover: " <<std::endl;
+                std::cout << "Deck improved: " << best_deck->hash() <<":";
+              }
+              else
+              {
+                if (debug_print >= 0)
+                  std::cout << "Mutation: " <<std::endl;
+                std::cout << "Deck improved: " << best_deck->hash() <<":";
+              }
+
               print_deck_inline(get_deck_cost(best_deck), best_score, best_deck);
             }
         }
+#ifndef NDEBUG
+        if (debug_print >= 0)
+        {
+          std::cout << "---------------POOL---------------" << std::endl;
+          for (unsigned it =0; it < pool.size();++it)
+          {
+            if(it==0)std::cout << "---------------KEEP---------------" << std::endl;
+            if(it==pool_keep)std::cout << "---------------CROSS--------------" << std::endl;
+            if(it==pool_keep+pool_cross)std::cout << "---------------MUTATE-------------" << std::endl;
+            auto a = pool[it];
+            print_deck_inline(get_deck_cost(a.first),a.second,a.first);
+          }
+          std::cout << "---------------PEND---------------" << std::endl;
+        }
+#endif
     }
-    for (auto a : pool)
-        print_deck_inline(get_deck_cost(a.first),a.second,a.first);
+
     unsigned simulations = 0;
     for (auto evaluation: evaluated_decks)
     { simulations += evaluation.second.second; }
@@ -2997,19 +3068,19 @@ FinalResults<long double> run(int argc, char** argv)
         {
             opt_your_strategy = DeckStrategy::ordered;
         }
-        else if (strcmp(argv[argIndex], "flexible") == 0)
+        else if (strcmp(argv[argIndex], "flexible") == 0 || strcmp(argv[argIndex], "flex") == 0)
         {
             opt_your_strategy = DeckStrategy::flexible;
         }
         else if (strcmp(argv[argIndex], "flexible-iter") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
+	          if(check_input_amount(argc,argv,argIndex,1))exit(1);
             flexible_iter = atoi(argv[argIndex+1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "flexible-turn") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
+	          if(check_input_amount(argc,argv,argIndex,1))exit(1);
             flexible_turn = atoi(argv[argIndex+1]);
             argIndex += 1;
         }
@@ -3216,14 +3287,14 @@ FinalResults<long double> run(int argc, char** argv)
         }
         else if (strcmp(argv[argIndex], "climb_forts") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
+	          if(check_input_amount(argc,argv,argIndex,1))exit(1);
             opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 1]), climb_forts));
             if (std::get<1>(opt_todo.back()) < 10) { opt_num_threads = 1; }
             argIndex += 1;
         }
         else if ( strcmp(argv[argIndex], "anneal") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,3))exit(1);
+	          if(check_input_amount(argc,argv,argIndex,3))exit(1);
             opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 1]), anneal));
             temperature = std::stod(argv[argIndex+2]);
             coolingRate = std::stod(argv[argIndex+3]);
@@ -3240,6 +3311,26 @@ FinalResults<long double> run(int argc, char** argv)
             opt_do_optimization = true;
             opt_multi_optimization = true;
             argIndex += 1;
+        }
+        else if (strcmp(argv[argIndex], "genetic-pool") == 0)
+        {
+	          if(check_input_amount(argc,argv,argIndex,1))exit(1);
+            pool_size = std::stod(argv[argIndex+1]);
+            argIndex += 1;
+        }
+        else if (strcmp(argv[argIndex], "genetic-gen") == 0)
+        {
+	          if(check_input_amount(argc,argv,argIndex,1))exit(1);
+            generations = std::stod(argv[argIndex+1]);
+            argIndex += 1;
+        }
+        else if (strcmp(argv[argIndex], "genetic-opts") == 0)
+        {
+	          if(check_input_amount(argc,argv,argIndex,3))exit(1);
+            opt_pool_keep = std::stod(argv[argIndex+1]);
+            opt_pool_cross = std::stod(argv[argIndex+2]);
+            opt_pool_mutate = std::stod(argv[argIndex+3]);
+            argIndex += 3;
         }
         else if (strcmp(argv[argIndex], "reorder") == 0)
         {
