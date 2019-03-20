@@ -63,7 +63,7 @@ namespace {
     bool use_owned_cards{true};
     unsigned min_deck_len{1};
     unsigned max_deck_len{10};
-    unsigned freezed_cards{0};
+    unsigned opt_freezed_cards{0};
     unsigned fund{0};
     long double target_score{100};
     long double min_increment_of_score{0};
@@ -93,8 +93,17 @@ namespace {
 
     std::chrono::time_point<std::chrono::system_clock> start_time;
     long double maximum_time{0};
+    //anneal
     long double temperature = 1000;
     long double coolingRate = 0.001;
+    //genetic
+    unsigned generations = 50;
+    unsigned pool_size = 0;
+    unsigned min_pool_size = 20;
+    double opt_pool_keep = 1;
+    double opt_pool_mutate = 1;
+    double opt_pool_cross = 1;
+    //fort_climb
     unsigned yfpool{0};
     unsigned efpool{0};
 
@@ -108,10 +117,10 @@ namespace {
     std::vector<Skill::Skill> prefered_skills;
     unsigned prefered_factor{3};
 
-	#if defined(ANDROID) || defined(__ANDROID__)
-	JNIEnv *envv;
+#if defined(ANDROID) || defined(__ANDROID__)
+	  JNIEnv *envv;
     jobject objv;
-    #endif
+#endif
 }
 
 void init()
@@ -123,7 +132,7 @@ void init()
     use_owned_cards=true;
     min_deck_len=1;
     max_deck_len=10;
-    freezed_cards=0;
+    opt_freezed_cards=0;
     fund=0;
     target_score=100;
     min_increment_of_score=0;
@@ -155,6 +164,13 @@ void init()
     maximum_time=0;
     temperature = 1000;
     coolingRate = 0.001;
+
+    generations = 50;
+    pool_size = 0;
+    opt_pool_keep = 1;
+    opt_pool_mutate = 1;
+    opt_pool_cross = 1;
+
     yfpool=0;
     efpool=0;
 
@@ -258,6 +274,16 @@ Java_de_neuwirthinformatik_Alexander_mTUO_TUOIntentService_stringFromJNI( JNIEnv
 }
 #endif
 using namespace std::placeholders;
+//------------------------------------------------------------------------------
+unsigned freezed_cards(const Deck* your_deck) {
+        return std::min<unsigned>(opt_freezed_cards, your_deck->cards.size());
+}
+void copy_deck(Deck* src,Deck* dst)
+{
+    dst->commander = src->commander;
+    dst->alpha_dominion = src->alpha_dominion;
+    dst->cards = src->cards;
+}
 //------------------------------------------------------------------------------
 std::string card_id_name(const Card* card)
 {
@@ -1677,18 +1703,84 @@ inline bool try_improve_deck(Deck* d1, unsigned from_slot, unsigned to_slot, con
     return false;
 }
 //------------------------------------------------------------------------------
-void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d1, Process& proc, Requirement & requirement
+/*
+ * Calc value of current set deck in d1 (proc.your_decks[0])
+ */
+inline FinalResults<long double> fitness(Deck* d1,
+        FinalResults<long double>& best_score,
+        std::unordered_map<std::string, EvaluatedResults>& evaluated_decks, EvaluatedResults& zero_results,
+        unsigned long& skipped_simulations, Process& proc, bool compare = false)
+{
+
+    // check previous simulations
+    auto && cur_deck = d1->hash();
+    //std::cout << "Deck hash: " << d1->hash() << " with ";
+    auto && emplace_rv = evaluated_decks.insert({cur_deck, zero_results});
+    auto & prev_results = emplace_rv.first->second;
+    if (!emplace_rv.second)
+    {
+        skipped_simulations += prev_results.second;
+    }
+
+    // Evaluate new deck
+    if (compare) {
+      auto compare_results= proc.compare(best_score.n_sims, prev_results,best_score);
+      auto current_score = compute_score(compare_results, proc.factors);
+      return current_score;
+    }
+    else
+    {
+      auto compare_results= proc.evaluate(best_score.n_sims, prev_results);
+      auto current_score = compute_score(compare_results, proc.factors);
+
+      //best_score = current_score;
+      //auto best_deck = d1->clone();
+      //print_score_info(compare_results, proc.factors);
+      //print_deck_inline(get_deck_cost(best_deck), best_score, best_deck);
+      return current_score;
+    }
+}
+//------------------------------------------------------------------------------
+Deck* filter_best_deck(std::vector<Deck*> your_decks, Deck* d1,
+        FinalResults<long double>& best_score,
+        std::unordered_map<std::string, EvaluatedResults>& evaluated_decks, EvaluatedResults& zero_results,
+        unsigned long& skipped_simulations, Process& proc) {
+    Deck * cur_return = your_decks[0];
+    FinalResults<long double> cur_score;
+    for(unsigned i=1;i < your_decks.size();++i) //start with 1 since first always is simmed already
+    {
+        copy_deck(your_decks[i],d1);
+        cur_score = fitness(d1, best_score, evaluated_decks, zero_results, skipped_simulations, proc,true);
+        if(cur_score.points > best_score.points)
+        {
+            cur_return = your_decks[i];
+            best_score = cur_score;
+
+            std::cout << "Deck improved: " << d1->hash() <<":";
+            print_deck_inline(get_deck_cost(d1), best_score, d1);
+        }
+    }
+    return cur_return;
+}
+//------------------------------------------------------------------------------
+FinalResults<long double> hill_climbing(unsigned num_min_iterations, unsigned num_iterations, std::vector<Deck*> your_decks , Process& proc, Requirement & requirement
 #ifndef NQUEST
         , Quest & quest
 #endif
         )
 {
+    Deck * d1 = proc.your_decks[0];
     EvaluatedResults zero_results = { EvaluatedResults::first_type(proc.enemy_decks.size()), 0 };
     std::string best_deck = d1->hash();
     std::unordered_map<std::string, EvaluatedResults> evaluated_decks{{best_deck, zero_results}};
     EvaluatedResults& results = proc.evaluate(num_min_iterations, evaluated_decks.begin()->second);
     print_score_info(results, proc.factors);
     FinalResults<long double> best_score = compute_score(results, proc.factors);
+    unsigned long skipped_simulations = 0;
+
+    // use the best deck from all passed decks
+    copy_deck(filter_best_deck(your_decks, d1, best_score, evaluated_decks, zero_results, skipped_simulations, proc),d1);
+
     const Card* best_commander = d1->commander;
     const Card* best_alpha_dominion = d1->alpha_dominion;
     std::vector<const Card*> best_cards = d1->cards;
@@ -1703,7 +1795,6 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
             );
     bool is_random = (d1->strategy == DeckStrategy::random) || (d1->strategy == DeckStrategy::flexible);
     bool deck_has_been_improved = true;
-    unsigned long skipped_simulations = 0;
     std::vector<const Card*> commander_candidates;
     std::vector<const Card*> alpha_dominion_candidates;
     std::vector<const Card*> card_candidates;
@@ -1746,8 +1837,8 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
 
 
     // << main climbing loop >>
-    for (unsigned from_slot(freezed_cards), dead_slot(freezed_cards); ;
-            from_slot = std::max(freezed_cards, (from_slot + 1) % std::min<unsigned>(max_deck_len, best_cards.size() + 1)))
+    for (unsigned from_slot(freezed_cards(d1)), dead_slot(freezed_cards(d1)); ;
+            from_slot = std::max(freezed_cards(d1), (from_slot + 1) % std::min<unsigned>(max_deck_len, best_cards.size() + 1)))
     {
         if(is_timeout_reached()){ break;}
         if (deck_has_been_improved)
@@ -1822,7 +1913,7 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
         for (auto it = card_candidates.begin(); it != card_candidates.end();++it)
         {
             const Card* card_candidate = *it;
-            for (unsigned to_slot(is_random ? from_slot : card_candidate ? freezed_cards : (best_cards.size() - 1));
+            for (unsigned to_slot(is_random ? from_slot : card_candidate ? freezed_cards(d1) : (best_cards.size() - 1));
                     to_slot < (is_random ? (from_slot + 1) : (best_cards.size() + (from_slot < best_cards.size() ? 0 : 1)));
                     ++ to_slot)
             {
@@ -1851,36 +1942,11 @@ void hill_climbing(unsigned num_min_iterations, unsigned num_iterations, Deck* d
     print_deck_inline(get_deck_cost(d1), best_score, d1);
     print_upgraded_cards(d1);
     print_sim_card_values(d1,proc,num_iterations);
+    return best_score;
 }
 
-inline FinalResults<long double> fitness(Deck* d1,
-        FinalResults<long double>& best_score,
-        std::unordered_map<std::string, EvaluatedResults>& evaluated_decks, EvaluatedResults& zero_results,
-        unsigned long& skipped_simulations, Process& proc)
-{
 
-    // check previous simulations
-    auto && cur_deck = d1->hash();
-    //std::cout << "Deck hash: " << d1->hash() << " with ";
-    auto && emplace_rv = evaluated_decks.insert({cur_deck, zero_results});
-    auto & prev_results = emplace_rv.first->second;
-    if (!emplace_rv.second)
-    {
-        skipped_simulations += prev_results.second;
-    }
 
-    // Evaluate new deck
-
-    auto compare_results= proc.evaluate(best_score.n_sims, prev_results);
-
-    auto current_score = compute_score(compare_results, proc.factors);
-
-    //best_score = current_score;
-    //auto best_deck = d1->clone();
-    //print_score_info(compare_results, proc.factors);
-    //print_deck_inline(get_deck_cost(best_deck), best_score, best_deck);
-    return current_score;
-}
 
 inline long double acceptanceProbability(long double old_score, long double new_score, long double temperature)
 {
@@ -1893,12 +1959,13 @@ inline long double acceptanceProbability(long double old_score, long double new_
     return exp(((new_score-old_score)/temperature*1000*100)/max_possible_score[(size_t)optimization_mode]);
 }
 
-void simulated_annealing(unsigned num_min_iterations, unsigned num_iterations, Deck* cur_deck, Process& proc, Requirement & requirement
+FinalResults<long double> simulated_annealing(unsigned num_min_iterations, unsigned num_iterations, std::vector<Deck*> your_decks, Process& proc, Requirement & requirement
 #ifndef NQUEST
         , Quest & quest
 #endif
         )
 {
+    Deck* cur_deck = proc.your_decks[0];
     EvaluatedResults zero_results = { EvaluatedResults::first_type(proc.enemy_decks.size()), 0 };
     //std::string best_deck = d1->hash();
     std::unordered_map<std::string, EvaluatedResults> evaluated_decks{{cur_deck->hash(), zero_results}};
@@ -1908,6 +1975,13 @@ void simulated_annealing(unsigned num_min_iterations, unsigned num_iterations, D
     //const Card* best_commander = d1->commander;
     //const Card* best_alpha_dominion = cur_deck->alpha_dominion;
     //std::vector<const Card*> best_cards = cur_deck->cards;
+    unsigned long skipped_simulations = 0;
+
+
+    // use the best deck from all passed decks
+    copy_deck(filter_best_deck(your_decks, cur_deck, best_score, evaluated_decks, zero_results, skipped_simulations, proc),cur_deck);
+
+
     unsigned deck_cost = get_deck_cost(cur_deck);
     fund = std::max(fund, deck_cost);
     print_deck_inline(deck_cost, best_score, cur_deck);
@@ -1919,7 +1993,6 @@ void simulated_annealing(unsigned num_min_iterations, unsigned num_iterations, D
             );
 
     bool is_random = (cur_deck->strategy == DeckStrategy::random) || (cur_deck->strategy == DeckStrategy::flexible);
-    unsigned long skipped_simulations = 0;
     std::vector<const Card*> all_candidates;
 
     auto mixed_candidates = get_candidate_lists(proc);
@@ -1961,8 +2034,8 @@ void simulated_annealing(unsigned num_min_iterations, unsigned num_iterations, D
 
     deck_cost = 0;
 
-    unsigned from_slot(freezed_cards);
-    unsigned from_slot_tmp(freezed_cards);
+    unsigned from_slot(freezed_cards(cur_deck));
+    unsigned from_slot_tmp(freezed_cards(cur_deck));
     unsigned to_slot(1);
 
     if(debug_print >0)std::cout << "Starting Anneal" << std::endl;
@@ -1971,14 +2044,14 @@ void simulated_annealing(unsigned num_min_iterations, unsigned num_iterations, D
         cur_deck->commander = prev_deck->commander;
         cur_deck->alpha_dominion = prev_deck->alpha_dominion;
         cur_deck->cards = prev_deck->cards;
-        from_slot = std::max(freezed_cards, (from_slot+1) % std::min<unsigned>(max_deck_len, cur_deck->cards.size() +1));
+        from_slot = std::max(freezed_cards(cur_deck), (from_slot+1) % std::min<unsigned>(max_deck_len, cur_deck->cards.size() +1));
         const Card* candidate = all_candidates.at(std::uniform_int_distribution<unsigned>(0,all_candidates.size()-1)(re));
 
 
         if((!candidate || (candidate->m_category == CardCategory::normal && candidate->m_type != CardType::commander && candidate->m_category != CardCategory::dominion_alpha)))
         {
 
-            to_slot = std::uniform_int_distribution<unsigned>(is_random ? from_slot : candidate ? freezed_cards : (cur_deck->cards.size() -1),(is_random ? (from_slot+1) : (cur_deck->cards.size() + ( from_slot < cur_deck->cards.size() ? 0 : 1)))-1)(re);
+            to_slot = std::uniform_int_distribution<unsigned>(is_random ? from_slot : candidate ? freezed_cards(cur_deck) : (cur_deck->cards.size() -1),(is_random ? (from_slot+1) : (cur_deck->cards.size() + ( from_slot < cur_deck->cards.size() ? 0 : 1)))-1)(re);
             if(candidate ?
                     (from_slot < cur_deck->cards.size() && (from_slot == to_slot && candidate == cur_deck->cards[to_slot]))
                     :
@@ -2047,7 +2120,353 @@ void simulated_annealing(unsigned num_min_iterations, unsigned num_iterations, D
     print_deck_inline(get_deck_cost(best_deck), best_score, best_deck);
     print_upgraded_cards(best_deck);
     print_sim_card_values(best_deck,proc,num_iterations);
+    return best_score;
 }
+
+
+
+bool valid_deck(Deck* cur_deck)
+{
+    std::map<const Card *, unsigned> num_cards;
+    get_required_cards_before_upgrade(cur_deck->cards, num_cards);//only needed to check card combination
+    for (const auto & it: num_cards)
+    {
+        const Card * card = it.first;
+        unsigned num_to_claim = safe_minus(it.second, owned_cards[card->m_id]);
+        if (num_to_claim > 0)
+        {
+            return false; //invalid
+        }
+    }
+    return true; //valid
+}
+
+void crossover(Deck* src1,Deck* src2, Deck* cur_deck, std::mt19937& re,unsigned best_gap,std::unordered_map<std::string, EvaluatedResults>& evaluated_decks)
+{
+      cur_deck->commander = std::uniform_int_distribution<unsigned>(0, 1)(re)?src1->commander:src2->commander;
+      cur_deck->alpha_dominion = std::uniform_int_distribution<unsigned>(0, 1)(re)?src1->alpha_dominion:src2->alpha_dominion;
+      bool finished = false;
+      unsigned itr = 0;
+      while(!finished && itr < 100) //todo opt
+      {
+        itr++;
+        cur_deck->cards.clear();
+        for(unsigned it =0; it < std::max(src1->cards.size(),src2->cards.size());it++)
+        {
+            if(src1->cards.size() <=it)
+            {cur_deck->cards.push_back(src2->cards[it]);}
+            else if(src2->cards.size() <=it)
+            {cur_deck->cards.push_back(src1->cards[it]);}
+            else
+            {
+            cur_deck->cards.push_back(std::uniform_int_distribution<unsigned>(0, 1)(re)?src1->cards[it]:src2->cards[it]);
+            }
+        }
+        if(!valid_deck(cur_deck)) {continue;} //repeat
+
+        if(evaluated_decks.count(cur_deck->hash())){continue;} // deck already simmed
+        unsigned cur_gap = check_requirement(cur_deck, requirement
+#ifndef NQUEST
+                , quest
+#endif
+                );
+        if ((cur_gap > 0) && (cur_gap >= best_gap))
+        { continue; }
+        finished = true; // exit while
+      }
+      if(!finished) copy_deck(std::uniform_int_distribution<unsigned>(0, 1)(re)?src1:src2,cur_deck);
+}
+
+void mutate(Deck* src, Deck* cur_deck, std::vector<const Card*> all_candidates, std::mt19937& re,unsigned best_gap,std::unordered_map<std::string, EvaluatedResults>& evaluated_decks)
+{
+        copy_deck(src,cur_deck);
+
+        bool is_random = (cur_deck->strategy == DeckStrategy::random) || (cur_deck->strategy == DeckStrategy::flexible); //should be same for all decks from input!?
+
+        unsigned deck_cost = 0;
+
+        unsigned from_slot(freezed_cards(cur_deck));
+        unsigned from_slot_tmp(freezed_cards(cur_deck));
+        unsigned to_slot(1);
+
+        bool finished = false;
+        unsigned itr=0;
+        while(!finished && itr < 100) // todo opt
+        {
+        itr++;
+        copy_deck(src,cur_deck);
+
+        from_slot = std::uniform_int_distribution<unsigned>(1,std::min<unsigned>(max_deck_len-1, cur_deck->cards.size()))(re);
+
+        const Card* candidate = all_candidates.at(std::uniform_int_distribution<unsigned>(0,all_candidates.size()-1)(re));
+
+
+        if((!candidate || (candidate->m_category == CardCategory::normal && candidate->m_type != CardType::commander && candidate->m_category != CardCategory::dominion_alpha)))
+        {
+
+            to_slot = std::uniform_int_distribution<unsigned>(is_random ? from_slot : candidate ? freezed_cards(cur_deck) : (cur_deck->cards.size() -1),(is_random ? (from_slot+1) : (cur_deck->cards.size() + ( from_slot < cur_deck->cards.size() ? 0 : 1)))-1)(re);
+            if(candidate ?
+                    (from_slot < cur_deck->cards.size() && (from_slot == to_slot && candidate == cur_deck->cards[to_slot]))
+                    :
+                    (from_slot == cur_deck->cards.size()))
+            {
+                continue;
+            }
+            from_slot_tmp = from_slot;
+        }
+        else if(candidate->m_type == CardType::commander && requirement.num_cards.count(cur_deck->commander) == 0)
+        {
+            cur_deck->commander = candidate;
+            from_slot_tmp = -1;
+            to_slot = -1;
+        }
+        else if(candidate->m_category == CardCategory::dominion_alpha && use_owned_dominions)
+        {
+            cur_deck->alpha_dominion = candidate;
+            from_slot_tmp = -1;
+            to_slot = -1;
+        }
+        else{
+            continue;
+        }
+
+        if(evaluated_decks.count(cur_deck->hash())){continue;} // deck already simmed
+        std::vector<std::pair<signed, const Card * >> cards_out, cards_in;
+        if (!adjust_deck(cur_deck, from_slot_tmp, to_slot, candidate, fund, re, deck_cost, cards_out, cards_in))
+        { continue;}
+        if(!valid_deck(cur_deck)) {continue;} //repeat
+        unsigned cur_gap = check_requirement(cur_deck, requirement
+#ifndef NQUEST
+                , quest
+#endif
+                );
+        if ((cur_gap > 0) && (cur_gap >= best_gap))
+        { continue; }
+        finished = true; // exit while
+        }
+        if(!finished) copy_deck(src,cur_deck);
+}
+FinalResults<long double> genetic_algorithm(unsigned num_min_iterations, unsigned num_iterations, std::vector<Deck*> your_decks, Process& proc, Requirement & requirement
+#ifndef NQUEST
+        , Quest & quest
+#endif
+        )
+{
+    //std::cerr << "START GENETIC" << std::endl;
+    if(pool_size==0){
+      if(your_decks.size()>20) {
+         pool_size = your_decks.size();
+      }
+      else {
+        pool_size = min_pool_size;
+      }
+    }
+    unsigned pool_cross = pool_size*opt_pool_cross/(opt_pool_mutate+opt_pool_cross+opt_pool_keep);
+    unsigned pool_keep = pool_size*opt_pool_keep/(opt_pool_mutate+opt_pool_cross+opt_pool_keep);
+    unsigned pool_mutate = pool_size-pool_cross-pool_keep;
+
+    //your_decks.size();
+    std::vector<std::pair<Deck*,FinalResults<long double>>> pool;
+    Deck* cur_deck = proc.your_decks[0];
+
+
+
+    EvaluatedResults zero_results = { EvaluatedResults::first_type(proc.enemy_decks.size()), 0 };
+
+    std::unordered_map<std::string, EvaluatedResults> evaluated_decks{{cur_deck->hash(), zero_results}};
+    EvaluatedResults& results = proc.evaluate(num_min_iterations, evaluated_decks.begin()->second);
+    print_score_info(results, proc.factors);
+    FinalResults<long double> best_score = compute_score(results, proc.factors); //init sim, todo remove
+
+    unsigned deck_cost = get_deck_cost(cur_deck);
+    fund = std::max(fund, deck_cost);
+    print_deck_inline(deck_cost, best_score, cur_deck);
+    std::mt19937& re = proc.threads_data[0]->re;
+    unsigned cur_gap = check_requirement(cur_deck, requirement
+#ifndef NQUEST
+            , quest
+#endif
+            );
+
+    unsigned long skipped_simulations = 0;
+    std::vector<const Card*> all_candidates;
+
+    auto mixed_candidates = get_candidate_lists(proc);
+    all_candidates.reserve(mixed_candidates.at(0).size()+mixed_candidates.at(1).size()+mixed_candidates.at(2).size());
+    all_candidates.insert(all_candidates.end(), std::make_move_iterator(mixed_candidates.at(0).begin()),std::make_move_iterator(mixed_candidates.at(0).end()));
+    all_candidates.insert(all_candidates.end(), std::make_move_iterator(mixed_candidates.at(1).begin()),std::make_move_iterator(mixed_candidates.at(1).end()));
+    all_candidates.insert(all_candidates.end(), std::make_move_iterator(mixed_candidates.at(2).begin()),std::make_move_iterator(mixed_candidates.at(2).end()));
+    //clear
+    mixed_candidates.at(0).clear(); mixed_candidates.at(0).shrink_to_fit();
+    mixed_candidates.at(1).clear(); mixed_candidates.at(1).shrink_to_fit();
+    mixed_candidates.at(2).clear(); mixed_candidates.at(2).shrink_to_fit();
+    mixed_candidates.clear();mixed_candidates.shrink_to_fit();
+
+    // add current alpha dominion to candidates if necessary
+    // or setup first candidate into the deck if no alpha dominion defined
+
+    for( auto tmp_deck : your_decks) // check all decks for owned dominions
+    {
+      if (use_owned_dominions)
+      {
+          if (tmp_deck->alpha_dominion)
+          {
+              if (!std::count(all_candidates.begin(), all_candidates.end(), tmp_deck->alpha_dominion))
+              {
+                  all_candidates.emplace_back(tmp_deck->alpha_dominion);
+              }
+          }
+          if (!tmp_deck->alpha_dominion && owned_alpha_dominion)
+          {
+                tmp_deck->alpha_dominion = owned_alpha_dominion;
+                std::cout << "Setting up owned Alpha Dominion into a deck: " << tmp_deck->alpha_dominion->m_name << std::endl;
+          }
+      }
+    }
+    Deck* best_deck = cur_deck->clone();
+    FinalResults<long double> cur_score = best_score;
+    unsigned best_gap = cur_gap;
+
+    //fill pool
+    if(your_decks.size()>pool_size) your_decks.resize(pool_size);
+    for ( unsigned it =your_decks.size(); it < pool_size;it++)
+    {
+          unsigned j = std::uniform_int_distribution<unsigned>(0,your_decks.size()-1)(re);
+          unsigned i = std::uniform_int_distribution<unsigned>(0,your_decks.size()-1)(re);
+          Deck* nxt = your_decks[j]->clone();
+          if(std::uniform_int_distribution<unsigned>(0,1)(re))
+          {
+              mutate(your_decks[i],nxt,all_candidates,re,best_gap,evaluated_decks);
+          }
+          else
+          {
+              crossover(your_decks[i],your_decks[j],nxt,re,best_gap,evaluated_decks);
+          }
+          your_decks.push_back(nxt);
+    }
+    //sim pool
+    for( auto i_deck :your_decks)
+    {
+        copy_deck(i_deck,cur_deck);
+        cur_score = fitness(cur_deck, best_score, evaluated_decks, zero_results, skipped_simulations, proc,true);
+        pool.push_back(std::make_pair(i_deck,cur_score));
+        if(cur_score.points > best_score.points)
+        {
+            best_score = cur_score;
+            best_deck = cur_deck->clone();
+            best_gap = check_requirement(cur_deck, requirement
+#ifndef NQUEST
+                , quest
+#endif
+                );
+            std::cout << "Deck improved: " << best_deck->hash() <<":";
+            print_deck_inline(get_deck_cost(best_deck), best_score, best_deck);
+        }
+    }
+
+    for( unsigned gen= 0; gen< generations && !is_timeout_reached() ;gen++ )
+    {
+        std::cout << "GENERATION: " << gen << std::endl;
+
+        //sort
+        auto sort = [](std::pair<Deck*,FinalResults<long double>> l,std::pair<Deck*,FinalResults<long double>> r) {return l.second.points > r.second.points;};
+        std::sort(pool.begin(),pool.end(),sort);
+        //breed
+        //cross
+        for ( unsigned it = 0; it < pool_cross;it++)
+        {
+            unsigned i = std::uniform_int_distribution<unsigned>(0,pool_keep-1)(re);
+            unsigned j = std::uniform_int_distribution<unsigned>(pool_keep,pool_size-pool_mutate)(re);
+            //unsigned  k= std::uniform_int_distribution<unsigned>(0,pool_size-pool_mutate)(re);
+            unsigned k = -1;
+            while (k >= pool_size-pool_mutate)
+              k=std::geometric_distribution<unsigned>(0.2)(re); //prefer crossover with strong decks
+            crossover(pool[i].first,pool[k].first,pool[j].first,re,best_gap, evaluated_decks);
+            //crossover(pool[it+pool_size/4*2].first,pool[it+pool_size/4*3].first,pool[it+pool_size/4*3].first,re,best_gap, evaluated_decks);
+            //crossover(pool[it].first,pool[(it+pool_size/8)%(pool_size/4)].first,pool[it+pool_size/4*2].first,re,best_gap, evaluated_decks);
+            //mutate(pool[it].first,pool[it+pool_size/4*3].first,all_candidates,re,best_gap, evaluated_decks);
+        }
+        //mutate pool_keep to replace lowest scores
+        for ( unsigned it = pool_size-pool_mutate; it < pool_size;it++)
+        {
+            unsigned i = std::uniform_int_distribution<unsigned>(0,pool_keep-1)(re);
+            //unsigned j = std::uniform_int_distribution<unsigned>(pool_keep,pool_size-1)(re);
+            mutate(pool[i].first,pool[it].first,all_candidates,re,best_gap, evaluated_decks);
+        }
+        //mutate duplicates
+        for ( unsigned it = 0; it < pool_size;it++)
+        {
+            for (unsigned i = it+1; i < pool_size;i++)
+            {
+                if(pool[it].first->hash().substr(8)==pool[i].first->hash().substr(8)) //ignore commander + dominion
+                {
+                    mutate(pool[i].first->clone(),pool[i].first,all_candidates,re,best_gap, evaluated_decks);
+
+                    FinalResults<long double> nil{0, 0, 0, 0, 0, 0, 1};
+                    pool[i].second = nil; //lowest score approx Null
+                }
+            }
+        }
+        //calc fitness
+        for (unsigned it = pool_keep; it < pool_size; it++)
+        {
+            copy_deck(pool[it].first,cur_deck);
+            cur_score = fitness(cur_deck, best_score, evaluated_decks, zero_results, skipped_simulations, proc,true);
+            pool[it].second = cur_score;
+            if(cur_score.points > best_score.points)
+            {
+              best_score = cur_score;
+              best_deck = cur_deck->clone();
+              best_gap = check_requirement(cur_deck, requirement
+#ifndef NQUEST
+                    , quest
+#endif
+              );
+              if(it < pool_size-pool_mutate)
+              {
+                if (debug_print >= 0)
+                  std::cout << "Crossover: " <<std::endl;
+                std::cout << "Deck improved: " << best_deck->hash() <<":";
+              }
+              else
+              {
+                if (debug_print >= 0)
+                  std::cout << "Mutation: " <<std::endl;
+                std::cout << "Deck improved: " << best_deck->hash() <<":";
+              }
+
+              print_deck_inline(get_deck_cost(best_deck), best_score, best_deck);
+            }
+        }
+#ifndef NDEBUG
+        if (debug_print >= 0)
+        {
+          std::cout << "---------------POOL---------------" << std::endl;
+          for (unsigned it =0; it < pool.size();++it)
+          {
+            if(it==0)std::cout << "---------------KEEP---------------" << std::endl;
+            if(it==pool_keep)std::cout << "---------------CROSS--------------" << std::endl;
+            if(it==pool_keep+pool_cross)std::cout << "---------------MUTATE-------------" << std::endl;
+            auto a = pool[it];
+            print_deck_inline(get_deck_cost(a.first),a.second,a.first);
+          }
+          std::cout << "---------------PEND---------------" << std::endl;
+        }
+#endif
+    }
+
+    unsigned simulations = 0;
+    for (auto evaluation: evaluated_decks)
+    { simulations += evaluation.second.second; }
+    std::cout << "Evaluated " << evaluated_decks.size() << " decks (" << simulations << " + " << skipped_simulations << " simulations)." << std::endl;
+    std::cout << "Optimized Deck: ";
+    print_deck_inline(get_deck_cost(best_deck), best_score, best_deck);
+    print_upgraded_cards(best_deck);
+    print_sim_card_values(best_deck,proc,num_iterations);
+    return best_score;
+}
+
+
 unsigned factorial(unsigned n)
 {
    	unsigned retval = 1;
@@ -2108,7 +2527,7 @@ void recursion(unsigned num_iterations, std::vector<unsigned> used, unsigned poo
     }
 }
 
-void forts_climbing(unsigned num_iterations, Process& proc) {
+FinalResults<long double> forts_climbing(unsigned num_iterations, Process& proc) {
     EvaluatedResults zero_results = { EvaluatedResults::first_type(proc.enemy_decks.size()*proc.your_decks.size()), 0 };
     unsigned pool = std::get<0>(proc.your_decks[0]->variable_forts[0]);
     std::vector<const Card*> forts(std::get<2>(proc.your_decks[0]->variable_forts[0]));
@@ -2129,6 +2548,7 @@ void forts_climbing(unsigned num_iterations, Process& proc) {
     std::cout << "Evaluated " << evaluated_decks.size() << " decks (" << simulations << " + " << skipped_simulations << " simulations)." << std::endl;
     std::cout << "Optimized Deck: ";
     print_cards_inline(best_forts);
+    return best_score;
 }
 
 
@@ -2139,6 +2559,7 @@ enum Operation {
     climb,
     climb_forts,
     anneal,
+    genetic,
     reorder,
     debug,
     debuguntil,
@@ -2407,6 +2828,7 @@ FinalResults<long double> run(int argc, char** argv)
     std::string prefix = "";
     std::vector<std::string> opt_owned_cards_str_list;
     bool opt_do_optimization(false);
+    bool opt_multi_optimization(false);
     bool opt_do_reorder(false);
     bool opt_keep_commander{false};
     std::vector<std::tuple<unsigned, unsigned, Operation>> opt_todo;
@@ -2417,6 +2839,7 @@ FinalResults<long double> run(int argc, char** argv)
 
     for (int argIndex = 3; argIndex < argc; ++argIndex)
     {
+
         // Codec
         if (strcmp(argv[argIndex], "ext_b64") == 0)
         {
@@ -2580,7 +3003,7 @@ FinalResults<long double> run(int argc, char** argv)
         else if (strcmp(argv[argIndex], "freeze") == 0 || strcmp(argv[argIndex], "-F") == 0)
         {
 	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
-            freezed_cards = atoi(argv[argIndex + 1]);
+            opt_freezed_cards = atoi(argv[argIndex + 1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "-L") == 0)
@@ -2645,19 +3068,19 @@ FinalResults<long double> run(int argc, char** argv)
         {
             opt_your_strategy = DeckStrategy::ordered;
         }
-        else if (strcmp(argv[argIndex], "flexible") == 0)
+        else if (strcmp(argv[argIndex], "flexible") == 0 || strcmp(argv[argIndex], "flex") == 0)
         {
             opt_your_strategy = DeckStrategy::flexible;
         }
         else if (strcmp(argv[argIndex], "flexible-iter") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
+	          if(check_input_amount(argc,argv,argIndex,1))exit(1);
             flexible_iter = atoi(argv[argIndex+1]);
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "flexible-turn") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
+	          if(check_input_amount(argc,argv,argIndex,1))exit(1);
             flexible_turn = atoi(argv[argIndex+1]);
             argIndex += 1;
         }
@@ -2838,7 +3261,7 @@ FinalResults<long double> run(int argc, char** argv)
         }
         else if (strcmp(argv[argIndex], "sim") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
+	          if(check_input_amount(argc,argv,argIndex,1))exit(1);
             opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), 0u, simulate));
             if (std::get<0>(opt_todo.back()) < 10) { opt_num_threads = 1; }
             argIndex += 1;
@@ -2846,40 +3269,72 @@ FinalResults<long double> run(int argc, char** argv)
         // climbing tasks
         else if (strcmp(argv[argIndex], "climbex") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,2))exit(1);
+	          if(check_input_amount(argc,argv,argIndex,2))exit(1);
             opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 2]), climb));
             if (std::get<1>(opt_todo.back()) < 10) { opt_num_threads = 1; }
             opt_do_optimization = true;
+            opt_multi_optimization = true;
             argIndex += 2;
         }
         else if (strcmp(argv[argIndex], "climb") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
+	         if(check_input_amount(argc,argv,argIndex,1))exit(1);
             opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 1]), climb));
             if (std::get<1>(opt_todo.back()) < 10) { opt_num_threads = 1; }
             opt_do_optimization = true;
+            opt_multi_optimization = true;
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "climb_forts") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
+	          if(check_input_amount(argc,argv,argIndex,1))exit(1);
             opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 1]), climb_forts));
             if (std::get<1>(opt_todo.back()) < 10) { opt_num_threads = 1; }
             argIndex += 1;
         }
         else if ( strcmp(argv[argIndex], "anneal") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,3))exit(1);
+	          if(check_input_amount(argc,argv,argIndex,3))exit(1);
             opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 1]), anneal));
             temperature = std::stod(argv[argIndex+2]);
             coolingRate = std::stod(argv[argIndex+3]);
             if (std::get<1>(opt_todo.back()) < 10) { opt_num_threads = 1; }
             opt_do_optimization = true;
+            opt_multi_optimization = true;
+            argIndex += 3;
+        }
+        else if (strcmp(argv[argIndex], "genetic") == 0)
+        {
+	          if(check_input_amount(argc,argv,argIndex,1))exit(1);
+            opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 1]), genetic));
+            if (std::get<1>(opt_todo.back()) < 10) { opt_num_threads = 1; }
+            opt_do_optimization = true;
+            opt_multi_optimization = true;
+            argIndex += 1;
+        }
+        else if (strcmp(argv[argIndex], "genetic-pool") == 0)
+        {
+	          if(check_input_amount(argc,argv,argIndex,1))exit(1);
+            pool_size = std::stod(argv[argIndex+1]);
+            argIndex += 1;
+        }
+        else if (strcmp(argv[argIndex], "genetic-gen") == 0)
+        {
+	          if(check_input_amount(argc,argv,argIndex,1))exit(1);
+            generations = std::stod(argv[argIndex+1]);
+            argIndex += 1;
+        }
+        else if (strcmp(argv[argIndex], "genetic-opts") == 0)
+        {
+	          if(check_input_amount(argc,argv,argIndex,3))exit(1);
+            opt_pool_keep = std::stod(argv[argIndex+1]);
+            opt_pool_cross = std::stod(argv[argIndex+2]);
+            opt_pool_mutate = std::stod(argv[argIndex+3]);
             argIndex += 3;
         }
         else if (strcmp(argv[argIndex], "reorder") == 0)
         {
-	    if(check_input_amount(argc,argv,argIndex,1))exit(1);
+	          if(check_input_amount(argc,argv,argIndex,1))exit(1);
             opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 1]), reorder));
             if (std::get<1>(opt_todo.back()) < 10) { opt_num_threads = 1; }
             opt_do_reorder = true;
@@ -2968,7 +3423,6 @@ FinalResults<long double> run(int argc, char** argv)
             exit(1);
         }
     }
-
     Cards all_cards;
     Decks decks;
     std::unordered_map<std::string, std::string> bge_aliases;
@@ -3428,18 +3882,21 @@ FinalResults<long double> run(int argc, char** argv)
         enemy_decks.push_back(enemy_deck);
         enemy_decks_factors.push_back(deck_parsed.second);
     }
-    std::vector<long double> factors(your_decks_factors.size()*enemy_decks_factors.size());
+    std::vector<long double> factors((opt_multi_optimization?1:your_decks_factors.size())*enemy_decks_factors.size());
     for(unsigned i =0; i < factors.size();++i)
     {
         factors[i] = your_decks_factors[i/enemy_decks_factors.size()]*enemy_decks_factors[i%enemy_decks_factors.size()];
     }
-    if((opt_do_optimization || opt_do_reorder) && your_decks.size() != 1) {
+
+    if((opt_do_optimization || opt_do_reorder ) && (your_decks.size() != 1 && !opt_multi_optimization)) {
         std::cerr << "Optimization only works with a single deck" << std::endl;
         exit(1);
     }
-    if(opt_do_optimization || opt_do_reorder)  // => your_decks.site()==1
+    if(opt_do_optimization || opt_do_reorder)
     {
-        auto your_deck = your_decks[0];
+        //auto your_deck = your_decks[0];
+        for( auto your_deck : your_decks)
+        {
 
         if (opt_keep_commander)
         {
@@ -3475,7 +3932,7 @@ FinalResults<long double> run(int argc, char** argv)
                 std::cerr << "WARNING: Too many cards in your deck. Trimmed.\n";
             }
         }
-        freezed_cards = std::min<unsigned>(freezed_cards, your_deck->cards.size());
+      }
     }
 
     if (debug_print >= 0)
@@ -3539,8 +3996,12 @@ FinalResults<long double> run(int argc, char** argv)
                     x_mult_ss.s, x_mult_ss.s2, x_mult_ss.all});
         }
     }
-
-    Process p(opt_num_threads, all_cards, decks, your_decks, enemy_decks, factors, gamemode,
+    auto proc_decks = your_decks;
+    if(opt_multi_optimization)
+    { //only one deck at a time
+          proc_decks.erase(proc_decks.begin()+1,proc_decks.end());
+    }
+    Process p(opt_num_threads, all_cards, decks, proc_decks, enemy_decks, factors, gamemode,
 #ifndef NQUEST
             quest,
 #endif
@@ -3563,12 +4024,12 @@ FinalResults<long double> run(int argc, char** argv)
                                break;
                            }
             case climb_forts: {
-                                  forts_climbing(std::get<0>(op),p);
+                                  fr=forts_climbing(std::get<0>(op),p);
                                   break;
                               }
             case climb: {
                             //TODO check for your_decks.size()==1
-                            hill_climbing(std::get<0>(op), std::get<1>(op), your_deck, p, requirement
+                            fr=hill_climbing(std::get<0>(op), std::get<1>(op), your_decks, p, requirement
 #ifndef NQUEST
                                     , quest
 #endif
@@ -3577,7 +4038,16 @@ FinalResults<long double> run(int argc, char** argv)
                         }
             case anneal: {
                               //TODO check for your_decks.size()==1
-                             simulated_annealing(std::get<0>(op), std::get<1>(op), your_deck, p, requirement
+                             fr= simulated_annealing(std::get<0>(op), std::get<1>(op), your_decks, p, requirement
+#ifndef NQUEST
+                                     , quest
+#endif
+                                     );
+                             break;
+
+                         }
+             case genetic: {
+                             fr=genetic_algorithm(std::get<0>(op), std::get<1>(op), your_decks, p, requirement
 #ifndef NQUEST
                                      , quest
 #endif
@@ -3586,8 +4056,7 @@ FinalResults<long double> run(int argc, char** argv)
 
                          }
             case reorder: {
-
-                              //TODO check for your_decks.size()==1
+                              //TODO multi deck mode for reorder
                               your_deck->strategy = DeckStrategy::ordered;
                               use_owned_cards = true;
                               use_top_level_card = false;
@@ -3602,13 +4071,15 @@ FinalResults<long double> run(int argc, char** argv)
                               owned_cards.clear();
                               claim_cards({your_deck->commander});
                               claim_cards(your_deck->cards);
-                              hill_climbing(std::get<0>(op), std::get<1>(op), your_deck, p, requirement
+                              std::vector<Deck*> single_deck =  {your_deck};
+                              fr=hill_climbing(std::get<0>(op), std::get<1>(op), single_deck, p, requirement
 #ifndef NQUEST
                                       , quest
 #endif
                                       );
                               break;
                           }
+            //fr=nllptr no return
             case debug: {
                             ++ debug_print;
                             debug_str.clear();
@@ -3618,6 +4089,7 @@ FinalResults<long double> run(int argc, char** argv)
                             -- debug_print;
                             break;
                         }
+            //fr=nllptr no return
             case debuguntil: {
                                  ++ debug_print;
                                  ++ debug_cached;
