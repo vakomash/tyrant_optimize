@@ -48,7 +48,7 @@
 #include "xml.h"
 
 // OpenMP Header
-#ifndef _OPENMP
+#ifdef _OPENMP
 #include <omp.h>
 #endif
 
@@ -1049,7 +1049,7 @@ class Process
 #pragma omp parallel default(none) shared(thread_num_iterations,results)
         	    {
         	    	SimulationData* sim = threads_data.at(omp_get_thread_num());
-         		    sim->set_decks(this->your_deck, this->enemy_decks);
+         		    sim->set_decks(this->your_decks, this->enemy_decks);
 #pragma omp for reduction(VecPlus:results) schedule(auto)
         	    	for(unsigned i =0; i < thread_num_iterations;++i) {
         		    	if(results.size()==0)
