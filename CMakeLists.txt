@@ -17,7 +17,12 @@ file(GLOB TUO_SOURCES "*.cpp")
 enable_language(CXX)
 add_executable(tuo ${TUO_SOURCES})
 
+option(USE_OPENMP "Use OpenMP instead of Boost" OFF)
+if(USE_OPENMP)
+find_package(Boost OpenMP EXACT COMPONENTS system thread filesystem regex timer REQUIRED)
+else()
 find_package(Boost EXACT COMPONENTS system thread filesystem regex timer REQUIRED)
+endif()
 
 target_link_libraries(tuo ${Boost_LIBRARIES})
 
