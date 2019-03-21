@@ -33,11 +33,11 @@ fi
 
 #No windows timer on debug
 if [ "$dbg" = "-debug" ]; then
-DFLAGS = "${DFLAGS} -DDEBUG:STRING=\"-DNTIMER\""
+DFLAGS="${DFLAGS} -DDEBUG:STRING=\"-DNTIMER\""
 fi
 #activate openmp
 if [ "$omp" = "-openmp" ]; then
-DFLAGS = "${DFLAGS} -DUSE_OPENMP=ON"
+DFLAGS="${DFLAGS} -DUSE_OPENMP=ON"
 fi
 #prep cmake
 ${MXE_DIR}/usr/bin/${MXE_TARGET}-cmake . -B${BDIR} -DVERSION:STRING="${TRAVIS_TAG}${bit}${omp}${dbg}"  ${DFLAGS}
