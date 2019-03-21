@@ -11,6 +11,14 @@ matrix:
     dist: trusty
     sudo: required
     compiler: gcc
+    addons:
+      apt:
+        sources:
+          - ubuntu-toolchain-r-test
+        packages:
+          - gcc-7
+          - g++-7
+          - cmake
 
 before_install:
   - TUO_TARGET="${TUO_PLATFORM::${#TUO_PLATFORM}-2}"
