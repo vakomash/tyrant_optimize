@@ -11,12 +11,13 @@ declare -a a_openmp=("" "-openmp" )
 declare -a a_debug=("" "-debug" )
 declare -a a_bit=("" "-x86" )
 
-for omp in "${a_openmp}"
+for omp in "${a_openmp[@]}"
 do
-for dbg in "${a_debug}"
+for dbg in "${a_debug[@]}"
 do
-for bit in "${a_bit}"
+for bit in "${a_bit[@]}"
 do
+
 DFLAGS=""
 BDIR="build-dir${bit}${omp}${dbg}"
 NAME="tuo${bit}${omp}${dbg}.exe"
@@ -45,6 +46,7 @@ ${MXE_DIR}/usr/bin/${MXE_TARGET}-cmake . -B${BDIR} -DVERSION:STRING="${TRAVIS_TA
 if [ "$dbg" = "-debug" ]; then
 sed -i -e 's/-DNDEBUG//g' ${BDIR}/CMakeCache.txt
 fi
+
 # compile
 cmake --build ${BDIR}
 
