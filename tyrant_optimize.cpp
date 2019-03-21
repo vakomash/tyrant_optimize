@@ -1092,16 +1092,16 @@ class Process
                               unsigned score_accum = 0;
                               // Multiple defense decks case: scaling by factors and approximation of a "discrete" number of events.
                               long double score_accum_d = 0.0;
-                              for (unsigned i = 0; i < results.size(); ++i)
+                              for (unsigned j = 0; j < results.size(); ++j)
                               {
-                                score_accum_d += results[i].points * sim.factors[i];
+                                score_accum_d += results[j].points * sim->factors[j]; //lock threads here?
                               }
-                              score_accum_d /= std::accumulate(sim.factors.begin(), sim.factors.end(), .0);
+                              score_accum_d /= std::accumulate(sim->factors.begin(), sim->factors.end(), .0);
                               score_accum = score_accum_d;
                               long double max_possible = max_possible_score[(size_t)optimization_mode];
 
                               //APN
-                              auto trials = thread_total_local;
+                              auto trials = i;
                               auto prob = 1-confidence_level;
                               auto successes = score_accum / max_possible;
                               if(successes > trials)
