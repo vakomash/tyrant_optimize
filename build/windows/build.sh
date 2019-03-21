@@ -25,24 +25,24 @@ if [ "$bit" = "" ]; then
 #Windows x64 Build
 MXE_TARGET=x86_64-w64-mingw32.static
 fi
-if [ "$bit" = "-x86"]; then
+if [ "$bit" = "-x86" ]; then
 #Windows x86 Build
 MXE_TARGET=i686-w64-mingw32.static
 fi
 
 #No windows timer on debug
-if [ "$dbg" = "-debug"]; then
+if [ "$dbg" = "-debug" ]; then
 DFLAGS = "${DFLAGS} -DDEBUG:STRING=\"-DNTIMER\""
 fi
 #activate openmp
-if [ "$omp"]; then
+if [ "$omp" = "-openmp" ]; then
 DFLAGS = "${DFLAGS} -DUSE_OPENMP=ON"
 fi
 #prep cmake
 ${MXE_DIR}/usr/bin/${MXE_TARGET}-cmake . -B${BDIR} -DVERSION:STRING="${TRAVIS_TAG}${bit}${omp}${dbg}"  ${DFLAGS}
 
 #cmake sets dndebug by default => remove that
-if [ "$dbg" = "-debug"]; then
+if [ "$dbg" = "-debug" ]; then
 sed -i -e 's/-DNDEBUG//g' ${BDIR}/CMakeCache.txt
 fi
 # compile
