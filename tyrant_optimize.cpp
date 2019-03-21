@@ -1066,6 +1066,65 @@ class Process
         	    evaluated_results.second+=thread_num_iterations;
             }
 
+            void openmp_compare(EvaluatedResults & evaluated_results) {
+              bool compare_stop{false};
+              std::vector<Results<uint64_t>> save_results(evaluated_results.first);
+        	    std::vector<Results<uint64_t>> results(evaluated_results.first);
+#pragma omp declare reduction \
+        	(VecPlus:std::vector<Results<uint64_t>>: omp_out=merge(omp_out,omp_in))
+#pragma omp parallel default(none) shared(thread_num_iterations,results,compare_stop)
+        	    {
+        	    	SimulationData* sim = threads_data.at(omp_get_thread_num());
+         		    sim->set_decks(this->your_decks, this->enemy_decks);
+#pragma omp for reduction(VecPlus:results) schedule(auto)
+        	    	for(unsigned i =0; i < thread_num_iterations;++i) {
+                  if(!compare_stop){
+        		    	     if(results.size()==0)
+                       {
+        				           results =sim->evaluate();				//calculate single sim
+                       }
+        			         else {
+        				            //printf("%p ",(void*)&results );
+        				            results =merge(results,sim->evaluate());				//calculate single sim
+        				            //printf("%p ",(void *)&results );
+                            #pragma omp master
+                            {
+                              unsigned score_accum = 0;
+                              // Multiple defense decks case: scaling by factors and approximation of a "discrete" number of events.
+                              long double score_accum_d = 0.0;
+                              for (unsigned i = 0; i < results.size(); ++i)
+                              {
+                                score_accum_d += results[i].points * sim.factors[i];
+                              }
+                              score_accum_d /= std::accumulate(sim.factors.begin(), sim.factors.end(), .0);
+                              score_accum = score_accum_d;
+                              long double max_possible = max_possible_score[(size_t)optimization_mode];
+
+                              //APN
+                              auto trials = thread_total_local;
+                              auto prob = 1-confidence_level;
+                              auto successes = score_accum / max_possible;
+                              if(successes > trials)
+                              {
+                                successes = trials;
+                                printf("WARNING: biominal successes > trials in Threads");
+                                _DEBUG_MSG(2,"WARNING: biominal successes > trials in Threads");
+                              }
+
+
+                              // Get a loose (better than no) upper bound. TODO: Improve it.
+                              compare_stop = (boost::math::binomial_distribution<>::find_upper_bound_on_p(trials, successes, prob) * max_possible <
+                                thread_best_results->points + min_increment_of_score);
+                            }
+        			         }
+                   }
+        	    	}
+        	    }
+        	    for( unsigned i =0; i< results.size();++i)
+        		    evaluated_results.first[i] +=results[i];
+        	    evaluated_results.second+=thread_num_iterations;
+            }
+
         	static std::vector<Results<uint64_t>> merge(std::vector<Results<uint64_t>> out, std::vector<Results<uint64_t>> in)
         	{
         		//printf("merging out: %d in: %d \n", (int)out[0].wins, (int)in[0].wins);
