@@ -812,7 +812,44 @@ class Process
             for (auto data: threads_data) { delete(data); }
         }
 
-        EvaluatedResults & evaluate(unsigned num_iterations, EvaluatedResults & evaluated_results) 
+#ifdef _OPENMP
+         void openmp_evaluate(EvaluatedResults & evaluated_results) {
+
+      std::vector<Results<uint64_t>> save_results(evaluated_results.first);
+	    std::vector<Results<uint64_t>> results(evaluated_results.first);
+#pragma omp declare reduction \
+	(VecPlus:std::vector<Results<uint64_t>>: omp_out=merge(omp_out,omp_in))
+#pragma omp parallel default(none) shared(thread_num_iterations,results)
+	    {
+	    	SimulationData* sim = threads_data.at(omp_get_thread_num());
+ 		    sim->set_decks(this->your_deck, this->enemy_decks);
+#pragma omp for reduction(VecPlus:results) schedule(auto)
+	    	for(unsigned i =0; i < thread_num_iterations;++i) {
+		    	if(results.size()==0)
+				      results =sim->evaluate();				//calculate single sim
+			    else {
+				        //printf("%p ",(void*)&results );
+				        results =merge(results,sim->evaluate());				//calculate single sim
+				        //printf("%p ",(void *)&results );
+			    }
+	    	}
+	    }
+	    for( unsigned i =0; i< results.size();++i)
+		    evaluated_results.first[i] +=results[i];
+	    evaluated_results.second+=thread_num_iterations;
+    }
+
+	static std::vector<Results<uint64_t>> merge(std::vector<Results<uint64_t>> out, std::vector<Results<uint64_t>> in)
+	{
+		//printf("merging out: %d in: %d \n", (int)out[0].wins, (int)in[0].wins);
+	    	//printf("out%p ",(void *)&out );
+		for( unsigned i =0; i< out.size();++i)
+			out[i] +=in[i];
+		//printf("merged out: %d \n", (int)out[0].wins);
+		return out;
+	}
+#endif
+        EvaluatedResults & evaluate(unsigned num_iterations, EvaluatedResults & evaluated_results)
         {
             if (num_iterations <= evaluated_results.second)
             {
@@ -825,42 +862,13 @@ class Process
             // unlock all the threads
             main_barrier.wait();
             // wait for the threads
-	    main_barrier.wait();
+	          main_barrier.wait();
 #else
-	    std::vector<Results<uint64_t>> save_results(evaluated_results.first);
-	    std::vector<Results<uint64_t>> results(evaluated_results.first);
-#pragma omp declare reduction \
-	(VecPlus:std::vector<Results<uint64_t>>: omp_out=merge(omp_out,omp_in))
-#pragma omp parallel default(none) shared(thread_num_iterations,results)
-	    {
-	    	SimulationData* sim = threads_data.at(omp_get_thread_num());
- 		sim->set_decks(this->your_deck, this->enemy_decks);
-#pragma omp for reduction(VecPlus:results) schedule(auto)
-	    	for(unsigned i =0; i < thread_num_iterations;++i) {
-		    	if(results.size()==0)
-				results =sim->evaluate();				//calculate single sim
-			else {
-				//printf("%p ",(void*)&results );
-				results =merge(results,sim->evaluate());				//calculate single sim
-				//printf("%p ",(void *)&results );
-			}
-	    	}
-	    }
-	    for( unsigned i =0; i< results.size();++i)
-		evaluated_results.first[i] +=results[i];
-	    evaluated_results.second+=thread_num_iterations;
+            openmp_evaluate(evaluated_results);
 #endif
-	    return evaluated_results;
-	}
-	static std::vector<Results<uint64_t>> merge(std::vector<Results<uint64_t>> out, std::vector<Results<uint64_t>> in)
-	{
-		//printf("merging out: %d in: %d \n", (int)out[0].wins, (int)in[0].wins);
-	    	//printf("out%p ",(void *)&out );
-		for( unsigned i =0; i< out.size();++i)
-			out[i] +=in[i];
-		//printf("merged out: %d \n", (int)out[0].wins);
-		return out;
-	}
+	          return evaluated_results;
+	       }
+
 
 	EvaluatedResults & compare(unsigned num_iterations, EvaluatedResults & evaluated_results, const FinalResults<long double> & best_results)
 	{
@@ -873,10 +881,14 @@ class Process
 		thread_best_results = &best_results;
 		thread_compare = true;
 		thread_compare_stop = false;
+#ifndef _OPENMP
 		// unlock all the threads
 		main_barrier.wait();
 		// wait for the threads
 		main_barrier.wait();
+#else //no compare support for openmp
+    openmp_evaluate(evaluated_results)
+#endif
 		return evaluated_results;
 	}
 };
@@ -1766,7 +1778,7 @@ void simulated_annealing(unsigned num_min_iterations, unsigned num_iterations, D
 		{
 
 			to_slot = std::uniform_int_distribution<unsigned>(is_random ? from_slot : candidate ? freezed_cards : (cur_deck->cards.size() -1),(is_random ? (from_slot+1) : (cur_deck->cards.size() + ( from_slot < cur_deck->cards.size() ? 0 : 1)))-1)(re);
-			if(candidate ? 
+			if(candidate ?
 					(from_slot < cur_deck->cards.size() && (from_slot == to_slot && candidate == cur_deck->cards[to_slot]))
 					:
 					(from_slot == best_cards.size()))
