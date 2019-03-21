@@ -12,7 +12,7 @@ endif
 endif
 
 CPPFLAGS := -Wall -Werror -std=gnu++11 -Ofast -DNDEBUG -DNQUEST -DTYRANT_OPTIMIZER_VERSION='"$(VERSION)"' -fopenmp
-LDFLAGS := -lboost_system -lboost_thread -lboost_filesystem -lboost_regex -lboost_timer -lpthread -lomp
+LDFLAGS := -lboost_system -lboost_thread -lboost_filesystem -lboost_regex -lboost_timer -lpthread -lgomp
 
 all: $(MAIN)
 
