@@ -1172,7 +1172,7 @@ class Process
             // wait for the threads
             main_barrier.wait();
 #else
-            openmp_evaluate(evaluated_results);
+            openmp_compare(evaluated_results);
 #endif
             return evaluated_results;
         }
