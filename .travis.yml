@@ -43,6 +43,7 @@ deploy:
   file_glob: true
   file:
     - ./*.exe
+    - "${TUO_FILE_ZIP}"
   skip_cleanup: true
   on:
     tags: true
