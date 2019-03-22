@@ -1069,10 +1069,11 @@ class Process
             void openmp_compare(EvaluatedResults & evaluated_results) {
               bool compare_stop{false};
               std::vector<Results<uint64_t>> save_results(evaluated_results.first);
-        	    std::vector<Results<uint64_t>> results(evaluated_results.first);
+              std::vector<Results<uint64_t>> results(evaluated_results.first);
 #pragma omp declare reduction \
         	(VecPlus:std::vector<Results<uint64_t>>: omp_out=merge(omp_out,omp_in))
-#pragma omp parallel default(none) shared(thread_num_iterations,results,compare_stop)
+#pragma omp parallel default(none) shared(thread_num_iterations,results,\
+		compare_stop,optimization_mode,confidence_level,max_possible_score,thread_best_results, min_increment_of_score)
         	    {
         	    	SimulationData* sim = threads_data.at(omp_get_thread_num());
          		    sim->set_decks(this->your_decks, this->enemy_decks);
@@ -1087,7 +1088,7 @@ class Process
         				            //printf("%p ",(void*)&results );
         				            results =merge(results,sim->evaluate());				//calculate single sim
         				            //printf("%p ",(void *)&results );
-                            #pragma omp master
+		            if(omp_get_thread_num()==0)
                             {
                               unsigned score_accum = 0;
                               // Multiple defense decks case: scaling by factors and approximation of a "discrete" number of events.
@@ -1116,7 +1117,7 @@ class Process
                               compare_stop = (boost::math::binomial_distribution<>::find_upper_bound_on_p(trials, successes, prob) * max_possible <
                                 thread_best_results->points + min_increment_of_score);
                             }
-        			         }
+		       }				    
                    }
         	    	}
         	    }
