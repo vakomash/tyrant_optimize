@@ -1065,7 +1065,7 @@ class Process
         		    evaluated_results.first[i] =results[i]; //+?
 
 		}
-        	    evaluated_results.second+=thread_num_iterations;
+        	evaluated_results.second+=thread_num_iterations;
             }
 
 	    void openmp_compare_reduction(EvaluatedResults & evaluated_results) {
@@ -1135,10 +1135,10 @@ class Process
 #pragma omp for schedule(runtime)
         	    for( unsigned i =0; i< results.size();++i)
         		    evaluated_results.first[i] =results[i]; //+?
+        	  }
         	    evaluated_results.second+=thread_num_iterations;
 		    for(unsigned i =0; i < c_num_threads;++i)
 	      		omp_destroy_lock(&locks[i]);
-        	  }
             }
 
 
