@@ -1070,7 +1070,10 @@ class Process
               std::vector<std::vector<Results<uint64_t>>> all_results(thread_num_iterations);
               std::vector<Results<uint64_t>> save_results(evaluated_results.first);
               std::vector<Results<uint64_t>> result(evaluated_results.first);
-#pragma omp parallel default(none) shared(thread_num_iterations,all_results,\
+              	   std::vector<Results<uint64_t>> results(evaluated_results.first);
+#pragma omp declare reduction \
+        	(VecPlus:std::vector<Results<uint64_t>>: omp_out=merge(omp_out,omp_in))
+#pragma omp parallel default(none) shared(thread_num_iterations,results,all_results,\
 		optimization_mode,confidence_level,max_possible_score,thread_best_results, min_increment_of_score)
         	    {
         	    	SimulationData* sim = threads_data.at(omp_get_thread_num());
@@ -1079,26 +1082,25 @@ class Process
         	    	for(unsigned i =0; i < thread_num_iterations;++i) {
         	 	   all_results[i] = sim->evaluate();				//calculate single sim
 			    }
-	    	    }
-		    //TODO reduction here?
-			   unsigned count{0};
-              		   std::vector<Results<uint64_t>> results;
-			   for(unsigned k=0; k < thread_num_iterations;k++)
+		  //sum results
+#pragma omp for reduction(VecPlus:results) schedule(runtime)
+			   for(unsigned k=0; k < thread_num_iterations;++k)
 			   {
 			   	if(all_results[k].size() >0)
 				{
-					count++;
 			   		if(results.size()==0)
 						results = all_results[k];
 			 		else
         	           			results =merge(results,all_results[k]);				//calculate single sim
 				}
 			   }
-        
+		     }
+       
         	    for( unsigned i =0; i< results.size();++i)
         		    evaluated_results.first[i] +=results[i];
         	    evaluated_results.second+=thread_num_iterations;
 	    }
+
             void openmp_compare(EvaluatedResults & evaluated_results) {
               std::vector<std::vector<Results<uint64_t>>> all_results(thread_num_iterations);
               std::vector<Results<uint64_t>> save_results(evaluated_results.first);
