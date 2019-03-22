@@ -1106,7 +1106,9 @@ class Process
               std::vector<Results<uint64_t>> save_results(evaluated_results.first);
               std::vector<Results<uint64_t>> result(evaluated_results.first);
 	      bool compare_stop{false};
-#pragma omp parallel default(none) shared(compare_stop,thread_num_iterations,all_results,\
+              std::vector<Results<uint64_t>> results;
+	      unsigned count{0};
+#pragma omp parallel default(none) shared(count,results,compare_stop,thread_num_iterations,all_results,\
 		optimization_mode,confidence_level,max_possible_score,thread_best_results, min_increment_of_score)
         	    {
         	    	SimulationData* sim = threads_data.at(omp_get_thread_num());
@@ -1120,8 +1122,6 @@ class Process
 			   //#pragma omp master
 			   if(omp_get_thread_num()==0)
 			   {
-			   unsigned count{0};
-              		   std::vector<Results<uint64_t>> results;
 			   for(unsigned k=0; k < thread_num_iterations;k++)
 			   {
 			   	if(all_results[k].size() >0)
@@ -1131,6 +1131,7 @@ class Process
 						results = all_results[k];
 			 		else
         	           			results =merge(results,all_results[k]);				//calculate single sim
+					all_results[k].clear();
 				}
 			   }
                               unsigned score_accum = 0;
@@ -1168,7 +1169,7 @@ class Process
 			    }
                    	}
 	    	    }
-			   unsigned count{0};
+			   /*unsigned count{0};
               		   std::vector<Results<uint64_t>> results;
 			   for(unsigned k=0; k < thread_num_iterations;k++)
 			   {
@@ -1180,7 +1181,7 @@ class Process
 			 		else
         	           			results =merge(results,all_results[k]);				//calculate single sim
 				}
-			   }
+			   }*/
         
         	    for( unsigned i =0; i< results.size();++i)
         		    evaluated_results.first[i] +=results[i];
