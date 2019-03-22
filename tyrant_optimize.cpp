@@ -63,6 +63,7 @@ struct Requirement
 };
 
 namespace {
+    unsigned opt_num_threads(4);
     gamemode_t gamemode{fight};
     OptimizationMode optimization_mode{OptimizationMode::notset};
     std::unordered_map<unsigned, unsigned> owned_cards;
@@ -134,6 +135,7 @@ namespace {
 
 void init()
 {
+    opt_num_threads=4;
     gamemode = fight;
     optimization_mode =OptimizationMode::notset;
     owned_cards.clear();
@@ -1043,7 +1045,7 @@ class Process
        void openmp_evaluate_reduction(EvaluatedResults & evaluated_results) {
 
               std::vector<Results<uint64_t>> save_results(evaluated_results.first);
-        	    std::vector<Results<uint64_t>> results(evaluated_results.first);
+       	      std::vector<Results<uint64_t>> results(evaluated_results.first);
 #pragma omp declare reduction \
         	(VecPlus:std::vector<Results<uint64_t>>: omp_out=merge(omp_out,omp_in))
 #pragma omp parallel default(none) shared(thread_num_iterations,results)
@@ -1052,19 +1054,92 @@ class Process
          		    sim->set_decks(this->your_decks, this->enemy_decks);
 #pragma omp for reduction(VecPlus:results) schedule(runtime)
         	    	for(unsigned i =0; i < thread_num_iterations;++i) {
-        		    	if(results.size()==0)
+        		    	if(results.size()==0) 
         				      results =sim->evaluate();				//calculate single sim
         			    else {
-        				        //printf("%p ",(void*)&results );
         				        results =merge(results,sim->evaluate());				//calculate single sim
-        				        //printf("%p ",(void *)&results );
         			    }
         	    	}
-        	    }
-        	    for( unsigned i =0; i< results.size();++i)
-        		    evaluated_results.first[i] +=results[i];
+		}
+		    //todo parallel?
+	            for( unsigned i =0; i< results.size();++i)
+        		    evaluated_results.first[i] =results[i]; //+?
+
         	    evaluated_results.second+=thread_num_iterations;
             }
+
+	    void openmp_compare_reduction(EvaluatedResults & evaluated_results) {
+
+	      const unsigned c_num_threads = opt_num_threads;
+              std::vector<Results<uint64_t>> save_results(evaluated_results.first);
+       	      std::vector<Results<uint64_t>> results(evaluated_results.first);
+	      bool compare_stop{false};
+	      unsigned trials[c_num_threads] = {0};
+	      long double successes [c_num_threads] = {.0};
+	      const long double	max_possible =  max_possible_score[(size_t)optimization_mode];
+	      const long double	prob =1-confidence_level;
+	      omp_lock_t locks[c_num_threads];
+	      for(unsigned  i =0; i < c_num_threads;++i)
+	      	omp_init_lock(&locks[i]);
+#pragma omp declare reduction \
+        	(VecPlus:std::vector<Results<uint64_t>>: omp_out=merge(omp_out,omp_in))
+#pragma omp parallel default(none) shared(trials,successes,locks, compare_stop, thread_num_iterations,results, \
+		thread_best_results, min_increment_of_score)
+        	    {
+        	    	SimulationData* sim = threads_data.at(omp_get_thread_num());
+         		sim->set_decks(this->your_decks, this->enemy_decks);
+#pragma omp for reduction(VecPlus:results) schedule(runtime)
+        	    	for(unsigned i =0; i < thread_num_iterations;++i) {
+				if(!compare_stop){
+        		    	    if(results.size()==0) 
+        				      results =sim->evaluate();				//calculate single sim
+        			    else 
+        			              results =merge(results,sim->evaluate());				//calculate single sim
+				    omp_set_lock(&locks[omp_get_thread_num()]);
+				    	trials[omp_get_thread_num()]++;
+					long double score_accum_d = 0.0;
+					for(unsigned j=0; j < results.size(); ++j)
+						score_accum_d+=results[j].points * sim->factors[j];
+	      				long double sim_accum = std::accumulate(sim->factors.begin(), sim->factors.end(),.0);
+				        score_accum_d /= sim_accum;
+					successes[omp_get_thread_num()] = score_accum_d/max_possible;
+				    omp_unset_lock(&locks[omp_get_thread_num()]);
+				    //#pragma omp master
+				    if(omp_get_thread_num()==0)
+				    {
+	      				for(unsigned j =0; j < c_num_threads;++j)
+						omp_set_lock(&locks[j]);
+
+					unsigned ttrials = 0;
+					long double ssuccesses =0.0;
+					for(unsigned  l= 0; l < c_num_threads;++l)
+					{
+						ttrials += trials[l];
+						ssuccesses += successes[l];
+					}
+					if(ssuccesses > ttrials)
+                              		{
+                                		ssuccesses = ttrials;
+                                		printf("WARNING: biominal successes {%Le} > trials {%d} in Threads\n", ssuccesses,ttrials);
+                                		_DEBUG_MSG(2,"WARNING: biominal successes > trials in Threads");
+                              		}
+					compare_stop = (boost::math::binomial_distribution<>::find_upper_bound_on_p(ttrials, ssuccesses, prob) * max_possible <
+					                                thread_best_results->points + min_increment_of_score);
+					for(unsigned j =0; j < c_num_threads;++j)
+						omp_unset_lock(&locks[j]);
+					
+				    }
+				 }
+        	    	}
+        	    }
+		    //todo parallel?
+        	    for( unsigned i =0; i< results.size();++i)
+        		    evaluated_results.first[i] =results[i]; //+?
+        	    evaluated_results.second+=thread_num_iterations;
+	      for(unsigned i =0; i < c_num_threads;++i)
+	      	omp_destroy_lock(&locks[i]);
+            }
+
 
 	    void openmp_evaluate(EvaluatedResults & evaluated_results) {
               std::vector<std::vector<Results<uint64_t>>> all_results(thread_num_iterations);
@@ -1097,18 +1172,17 @@ class Process
 		     }
        
         	    for( unsigned i =0; i< results.size();++i)
-        		    evaluated_results.first[i] +=results[i];
+        		    evaluated_results.first[i] =results[i]; //+?
         	    evaluated_results.second+=thread_num_iterations;
 	    }
 
             void openmp_compare(EvaluatedResults & evaluated_results) {
               std::vector<std::vector<Results<uint64_t>>> all_results(thread_num_iterations);
-              std::vector<Results<uint64_t>> save_results(evaluated_results.first);
-              std::vector<Results<uint64_t>> result(evaluated_results.first);
 	      bool compare_stop{false};
-              std::vector<Results<uint64_t>> results;
+	      bool skip[thread_num_iterations] = {false};
+              std::vector<Results<uint64_t>> results(evaluated_results.first);
 	      unsigned count{0};
-#pragma omp parallel default(none) shared(count,results,compare_stop,thread_num_iterations,all_results,\
+#pragma omp parallel default(none) shared(skip,count,results,compare_stop,thread_num_iterations,all_results,\
 		optimization_mode,confidence_level,max_possible_score,thread_best_results, min_increment_of_score)
         	    {
         	    	SimulationData* sim = threads_data.at(omp_get_thread_num());
@@ -1117,23 +1191,24 @@ class Process
         	    	for(unsigned i =0; i < thread_num_iterations;++i) {
 			   if(!compare_stop)
 			   {
-			   
-        	 	   all_results[i] = sim->evaluate();				//calculate single sim
+			   				//calculate single sim
+        	 	   all_results[i]= sim->evaluate();
+
 			   //#pragma omp master
 			   if(omp_get_thread_num()==0)
 			   {
-			   for(unsigned k=0; k < thread_num_iterations;k++)
-			   {
-			   	if(all_results[k].size() >0)
+			   	for(unsigned k =0; k<thread_num_iterations;++k)
 				{
-					count++;
-			   		if(results.size()==0)
-						results = all_results[k];
-			 		else
-        	           			results =merge(results,all_results[k]);				//calculate single sim
-					all_results[k].clear();
+					if(!skip[k] && all_results[k].size() >0)
+					{
+						count++;
+			   			if(results.size()==0)
+							results = all_results[k];
+			 			else
+        	           				results =merge(results,all_results[k]);				//calculate single sim
+						skip[k]= true;
+					}
 				}
-			   }
                               unsigned score_accum = 0;
                               // Multiple defense decks case: scaling by factors and approximation of a "discrete" number of events.
 			      unsigned trials;
@@ -1214,7 +1289,7 @@ class Process
             // wait for the threads
             main_barrier.wait();
 #else
-            openmp_evaluate(evaluated_results);
+            openmp_evaluate_reduction(evaluated_results);
 #endif
             return evaluated_results;
         }
@@ -1236,7 +1311,7 @@ class Process
             // wait for the threads
             main_barrier.wait();
 #else
-            openmp_compare(evaluated_results);
+            openmp_compare_reduction(evaluated_results);
 #endif
             return evaluated_results;
         }
@@ -3005,7 +3080,7 @@ bool parse_bge(
 FinalResults<long double> run(int argc, char** argv)
 {
     FinalResults<long double> fr;
-    unsigned opt_num_threads(4);
+    opt_num_threads= 4;
     DeckStrategy::DeckStrategy opt_your_strategy(DeckStrategy::random);
     DeckStrategy::DeckStrategy opt_enemy_strategy(DeckStrategy::random);
     std::string opt_forts, opt_enemy_forts;
