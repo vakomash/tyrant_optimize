@@ -1121,7 +1121,7 @@ class Process
                               		{
                                 		ssuccesses = ttrials;
                                 		printf("WARNING: biominal successes {%Le} > trials {%d} in Threads\n", ssuccesses,ttrials);
-                                		_DEBUG_MSG(2,"WARNING: biominal successes > trials in Threads");
+                                		//_DEBUG_MSG(2,"WARNING: biominal successes > trials in Threads");
                               		}
 					compare_stop = (boost::math::binomial_distribution<>::find_upper_bound_on_p(ttrials, ssuccesses, prob) * max_possible <
 					                                thread_best_results->points + min_increment_of_score);
@@ -1233,7 +1233,7 @@ class Process
                               {
                                 successes = trials;
                                 printf("WARNING: biominal successes {%Le} > trials {%d} in Threads\n", successes,trials);
-                                _DEBUG_MSG(2,"WARNING: biominal successes > trials in Threads");
+                                //_DEBUG_MSG(2,"WARNING: biominal successes > trials in Threads");
                               }
 
 
