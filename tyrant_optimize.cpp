@@ -1095,27 +1095,28 @@ class Process
         				      results =sim->evaluate();				//calculate single sim
         			    else 
         			              results =merge(results,sim->evaluate());				//calculate single sim
-				    omp_set_lock(&locks[omp_get_thread_num()]);
-				    	trials[omp_get_thread_num()]++;
+				    
 					long double score_accum_d = 0.0;
 					for(unsigned j=0; j < results.size(); ++j)
 						score_accum_d+=results[j].points * sim->factors[j];
 	      				long double sim_accum = std::accumulate(sim->factors.begin(), sim->factors.end(),.0);
-				        score_accum_d /= sim_accum;
-					successes[omp_get_thread_num()] = score_accum_d/max_possible;
+				        score_accum_d /= sim_accum*max_possible;
+                    omp_set_lock(&locks[omp_get_thread_num()]);
+                    trials[omp_get_thread_num()]++;
+					successes[omp_get_thread_num()] = score_accum_d;
 				    omp_unset_lock(&locks[omp_get_thread_num()]);
 				    //#pragma omp master
 				    if(omp_get_thread_num()==0)
 				    {
-	      				for(unsigned j =0; j < c_num_threads;++j)
-						omp_set_lock(&locks[j]);
 
 					unsigned ttrials = 0;
 					long double ssuccesses =0.0;
 					for(unsigned  l= 0; l < c_num_threads;++l)
 					{
+                        omp_set_lock(&locks[l]);
 						ttrials += trials[l];
 						ssuccesses += successes[l];
+                        omp_unset_lock(&locks[l]);
 					}
 					if(ssuccesses > ttrials)
                               		{
@@ -1125,8 +1126,6 @@ class Process
                               		}
 					compare_stop = (boost::math::binomial_distribution<>::find_upper_bound_on_p(ttrials, ssuccesses, prob) * max_possible <
 					                                thread_best_results->points + min_increment_of_score);
-					for(unsigned j =0; j < c_num_threads;++j)
-						omp_unset_lock(&locks[j]);
 					
 				    }
 				 }
