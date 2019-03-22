@@ -1048,7 +1048,7 @@ class Process
        	      std::vector<Results<uint64_t>> results(evaluated_results.first);
 #pragma omp declare reduction \
         	(VecPlus:std::vector<Results<uint64_t>>: omp_out=merge(omp_out,omp_in))
-#pragma omp parallel default(none) shared(thread_num_iterations,results)
+#pragma omp parallel default(none) shared(evaluated_results,thread_num_iterations,results)
         	    {
         	    	SimulationData* sim = threads_data.at(omp_get_thread_num());
          		    sim->set_decks(this->your_decks, this->enemy_decks);
@@ -1060,11 +1060,11 @@ class Process
         				        results =merge(results,sim->evaluate());				//calculate single sim
         			    }
         	    	}
-		}
-		    //todo parallel?
+#pragma omp for schedule(runtime)
 	            for( unsigned i =0; i< results.size();++i)
         		    evaluated_results.first[i] =results[i]; //+?
 
+		}
         	    evaluated_results.second+=thread_num_iterations;
             }
 
@@ -1083,7 +1083,7 @@ class Process
 	      	omp_init_lock(&locks[i]);
 #pragma omp declare reduction \
         	(VecPlus:std::vector<Results<uint64_t>>: omp_out=merge(omp_out,omp_in))
-#pragma omp parallel default(none) shared(trials,successes,locks, compare_stop, thread_num_iterations,results, \
+#pragma omp parallel default(none) shared(evaluated_results,trials,successes,locks, compare_stop, thread_num_iterations,results, \
 		thread_best_results, min_increment_of_score)
         	    {
         	    	SimulationData* sim = threads_data.at(omp_get_thread_num());
@@ -1131,13 +1131,14 @@ class Process
 				    }
 				 }
         	    	}
-        	    }
 		    //todo parallel?
+#pragma omp for schedule(runtime)
         	    for( unsigned i =0; i< results.size();++i)
         		    evaluated_results.first[i] =results[i]; //+?
         	    evaluated_results.second+=thread_num_iterations;
-	      for(unsigned i =0; i < c_num_threads;++i)
-	      	omp_destroy_lock(&locks[i]);
+		    for(unsigned i =0; i < c_num_threads;++i)
+	      		omp_destroy_lock(&locks[i]);
+        	  }
             }
 
 
