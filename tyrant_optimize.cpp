@@ -1049,19 +1049,29 @@ class Process
 #pragma omp declare reduction \
 			(VecPlus:std::vector<Results<uint64_t>>: omp_out=merge(omp_out,omp_in))
 #pragma omp target
-#pragma omp teams num_teams(2) thread_limit(1) default(none) shared(evaluated_results,thread_num_iterations,results)
+#pragma omp teams num_teams(4) thread_limit(4) default(none) shared(evaluated_results,thread_num_iterations,results)
 			//#pragma omp parallel default(none) shared(evaluated_results,thread_num_iterations,results)
 			{
 				SimulationData* sim = threads_data.at(omp_get_team_num());
 				sim->set_decks(this->your_decks, this->enemy_decks);
-				printf("team: %d/%d thread: %d \n",omp_get_team_num(),omp_get_num_teams() ,omp_get_thread_num());
+				//printf("team: %d/%d thread: %d \n",omp_get_team_num(),omp_get_num_teams() ,omp_get_thread_num());
+
 #pragma omp distribute parallel for reduction(VecPlus:results) schedule(runtime)
 				//#pragma omp for reduction(VecPlus:results) schedule(runtime)
 				for(unsigned i =0; i < thread_num_iterations;++i) {
+					//SimulationData tsim= *sim; //copy TODO fix seed
+					//printf("for-team: %d/%d thread: %d \n",omp_get_team_num(),omp_get_num_teams() ,omp_get_thread_num());
+					SimulationData tsim(i, sim->cards, sim->decks,sim->your_decks.size(), sim->enemy_decks.size(), sim->factors, sim->gamemode,
+#ifndef NQUEST
+								sim->quest,
+#endif
+								sim->your_bg_effects, sim->enemy_bg_effects, sim->your_bg_skills, sim->enemy_bg_skills);
+					tsim.set_decks(this->your_decks, this->enemy_decks);
 					if(results.size()==0) 
-						results =sim->evaluate();				//calculate single sim
+						results =tsim.evaluate();				//calculate single sim
 					else {
-						results =merge(results,sim->evaluate());				//calculate single sim
+						results =tsim.evaluate();				//calculate single sim
+						//results =merge(results,tsim.evaluate());				//calculate single sim
 					}
 				}
 				//#pragma omp for schedule(runtime)
