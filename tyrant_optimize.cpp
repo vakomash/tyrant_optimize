@@ -1090,6 +1090,7 @@ class Process
 				sim->set_decks(this->your_decks, this->enemy_decks);
 #pragma omp for reduction(VecPlus:results) schedule(runtime)
 				for(unsigned i =0; i < thread_num_iterations;++i) {
+#pragma omp cancellation point for					
 					if(!compare_stop){
 						if(results.size()==0) 
 							results =sim->evaluate();				//calculate single sim
@@ -1126,6 +1127,10 @@ class Process
 							}
 							compare_stop = (boost::math::binomial_distribution<>::find_upper_bound_on_p(ttrials, ssuccesses, prob) * max_possible <
 									thread_best_results->points + min_increment_of_score);
+							if(compare_stop)
+							{
+#pragma omp cancel for
+							}
 
 						}
 					}
