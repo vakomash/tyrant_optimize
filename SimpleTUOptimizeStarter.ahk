@@ -38,6 +38,8 @@ IniRead, IniEndgame, %IniFileName%, %IniSection%, Endgame, 1
 IniRead, IniFund, %IniFileName%, %IniSection%, Fund, 0
 IniRead, Inix86, %IniFileName%, %IniSection%, x86, 0
 IniRead, Inidebug, %IniFileName%, %IniSection%, debug, 0
+IniRead, Iniopenmp, %IniFileName%, %IniSection%, openmp, 0
+IniRead, Initime, %IniFileName%, %IniSection%, time, 0
 
 Menu, MyMenu, Add, ownedcards.txt, MenuOwnedcards
 Menu, MyMenu, Add, customdecks.txt, MenuCustomdecks
@@ -117,8 +119,10 @@ Gui, Add, Checkbox, vCommander Checked%IniCommander%, Commander lock
 Gui, Add, Edit, vSimOptions r1 xs w600, %IniSimOptions%
 Gui, Add, Button, default r2 w100 x100 y+15 section, Simulate
 Gui, Add, Checkbox, vx86 Checked%Inix86%, x86 (32-bit)
+Gui, Add, Checkbox, vopenmp Checked%IniOpenMP%, openmp 
 Gui, Add, Button, r2 w100 ys xs+200, Exit
 Gui, Add, Checkbox, vdebug Checked%IniDebug%, debug
+Gui, Add, Checkbox, vtime Checked%IniTime%, time
 Gui, Show,, Simple TUO Starter %VersionOfStarter% (version of %VersionOfTUO%)
 return
 
@@ -137,7 +141,7 @@ GuiControl, , Edit3, %EnemiesDeck% ; this will put the content of the variable i
 GuiControl, , Edit11, %SimOptions% ; this will put the content of the variable in the editbox (edit11 is taken by the winspy)
 Gui, Submit, NoHide ; save the changes and not hide the windows)
 
-selTUO := (x86 ? (debug ? "tuo-x86-debug" : "tuo-x86") : (debug ? "tuo-debug" : "tuo"))
+selTUO := "tuo" . (x86 ? "-x86" : "") . (openmp ? "-openmp" : "") . (debug ? "-debug" : (time ? "-time" : "")) . ".exe"
 selMode := (Mode == 1 ? "pvp" : Mode == 2 ? "pvp-defense" : Mode == 3 ? "gw" : Mode == 4 ? "gw-defense" :Mode == 5 ? "brawl" : Mode == 6 ? "brawl-defense" : Mode == 7 ? "raid" : Mode == 8 ? "campaign" : "surge")
 selOrder := (Order == 1 ? "random" : Order == 2 ? "ordered" : "flexible")
 selOperation :=  (Operation == 1 ? "climb" : Operation == 2 ? "sim" : Operation == 3 ? "reorder": Operation == 4 ? "climbex" : Operation == 5 ? "anneal" : Operation==6 ? "debug sim" : Operation==7 ?"climb_forts" : "genetic")
@@ -171,7 +175,7 @@ return
 
 MenuHelp:
 Gui, Submit
-selTUO := (x86 ? (debug ? "tuo-x86-debug" : "tuo-x86") : (debug ? "tuo-debug" : "tuo"))
+selTUO := "tuo" . (x86 ? "-x86" : "") . (openmp ? "-openmp" : "") . (debug ? "-debug" : (time ? "-time" : "")) . ".exe"
 Run, cmd.exe /c title TUOptimizeOutput && echo %selTUO% && %selTUO% & pause
 Gui, Show
 return
@@ -326,6 +330,8 @@ IniWrite, %Endgame%, %IniFileName%, %IniSection%, Endgame
 IniWrite, %Fund%, %IniFileName%, %IniSection%, Fund
 IniWrite, %x86%, %IniFileName%, %IniSection%, x86
 IniWrite, %debug%, %IniFileName%, %IniSection%, debug
+IniWrite, %openmp%, %IniFileName%, %IniSection%, openmp
+IniWrite, %time%, %IniFileName%, %IniSection%, time
 
 while true
 {

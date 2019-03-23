@@ -8,7 +8,7 @@ MXE_DIR=/usr/lib/mxe
 
 
 declare -a a_openmp=("" "-openmp" )
-declare -a a_debug=("" "-debug" )
+declare -a a_debug=("" "-debug" "-time")
 declare -a a_bit=("" "-x86" )
 
 for omp in "${a_openmp[@]}"
@@ -31,8 +31,8 @@ if [ "$bit" = "-x86" ]; then
 MXE_TARGET=i686-w64-mingw32.static
 fi
 
-#No windows timer on debug
-if [ "$dbg" = "-debug" ]; then
+#No windows timer on default
+if [ "$dbg" = "" ]; then
 DFLAGS="${DFLAGS} -DDEBUG:STRING=\"-DNTIMER\""
 fi
 #activate openmp
