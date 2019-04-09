@@ -1076,8 +1076,8 @@ class Process
 			bool compare_stop{false};
 			unsigned trials[c_num_threads] = {0};
 			long double successes [c_num_threads] = {.0};
-			const long double	max_possible =  max_possible_score[(size_t)optimization_mode];
-			const long double	prob =1-confidence_level;
+			const long double max_possible =  max_possible_score[(size_t)optimization_mode];
+			const long double prob =1-confidence_level;
 			omp_lock_t locks[c_num_threads];
 			for(unsigned  i =0; i < c_num_threads;++i)
 				omp_init_lock(&locks[i]);
@@ -1088,6 +1088,7 @@ class Process
 			{
 				SimulationData* sim = threads_data.at(omp_get_thread_num());
 				sim->set_decks(this->your_decks, this->enemy_decks);
+				const long double sim_accum = std::accumulate(sim->factors.begin(), sim->factors.end(),.0);
 #pragma omp for reduction(VecPlus:results) schedule(runtime)
 				for(unsigned i =0; i < thread_num_iterations;++i) {
 #pragma omp cancellation point for					
@@ -1096,11 +1097,9 @@ class Process
 							results =sim->evaluate();				//calculate single sim
 						else 
 							results =merge(results,sim->evaluate());				//calculate single sim
-
 						long double score_accum_d = 0.0;
 						for(unsigned j=0; j < results.size(); ++j)
 							score_accum_d+=results[j].points * sim->factors[j];
-						long double sim_accum = std::accumulate(sim->factors.begin(), sim->factors.end(),.0);
 						score_accum_d /= sim_accum*max_possible;
 						omp_set_lock(&locks[omp_get_thread_num()]);
 						trials[omp_get_thread_num()]++;
@@ -1135,7 +1134,6 @@ class Process
 						}
 					}
 				}
-				//todo parallel?
 #pragma omp for schedule(runtime)
 				for( unsigned i =0; i< results.size();++i)
 					evaluated_results.first[i] =results[i]; //+?
