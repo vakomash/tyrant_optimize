@@ -2,12 +2,16 @@
 
 set -xue
 
-make
-make debug
+#make
+#make debug
 
-chmod 755 tuo.osx
+#chmod 755 tuo.osx
 
-./tuo.osx -version
+#./tuo.osx -version
+
+cmake . -Bbuild -DVERSION:STRING="${TRAVIS_TAG}"
+cmake --build $build
+mv build/tuo tuo.osx
 
 #cp tuo.osx $TUO_FILE_32
 

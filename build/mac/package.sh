@@ -7,7 +7,7 @@ set -xue
 
 #cp build-dir/tuo $TUO_FILE
 
-export TUO_FILE_ZIP="tuo.${TRAVIS_TAG}_32+64_bit_osx.zip" 
+export TUO_FILE_ZIP="tuo.${TRAVIS_TAG}_64_bit_osx.zip" 
 
 #ls -la
 
