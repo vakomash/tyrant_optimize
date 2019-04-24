@@ -46,6 +46,7 @@ deploy:
   file_glob: true
   file:
     - ./*.exe
+    - ./*.osx
     - "${TUO_FILE_ZIP}"
   skip_cleanup: true
   on:
