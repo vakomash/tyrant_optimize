@@ -13,7 +13,10 @@ matrix:
         packages:
           - gcc-7
           - g++-7
-
+  - env:
+    - TUO_PLATFORM='macXX'
+    os: osx
+    
 before_install:
   # src: https://stackoverflow.com/a/49412522
   # Export CC and CXX to tell cmake which compiler to use

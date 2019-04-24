@@ -1,3 +1,3 @@
-#brew update
-#brew install cmake
-#brew install boost
+brew update
+brew install cmake
+brew install boost
