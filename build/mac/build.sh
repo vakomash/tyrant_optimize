@@ -10,7 +10,7 @@ set -xue
 #./tuo.osx -version
 
 cmake . -Bbuild -DVERSION:STRING="${TRAVIS_TAG}"
-cmake --build $build
+cmake --build build
 mv build/tuo tuo.osx
 
 #cp tuo.osx $TUO_FILE_32
