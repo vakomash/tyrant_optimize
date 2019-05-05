@@ -2856,7 +2856,7 @@ bool parse_bge(
 			if (passive_bge_id != PassiveBGE::no_bge)
 			{
 				// map bge id to its value (if present otherwise zero)
-				signed short bge_value = (tokens.size() > 1) ? boost::lexical_cast<signed short>(tokens[1]) : -1;
+				signed short bge_value = (tokens.size() > 1) ? boost::lexical_cast<signed short>(tokens[1]) : 1;
 				if (!bge_value)
 					throw std::runtime_error("BGE " + skill_name + ": zero value means no BGE");
 				if ((player == 0) or (player == 2))
