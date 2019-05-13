@@ -2609,7 +2609,7 @@ bool check_and_perform_bravery(Field* fd, CardStatus* src)
         //BGE: superheroism
         if (__builtin_expect(fd->bg_effects[fd->tapi][PassiveBGE::superheroism], false))
         {
-            unsigned bge_value = (bravery_value+1) / 2;
+            unsigned bge_value = bravery_value;
             const SkillSpec ss_heal{Skill::heal, bge_value, allfactions, 0, 0, Skill::no_skill, Skill::no_skill, true, 0,};
             _DEBUG_MSG(1, "%s activates SuperHeroism: %s\n", status_description(src).c_str(),
                     skill_description(fd->cards, ss_heal).c_str());
