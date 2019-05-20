@@ -470,17 +470,9 @@ void prepend_on_death(Field* fd)
             // Skill: Avenge
             const unsigned host_idx = status->m_index;
             unsigned from_idx, till_idx;
-            if (__builtin_expect(fd->bg_effects[fd->tapi][PassiveBGE::bloodvengeance], false))
-            {
-                // Passive BGE Blood Vengeance: scan all assaults for Avenge
-                from_idx = 0;
-                till_idx = assaults.size() - 1;
-            }
-            else
-            {
-                from_idx = safe_minus(host_idx, 1);
-                till_idx = std::min(host_idx + 1, safe_minus(assaults.size(), 1));
-            }
+            //scan all assaults for Avenge
+            from_idx = 0;
+            till_idx = assaults.size() - 1;
             for (; from_idx <= till_idx; ++ from_idx)
             {
                 if (from_idx == host_idx) { continue; }
@@ -489,15 +481,16 @@ void prepend_on_death(Field* fd)
                 unsigned avenge_value = adj_status->skill(Skill::avenge);
                 if (!avenge_value) { continue; }
 
-                // Passive BGE Blood Vengeance: use half value rounded up
+                // Use half value rounded up
                 // (for distance > 1, i. e. non-standard Avenge triggering)
-                if (__builtin_expect((std::abs((signed)from_idx - (signed)host_idx) > 1), false))
+                if (std::abs((signed)from_idx - (signed)host_idx) > 1))
                 {
                     avenge_value = (avenge_value + 1) / 2;
                 }
-                _DEBUG_MSG(1, "%s%s activates Avenge %u\n",
-                        (std::abs((signed)from_idx - (signed)host_idx) > 1 ? "BGE BloodVengeance: " : ""),
-                        status_description(adj_status).c_str(), avenge_value);
+                _DEBUG_MSG(1, "%s activates %sAvenge %u\n",
+                        status_description(adj_status).c_str(),
+                        (std::abs((signed)from_idx - (signed)host_idx) > 1 ? "Half-" : ""),
+                         avenge_value);
                 if (!adj_status->m_sundered)
                 { adj_status->m_perm_attack_buff += avenge_value; }
                 adj_status->ext_hp(avenge_value);
