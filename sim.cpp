@@ -2037,8 +2037,11 @@ inline bool skill_predicate<Skill::mimic>(Field* fd, CardStatus* src, CardStatus
     // skip dead units
     if (!is_alive(dst)) return false;
 
+    //include on play/attacked/death
+    for(const auto a : {dst->m_card->m_skills,dst->m_card->m_skills_on_play,dst->m_card->m_skills_on_death,dst->m_card->m_skills_on_attacked})
+    {
     // scan all enemy skills until first activation
-    for (const auto & ss: dst->m_card->m_skills)
+    for (const auto & ss: a)
     {
         // get skill
         Skill::Skill skill_id = static_cast<Skill::Skill>(ss.id);
@@ -2053,6 +2056,7 @@ inline bool skill_predicate<Skill::mimic>(Field* fd, CardStatus* src, CardStatus
 
         // enemy has at least one activation skill that can be mimicked, so enemy is eligible target for Mimic
         return true;
+    }
     }
 
     // found nothing (enemy has no skills to be mimicked, so enemy isn't eligible target for Mimic)
@@ -2308,9 +2312,12 @@ inline void perform_skill<Skill::mimic>(Field* fd, CardStatus* src, CardStatus* 
 {
     // collect all mimickable enemy skills
     std::vector<const SkillSpec *> mimickable_skills;
-    mimickable_skills.reserve(dst->m_card->m_skills.size());
+    mimickable_skills.reserve(dst->m_card->m_skills.size()+dst->m_card->m_skills_on_play.size()+dst->m_card->m_skills_on_death.size()+dst->m_card->m_skills_on_attacked.size());
     _DEBUG_MSG(2, " * Mimickable skills of %s\n", status_description(dst).c_str());
-    for (const auto & ss: dst->m_card->m_skills)
+    //include on play/attacked/death
+    for(const auto a : {dst->m_card->m_skills,dst->m_card->m_skills_on_play,dst->m_card->m_skills_on_death,dst->m_card->m_skills_on_attacked})
+    {
+    for (const auto & ss: a)
     {
         // get skill
         Skill::Skill skill_id = static_cast<Skill::Skill>(ss.id);
@@ -2325,6 +2332,7 @@ inline void perform_skill<Skill::mimic>(Field* fd, CardStatus* src, CardStatus* 
 
         mimickable_skills.emplace_back(&ss);
         _DEBUG_MSG(2, "  + %s\n", skill_description(fd->cards, ss).c_str());
+    }
     }
 
     // select skill
