@@ -483,7 +483,7 @@ void prepend_on_death(Field* fd)
 
                 // Use half value rounded up
                 // (for distance > 1, i. e. non-standard Avenge triggering)
-                if (std::abs((signed)from_idx - (signed)host_idx) > 1))
+                if (std::abs((signed)from_idx - (signed)host_idx) > 1)
                 {
                     avenge_value = (avenge_value + 1) / 2;
                 }
@@ -1617,12 +1617,12 @@ struct PerformAttack
                     bool bge_megamorphosis = fd->bg_effects[fd->tapi][PassiveBGE::megamorphosis];
                     //scan all assaults for Global Legion
                     itr_idx = 0;
-                    till_idx = assaults.size() - 1;
+                    till_idx = att_assaults.size() - 1;
                     for (; itr_idx <= till_idx; ++ itr_idx)
                     {
-                        if(itr_idx == att_statis->m_index)continue; //legion doesn't count itself, unlike coalition
+                        if(itr_idx == att_status->m_index)continue; //legion doesn't count itself, unlike coalition
                         legion_value += is_alive(&att_assaults[itr_idx])
-                          && (bge_megamorphosis || (att_assaults[itr].m_card->m_faction == att_status->m_card->m_faction));
+                          && (bge_megamorphosis || (att_assaults[itr_idx].m_card->m_faction == att_status->m_card->m_faction));
                     }
                     if (legion_value)
                     {
