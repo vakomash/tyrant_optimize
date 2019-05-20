@@ -1613,11 +1613,17 @@ struct PerformAttack
                 unsigned legion_base = att_status->skill(Skill::legion);
                 if (__builtin_expect(legion_base, false))
                 {
+                    unsigned itr_idx, till_idx;
                     bool bge_megamorphosis = fd->bg_effects[fd->tapi][PassiveBGE::megamorphosis];
-                    legion_value += (att_status->m_index > 0) && is_alive(&att_assaults[att_status->m_index - 1])
-                        && (bge_megamorphosis || (att_assaults[att_status->m_index - 1].m_card->m_faction == att_status->m_card->m_faction));
-                    legion_value += ((att_status->m_index + 1) < att_assaults.size()) && is_alive(&att_assaults[att_status->m_index + 1])
-                        && (bge_megamorphosis || (att_assaults[att_status->m_index + 1].m_card->m_faction == att_status->m_card->m_faction));
+                    //scan all assaults for Global Legion
+                    itr_idx = 0;
+                    till_idx = assaults.size() - 1;
+                    for (; itr_idx <= till_idx; ++ itr_idx)
+                    {
+                        if(itr_idx == att_statis->m_index)continue; //legion doesn't count itself, unlike coalition
+                        legion_value += is_alive(&att_assaults[itr_idx])
+                          && (bge_megamorphosis || (att_assaults[itr].m_card->m_faction == att_status->m_card->m_faction));
+                    }
                     if (legion_value)
                     {
                         legion_value *= legion_base;
