@@ -1,4 +1,5 @@
 // exec: ./tuo-test , verbose: ./tuo-test --log_level=all
+// set-iterations ./tuo-test 100  , default = 10 // more than 100 cause errors
 #ifdef TEST
 #ifdef NQUEST // only without quests
 #define BOOST_TEST_DYN_LINK
@@ -21,6 +22,9 @@
 using namespace std;
 namespace bdata = boost::unit_test::data;
 typedef std::tuple<FinalResults<long double>,std::string,double> Result; // score, output, time
+int iter = 10;
+//limit for float diffing
+double eps = 0.0000001;
 
 //pipe output: https://stackoverflow.com/questions/5405016/can-i-check-my-programs-output-with-boost-test
 struct ios_redirect {
@@ -89,9 +93,9 @@ inline Result run_sim(int argc,const char** argv, bool pipe_output=true)
 
 inline void check_win(Result result) {
     BOOST_CHECK_MESSAGE(
-      1==std::get<0>(result).wins &&
-      0==std::get<0>(result).losses &&
-      0==std::get<0>(result).draws
+      1-eps<=std::get<0>(result).wins &&
+      eps>=std::get<0>(result).losses &&
+      eps>=std::get<0>(result).draws
       ,std::get<1>(result));
     //BOOST_CHECK(100==result.points);
 }
@@ -100,15 +104,21 @@ inline void check_win_sim(TestInfo ti) {
     /////////////
     // Max. Iter == 100, else check_win fails with integer vs double equal in check_win
     ////////////
-    const char* argv[] = {"tuo",ti.your_deck.c_str(),ti.enemy_deck.c_str(),"-e",ti.bge.c_str(),"sim", "10"}; //TODO hardcoded iterations? //much output on error?! // better 100 iterations for test, 10 for checking errors
+    string s = std::to_string(iter);
+    char * ii = new char[s.length()];
+    strcpy(ii,s.c_str());
+    const char* argv[] = {"tuo",ti.your_deck.c_str(),ti.enemy_deck.c_str(),"-e",ti.bge.c_str(),"sim", ii}; //TODO hardcoded iterations? //much output on error?! // better 100 iterations for test, 10 for checking errors
     Result result(run_sim(sizeof(argv)/sizeof(*argv),argv));
+    delete ii;
     //result.second += "\nTest: " + ti.your_deck + "; " + ti.enemy_deck + "; " + ti.bge;
     check_win(result);
 }
 
 inline void genetic(std::string gnt1,std::string gnt2){
-
-    const char* argv[] = {"tuo",gnt1.c_str(),gnt2.c_str(),"_test","brawl","genetic","10", "-t", "4"};
+    string s = std::to_string(iter);
+    char * ii = new char[s.length()];
+    strcpy(ii,s.c_str());
+    const char* argv[] = {"tuo",gnt1.c_str(),gnt2.c_str(),"_test","brawl","genetic",ii, "-t", "4"};
     Result result(run_sim(sizeof(argv)/sizeof(*argv),argv,false));
     std::ofstream mf;
     mf.open("out.csv", std::ios_base::app);
@@ -159,13 +169,19 @@ BOOST_AUTO_TEST_CASE(test_genetic)
 BOOST_AUTO_TEST_SUITE_END()
 */
 
-BOOST_AUTO_TEST_SUITE(test_sim)
+
+
+BOOST_AUTO_TEST_SUITE(test_sim )
 BOOST_AUTO_TEST_CASE(test_sim_init)
 {
     init();
     debug_print++;
     debug_cached++;
     debug_line =true;
+    if(boost::unit_test::framework::master_test_suite().argc==2)
+    {
+        iter = atoi(boost::unit_test::framework::master_test_suite().argv[1]);
+    }
     BOOST_CHECK(1==1);//..
 }
 
