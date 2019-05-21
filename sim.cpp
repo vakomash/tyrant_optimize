@@ -1172,7 +1172,7 @@ void cooldown_skills(CardStatus * status)
 void turn_start_phase_update(Field*fd,CardStatus * status)
 {
             //apply Absorb + Triggered\{Valor} Enhances
-            check_and_perform_early_enhance();
+            check_and_perform_early_enhance(fd,status);
             //refresh absorb
             if(status->has_skill(Skill::absorb))
             {
@@ -1204,14 +1204,14 @@ void turn_start_phase(Field* fd)
     unsigned end(assaults.size());
 
     //Perform early enhance for commander
-    check_and_perform_enhance(fd,fd->tap->commander);
-    
+    check_and_perform_early_enhance(fd,&fd->tap->commander);
+
     // Active player's structure cards:
     // update index
     // reduce delay; reduce skill cooldown
     {
         auto& structures(fd->tap->structures);
-        for(unsigned index(0); index < structures.size(), ++index)
+        for(unsigned index(0); index < structures.size(); ++index)
         {
             CardStatus * status = &structures[index];
             status->m_index = index;
@@ -2555,12 +2555,12 @@ inline bool check_and_perform_skill(Field* fd, CardStatus* src, CardStatus* dst,
 }
 bool check_and_perform_enhance(Field* fd, CardStatus* src, bool early)
 {
-      if(!has_skill(src,Skill::enhance))return false;
-      for(auto ss : src->m_skills)
+      if(!src->has_skill(Skill::enhance))return false;
+      for(auto ss : src->m_card->m_skills)
       {
-          if(ss->id != Skill::enhance)continue;
-          if(early ^ (ss->s == Skill::allegiance || ss->s == Skill::absorb ||ss->s == Skill::stasis || ss-> == Skill::bravery))continue; //only specified skills are 'early'
-          fd->skill_queue.emplace_back(status, ss);
+          if(ss.id != Skill::enhance)continue;
+          if(early ^ (ss.s == Skill::allegiance || ss.s == Skill::absorb ||ss.s == Skill::stasis || ss.s == Skill::bravery))continue; //only specified skills are 'early'
+          fd->skill_queue.emplace_back(src, ss);
           resolve_skill(fd);
       }
       return true;
@@ -3256,8 +3256,16 @@ Results<uint64_t> play(Field* fd,bool skip_init)
         }
         if (__builtin_expect(fd->end, false)) { break; }
 
-        //enhance everything else after card was played
-        check_and_perform_later_enhance();
+        //Skill: Enhance
+        //Perform later enhance for commander
+        check_and_perform_later_enhance(fd,&fd->tap->commander);
+        auto& structures(fd->tap->structures);
+        for(unsigned index(0); index < structures.size(); ++index)
+        {
+            CardStatus * status = &structures[index];
+            //enhance everything else after card was played
+            check_and_perform_later_enhance(fd,status);
+        }
 
         // Evaluate Passive BGE Heroism skills
         if (__builtin_expect(fd->bg_effects[fd->tapi][PassiveBGE::heroism], false))

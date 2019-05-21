@@ -60,7 +60,7 @@ enum Skill
     inhibit, sabotage, disease,
 
     // Triggered:
-    allegiance, flurry, valor, stasis, summon, bravery, enhance
+    allegiance, flurry, valor, stasis, summon, bravery, enhance,
 
     // End of skills
     num_skills
