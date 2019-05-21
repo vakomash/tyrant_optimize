@@ -16,6 +16,8 @@
 
 bool check_and_perform_valor(Field* fd, CardStatus* src);
 bool check_and_perform_bravery(Field* fd, CardStatus* src);
+bool check_and_perform_early_enhance(Field* fd, CardStatus* src);
+bool check_and_perform_later_enhance(Field* fd, CardStatus* src);
 CardStatus* check_and_perform_summon(Field* fd, CardStatus* src);
 //------------------------------------------------------------------------------
 inline unsigned remove_absorption(Field* fd, CardStatus* status, unsigned dmg);
@@ -1163,23 +1165,14 @@ void cooldown_skills(CardStatus * status)
         }
     }
 }
-
-void turn_start_phase(Field* fd)
+/**
+ * Handle:
+ * Absorb, (Activation)Summon, Bravery, (Initial)Valor, Inhibit, Sabotage, Disease, Enhance, (Cooldown/Every X) Reductions
+ **/
+void turn_start_phase_update(Field*fd,CardStatus * status)
 {
-    // Active player's commander card:
-    cooldown_skills(&fd->tap->commander);
-    //grab structs before new one get summoned
-    auto& structures(fd->tap->structures);
-    unsigned end(structures.size());
-    // Active player's assault cards:
-    // update index
-    // reduce delay; reduce skill cooldown
-    {
-        auto& assaults(fd->tap->assaults);
-        for(unsigned index(0), end(assaults.size()); index < end; ++index)
-        {
-            CardStatus * status = &assaults[index];
-            status->m_index = index;
+            //apply Absorb + Triggered\{Valor} Enhances
+            check_and_perform_early_enhance();
             //refresh absorb
             if(status->has_skill(Skill::absorb))
             {
@@ -1200,44 +1193,40 @@ void turn_start_phase(Field* fd)
             {
                 cooldown_skills(status);
             }
+}
+
+void turn_start_phase(Field* fd)
+{
+    // Active player's commander card:
+    cooldown_skills(&fd->tap->commander);
+    //grab assaults before new ones get summoned
+    auto& assaults(fd->tap->assaults);
+    unsigned end(assaults.size());
+
+    //Perform early enhance for commander
+    check_and_perform_enhance(fd,fd->tap->commander);
+    
+    // Active player's structure cards:
+    // update index
+    // reduce delay; reduce skill cooldown
+    {
+        auto& structures(fd->tap->structures);
+        for(unsigned index(0); index < structures.size(), ++index)
+        {
+            CardStatus * status = &structures[index];
+            status->m_index = index;
+            turn_start_phase_update(fd,status);
         }
     }
-    // Active player's structure cards:
+    // Active player's assault cards:
     // update index
     // reduce delay; reduce skill cooldown
     {
         for(unsigned index(0); index < end; ++index)
         {
-            CardStatus * status = &structures[index];
+            CardStatus * status = &assaults[index];
             status->m_index = index;
-            //refresh absorb
-            if(status->has_skill(Skill::absorb))
-            {
-                status->m_absorption = status->skill_base_value(Skill::absorb);
-            }
-            if (status->m_delay > 0)
-            {
-                _DEBUG_MSG(1, "%s reduces its timer\n", status_description(status).c_str());
-                --status->m_delay;
-                if (status->m_delay == 0)
-                {
-                    if(status->m_card->m_skill_trigger[Skill::summon] == Skill::Trigger::activate)check_and_perform_summon(fd, status);
-                }
-            }
-            else
-            {
-                cooldown_skills(status);
-            }
-        }
-    }
-    // Defending player's assault cards:
-    // update index
-    {
-        auto& assaults(fd->tip->assaults);
-        for(unsigned index(0), end(assaults.size()); index < end; ++index)
-        {
-            CardStatus& status(assaults[index]);
-            status.m_index = index;
+            turn_start_phase_update(fd,status);
         }
     }
     // Defending player's structure cards:
@@ -1247,6 +1236,16 @@ void turn_start_phase(Field* fd)
         for(unsigned index(0), end(structures.size()); index < end; ++index)
         {
             CardStatus& status(structures[index]);
+            status.m_index = index;
+        }
+    }
+    // Defending player's assault cards:
+    // update index
+    {
+        auto& assaults(fd->tip->assaults);
+        for(unsigned index(0), end(assaults.size()); index < end; ++index)
+        {
+            CardStatus& status(assaults[index]);
             status.m_index = index;
         }
     }
@@ -2005,6 +2004,8 @@ inline bool skill_predicate<Skill::enhance>(Field* fd, CardStatus* src, CardStat
     if (!dst->has_skill(s.s)) return false;
     if (is_active(dst)) return true;
     if (is_defensive_skill(s.s)) return true;
+    if (is_instant_debuff_skill(s.s)) return true; // Enhance Sabotage, Inhibit, Disease also without dst being active
+    if (is_triggered_skill(s.s) && s.s != Skill::valor) return true;// Enhance Allegiance, Stasis, Bravery ( + not in TU: Flurry, Summon; No enhance on inactive dst: Valor)
 
     /* Strange Transmission [Gilians]: strange gillian's behavior implementation:
      * The Gillian commander and assaults can enhance any skills on any assaults
@@ -2552,12 +2553,32 @@ inline bool check_and_perform_skill(Field* fd, CardStatus* src, CardStatus* dst,
             status_description(dst).c_str());
     return(false);
 }
-
+bool check_and_perform_enhance(Field* fd, CardStatus* src, bool early)
+{
+      if(!has_skill(src,Skill::enhance))return false;
+      for(auto ss : src->m_skills)
+      {
+          if(ss->id != Skill::enhance)continue;
+          if(early ^ (ss->s == Skill::allegiance || ss->s == Skill::absorb ||ss->s == Skill::stasis || ss-> == Skill::bravery))continue; //only specified skills are 'early'
+          fd->skill_queue.emplace_back(status, ss);
+          resolve_skill(fd);
+      }
+      return true;
+}
+bool check_and_perform_early_enhance(Field* fd, CardStatus* src)
+{
+      return check_and_perform_enhance(fd,src,true);
+}
+bool check_and_perform_later_enhance(Field* fd, CardStatus* src)
+{
+      return check_and_perform_enhance(fd,src,false);
+}
 bool check_and_perform_valor(Field* fd, CardStatus* src)
 {
     unsigned valor_value = src->skill(Skill::valor);
     if (valor_value && !src->m_sundered && skill_check<Skill::valor>(fd, src, nullptr))
     {
+        _DEBUG_ASSERT(src->m_card->m_type == CardType::assault); //only assaults
         unsigned opponent_player = opponent(src->m_player);
         const CardStatus * dst = fd->players[opponent_player]->assaults.size() > src->m_index ?
             &fd->players[opponent_player]->assaults[src->m_index] :
@@ -2590,6 +2611,7 @@ bool check_and_perform_bravery(Field* fd, CardStatus* src)
     unsigned bravery_value = src->skill(Skill::bravery);
     if (bravery_value && !src->m_sundered && skill_check<Skill::bravery>(fd, src, nullptr))
     {
+        _DEBUG_ASSERT(src->m_card->m_type == CardType::assault); //only assaults
         unsigned opponent_player = opponent(src->m_player);
         const CardStatus * dst = fd->players[opponent_player]->assaults.size() > src->m_index ?
             &fd->players[opponent_player]->assaults[src->m_index] :
@@ -3233,6 +3255,9 @@ Results<uint64_t> play(Field* fd,bool skip_init)
 
         }
         if (__builtin_expect(fd->end, false)) { break; }
+
+        //enhance everything else after card was played
+        check_and_perform_later_enhance();
 
         // Evaluate Passive BGE Heroism skills
         if (__builtin_expect(fd->bg_effects[fd->tapi][PassiveBGE::heroism], false))
