@@ -444,9 +444,10 @@ inline void resolve_scavenge(Storage<CardStatus>& store)
         if(!is_alive(status))continue;
         unsigned scavenge_value = status->skill(Skill::scavenge);
         if(!scavenge_value)continue;
-        status->ext_hp(scavenge_value);
+
         _DEBUG_MSG(1, "%s activates Scavenge %u\n",
                 status_description(status).c_str(), scavenge_value);
+        status->ext_hp(scavenge_value);
     }
 }
 //------------------------------------------------------------------------------
@@ -629,6 +630,26 @@ void resolve_skill(Field* fd)
     }
 }
 
+void apply_corrosion(CardStatus * status)
+{
+      if (status->m_corroded_rate)
+      {
+        unsigned v = std::min(status->m_corroded_rate, status->attack_power());
+        unsigned corrosion = std::min(v, status->m_card->m_attack
+                + status->m_perm_attack_buff - status->m_corroded_weakened);
+        _DEBUG_MSG(1, "%s loses Attack by %u (+corrosion %u).\n", status_description(status).c_str(), v, corrosion);
+        status->m_corroded_weakened += corrosion;
+      }
+}
+void remove_corrosion(CardStatus * status)
+{
+       if (status->m_corroded_rate)
+       {
+           _DEBUG_MSG(1, "%s loses Status corroded.\n", status_description(status).c_str());
+           status->m_corroded_rate = 0;
+           status->m_corroded_weakened = 0;
+       }
+}
 //------------------------------------------------------------------------------
 bool attack_phase(Field* fd);
 
@@ -667,27 +688,20 @@ void evaluate_skills(Field* fd, CardStatus* status, const std::vector<SkillSpec>
                 {
                     *attacked = true;
                     if (__builtin_expect(fd->end, false)) { break; }
-                    //apply corrosion
-                    if (status->m_corroded_rate)
-                    {
-                      unsigned v = std::min(status->m_corroded_rate, status->attack_power());
-                      unsigned corrosion = std::min(v, status->m_card->m_attack
-                              + status->m_perm_attack_buff - status->m_corroded_weakened);
-                      _DEBUG_MSG(1, "%s loses Attack by %u (+corrosion %u).\n", status_description(status).c_str(), v, corrosion);
-                      status->m_corroded_weakened += corrosion;
-                    }
+                    //Apply corrosion
+                    apply_corrosion(status);
+                }
+                else
+                {
+                  // Remove Corrosion
+                  remove_corrosion(status);
                 }
             }
             else
             {
                 _DEBUG_MSG(2, "%s cannot take attack.\n", status_description(status).c_str());
                 // Remove Corrosion
-                if (status->m_corroded_rate)
-                {
-                    _DEBUG_MSG(1, "%s loses Status corroded.\n", status_description(status).c_str());
-                    status->m_corroded_rate = 0;
-                    status->m_corroded_weakened = 0;
-                }
+                remove_corrosion(status);
             }
         }
         fd->finalize_action();
