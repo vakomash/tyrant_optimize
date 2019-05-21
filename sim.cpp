@@ -667,11 +667,27 @@ void evaluate_skills(Field* fd, CardStatus* status, const std::vector<SkillSpec>
                 {
                     *attacked = true;
                     if (__builtin_expect(fd->end, false)) { break; }
+                    //apply corrosion
+                    if (current_status->m_corroded_rate)
+                    {
+                      unsigned v = std::min(current_status->m_corroded_rate, current_status->attack_power());
+                      unsigned corrosion = std::min(v, current_status->m_card->m_attack
+                              + current_status->m_perm_attack_buff - current_status->m_corroded_weakened);
+                      _DEBUG_MSG(1, "%s loses Attack by %u (+corrosion %u).\n", status_description(current_status).c_str(), v, corrosion);
+                      current_status->m_corroded_weakened += corrosion;
+                    }
                 }
             }
             else
             {
                 _DEBUG_MSG(2, "%s cannot take attack.\n", status_description(status).c_str());
+                // Remove Corrosion
+                if (current_status->m_corroded_rate)
+                {
+                    _DEBUG_MSG(1, "%s loses Status corroded.\n", status_description(current_status).c_str());
+                    current_status->m_corroded_rate = 0;
+                    current_status->m_corroded_weakened = 0;
+                }
             }
         }
         fd->finalize_action();
@@ -1044,9 +1060,18 @@ inline bool skill_check<Skill::mark>(Field* fd, CardStatus* c, CardStatus* ref)
     template<>
 inline bool skill_check<Skill::disease>(Field* fd, CardStatus* c, CardStatus* ref)
 {
-    return (ref->m_card->m_type == CardType::assault);
+    return is_alive(c) && (ref->m_card->m_type == CardType::assault);
 }
-
+    template<>
+inline bool skill_check<Skill::inhibit>(Field* fd, CardStatus* c, CardStatus* ref)
+{
+    return is_alive(c) && (ref->m_card->m_type == CardType::assault);
+}
+    template<>
+inline bool skill_check<Skill::sabotage>(Field* fd, CardStatus* c, CardStatus* ref)
+{
+    return is_alive(c) && (ref->m_card->m_type == CardType::assault);
+}
 inline unsigned remove_disease(CardStatus* status, unsigned heal)
 {
     unsigned remaining_heal(heal);
@@ -1825,6 +1850,7 @@ void PerformAttack::damage_dependant_pre_oa<CardType::assault>()
     }
 
     // Damage-Dependent skill: Inhibit
+    /*
     unsigned inhibit_value = att_status->skill(Skill::inhibit);
     if (inhibit_value > def_status->m_inhibited && skill_check<Skill::inhibit>(fd, att_status, def_status))
     {
@@ -1833,8 +1859,10 @@ void PerformAttack::damage_dependant_pre_oa<CardType::assault>()
                 status_description(def_status).c_str(), inhibit_value);
         def_status->m_inhibited = inhibit_value;
     }
+    */
 
     // Damage-Dependent skill: Sabotage
+    /*
     unsigned sabotage_value = att_status->skill(Skill::sabotage);
     if (sabotage_value > def_status->m_sabotaged && skill_check<Skill::sabotage>(fd, att_status, def_status))
     {
@@ -1843,13 +1871,16 @@ void PerformAttack::damage_dependant_pre_oa<CardType::assault>()
                 status_description(def_status).c_str(), sabotage_value);
         def_status->m_sabotaged = sabotage_value;
     }
+    */
     // Damage-Dependent skill: Increase Disease-counter
+    /*
     unsigned disease_base = att_status->skill(Skill::disease);
     if(disease_base && skill_check<Skill::disease>(fd, att_status, def_status)) {
         _DEBUG_MSG(1, "%s diseases %s for %u\n",
         status_description(att_status).c_str(), status_description(def_status).c_str(), disease_base);
         def_status->m_diseased += disease_base;
     }
+    */
 }
 
     template<>
@@ -2555,7 +2586,8 @@ inline bool check_and_perform_skill(Field* fd, CardStatus* src, CardStatus* dst,
 }
 bool check_and_perform_enhance(Field* fd, CardStatus* src, bool early)
 {
-      if(!src->has_skill(Skill::enhance))return false;
+      if(!is_active(src))return false; // active
+      if(!src->has_skill(Skill::enhance))return false; // enhance Skill
       for(auto ss : src->m_card->m_skills)
       {
           if(ss.id != Skill::enhance)continue;
@@ -2651,6 +2683,44 @@ bool check_and_perform_bravery(Field* fd, CardStatus* src)
     return false;
 }
 
+bool check_and_perform_inhibit(Field* fd, CardStatus* att_status,CardStatus* def_status)
+{
+      unsigned inhibit_value = att_status->skill(Skill::inhibit);
+      if (inhibit_value > def_status->m_inhibited && skill_check<Skill::inhibit>(fd, att_status, def_status))
+      {
+        _DEBUG_MSG(1, "%s inhibits %s by %u\n",
+                status_description(att_status).c_str(),
+                status_description(def_status).c_str(), inhibit_value);
+        def_status->m_inhibited = inhibit_value;
+        return true;
+      }
+      return false;
+}
+bool check_and_perform_sabotage(Field* fd, CardStatus* att_status, CardStatus* def_status)
+{
+    unsigned sabotage_value = att_status->skill(Skill::sabotage);
+    if (sabotage_value > def_status->m_sabotaged && skill_check<Skill::sabotage>(fd, att_status, def_status))
+    {
+        _DEBUG_MSG(1, "%s sabotages %s by %u\n",
+                status_description(att_status).c_str(),
+                status_description(def_status).c_str(), sabotage_value);
+        def_status->m_sabotaged = sabotage_value;
+        return true;
+    }
+    return false;
+}
+bool check_and_perform_disease(Field* fd, CardStatus* att_status,CardStatus* def_status)
+{
+    unsigned disease_base = att_status->skill(Skill::disease);
+    if(disease_base && skill_check<Skill::disease>(fd, att_status, def_status)) {
+        _DEBUG_MSG(1, "%s diseases %s for %u\n",
+        status_description(att_status).c_str(), status_description(def_status).c_str(), disease_base);
+        def_status->m_diseased += disease_base;
+        return true;
+    }
+    return false;
+}
+
 CardStatus* check_and_perform_summon(Field* fd, CardStatus* src)
 {
     unsigned summon_card_id = src->m_card->m_skill_value[Skill::summon];
@@ -2677,6 +2747,7 @@ CardStatus* check_and_perform_summon(Field* fd, CardStatus* src)
     }
     return nullptr;
 }
+
 
     template<Skill::Skill skill_id>
 size_t select_targets(Field* fd, CardStatus* src, const SkillSpec& s)
@@ -3256,6 +3327,9 @@ Results<uint64_t> play(Field* fd,bool skip_init)
         }
         if (__builtin_expect(fd->end, false)) { break; }
 
+        //-------------------------------------------------
+        // Phase: (Later-) Enhance, Inhibit, Sabotage, Disease
+        //-------------------------------------------------
         //Skill: Enhance
         //Perform later enhance for commander
         check_and_perform_later_enhance(fd,&fd->tap->commander);
@@ -3266,6 +3340,20 @@ Results<uint64_t> play(Field* fd,bool skip_init)
             //enhance everything else after card was played
             check_and_perform_later_enhance(fd,status);
         }
+        //Perform Inhibit, Sabotage, Disease
+        auto& assaults(fd->tap->structures);
+        for(unsigned index(0); index < assaults.size(); ++index)
+        {
+            CardStatus * att_status = &assaults[index];
+            if(att_status->m_index >= fd->tip->assaults.size())continue; //skip no enemy
+            auto def_status = &fd->tip->assaults[att_status->m_index];
+            if(!is_alive(def_status))continue; //skip dead
+
+            check_and_perform_inhibit(fd,att_status,def_status);
+            check_and_perform_sabotage(fd,att_status,def_status);
+            check_and_perform_disease(fd,att_status,def_status);
+        }
+        //-------------------------------------------------
 
         // Evaluate Passive BGE Heroism skills
         if (__builtin_expect(fd->bg_effects[fd->tapi][PassiveBGE::heroism], false))
@@ -3365,6 +3453,7 @@ Results<uint64_t> play(Field* fd,bool skip_init)
             {
                 _DEBUG_MSG(2, "%s cannot take action.\n", status_description(current_status).c_str());
                 // Passive BGE: HaltedOrders
+                /*
                 unsigned inhibit_value;
                 if (__builtin_expect(fd->bg_effects[fd->tapi][PassiveBGE::haltedorders], false)
                         && (current_status->m_delay > 0) // still frozen
@@ -3379,6 +3468,7 @@ Results<uint64_t> play(Field* fd,bool skip_init)
                                     status_description(across_status).c_str(), inhibit_value);
                             across_status->m_inhibited = inhibit_value;
                         }
+                        */
             }
             else
             {
@@ -3394,23 +3484,7 @@ Results<uint64_t> play(Field* fd,bool skip_init)
                 if (__builtin_expect(fd->end, false)) { break; }
                 if (__builtin_expect(!is_alive(current_status), false)) { continue; }
             }
-            if (current_status->m_corroded_rate)
-            {
-                if (attacked)
-                {
-                    unsigned v = std::min(current_status->m_corroded_rate, current_status->attack_power());
-                    unsigned corrosion = std::min(v, current_status->m_card->m_attack
-                            + current_status->m_perm_attack_buff - current_status->m_corroded_weakened);
-                    _DEBUG_MSG(1, "%s loses Attack by %u (+corrosion %u).\n", status_description(current_status).c_str(), v, corrosion);
-                    current_status->m_corroded_weakened += corrosion;
-                }
-                else
-                {
-                    _DEBUG_MSG(1, "%s loses Status corroded.\n", status_description(current_status).c_str());
-                    current_status->m_corroded_rate = 0;
-                    current_status->m_corroded_weakened = 0;
-                }
-            }
+
             current_status->m_step = CardStep::attacked;
         }
         fd->current_phase = Field::end_phase;

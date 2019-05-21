@@ -18,6 +18,8 @@ Test single skills with mocking-framework or similar
 //Check
 Check overall order of card-reduction with summon + on-play skills killing enemies + following enemy index update
 On-Play 0-delay Summon timings
+Heroism consistency
+
 
 mimic no on-play skills
 Summon-0-delay card  => new card with summon /valor
