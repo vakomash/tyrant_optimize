@@ -668,13 +668,13 @@ void evaluate_skills(Field* fd, CardStatus* status, const std::vector<SkillSpec>
                     *attacked = true;
                     if (__builtin_expect(fd->end, false)) { break; }
                     //apply corrosion
-                    if (current_status->m_corroded_rate)
+                    if (status->m_corroded_rate)
                     {
-                      unsigned v = std::min(current_status->m_corroded_rate, current_status->attack_power());
-                      unsigned corrosion = std::min(v, current_status->m_card->m_attack
-                              + current_status->m_perm_attack_buff - current_status->m_corroded_weakened);
-                      _DEBUG_MSG(1, "%s loses Attack by %u (+corrosion %u).\n", status_description(current_status).c_str(), v, corrosion);
-                      current_status->m_corroded_weakened += corrosion;
+                      unsigned v = std::min(status->m_corroded_rate, status->attack_power());
+                      unsigned corrosion = std::min(v, status->m_card->m_attack
+                              + status->m_perm_attack_buff - status->m_corroded_weakened);
+                      _DEBUG_MSG(1, "%s loses Attack by %u (+corrosion %u).\n", status_description(status).c_str(), v, corrosion);
+                      status->m_corroded_weakened += corrosion;
                     }
                 }
             }
@@ -682,11 +682,11 @@ void evaluate_skills(Field* fd, CardStatus* status, const std::vector<SkillSpec>
             {
                 _DEBUG_MSG(2, "%s cannot take attack.\n", status_description(status).c_str());
                 // Remove Corrosion
-                if (current_status->m_corroded_rate)
+                if (status->m_corroded_rate)
                 {
-                    _DEBUG_MSG(1, "%s loses Status corroded.\n", status_description(current_status).c_str());
-                    current_status->m_corroded_rate = 0;
-                    current_status->m_corroded_weakened = 0;
+                    _DEBUG_MSG(1, "%s loses Status corroded.\n", status_description(status).c_str());
+                    status->m_corroded_rate = 0;
+                    status->m_corroded_weakened = 0;
                 }
             }
         }
