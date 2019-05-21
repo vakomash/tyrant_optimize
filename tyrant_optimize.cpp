@@ -3274,6 +3274,9 @@ FinalResults<long double> run(int argc, char** argv)
 		{
 			if(check_input_amount(argc,argv,argIndex,1))exit(1);
 			opt_num_threads = atoi(argv[argIndex+1]);
+#ifdef _OPENMP
+			omp_set_num_threads(opt_num_threads);
+#endif
 			argIndex += 1;
 		}
 		else if (strcmp(argv[argIndex], "target") == 0)
@@ -3584,9 +3587,11 @@ FinalResults<long double> run(int argc, char** argv)
 			exit(1);
 		}
 	}
+
 #ifdef _OPENMP
-	omp_set_num_threads(opt_num_threads);
+	opt_num_threads = omp_get_max_threads();
 #endif
+
 	Cards all_cards;
 	Decks decks;
 	std::unordered_map<std::string, std::string> bge_aliases;
