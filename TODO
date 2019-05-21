@@ -16,6 +16,7 @@ Add more whole deck unit test cases
 Test single skills with mocking-framework or similar
 
 //Check
+Check all changed skills one by one
 Check overall order of card-reduction with summon + on-play skills killing enemies + following enemy index update
 On-Play 0-delay Summon timings
 Heroism consistency
