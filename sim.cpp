@@ -2361,7 +2361,7 @@ inline void perform_skill<Skill::mimic>(Field* fd, CardStatus* src, CardStatus* 
     mimickable_skills.reserve(dst->m_card->m_skills.size()+dst->m_card->m_skills_on_play.size()+dst->m_card->m_skills_on_death.size()+dst->m_card->m_skills_on_attacked.size());
     _DEBUG_MSG(2, " * Mimickable skills of %s\n", status_description(dst).c_str());
     //include on play/attacked/death
-    for(const auto a : {dst->m_card->m_skills,dst->m_card->m_skills_on_play,dst->m_card->m_skills_on_death,dst->m_card->m_skills_on_attacked})
+    for(const auto & a : {dst->m_card->m_skills,dst->m_card->m_skills_on_play,dst->m_card->m_skills_on_death,dst->m_card->m_skills_on_attacked})
     {
     for (const auto & ss: a)
     {
@@ -2389,11 +2389,10 @@ inline void perform_skill<Skill::mimic>(Field* fd, CardStatus* src, CardStatus* 
         case 1: break;
         default: mim_idx = (fd->re() % mimickable_skills.size()); break;
     }
-
     // prepare & perform selected skill
     const SkillSpec & mim_ss = *mimickable_skills[mim_idx];
     Skill::Skill mim_skill_id = static_cast<Skill::Skill>(mim_ss.id);
-    auto skill_value = s.x + src->enhanced(mim_skill_id);
+    auto skill_value = s.x + src->enhanced(mim_skill_id); //enhanced skill from mimic ?!?
     SkillSpec mimicked_ss{mim_skill_id, skill_value, allfactions, mim_ss.n, 0, mim_ss.s, mim_ss.s2, mim_ss.all, mim_ss.card_id,};
     _DEBUG_MSG(1, " * Mimicked skill: %s\n", skill_description(fd->cards, mimicked_ss).c_str());
     skill_table[mim_skill_id](fd, src, mimicked_ss);
