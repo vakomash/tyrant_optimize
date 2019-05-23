@@ -236,8 +236,9 @@ BOOST_AUTO_TEST_CASE(test_crashes)
 {
     eps=1.; //only check for crashes now
     std::vector<std::vector<TestInfo>> aati;
-    aati.emplace_back(read_test_file("tests/test_whole_decks.csv"));
-    aati.emplace_back(read_test_file("tests/test_bges.csv"));
+    //aati.emplace_back(read_test_file("tests/test_whole_decks.csv"));
+    //aati.emplace_back(read_test_file("tests/test_bges.csv"));
+    //aati.emplace_back(read_test_file("tests/test_multi_units.csv"));
     aati.emplace_back(read_test_file("tests/test_crash.csv"));
     std::string decks="";
     for(auto t=aati.begin(); t!=aati.end(); ++t)
