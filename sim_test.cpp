@@ -116,7 +116,7 @@ inline void check_win_sim(TestInfo ti) {
     char * iii = new char[s.length()];
     strcpy(iii,s.c_str());
     const char* argv[] = {"tuo",ti.your_deck.c_str(),ti.enemy_deck.c_str(),"-e",ti.bge.c_str(),"sim", ii,"seed", iii}; //TODO hardcoded iterations? //much output on error?! // better 100 iterations for test, 10 for checking errors
-    Result result(run_sim(sizeof(argv)/sizeof(*argv),argv));
+    Result result(run_sim(sizeof(argv)/sizeof(*argv),argv,false));
     delete ii;
 	delete iii;
     //result.second += "\nTest: " + ti.your_deck + "; " + ti.enemy_deck + "; " + ti.bge;
@@ -186,11 +186,15 @@ BOOST_AUTO_TEST_CASE(test_sim_init)
     debug_print++;
     debug_cached++;
     debug_line =true;
-    if(boost::unit_test::framework::master_test_suite().argc==2)
+	seed=std::chrono::system_clock::now().time_since_epoch().count() * 2654435761;
+    if(boost::unit_test::framework::master_test_suite().argc>=2)
     {
         iter = atoi(boost::unit_test::framework::master_test_suite().argv[1]);
     }
-	seed=std::chrono::system_clock::now().time_since_epoch().count() * 2654435761;
+	if(boost::unit_test::framework::master_test_suite().argc>=3)
+	{		
+		seed=atoi(boost::unit_test::framework::master_test_suite().argv[2]);
+	}
 	BOOST_TEST_MESSAGE("ITER: " << iter);
 	BOOST_TEST_MESSAGE("SEED: " << seed);
     BOOST_CHECK(1==1);//..
