@@ -78,11 +78,15 @@ inline Result run_sim(int argc,const char** argv, bool pipe_output=true)
     }
     else{
         //no guard here
-
-        char** param = new char*[argc];
-        for(int i = 0; i < argc;i++)
+		  //////////////////////
+          // only single thread, else crashes
+          //////////////////////
+        char** param = new char*[argc+2];
+          for(int i = 0; i < argc;i++)
             param[i] = const_cast<char*>(argv[i]);
-        fr = run(argc,param);
+          param[argc] = const_cast<char*>("-t");
+          param[argc+1] = const_cast<char*>("1");
+        fr = run(argc+2,param);
     }
   }
 
@@ -123,7 +127,7 @@ inline void genetic(std::string gnt1,std::string gnt2){
     string s = std::to_string(iter);
     char * ii = new char[s.length()];
     strcpy(ii,s.c_str());
-    const char* argv[] = {"tuo",gnt1.c_str(),gnt2.c_str(),"_test","brawl","genetic",ii, "-t", "4"};
+    const char* argv[] = {"tuo",gnt1.c_str(),gnt2.c_str(),"brawl","genetic",ii};
     Result result(run_sim(sizeof(argv)/sizeof(*argv),argv,false));
     std::ofstream mf;
     mf.open("out.csv", std::ios_base::app);
@@ -173,7 +177,6 @@ BOOST_AUTO_TEST_CASE(test_genetic)
 }
 BOOST_AUTO_TEST_SUITE_END()
 */
-
 
 
 BOOST_AUTO_TEST_SUITE(test_sim )
