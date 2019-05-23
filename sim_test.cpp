@@ -215,6 +215,28 @@ BOOST_DATA_TEST_CASE(test_whole_decks,bdata::make(read_test_file("tests/test_who
    check_win_sim(ti);
 }
 BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(test_crashes)
+BOOST_AUTO_TEST_CASE(test_crashes)
+{
+    eps=1.; //only check for crashes now
+    std::vector<std::vector<TestInfo>> aati;
+    aati.emplace_back(read_test_file("tests/test_whole_decks.csv"));
+    aati.emplace_back(read_test_file("tests/test_multi_units.csv"));
+    aati.emplace_back(read_test_file("tests/test_bges.csv"));
+    aati.emplace_back(read_test_file("tests/test_crash.csv"));
+    std::string decks="";
+    for(auto t=aati.begin(); t!=aati.end(); ++t)
+      for(auto tt=t->begin(); tt!=t->end(); ++tt)
+          decks += tt->your_deck + ";" + tt->enemy_deck + ";";
+    TestInfo ti;
+    ti.your_deck=decks;
+    ti.enemy_deck=decks;
+    ti.bge="";
+    check_win_sim(ti);
+}
+BOOST_AUTO_TEST_SUITE_END()
+
 BOOST_AUTO_TEST_SUITE_END()
 
 /*
