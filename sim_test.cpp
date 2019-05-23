@@ -23,6 +23,7 @@ using namespace std;
 namespace bdata = boost::unit_test::data;
 typedef std::tuple<FinalResults<long double>,std::string,double> Result; // score, output, time
 int iter = 10;
+unsigned seed = 0;
 //limit for float diffing
 double eps = 0.0000001;
 
@@ -107,9 +108,13 @@ inline void check_win_sim(TestInfo ti) {
     string s = std::to_string(iter);
     char * ii = new char[s.length()];
     strcpy(ii,s.c_str());
-    const char* argv[] = {"tuo",ti.your_deck.c_str(),ti.enemy_deck.c_str(),"-e",ti.bge.c_str(),"sim", ii}; //TODO hardcoded iterations? //much output on error?! // better 100 iterations for test, 10 for checking errors
+    s = std::to_string(seed);
+    char * iii = new char[s.length()];
+    strcpy(iii,s.c_str());
+    const char* argv[] = {"tuo",ti.your_deck.c_str(),ti.enemy_deck.c_str(),"-e",ti.bge.c_str(),"sim", ii,"seed", iii}; //TODO hardcoded iterations? //much output on error?! // better 100 iterations for test, 10 for checking errors
     Result result(run_sim(sizeof(argv)/sizeof(*argv),argv));
     delete ii;
+	delete iii;
     //result.second += "\nTest: " + ti.your_deck + "; " + ti.enemy_deck + "; " + ti.bge;
     check_win(result);
 }
@@ -182,6 +187,9 @@ BOOST_AUTO_TEST_CASE(test_sim_init)
     {
         iter = atoi(boost::unit_test::framework::master_test_suite().argv[1]);
     }
+	seed=std::chrono::system_clock::now().time_since_epoch().count() * 2654435761;
+	BOOST_TEST_MESSAGE("ITER: " << iter);
+	BOOST_TEST_MESSAGE("SEED: " << seed);
     BOOST_CHECK(1==1);//..
 }
 
