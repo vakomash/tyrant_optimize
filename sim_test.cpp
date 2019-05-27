@@ -116,7 +116,7 @@ inline void check_win_sim(TestInfo ti) {
     char * iii = new char[s.length()];
     strcpy(iii,s.c_str());
     const char* argv[] = {"tuo",ti.your_deck.c_str(),ti.enemy_deck.c_str(),"-e",ti.bge.c_str(),"sim", ii,"seed", iii}; //TODO hardcoded iterations? //much output on error?! // better 100 iterations for test, 10 for checking errors
-    Result result(run_sim(sizeof(argv)/sizeof(*argv),argv,false));
+    Result result(run_sim(sizeof(argv)/sizeof(*argv),argv));
     delete ii;
 	delete iii;
     //result.second += "\nTest: " + ti.your_deck + "; " + ti.enemy_deck + "; " + ti.bge;
@@ -232,8 +232,6 @@ BOOST_DATA_TEST_CASE(test_whole_decks,bdata::make(read_test_file("tests/test_who
 BOOST_AUTO_TEST_SUITE_END()
 
 
-/*
-TODO Test on linux, memory_access violation
 BOOST_AUTO_TEST_SUITE(test_crashes)
 BOOST_AUTO_TEST_CASE(test_crashes)
 {
@@ -254,7 +252,6 @@ BOOST_AUTO_TEST_CASE(test_crashes)
     check_win_sim(ti);
 }
 BOOST_AUTO_TEST_SUITE_END()
-*/
 
 BOOST_AUTO_TEST_SUITE_END()
 
