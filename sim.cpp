@@ -2085,10 +2085,15 @@ inline bool skill_predicate<Skill::mimic>(Field* fd, CardStatus* src, CardStatus
 
     //include on activate/attacked/death
     //for(const auto & a  : {dst->m_card->m_skills,dst->m_card->m_skills_on_play,dst->m_card->m_skills_on_death,dst->m_card->m_skills_on_attacked})
-    for(const auto & a  : {dst->m_card->m_skills,dst->m_card->m_skills_on_attacked})
+    //
+    std::vector<std::vector<SkillSpec>> all;
+    all.emplace_back(dst->m_card->m_skills);
+    all.emplace_back(dst->m_card->m_skills_on_attacked);
+
+    for(std::vector<SkillSpec> & a  : all)
     {
     // scan all enemy skills until first activation
-    for (const auto & ss: a)
+    for (const SkillSpec & ss: a)
     {
         // get skill
         Skill::Skill skill_id = static_cast<Skill::Skill>(ss.id);
@@ -2362,10 +2367,12 @@ inline void perform_skill<Skill::mimic>(Field* fd, CardStatus* src, CardStatus* 
     mimickable_skills.reserve(dst->m_card->m_skills.size()+dst->m_card->m_skills_on_play.size()+dst->m_card->m_skills_on_death.size()+dst->m_card->m_skills_on_attacked.size());
     _DEBUG_MSG(2, " * Mimickable skills of %s\n", status_description(dst).c_str());
     //include on activate/attacked
-    //for(const auto & a : {dst->m_card->m_skills,dst->m_card->m_skills_on_play,dst->m_card->m_skills_on_death,dst->m_card->m_skills_on_attacked})
-    for(const auto & a : {dst->m_card->m_skills,dst->m_card->m_skills_on_attacked})
+    std::vector<std::vector<SkillSpec>> all;
+    all.emplace_back(dst->m_card->m_skills);
+    all.emplace_back(dst->m_card->m_skills_on_attacked);
+    for(std::vector<SkillSpec> & a : all)
     {
-    for (const auto & ss: a)
+    for (const SkillSpec & ss: a)
     {
         // get skill
         Skill::Skill skill_id = static_cast<Skill::Skill>(ss.id);
