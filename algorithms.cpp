@@ -582,10 +582,12 @@ void mutate(Deck* src, Deck* cur_deck, std::vector<const Card*> all_candidates, 
 			continue;
 		}
 
-		if(evaluated_decks.count(cur_deck->hash())){continue;} // deck already simmed
 		std::vector<std::pair<signed, const Card * >> cards_out, cards_in;
 		if (!adjust_deck(cur_deck, from_slot_tmp, to_slot, candidate, fund, re, deck_cost, cards_out, cards_in))
 		{ continue;}
+
+		if(evaluated_decks.count(cur_deck->hash()))
+		{continue;} // deck already simmed
 		if(!valid_deck(cur_deck)) {continue;} //repeat
 		unsigned cur_gap = check_requirement(cur_deck, requirement
 #ifndef NQUEST
