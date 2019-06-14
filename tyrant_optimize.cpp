@@ -193,7 +193,7 @@ void init()
 	opt_pool_mutate = 1;
 	opt_pool_cross = 1;
 
-	min_beam_size = 2;
+	min_beam_size = 5;
 
 	yfpool=0;
 	efpool=0;
@@ -784,7 +784,7 @@ FinalResults<long double> compute_score(const EvaluatedResults& results, std::ve
 		}
 
 
-		static std::vector<Results<uint64_t>> Process::merge(std::vector<Results<uint64_t>> out, std::vector<Results<uint64_t>> in)
+		static std::vector<Results<uint64_t>> merge(std::vector<Results<uint64_t>> out, std::vector<Results<uint64_t>> in)
 		{
 			//printf("merging out: %d in: %d \n", (int)out[0].wins, (int)in[0].wins);
 			//printf("out%p ",(void *)&out );
