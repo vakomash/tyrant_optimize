@@ -1063,6 +1063,13 @@ FinalResults<long double> beam_climb(unsigned num_min_iterations, unsigned num_i
 			break; // done climbing
 			//TODO climbex like beam climb here
 		}
+
+		// get new best decks:
+		best_decks.clear();
+		for(auto it = best.begin();it!=best.end();it++)
+		{
+			best_decks.push_back(it->second);
+		}
 		//sim deck
 		for( auto i_deck :best_decks)
 		{
@@ -1147,13 +1154,7 @@ FinalResults<long double> beam_climb(unsigned num_min_iterations, unsigned num_i
 
 			}
 		}
-		// get new best decks:
-		best_decks.clear();
-		for(auto it = best.begin();it!=best.end();it++)
-		{
-			best_decks.push_back(it->second);
-		}
-	}
+}
 
 	best_deck = best.begin()->second;
 	best_score = best.begin()->first;
