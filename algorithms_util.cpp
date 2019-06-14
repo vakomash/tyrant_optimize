@@ -1,5 +1,10 @@
 #include "algorithms_util.h"
-
+void copy_deck(Deck* src,Deck* dst)
+{
+	dst->commander = src->commander;
+	dst->alpha_dominion = src->alpha_dominion;
+	dst->cards = src->cards;
+}
 std::string card_id_name(const Card* card)
 {
 	std::stringstream ios;

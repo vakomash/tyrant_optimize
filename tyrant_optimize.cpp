@@ -188,6 +188,7 @@ void init()
 
 	generations = 50;
 	pool_size = 0;
+	min_pool_size = 20;
 	opt_pool_keep = 1;
 	opt_pool_mutate = 1;
 	opt_pool_cross = 1;
@@ -1446,6 +1447,7 @@ enum Operation {
 	climb_forts,
 	anneal,
 	genetic,
+	beam,
 	reorder,
 	debug,
 	debuguntil,
@@ -2231,6 +2233,15 @@ FinalResults<long double> run(int argc, char** argv)
 			opt_pool_mutate = std::stod(argv[argIndex+3]);
 			argIndex += 3;
 		}
+		else if (strcmp(argv[argIndex], "beam") == 0)
+		{
+			if(check_input_amount(argc,argv,argIndex,1))exit(1);
+			opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 1]), beam));
+			if (std::get<1>(opt_todo.back()) < 10) { opt_num_threads = 1; }
+			opt_do_optimization = true;
+			opt_multi_optimization = true;
+			argIndex += 1;
+		}
 		else if (strcmp(argv[argIndex], "reorder") == 0)
 		{
 			if(check_input_amount(argc,argv,argIndex,1))exit(1);
@@ -2960,6 +2971,16 @@ FinalResults<long double> run(int argc, char** argv)
 				     }
 			case genetic: {
 					      fr=genetic_algorithm(std::get<0>(op), std::get<1>(op), your_decks, p, requirement
+#ifndef NQUEST
+							      , quest
+#endif
+							      );
+					      break;
+
+				      }
+
+			case beam: {
+					      fr=beam_climb(std::get<0>(op), std::get<1>(op), your_decks, p, requirement
 #ifndef NQUEST
 							      , quest
 #endif

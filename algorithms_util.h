@@ -1,6 +1,7 @@
 #include "deck.h"
 #include "tyrant_optimize.h"
 
+void copy_deck(Deck* src,Deck* dst);
 std::string card_id_name(const Card* card);
 std::string card_slot_id_names(const std::vector<std::pair<signed, const Card *>> card_list);
 
