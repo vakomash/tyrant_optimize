@@ -9,7 +9,7 @@ inline bool try_improve_deck(Deck* d1, unsigned from_slot, unsigned to_slot, con
 		const Card*& best_commander, const Card*& best_alpha_dominion, std::vector<const Card*>& best_cards,
 		FinalResults<long double>& best_score, unsigned& best_gap, std::string& best_deck,
 		std::unordered_map<std::string, EvaluatedResults>& evaluated_decks, EvaluatedResults& zero_results,
-		unsigned long& skipped_simulations, Process& proc)
+		unsigned long& skipped_simulations, Process& proc, bool print=true)
 {
 	unsigned deck_cost(0);
 	std::vector<std::pair<signed, const Card *>> cards_out, cards_in;
@@ -50,15 +50,15 @@ inline bool try_improve_deck(Deck* d1, unsigned from_slot, unsigned to_slot, con
 	if (new_gap < best_gap || current_score.points > best_score.points + min_increment_of_score)
 	{
 		// Then update best score/slot, print stuff
-		std::cout << "Deck improved: " << d1->hash() << ": " << card_slot_id_names(cards_out) << " -> " << card_slot_id_names(cards_in) << ": ";
+		if(print)std::cout << "Deck improved: " << d1->hash() << ": " << card_slot_id_names(cards_out) << " -> " << card_slot_id_names(cards_in) << ": ";
 		best_gap = new_gap;
 		best_score = current_score;
 		best_deck = cur_deck;
 		best_commander = d1->commander;
 		best_alpha_dominion = d1->alpha_dominion;
 		best_cards = d1->cards;
-		print_score_info(compare_results, proc.factors);
-		print_deck_inline(deck_cost, best_score, d1);
+		if(print)print_score_info(compare_results, proc.factors);
+		if(print)print_deck_inline(deck_cost, best_score, d1);
 		return true;
 	}
 
@@ -682,7 +682,7 @@ FinalResults<long double> genetic_algorithm(unsigned num_min_iterations, unsigne
 	unsigned best_gap = cur_gap;
 
 	//fill pool
-	if(your_decks.size()>pool_size) your_decks.resize(pool_size);
+	if(your_decks.size()>pool_size) your_decks.resize(pool_size); //TODO this drops potential better overflowing decks?!
 	for ( unsigned it =your_decks.size(); it < pool_size;it++)
 	{
 		unsigned j = std::uniform_int_distribution<unsigned>(0,your_decks.size()-1)(re);
@@ -914,6 +914,21 @@ inline bool contains(std::multimap<FinalResults<long double>, Deck*, std::greate
 		return false;
 }
 
+inline void check_and_update(std::multimap<FinalResults<long double>, Deck*, std::greater<FinalResults<long double>>>& best,Deck* cur_deck,bool & deck_has_been_improved, FinalResults<long double>& best_score )
+{
+	auto tmp_result = (best.size()<pool_size)?0.:(std::next(best.begin(),pool_size))->first.points;
+	//std::cout << "IMP CMD" << std::endl;
+	if(best_score.points > tmp_result && !contains(best,cur_deck))
+	{
+			deck_has_been_improved = true;
+			if(best_score > best.begin()->first){
+					std::cout << "Deck improved: " << cur_deck->hash() <<":" << std::endl;
+					print_deck_inline(get_deck_cost(cur_deck), best_score, cur_deck);
+			}
+			best.insert(std::make_pair(best_score,cur_deck->clone()));
+			if(best.size()==pool_size+1)best.erase(std::prev(best.end(),1));
+	}
+}
 
 FinalResults<long double> beam_climb(unsigned num_min_iterations, unsigned num_iterations, std::vector<Deck*> your_decks, Process& proc, Requirement & requirement
 #ifndef NQUEST
@@ -922,12 +937,7 @@ FinalResults<long double> beam_climb(unsigned num_min_iterations, unsigned num_i
 		)
 {
 	if(pool_size==0){
-		if(your_decks.size()>min_pool_size) { //
-			pool_size = your_decks.size();
-		}
-		else {
 			pool_size = min_beam_size;
-		}
 	}
 
 	//your_decks.size();
@@ -956,7 +966,6 @@ FinalResults<long double> beam_climb(unsigned num_min_iterations, unsigned num_i
 			);
 
 	unsigned long skipped_simulations = 0;
-	std::vector<const Card*> all_candidates;
 
 	bool is_random = (cur_deck->strategy == DeckStrategy::random) || (cur_deck->strategy == DeckStrategy::flexible);
 	bool deck_has_been_improved = true;
@@ -1005,17 +1014,43 @@ FinalResults<long double> beam_climb(unsigned num_min_iterations, unsigned num_i
 	std::string best_hash = cur_deck->hash();
 	unsigned from_slot;
 	unsigned count_slot=0; //count iterations
-	unsigned dead_slot; //last deck improvement
+	unsigned dead_slot=0; //last deck improvement
 	unsigned mod_permute = 10*9*8*7*6*5*4*3*2*1;
-	FinalResults<long double> tmp_result;
+	//FinalResults<long double> tmp_result;
 	FinalResults<long double> nil{0, 0, 0, 0, 0, 0, num_min_iterations};
+	//sim passed decks
 	for(auto ii : your_decks){
-			best.insert(std::make_pair(nil,ii->clone()));
+			auto tdeck = ii->clone();
+			copy_deck(tdeck,cur_deck);
+			auto tscore = fitness(cur_deck,nil,evaluated_decks,zero_results,skipped_simulations,proc);
+			if(!contains(best,cur_deck))best.insert(std::make_pair(tscore,tdeck));
 			if(best.size()==pool_size+1)best.erase(std::prev(best.end(),1));
 	}
-	std::cout << "starting beam" << std::endl;
+	//fill remaining
+	while(best.size()<pool_size){
+		unsigned j = std::uniform_int_distribution<unsigned>(0,your_decks.size()-1)(re);
+		unsigned i = std::uniform_int_distribution<unsigned>(0,your_decks.size()-1)(re);
+		Deck* nxt = your_decks[j]->clone();
+		mutate(your_decks[i],nxt,card_candidates,re,cur_gap,evaluated_decks); //no crossovers here only fill with mutations
+		copy_deck(nxt,cur_deck);
+		auto tscore = fitness(cur_deck,nil,evaluated_decks,zero_results,skipped_simulations,proc);
+		if(!contains(best,nxt)){best.insert(std::make_pair(tscore,nxt));}
+	}
+
 	while(true)
 	{
+
+#ifndef NDEBUG
+		if (debug_print >= 0)
+		{
+			std::cout << "---------------BEST---------------" << std::endl;
+			for (auto it = best.begin(); it != best.end();++it)
+			{
+				print_deck_inline(get_deck_cost(it->second),it->first,it->second);
+			}
+			std::cout << "---------------BEND---------------" << std::endl;
+		}
+#endif
 		count_slot = (count_slot+1)%(mod_permute); //TODO Modulo here? % 10*9*8*7*6*5*4*3*2*1
 		if(is_timeout_reached()){break;}
 		if (deck_has_been_improved)
@@ -1031,7 +1066,7 @@ FinalResults<long double> beam_climb(unsigned num_min_iterations, unsigned num_i
 		//sim deck
 		for( auto i_deck :best_decks)
 		{
-			copy_deck(i_deck,cur_deck);
+			copy_deck(i_deck->clone(),cur_deck);
 			best_deck = i_deck->clone();
 			//copy_deck(i_deck,best_deck);
 			best_score = fitness(cur_deck,nil,evaluated_decks,zero_results,skipped_simulations,proc); // grab from stored results or sim it
@@ -1051,16 +1086,9 @@ FinalResults<long double> beam_climb(unsigned num_min_iterations, unsigned num_i
 				//std::cout << "TRY CMD" << std::endl;
 				if(try_improve_deck(cur_deck, -1, -1, commander_candidate,
 						best_deck->commander, best_deck->alpha_dominion, best_deck->cards, best_score, cur_gap, best_hash,
-						evaluated_decks, zero_results, skipped_simulations, proc))
+						evaluated_decks, zero_results, skipped_simulations, proc,false))
 						{
-								deck_has_been_improved = true;
-								tmp_result = (best.size()<pool_size)?nil:(std::next(best.begin(),pool_size))->first;
-								//std::cout << "IMP CMD" << std::endl;
-								if(best_score.points > tmp_result.points && !contains(best,cur_deck))
-								{
-									best.insert(std::make_pair(best_score,cur_deck->clone()));
-									if(best.size()==pool_size+1)best.erase(std::prev(best.end(),1));
-								}
+								check_and_update(best,cur_deck,deck_has_been_improved,best_score);
 						}
 			}
 			copy_deck(best_deck,cur_deck);
@@ -1078,16 +1106,9 @@ FinalResults<long double> beam_climb(unsigned num_min_iterations, unsigned num_i
 				{ continue; }
 				if(try_improve_deck(cur_deck, -1, -1, alpha_dominion_candidate,
 						best_deck->commander, best_deck->alpha_dominion, best_deck->cards, best_score, cur_gap, best_hash,
-						evaluated_decks, zero_results, skipped_simulations, proc))
+						evaluated_decks, zero_results, skipped_simulations, proc,false))
 						{
-								deck_has_been_improved = true;
-								tmp_result = (best.size()<pool_size)?nil:std::next(best.begin(),pool_size)->first;
-								//std::cout << "IMP ALPHA" << std::endl;
-								if(best_score.points > tmp_result.points && !contains(best,cur_deck))
-								{
-									best.insert(std::make_pair(best_score,cur_deck->clone()));
-									if(best.size()==pool_size+1)best.erase(std::prev(best.end(),1));
-								}
+								check_and_update(best,cur_deck,deck_has_been_improved,best_score);
 						}
 			}
 			copy_deck(best_deck,cur_deck);
@@ -1115,17 +1136,9 @@ FinalResults<long double> beam_climb(unsigned num_min_iterations, unsigned num_i
 				//print_deck_inline(get_deck_cost(best_deck),best_score,best_deck);
 				if(try_improve_deck(cur_deck, from_slot, to_slot, card_candidate,
 						best_deck->commander, best_deck->alpha_dominion, best_deck->cards, best_score, cur_gap, best_hash,
-						evaluated_decks, zero_results, skipped_simulations, proc))
+						evaluated_decks, zero_results, skipped_simulations, proc,false))
 						{
-								deck_has_been_improved = true;
-								//std::cout << "--IMP : " << contains(best,cur_deck)<< std::endl;
-								tmp_result = (best.size()<pool_size)?nil:std::next(best.begin(),pool_size)->first;
-								if(best_score.points > tmp_result.points && !contains(best,cur_deck))
-								{
-									//std::cout << "----UP" << std::endl;
-									best.insert(std::make_pair(best_score,cur_deck->clone()));
-									if(best.size()==pool_size+1)best.erase(std::prev(best.end(),1));
-								}
+								check_and_update(best,cur_deck,deck_has_been_improved,best_score);
 						}
 				//print_deck_inline(get_deck_cost(best_deck),best_score,best_deck);
 			}
@@ -1134,18 +1147,6 @@ FinalResults<long double> beam_climb(unsigned num_min_iterations, unsigned num_i
 
 			}
 		}
-#ifndef NDEBUG
-		if (debug_print >= 0)
-		{
-			std::cout << "---------------BEST---------------" << std::endl;
-			for (auto it = best.begin(); it != best.end();++it)
-			{
-				print_deck_inline(get_deck_cost(it->second),it->first,it->second);
-			}
-			std::cout << "---------------BEND---------------" << std::endl;
-		}
-#endif
-		std::cout << "Pre next cycle" << std::endl;
 		// get new best decks:
 		best_decks.clear();
 		for(auto it = best.begin();it!=best.end();it++)
@@ -1153,7 +1154,6 @@ FinalResults<long double> beam_climb(unsigned num_min_iterations, unsigned num_i
 			best_decks.push_back(it->second);
 		}
 	}
-	std::cout << "official leave" << std::endl;
 
 	best_deck = best.begin()->second;
 	best_score = best.begin()->first;

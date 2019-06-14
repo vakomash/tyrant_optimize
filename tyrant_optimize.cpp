@@ -2215,7 +2215,7 @@ FinalResults<long double> run(int argc, char** argv)
 			opt_multi_optimization = true;
 			argIndex += 1;
 		}
-		else if (strcmp(argv[argIndex], "genetic-pool") == 0)
+		else if (strcmp(argv[argIndex], "genetic-pool") == 0 || strcmp(argv[argIndex], "beam-size") == 0 || strcmp(argv[argIndex], "size") == 0 )
 		{
 			if(check_input_amount(argc,argv,argIndex,1))exit(1);
 			pool_size = std::stod(argv[argIndex+1]);
