@@ -66,6 +66,8 @@ namespace tuo {
 	EXTERN double opt_pool_keep;
 	EXTERN double opt_pool_mutate;
 	EXTERN double opt_pool_cross;
+	//beam
+	EXTERN unsigned min_beam_size;
 	//fort_climb
 	EXTERN unsigned yfpool;
 	EXTERN unsigned efpool;

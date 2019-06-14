@@ -193,6 +193,8 @@ void init()
 	opt_pool_mutate = 1;
 	opt_pool_cross = 1;
 
+	min_beam_size = 2;
+
 	yfpool=0;
 	efpool=0;
 
