@@ -261,6 +261,7 @@ public:
     EvaluatedResults & evaluate(unsigned num_iterations, EvaluatedResults & evaluated_results);
     EvaluatedResults & compare(unsigned num_iterations, EvaluatedResults & evaluated_results, const FinalResults<long double> & best_results);
 #ifdef _OPENMP
+		static std::vector<Results<uint64_t>> merge(std::vector<Results<uint64_t>> out, std::vector<Results<uint64_t>> in)
 		void openmp_evaluate_reduction(EvaluatedResults & evaluated_results);
     void openmp_compare_reduction(EvaluatedResults & evaluated_results);
 #endif
