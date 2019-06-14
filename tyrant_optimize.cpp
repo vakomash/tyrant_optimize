@@ -784,7 +784,7 @@ FinalResults<long double> compute_score(const EvaluatedResults& results, std::ve
 		}
 
 
-		static std::vector<Results<uint64_t>> merge(std::vector<Results<uint64_t>> out, std::vector<Results<uint64_t>> in)
+		std::vector<Results<uint64_t>> merge(std::vector<Results<uint64_t>> out, std::vector<Results<uint64_t>> in)
 		{
 			//printf("merging out: %d in: %d \n", (int)out[0].wins, (int)in[0].wins);
 			//printf("out%p ",(void *)&out );

@@ -119,7 +119,7 @@ bool valid_deck(Deck* your_deck);
 std::vector<std::vector<const Card*>> get_candidate_lists(Process& proc);
 std::string alpha_dominion_cost(const Card* dom_card);
 #ifdef _OPENMP
-static std::vector<Results<uint64_t>> merge(std::vector<Results<uint64_t>> out, std::vector<Results<uint64_t>> in);
+std::vector<Results<uint64_t>> merge(std::vector<Results<uint64_t>> out, std::vector<Results<uint64_t>> in);
 #endif
 // some print functions
 void print_score_info(const EvaluatedResults& results, std::vector<long double>& factors);
