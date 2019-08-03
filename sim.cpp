@@ -3362,7 +3362,7 @@ Results<uint64_t> play(Field* fd,bool skip_init)
             check_and_perform_later_enhance(fd,status);
         }
         //Perform Inhibit, Sabotage, Disease
-        auto& assaults(fd->tap->structures);
+        auto& assaults(fd->tap->assaults);
         for(unsigned index(0); index < assaults.size(); ++index)
         {
             CardStatus * att_status = &assaults[index];
