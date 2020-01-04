@@ -599,7 +599,7 @@ void resolve_skill(Field* fd)
             check_and_perform_summon(fd, status);
             continue;
         }
-        _DEBUG_ASSERT(is_activation_skill(ss.id));
+        _DEBUG_ASSERT(is_activation_skill(ss.id) || ss.id == Skill::enhance); // enhance is no trigger, but  queues the skill
 
         SkillSpec modified_s = ss;
 
