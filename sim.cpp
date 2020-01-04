@@ -9,7 +9,6 @@
 #include <vector>
 #include <cmath>
 
-#include "tyrant.h"
 #include "card.h"
 #include "cards.h"
 #include "deck.h"
@@ -1212,6 +1211,7 @@ void turn_start_phase_update(Field*fd,CardStatus * status)
 {
             //apply Absorb + Triggered\{Valor} Enhances
             check_and_perform_early_enhance(fd,status);
+            if(fd->fixes[Fix::enhance_early])check_and_perform_later_enhance(fd,status);
             //refresh absorb
             if(status->has_skill(Skill::absorb))
             {
@@ -1244,6 +1244,7 @@ void turn_start_phase(Field* fd)
 
     //Perform early enhance for commander
     check_and_perform_early_enhance(fd,&fd->tap->commander);
+    if(fd->fixes[Fix::enhance_early])check_and_perform_later_enhance(fd,&fd->tap->commander);
 
     // Active player's structure cards:
     // update index
@@ -3013,9 +3014,11 @@ void perform_targetted_hostile_fast(Field* fd, CardStatus* src, const SkillSpec&
                 // skip dead target
                 if (!is_alive(target_status))
                 {
+#ifndef NDEBUG
                     _DEBUG_MSG(1, "(CANCELLED: target unit dead) %s Revenge (to %s) %s on %s\n",
                             status_description(pb_status).c_str(), target_desc,
                             skill_short_description(fd->cards, s).c_str(), status_description(target_status).c_str());
+#endif
                     continue;
                 }
 
@@ -3026,9 +3029,11 @@ void perform_targetted_hostile_fast(Field* fd, CardStatus* src, const SkillSpec&
                 }
 
                 // apply revenged skill
+#ifndef NDEBUG
                 _DEBUG_MSG(1, "%s Revenge (to %s) %s on %s\n",
                         status_description(pb_status).c_str(), target_desc,
                         skill_short_description(fd->cards, s).c_str(), status_description(target_status).c_str());
+#endif
                 perform_skill<skill_id>(fd, pb_status, target_status, s);
                 ++ revenged_count;
 
@@ -3353,6 +3358,7 @@ Results<uint64_t> play(Field* fd,bool skip_init)
         //-------------------------------------------------
         //Skill: Enhance
         //Perform later enhance for commander
+        if(!fd->fixes[Fix::enhance_early]) {
         check_and_perform_later_enhance(fd,&fd->tap->commander);
         auto& structures(fd->tap->structures);
         for(unsigned index(0); index < structures.size(); ++index)
@@ -3360,6 +3366,7 @@ Results<uint64_t> play(Field* fd,bool skip_init)
             CardStatus * status = &structures[index];
             //enhance everything else after card was played
             check_and_perform_later_enhance(fd,status);
+        }
         }
         //Perform Inhibit, Sabotage, Disease
         auto& assaults(fd->tap->assaults);
