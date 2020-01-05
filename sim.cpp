@@ -450,7 +450,7 @@ inline void resolve_scavenge(Storage<CardStatus>& store)
     }
 }
 //------------------------------------------------------------------------------
-void prepend_on_death(Field* fd)
+void prepend_on_death(Field* fd,bool paybacked=false)
 {
     if (fd->killed_units.empty())
         return;
@@ -557,11 +557,17 @@ void prepend_on_death(Field* fd)
         }
 
         // resolve On-Death skills
-        for (const auto& ss: status->m_card->m_skills_on_death)
+        for (auto& ss: status->m_card->m_skills_on_death)
         {
+        	SkillSpec tss = ss;
             _DEBUG_MSG(2, "On Death %s: Preparing (tail) skill %s\n",
                     status_description(status).c_str(), skill_description(fd->cards, ss).c_str());
-            fd->skill_queue.emplace_back(status, ss);
+            if(fd->fixes[Fix::revenge_on_death] && is_activation_harmful_skill(ss.id) && paybacked)
+            {
+            	_DEBUG_MSG(2, "On Death Revenge Fix\n");
+            	tss.s2 = Skill::revenge;
+            }
+            fd->skill_queue.emplace_back(status, tss);
         }
     }
     fd->killed_units.clear();
@@ -2772,9 +2778,19 @@ CardStatus* check_and_perform_summon(Field* fd, CardStatus* src)
 
 
     template<Skill::Skill skill_id>
-size_t select_targets(Field* fd, CardStatus* src, const SkillSpec& s)
+size_t select_targets(Field* fd, CardStatus* tsrc, const SkillSpec& s)
 {
     size_t n_candidates;
+    CardStatus* src;
+    if(fd->fixes[Fix::revenge_on_death] && s.s2 == Skill::revenge)
+    {
+    	_DEBUG_MSG(2,"FIX ON DEATH REVENGE SELECTION")
+    	src = &fd->players[(tsrc->m_player+1)%2]->commander; // selection like enemy commander
+    }
+    else
+    {
+    	src = tsrc;
+    }
     switch (skill_id)
     {
         case Skill::mortar:
@@ -3101,7 +3117,7 @@ void perform_targetted_hostile_fast(Field* fd, CardStatus* src, const SkillSpec&
         }
     }
 
-    prepend_on_death(fd);  // paybacked skills
+    prepend_on_death(fd,true);  // paybacked skills
 }
 
 //------------------------------------------------------------------------------

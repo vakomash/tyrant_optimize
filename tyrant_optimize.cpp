@@ -212,6 +212,7 @@ void init()
 	for (int i=0; i < Fix::num_fixes;++i) fixes[i]=false;
 	//recommended/default fixes
 	fixes[Fix::enhance_early] = true;
+	fixes[Fix::revenge_on_death] = true;
 
 }
 
@@ -2089,6 +2090,10 @@ FinalResults<long double> run(int argc, char** argv)
 		else if (strcmp(argv[argIndex], "fix-enhance-early") == 0)
 		{
 			fixes[Fix::enhance_early] = true;
+		}
+		else if (strcmp(argv[argIndex], "fix-revenge-on-death") == 0)
+		{
+			fixes[Fix::revenge_on_death] = true;
 		}
 		else if (strcmp(argv[argIndex], "seed") == 0)
 		{

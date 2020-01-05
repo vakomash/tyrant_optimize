@@ -16,7 +16,7 @@
 
 enum Fix
 {
-	no_fix, enhance_early, num_fixes
+	no_fix, enhance_early, revenge_on_death, num_fixes
 };
 
 class Card;
