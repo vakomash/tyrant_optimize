@@ -710,7 +710,6 @@ const Card* Deck::next(Field* f)
 				Deck deck2(*hand2.deck);
 				hand1.deck = &deck1;
 				hand2.deck = &deck2;
-				unsigned turn_steps = 1;
 				hand1.deck->strategy = DeckStrategy::random;
 				hand2.deck->strategy = DeckStrategy::random;
 				
@@ -734,14 +733,14 @@ const Card* Deck::next(Field* f)
 				std::shuffle(++fd.tap->deck->shuffled_cards.begin(),fd.tap->deck->shuffled_cards.begin()+resplusone,f->re);
 				std::shuffle(fd.tip->deck->shuffled_cards.begin(),fd.tip->deck->shuffled_cards.end(),f->re);
 
-				Results<uint64_t> result(play(&fd,true,true,turn_steps));
+				Results<uint64_t> result(play(&fd,true,true,1));
 				if (result.wins == 0 && result.losses ==0 && strategy == DeckStrategy::evaluate_twice) {
 					_DEBUG_MSG(1,">>>>>>EVAL%i SIMS>>>>>>%lu\n",strategy,result.points);
 					if(f->players[0]->deck->strategy==DeckStrategy::evaluate_twice)hand1.deck->strategy = DeckStrategy::evaluate;
 					else hand1.deck->strategy = DeckStrategy::random;
 					if(f->players[1]->deck->strategy==DeckStrategy::evaluate_twice)hand2.deck->strategy = DeckStrategy::evaluate;
 					else hand2.deck->strategy = DeckStrategy::random;
-					result=(play(&fd,true,false,turn_steps));
+					result=(play(&fd,true,false,1));
 					_DEBUG_MSG(1,"<<<<<<EVAL%i SIMS<<<<<<%lu\n",strategy,result.points);
 				}
 				res[j]+=(1-2*result.draws)*result.points;

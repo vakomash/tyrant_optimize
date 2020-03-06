@@ -174,8 +174,8 @@ void init()
 	sim_seed=0;
 	flexible_iter=20;
 	flexible_turn=20;
-	eval_iter=10;
-	eval_turn=20;
+	eval_iter=8;
+	eval_turn=8;
 	requirement.num_cards.clear();
 #ifndef NQUEST
 	//quest = new Quest(); //TODO Quest bugged in Android now here

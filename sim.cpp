@@ -3154,78 +3154,78 @@ int evaluate_skill(Field* fd,const Card* c , SkillSpec* ss)
 	tvalue += 10*(ss->id==Skill::flurry);
 	tvalue += 10*(ss->id==Skill::jam);
 	tvalue += 5*(ss->id==Skill::overload);
-	tvalue += 1*(ss->id==Skill::flying);
-	tvalue += 1*(ss->id==Skill::evolve);
-	tvalue += 1*(ss->id==Skill::wall);
-	//tvalue += 5*(ss->id==Skill::tribute);
+	tvalue += 2*(ss->id==Skill::flying);
+	tvalue += 2*(ss->id==Skill::evolve);
+	tvalue += 2*(ss->id==Skill::wall);
+	tvalue += 5*(ss->id==Skill::tribute);
 
-	tvalue *= 1.+1*(ss->id==Skill::evade);
+	tvalue *= 1.+1.5*(ss->id==Skill::flurry);
+	tvalue *= 1.+1.5*(ss->id==Skill::drain);
+	tvalue *= 1.+1.5*(ss->id==Skill::mortar);
+	tvalue *= 1.+1.5*(ss->id==Skill::scavenge);
+	tvalue *= 1.+1.5*(ss->id==Skill::disease);
 
+	tvalue *= 1.+1.3*(ss->id==Skill::rally);
+	tvalue *= 1.+1.3*(ss->id==Skill::strike);
 
-	tvalue *= 1.+0.5*(ss->id==Skill::drain);
-	tvalue *= 1.+0.5*(ss->id==Skill::flurry);
-	tvalue *= 1.+0.5*(ss->id==Skill::protect);
-	tvalue *= 1.+0.5*(ss->id==Skill::fortify);
+	tvalue *= 1.+1.2*(ss->id==Skill::avenge);
+	tvalue *= 1.+1.1*(ss->id==Skill::sunder);
+	tvalue *= 1.+1.1*(ss->id==Skill::venom);
+
+	tvalue *= 1.+1.0*(ss->id==Skill::evade);
+	tvalue *= 1.+1.0*(ss->id==Skill::enfeeble);
+
+	tvalue *= 1.+0.2*(ss->id==Skill::protect);
+
+	tvalue *= 1.+0.2*(ss->id==Skill::fortify);
 	tvalue *= 1.+0.5*(ss->id==Skill::mend);
 
-	tvalue *= 1.+0.4*(ss->id==Skill::mortar);
-	tvalue *= 1.+0.4*(ss->id==Skill::sunder);
 	tvalue *= 1.+0.4*(ss->id==Skill::jam);
 	tvalue *= 1.+0.4*(ss->id==Skill::overload);
-	tvalue *= 1.+0.4*(ss->id==Skill::rupture);
+	//tvalue *= 1.+0.4*(ss->id==Skill::rupture);
 	tvalue *= 1.+0.4*(ss->id==Skill::bravery);
 	tvalue *= 1.+0.4*(ss->id==Skill::entrap);
 	tvalue *= 1.+0.4*(ss->id==Skill::heal);
 
 
-	tvalue *= 1.+0.3*(ss->id==Skill::rally);
-	tvalue *= 1.+0.3*(ss->id==Skill::enfeeble);
 	tvalue *= 1.+0.3*(ss->id==Skill::revenge);
-	tvalue *= 1.+0.3*(ss->id==Skill::scavenge);
-	tvalue *= 1.+0.3*(ss->id==Skill::strike);
 	tvalue *= 1.+0.3*(ss->id==Skill::enrage);
 
-	tvalue *= 1.+0.2*(ss->id==Skill::avenge);
 
-	tvalue *= 1.+0.1*(ss->id==Skill::hunt);
-	tvalue *= 1.+0.1*(ss->id==Skill::venom);
+	//tvalue *= 1.+2.1*(ss->id==Skill::hunt);
 	tvalue *= 1.+0.1*(ss->id==Skill::mark);
 	tvalue *= 1.+0.1*(ss->id==Skill::coalition);
 	tvalue *= 1.+0.1*(ss->id==Skill::legion);
-	tvalue *= 1.+0.1*(ss->id==Skill::barrier);
-	tvalue *= 1.+0.1*(ss->id==Skill::armor);
-	tvalue *= 1.+0.1*(ss->id==Skill::disease);
+	//tvalue *= 1.+1.1*(ss->id==Skill::barrier);
 	tvalue *= 1.+0.1*(ss->id==Skill::pierce);
+	tvalue *= 1.+0.1*(ss->id==Skill::armor);
 	//tvalue *= 1.+0.1*(ss->id==Skill::swipe);
 	//tvalue *= 1.+0.1*(ss->id==Skill::berserk);
-	
-
-
 	tvalue *= 1.-0.1*(ss->id==Skill::weaken);
 
 
 
-	tvalue *= 1.-0.5 *(ss->id==Skill::payback); //sucks
-	tvalue *= 1.-0.5 *(ss->id==Skill::leech); //sucks
-	tvalue *= 1.-0.5 *(ss->id==Skill::corrosive); //sucks
 	tvalue *= 1.-0.5 *(ss->id==Skill::sabotage); //sucks
 	tvalue *= 1.-0.5 *(ss->id==Skill::inhibit); //sucks
+	tvalue *= 1.-0.5 *(ss->id==Skill::corrosive); //sucks
+	tvalue *= 1.-0.5 *(ss->id==Skill::payback); //sucks
+	tvalue *= 1.-0.5 *(ss->id==Skill::leech); //sucks
 
 
 	tvalue *= 1.+1*ss->all;
 	tvalue *= 1.-1./5.*ss->all*(ss->y!=0);
-	tvalue *= 1.+0.75*std::min<int>(3,ss->n);
-	tvalue *= 1.-1./2.* ((c->m_skill_trigger[ss->id] == Skill::Trigger::death) + (c->m_skill_trigger[ss->id] == Skill::Trigger::play));
-	tvalue *= 1./(1.+ss->c);
-	if(tvalue == 0) std::cout << ss->id << std::endl;
-	if(tvalue > 1000) std::cout << ss->id << std::endl;
-	return tvalue;
+	tvalue *= 1.+1*std::min<int>(3,ss->n);
+	tvalue *= 1.-1./3.* ((c->m_skill_trigger[ss->id] == Skill::Trigger::death) + (c->m_skill_trigger[ss->id] == Skill::Trigger::play));
+	tvalue *= 1./(2.+ss->c);
+	if(tvalue == 0) std::cout << ss->id << " "<<tvalue << std::endl;
+	if(tvalue > 10000) std::cout << ss->id <<" "<< tvalue << std::endl;
+	return 0.9*tvalue; // 0.85
 }
 int evaluate_card(Field* fd,const Card* cs)
 {
 	int value = 0;
 	value += cs->m_health;	
-	value += cs->m_attack;	
+	value += 2*cs->m_attack;	
 	for( auto ss : cs->m_skills) {
 		value += evaluate_skill(fd,cs,&ss);
 	}
@@ -3237,7 +3237,7 @@ int evaluate_cardstatus(Field* fd,CardStatus* cs)
 {
 	int value = 0;
 	value += cs->m_hp;	
-	value += cs->attack_power();	
+	value += 2*cs->attack_power();	
 	value += cs->protected_value();
 	for( auto ss : cs->m_card->m_skills) {
 		value += evaluate_skill(fd,cs->m_card,&ss);
@@ -3258,6 +3258,7 @@ int evaluate_field(Field* fd)
 	auto& structures(fd->tap->structures);
 
 
+	value += 0.5*scale * evaluate_cardstatus(fd,&fd->tap->commander);
 	for(unsigned index(0); index < assaults.size();++index)
 	{
 		value += scale * evaluate_cardstatus(fd,&assaults[index]);
@@ -3270,6 +3271,7 @@ int evaluate_field(Field* fd)
 	scale = is_alive(&fd->tip->commander);
 	auto& eassaults(fd->tip->assaults);
 	auto& estructures(fd->tip->structures);
+	value -= 0.5*scale * evaluate_cardstatus(fd,&fd->tip->commander);
 	for(unsigned index(0); index < eassaults.size();++index)
 	{
 		value -= (scale * evaluate_cardstatus(fd,&eassaults[index]));
