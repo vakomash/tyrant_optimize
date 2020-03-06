@@ -735,13 +735,13 @@ const Card* Deck::next(Field* f)
 
 				Results<uint64_t> result(play(&fd,true,true,1));
 				if (result.wins == 0 && result.losses ==0 && strategy == DeckStrategy::evaluate_twice) {
-					_DEBUG_MSG(1,">>>>>>EVAL%i SIMS>>>>>>%lu\n",strategy,result.points);
+					_DEBUG_MSG(1,">>>>>>EVAL%i SIMS>>>>>>\n",strategy);
 					if(f->players[0]->deck->strategy==DeckStrategy::evaluate_twice)hand1.deck->strategy = DeckStrategy::evaluate;
 					else hand1.deck->strategy = DeckStrategy::random;
 					if(f->players[1]->deck->strategy==DeckStrategy::evaluate_twice)hand2.deck->strategy = DeckStrategy::evaluate;
 					else hand2.deck->strategy = DeckStrategy::random;
 					result=(play(&fd,true,false,1));
-					_DEBUG_MSG(1,"<<<<<<EVAL%i SIMS<<<<<<%lu\n",strategy,result.points);
+					_DEBUG_MSG(1,"<<<<<<EVAL%i SIMS<<<<<<\n",strategy);
 				}
 				res[j]+=(1-2*result.draws)*result.points;
 			}

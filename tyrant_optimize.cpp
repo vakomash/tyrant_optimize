@@ -2013,7 +2013,7 @@ FinalResults<long double> run(int argc, char** argv)
 		{
 			opt_enemy_strategy = DeckStrategy::evaluate;
 		}
-		else if (strcmp(argv[argIndex], "enemy:evaluater2") == 0)
+		else if (strcmp(argv[argIndex], "enemy:evaluate2") == 0)
 		{
 			opt_enemy_strategy = DeckStrategy::evaluate_twice;
 		}
