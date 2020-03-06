@@ -251,6 +251,12 @@ inline signed CardStatus::calc_attack_power() const
         + m_temp_attack_buff;
 }
 //------------------------------------------------------------------------------
+const Card* card_by_id_safe(const Cards& cards, const unsigned card_id)
+{
+    const auto cardIter = cards.cards_by_id.find(card_id);
+    if (cardIter == cards.cards_by_id.end()) assert(false);//"UnknownCard.id[" + to_string(card_id) + "]"); }
+    return cardIter->second;
+}
 std::string card_name_by_id_safe(const Cards& cards, const unsigned card_id)
 {
     const auto cardIter = cards.cards_by_id.find(card_id);
@@ -1820,6 +1826,7 @@ struct PerformAttack
     template<enum CardType::CardType>
         void attack_damage()
         {
+
             remove_hp(fd, def_status, att_dmg);
             prepend_on_death(fd);
             resolve_skill(fd);
@@ -2276,6 +2283,7 @@ inline void perform_skill<Skill::fortify>(Field* fd, CardStatus* src, CardStatus
     template<>
 inline void perform_skill<Skill::mortar>(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s)
 {
+    _DEBUG_MSG(1,"absorb\n");
     if (dst->m_card->m_type == CardType::structure)
     {
         remove_hp(fd, dst, remove_absorption(fd,dst,s.x));
@@ -3136,9 +3144,145 @@ inline unsigned evaluate_war_score(Field* fd, unsigned player)
 {
     return 208 - ((unsigned)(fd->turn)/2)*4;
 }
+int evaluate_card(Field* fd,const Card* cs);
+int evaluate_skill(Field* fd,const Card* c , SkillSpec* ss)
+{
+	// TODO optimize this
+	int tvalue = ss->x;
+	 
+	if(ss->card_id != 0)tvalue += 1*evaluate_card(fd,card_by_id_safe(fd->cards,ss->card_id));
+	tvalue += 10*(ss->id==Skill::flurry);
+	tvalue += 10*(ss->id==Skill::jam);
+	tvalue += 5*(ss->id==Skill::overload);
+	tvalue += 1*(ss->id==Skill::flying);
+	tvalue += 1*(ss->id==Skill::evolve);
+	tvalue += 1*(ss->id==Skill::wall);
+	//tvalue += 5*(ss->id==Skill::tribute);
+
+	tvalue *= 1.+1*(ss->id==Skill::evade);
 
 
-Results<uint64_t> evaluate_sim_result(Field* fd)
+	tvalue *= 1.+0.5*(ss->id==Skill::drain);
+	tvalue *= 1.+0.5*(ss->id==Skill::flurry);
+	tvalue *= 1.+0.5*(ss->id==Skill::protect);
+	tvalue *= 1.+0.5*(ss->id==Skill::fortify);
+	tvalue *= 1.+0.5*(ss->id==Skill::mend);
+
+	tvalue *= 1.+0.4*(ss->id==Skill::mortar);
+	tvalue *= 1.+0.4*(ss->id==Skill::sunder);
+	tvalue *= 1.+0.4*(ss->id==Skill::jam);
+	tvalue *= 1.+0.4*(ss->id==Skill::overload);
+	tvalue *= 1.+0.4*(ss->id==Skill::rupture);
+	tvalue *= 1.+0.4*(ss->id==Skill::bravery);
+	tvalue *= 1.+0.4*(ss->id==Skill::entrap);
+	tvalue *= 1.+0.4*(ss->id==Skill::heal);
+
+
+	tvalue *= 1.+0.3*(ss->id==Skill::rally);
+	tvalue *= 1.+0.3*(ss->id==Skill::enfeeble);
+	tvalue *= 1.+0.3*(ss->id==Skill::revenge);
+	tvalue *= 1.+0.3*(ss->id==Skill::scavenge);
+	tvalue *= 1.+0.3*(ss->id==Skill::strike);
+	tvalue *= 1.+0.3*(ss->id==Skill::enrage);
+
+	tvalue *= 1.+0.2*(ss->id==Skill::avenge);
+
+	tvalue *= 1.+0.1*(ss->id==Skill::hunt);
+	tvalue *= 1.+0.1*(ss->id==Skill::venom);
+	tvalue *= 1.+0.1*(ss->id==Skill::mark);
+	tvalue *= 1.+0.1*(ss->id==Skill::coalition);
+	tvalue *= 1.+0.1*(ss->id==Skill::legion);
+	tvalue *= 1.+0.1*(ss->id==Skill::barrier);
+	tvalue *= 1.+0.1*(ss->id==Skill::armor);
+	tvalue *= 1.+0.1*(ss->id==Skill::disease);
+	tvalue *= 1.+0.1*(ss->id==Skill::pierce);
+	//tvalue *= 1.+0.1*(ss->id==Skill::swipe);
+	//tvalue *= 1.+0.1*(ss->id==Skill::berserk);
+	
+
+
+	tvalue *= 1.-0.1*(ss->id==Skill::weaken);
+
+
+
+	tvalue *= 1.-0.5 *(ss->id==Skill::payback); //sucks
+	tvalue *= 1.-0.5 *(ss->id==Skill::leech); //sucks
+	tvalue *= 1.-0.5 *(ss->id==Skill::corrosive); //sucks
+	tvalue *= 1.-0.5 *(ss->id==Skill::sabotage); //sucks
+	tvalue *= 1.-0.5 *(ss->id==Skill::inhibit); //sucks
+
+
+	tvalue *= 1.+1*ss->all;
+	tvalue *= 1.-1./5.*ss->all*(ss->y!=0);
+	tvalue *= 1.+0.75*std::min<int>(3,ss->n);
+	tvalue *= 1.-1./2.* ((c->m_skill_trigger[ss->id] == Skill::Trigger::death) + (c->m_skill_trigger[ss->id] == Skill::Trigger::play));
+	tvalue *= 1./(1.+ss->c);
+	if(tvalue == 0) std::cout << ss->id << std::endl;
+	if(tvalue > 1000) std::cout << ss->id << std::endl;
+	return tvalue;
+}
+int evaluate_card(Field* fd,const Card* cs)
+{
+	int value = 0;
+	value += cs->m_health;	
+	value += cs->m_attack;	
+	for( auto ss : cs->m_skills) {
+		value += evaluate_skill(fd,cs,&ss);
+	}
+	int denom_scale = 1+cs->m_delay*0;
+	if(value > 10000) std::cout << cs->m_name << value << std::endl;
+	return value /denom_scale;
+}
+int evaluate_cardstatus(Field* fd,CardStatus* cs)
+{
+	int value = 0;
+	value += cs->m_hp;	
+	value += cs->attack_power();	
+	value += cs->protected_value();
+	for( auto ss : cs->m_card->m_skills) {
+		value += evaluate_skill(fd,cs->m_card,&ss);
+	}
+	value -= (cs->m_enfeebled);
+	int denom_scale = 1+cs->m_delay*0;
+	if(value > 10000) std::cout << cs->m_card->m_name << value <<std::endl;
+	return value /denom_scale;
+}
+// calculate a value for current field, high values are better for fd->tap
+// dead commander -> the player gets zero value
+int evaluate_field(Field* fd)
+{
+	int value = 0;
+
+	int scale = is_alive(&fd->tap->commander);
+	auto& assaults(fd->tap->assaults);
+	auto& structures(fd->tap->structures);
+
+
+	for(unsigned index(0); index < assaults.size();++index)
+	{
+		value += scale * evaluate_cardstatus(fd,&assaults[index]);
+	}
+	for(unsigned index(0); index < structures.size();++index)
+	{
+		value += scale * evaluate_cardstatus(fd,&structures[index]);
+	}
+
+	scale = is_alive(&fd->tip->commander);
+	auto& eassaults(fd->tip->assaults);
+	auto& estructures(fd->tip->structures);
+	for(unsigned index(0); index < eassaults.size();++index)
+	{
+		value -= (scale * evaluate_cardstatus(fd,&eassaults[index]));
+	}
+	for(unsigned index(0); index < estructures.size();++index)
+	{
+		value -= (scale * evaluate_cardstatus(fd,&estructures[index]));
+	}
+	return value;
+}
+
+
+Results<uint64_t> evaluate_sim_result(Field* fd, bool single_turn_both)
 {
     typedef unsigned points_score_type;
     const auto & p = fd->players;
@@ -3146,6 +3290,13 @@ Results<uint64_t> evaluate_sim_result(Field* fd)
 #ifndef NQUEST
     unsigned quest_score = 0;
 #endif
+
+    if(single_turn_both)
+    {
+	bool sign = evaluate_field(fd)<0;
+	unsigned val = evaluate_field(fd) *(1-2*sign);
+	return {!is_alive(&fd->players[1]->commander),sign,!is_alive(&fd->players[0]->commander),val};
+    }
     switch (fd->optimization_mode)
     {
         case OptimizationMode::raid:
@@ -3273,7 +3424,8 @@ Results<uint64_t> evaluate_sim_result(Field* fd)
 }
 
 //------------------------------------------------------------------------------
-Results<uint64_t> play(Field* fd,bool skip_init)
+//turns_both sets the number of turns to sim before exiting before winner exists.
+Results<uint64_t> play(Field* fd,bool skip_init, bool skip_preplay,unsigned turns_both)
 {
     if(!skip_init){ //>>> start skip init
         fd->players[0]->commander.m_player = 0;
@@ -3313,10 +3465,10 @@ Results<uint64_t> play(Field* fd,bool skip_init)
             ai = opponent(ai);
         }
     }//>>> end skip init
-
-    while(__builtin_expect(fd->turn <= turn_limit && !fd->end, true))
+    unsigned both_turn_limit = fd->turn+2*turns_both;
+    while(__builtin_expect(fd->turn <= turn_limit && !fd->end && (turns_both==0 || fd->turn < both_turn_limit), true))
     {
-        if(!skip_init){ //>>> start skip init
+        if(!skip_preplay){ //>>> start skip init
 
             fd->current_phase = Field::playcard_phase;
             // Initialize stuff, remove dead cards
@@ -3332,7 +3484,7 @@ Results<uint64_t> play(Field* fd,bool skip_init)
             //bool bge_megamorphosis = fd->bg_effects[fd->tapi][PassiveBGE::megamorphosis];
 
         }//>>> end skip init
-        else { skip_init = false;}
+        else { skip_preplay = false;}
         // Play a card
         const Card* played_card(fd->tap->deck->next(fd));
         if (played_card)
@@ -3540,7 +3692,7 @@ Results<uint64_t> play(Field* fd,bool skip_init)
         ++fd->turn;
     }
 
-    return evaluate_sim_result(fd);
+    return evaluate_sim_result(fd,turns_both!= 0);
 }
 
 //------------------------------------------------------------------------------
