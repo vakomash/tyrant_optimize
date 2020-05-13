@@ -54,6 +54,8 @@ struct FinalResults
     uint64_t n_sims;
 };
 
+typedef std::pair<Deck*,FinalResults<long double>> DeckResults;
+
 template<typename result_type>
 bool operator >(const FinalResults<result_type>& x, const FinalResults<result_type>& y) {
     return x.points > y.points;

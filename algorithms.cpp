@@ -126,7 +126,7 @@ Deck* filter_best_deck(std::vector<Deck*> your_decks, Deck* d1,
 }
 
 //------------------------------------------------------------------------------
-FinalResults<long double> hill_climbing(unsigned num_min_iterations, unsigned num_iterations, std::vector<Deck*> your_decks , Process& proc, Requirement & requirement
+DeckResults hill_climbing(unsigned num_min_iterations, unsigned num_iterations, std::vector<Deck*> your_decks , Process& proc, Requirement & requirement
 #ifndef NQUEST
 		, Quest & quest
 #endif
@@ -307,7 +307,7 @@ FinalResults<long double> hill_climbing(unsigned num_min_iterations, unsigned nu
 	print_deck_inline(get_deck_cost(d1), best_score, d1);
 	print_upgraded_cards(d1);
 	print_sim_card_values(d1,proc,num_iterations);
-	return best_score;
+	return std::make_pair(d1->clone(),best_score);
 }
 
 
@@ -324,7 +324,7 @@ inline long double acceptanceProbability(long double old_score, long double new_
 	return exp(((new_score-old_score)/temperature*1000*100)/max_possible_score[(size_t)optimization_mode]);
 }
 
-FinalResults<long double> simulated_annealing(unsigned num_min_iterations, unsigned num_iterations, std::vector<Deck*> your_decks, Process& proc, Requirement & requirement
+DeckResults simulated_annealing(unsigned num_min_iterations, unsigned num_iterations, std::vector<Deck*> your_decks, Process& proc, Requirement & requirement
 #ifndef NQUEST
 		, Quest & quest
 #endif
@@ -487,7 +487,7 @@ FinalResults<long double> simulated_annealing(unsigned num_min_iterations, unsig
 	print_deck_inline(get_deck_cost(best_deck), best_score, best_deck);
 	print_upgraded_cards(best_deck);
 	print_sim_card_values(best_deck,proc,num_iterations);
-	return best_score;
+	return std::make_pair(best_deck->clone(),best_score);
 }
 
 
@@ -600,7 +600,7 @@ void mutate(Deck* src, Deck* cur_deck, std::vector<const Card*> all_candidates, 
 	}
 	if(!finished) copy_deck(src,cur_deck);
 }
-FinalResults<long double> genetic_algorithm(unsigned num_min_iterations, unsigned num_iterations, std::vector<Deck*> your_decks, Process& proc, Requirement & requirement
+DeckResults genetic_algorithm(unsigned num_min_iterations, unsigned num_iterations, std::vector<Deck*> your_decks, Process& proc, Requirement & requirement
 #ifndef NQUEST
 		, Quest & quest
 #endif
@@ -817,7 +817,7 @@ FinalResults<long double> genetic_algorithm(unsigned num_min_iterations, unsigne
 	print_deck_inline(get_deck_cost(best_deck), best_score, best_deck);
 	print_upgraded_cards(best_deck);
 	print_sim_card_values(best_deck,proc,num_iterations);
-	return best_score;
+	return std::make_pair(best_deck->clone(),best_score);
 }
 
 
@@ -881,7 +881,7 @@ void recursion(unsigned num_iterations, std::vector<unsigned> used, unsigned poo
 	}
 }
 
-FinalResults<long double> forts_climbing(unsigned num_iterations, Process& proc) {
+DeckResults forts_climbing(unsigned num_iterations, Process& proc) {
 	EvaluatedResults zero_results = { EvaluatedResults::first_type(proc.enemy_decks.size()*proc.your_decks.size()), 0 };
 	unsigned pool = std::get<0>(proc.your_decks[0]->variable_forts[0]);
 	std::vector<const Card*> forts(std::get<2>(proc.your_decks[0]->variable_forts[0]));
@@ -902,7 +902,7 @@ FinalResults<long double> forts_climbing(unsigned num_iterations, Process& proc)
 	std::cout << "Evaluated " << evaluated_decks.size() << " decks (" << simulations << " + " << skipped_simulations << " simulations)." << std::endl;
 	std::cout << "Optimized Deck: ";
 	print_cards_inline(best_forts);
-	return best_score;
+	return std::make_pair(nullptr,best_score);
 }
 
 inline bool contains(std::multimap<FinalResults<long double>, Deck*, std::greater<FinalResults<long double>>> best,Deck* d)
@@ -930,7 +930,7 @@ inline void check_and_update(std::multimap<FinalResults<long double>, Deck*, std
 	}
 }
 
-FinalResults<long double> beam_climb(unsigned num_min_iterations, unsigned num_iterations, std::vector<Deck*> your_decks, Process& proc, Requirement & requirement
+DeckResults beam_climb(unsigned num_min_iterations, unsigned num_iterations, std::vector<Deck*> your_decks, Process& proc, Requirement & requirement
 #ifndef NQUEST
 		, Quest & quest
 #endif
@@ -1167,5 +1167,5 @@ FinalResults<long double> beam_climb(unsigned num_min_iterations, unsigned num_i
 	print_deck_inline(get_deck_cost(best_deck), best_score, best_deck);
 	print_upgraded_cards(best_deck);
 	print_sim_card_values(best_deck,proc,num_iterations);
-	return best_score;
+	return std::make_pair(best_deck->clone(),best_score);
 }

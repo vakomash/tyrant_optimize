@@ -1709,9 +1709,9 @@ bool parse_bge(
 	return true;
 }
 
-FinalResults<long double> run(int argc, char** argv)
+DeckResults run(int argc, char** argv)
 {
-	FinalResults<long double> fr;
+	DeckResults fr;
 	opt_num_threads= 4;
 	DeckStrategy::DeckStrategy opt_your_strategy(DeckStrategy::random);
 	DeckStrategy::DeckStrategy opt_enemy_strategy(DeckStrategy::random);
@@ -3003,7 +3003,7 @@ FinalResults<long double> run(int argc, char** argv)
 					       EvaluatedResults results = { EvaluatedResults::first_type(enemy_decks.size()*your_decks.size()), 0 };
 					       results = p.evaluate(std::get<0>(op), results);
 					       print_results(results, p.factors);
-					       fr = compute_score(results,p.factors);
+					       fr = std::make_pair(your_deck,compute_score(results,p.factors));
 					       print_sim_card_values(your_deck,p,std::get<0>(op));
 					       break;
 				       }
@@ -3121,10 +3121,21 @@ int main(int argc,char** argv)
 		std::cout << "Tyrant Unleashed Optimizer " << TYRANT_OPTIMIZER_VERSION << std::endl;
 		return 0;
 	}
-	if (argc <= 2)
+	if (argc < 2)
 	{
 		usage(argc, argv);
 		return 255;
+	}
+	for(int j=0; j < argc;++j) {
+		if(strcmp(argv[j],"-p") ==0 || strcmp(argv[j],"params")==0 ){
+			std::ifstream param_file(argv[j+1]);
+			if (param_file.good() ) {
+				std::cout << "Loading params file " << argv[j+1] << std::endl;
+			}
+			else {
+				std::cout << "Error loading params file " << argv[j+1] << std::endl;
+			}
+		}
 	}
 	init();
 	run(argc,argv);
