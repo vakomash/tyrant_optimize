@@ -1740,11 +1740,23 @@ DeckResults run(int argc, const char** argv)
 	std::vector<SkillSpec> opt_bg_skills[2];
 	std::unordered_set<unsigned> disallowed_recipes;
 
+	std::string your_deck_list{argv[1]};
+	std::string enemy_deck_list{argv[2]};
+
 	for (int argIndex = 3; argIndex < argc; ++argIndex)
 	{
-
+		if (strcmp(argv[argIndex], "deck") == 0)
+		{
+			your_deck_list = std::string(argv[argIndex+1]);
+			argIndex += 1;
+		}
+		else if (strcmp(argv[argIndex], "enemy:deck") == 0)
+		{
+			enemy_deck_list = std::string(argv[argIndex+1]);
+			argIndex += 1;
+		}
 		// Codec
-		if (strcmp(argv[argIndex], "ext_b64") == 0)
+		else if (strcmp(argv[argIndex], "ext_b64") == 0)
 		{
 			hash_to_ids = hash_to_ids_ext_b64;
 			encode_deck = encode_deck_ext_b64;
@@ -2402,6 +2414,7 @@ DeckResults run(int argc, const char** argv)
 	//if(all_cards.all_cards.size()>0) delete(&all_cards); // complains invalid pointer
 	for(Card *c : all_cards.all_cards) delete c; // prevent memory leak
 	all_cards.visible_cardset.clear();
+	owned_cards.clear();
 	//all_cards.organize();
 	all_cards = Cards();
 	Decks decks;
@@ -2688,9 +2701,7 @@ DeckResults run(int argc, const char** argv)
 #endif
 
 	//std::string your_deck_name{argv[1]};
-	std::string your_deck_list{argv[1]};
-	std::string enemy_deck_list{argv[2]};
-	auto && your_deck_list_parsed = parse_deck_list(your_deck_list, decks);
+		auto && your_deck_list_parsed = parse_deck_list(your_deck_list, decks);
 	auto && enemy_deck_list_parsed = parse_deck_list(enemy_deck_list, decks);
 
 	//Deck* your_deck{nullptr};
@@ -3178,9 +3189,9 @@ DeckResults start(int argc, const char** argv) {
 						std::cout <<std::endl<< "///////////////" << std::endl;
 						int k  =0;
 						for (auto& str : cur_split) {
-							if(k==1 || k==2) std::cout << "\"";
+							if(k>0)std::cout << "\"";
     							std::cout << str ;
-							if(k==1 || k==2) std::cout << "\"";
+							if(k>0) std::cout << "\"";
 							std::cout << ' ';
 							k++;
 						}

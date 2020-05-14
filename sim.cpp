@@ -3236,8 +3236,8 @@ int evaluate_skill(Field* fd,const Card* c , SkillSpec* ss)
 	tvalue *= 1.+1*std::min<int>(3,ss->n);
 	tvalue *= 1.-1./3.* ((c->m_skill_trigger[ss->id] == Skill::Trigger::death) + (c->m_skill_trigger[ss->id] == Skill::Trigger::play));
 	tvalue *= 1./(2.+ss->c);
-	if(tvalue == 0) std::cout << ss->id << " "<<tvalue << std::endl;
-	if(tvalue > 10000) std::cout << ss->id <<" "<< tvalue << std::endl;
+	//if(tvalue == 0) std::cout << ss->id << " "<<tvalue << std::endl;
+	//if(tvalue > 10000) std::cout << ss->id <<" "<< tvalue << std::endl;
 	return 0.9*tvalue; // 0.85
 }
 int evaluate_card(Field* fd,const Card* cs)
@@ -3249,7 +3249,7 @@ int evaluate_card(Field* fd,const Card* cs)
 		value += evaluate_skill(fd,cs,&ss);
 	}
 	int denom_scale = 1+cs->m_delay*0;
-	if(value > 10000) std::cout << cs->m_name << value << std::endl;
+	//if(value > 10000) std::cout << cs->m_name << value << std::endl;
 	return value /denom_scale;
 }
 int evaluate_cardstatus(Field* fd,CardStatus* cs)

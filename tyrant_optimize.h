@@ -127,7 +127,7 @@ void thread_evaluate(boost::barrier& main_barrier,
 #ifndef TEST
 int main(int argc, const char** argv);
 #endif
-DeckResults run(int argc, char** argv);
+DeckResults run(int argc, const char** argv);
 void init();
 bool is_timeout_reached();
 bool valid_deck(Deck* your_deck);

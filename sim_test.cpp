@@ -72,24 +72,24 @@ inline Result run_sim(int argc,const char** argv, bool pipe_output=true)
           //////////////////////
           // only single thread for string stream build
           //////////////////////
-          char** param = new char*[argc+2];
+          const char** param = new const char*[argc+2];
           for(int i = 0; i < argc;i++)
             param[i] = const_cast<char*>(argv[i]);
           param[argc] = const_cast<char*>("-t");
           param[argc+1] = const_cast<char*>("1");
-        fr = run(argc+2,param);
+        fr = run(argc+2,param).second;
     }
     else{
         //no guard here
 		  //////////////////////
           // only single thread, else crashes
           //////////////////////
-        char** param = new char*[argc+2];
+        const char** param = new const char*[argc+2];
           for(int i = 0; i < argc;i++)
             param[i] = const_cast<char*>(argv[i]);
           param[argc] = const_cast<char*>("-t");
           param[argc+1] = const_cast<char*>("1");
-        fr = run(argc+2,param);
+        fr = run(argc+2,param).second;
     }
   }
 
