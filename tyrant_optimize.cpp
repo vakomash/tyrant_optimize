@@ -25,6 +25,7 @@
 #include <set>
 #include <stack>
 #include <string>
+#include <iomanip>
 #include <tuple>
 #include <vector>
 #include <math.h>
@@ -1099,7 +1100,7 @@ void print_upgraded_cards(Deck* deck)
 	std::cout << std::endl;
 }
 //------------------------------------------------------------------------------
-void print_cards_inline(std::vector<const Card*> cards)
+void print_cards_inline(std::vector<const Card*> cards,std::ostream& os)
 {
 	std::string last_name="";
 	unsigned num_repeat(0);
@@ -1115,9 +1116,9 @@ void print_cards_inline(std::vector<const Card*> cards)
 		{
 			if (num_repeat > 1)
 			{
-				std::cout << " #" << num_repeat;
+				os << " #" << num_repeat;
 			}
-			std::cout << (first?"":", ") << card->m_name;
+			os << (first?"":", ") << card->m_name;
 			first = false;
 			last_name = card->m_name;
 			num_repeat = 1;
@@ -1125,9 +1126,9 @@ void print_cards_inline(std::vector<const Card*> cards)
 	}
 	if (num_repeat > 1)
 	{
-		std::cout << " #" << num_repeat;
+		os << " #" << num_repeat;
 	}
-	std::cout << std::endl;
+	os << "\n";
 }
 void print_score_inline(const FinalResults<long double> score) {
 	// print optimization result details
@@ -1498,7 +1499,7 @@ void print_available_effects()
 		"  SuperHeroism\n"
 		;
 }
-bool check_input_amount(int argc, char** argv, int argIndex,int number)
+bool check_input_amount(int argc, const char** argv, int argIndex,int number)
 {
 	if(argc <=argIndex+number)
 	{
@@ -1512,7 +1513,7 @@ void input_error(std::string msg)
 	std::cerr << msg << std::endl;
 	exit(EXIT_FAILURE);
 }
-void usage(int argc, char** argv)
+void usage(int argc, const char** argv)
 {
 	std::cout << "Tyrant Unleashed Optimizer (TUO) " << TYRANT_OPTIMIZER_VERSION << "\n"
 		"usage: " << argv[0] << " Your_Deck Enemy_Deck [Flags] [Operations]\n"
@@ -1709,7 +1710,7 @@ bool parse_bge(
 	return true;
 }
 
-DeckResults run(int argc, char** argv)
+DeckResults run(int argc, const char** argv)
 {
 	DeckResults fr;
 	opt_num_threads= 4;
@@ -2397,8 +2398,12 @@ DeckResults run(int argc, char** argv)
 #ifdef _OPENMP
 	opt_num_threads = omp_get_max_threads();
 #endif
-
-	Cards all_cards;
+	// TODO delete ? since prefix/suffix might change we reload all cards.
+	//if(all_cards.all_cards.size()>0) delete(&all_cards); // complains invalid pointer
+	for(Card *c : all_cards.all_cards) delete c; // prevent memory leak
+	all_cards.visible_cardset.clear();
+	//all_cards.organize();
+	all_cards = Cards();
 	Decks decks;
 	std::unordered_map<std::string, std::string> bge_aliases;
 	load_skills_set_xml(all_cards, prefix+"data/skills_set.xml", true);
@@ -2993,7 +2998,8 @@ DeckResults run(int argc, char** argv)
 
 	auto your_deck = your_decks[0];
 
-	for (auto op: opt_todo)
+	auto op = opt_todo.back();
+	//for (auto op: opt_todo)
 	{
 		switch(std::get<2>(op))
 		{
@@ -3003,7 +3009,7 @@ DeckResults run(int argc, char** argv)
 					       EvaluatedResults results = { EvaluatedResults::first_type(enemy_decks.size()*your_decks.size()), 0 };
 					       results = p.evaluate(std::get<0>(op), results);
 					       print_results(results, p.factors);
-					       fr = std::make_pair(your_deck,compute_score(results,p.factors));
+					       fr = std::make_pair(your_deck->clone(),compute_score(results,p.factors));
 					       print_sim_card_values(your_deck,p,std::get<0>(op));
 					       break;
 				       }
@@ -3109,8 +3115,98 @@ DeckResults run(int argc, char** argv)
 	return fr;
 }
 
+std::vector<const char*> strlist(std::vector<std::string> &input) {
+    std::vector<const char*> result;
+
+    // remember the nullptr terminator
+    result.reserve(input.size()+1);
+
+    for(auto &i : input)
+	    result.push_back(i.data());
+    result.push_back(nullptr);
+    return result;
+}
+
+DeckResults start(int argc, const char** argv) {
+	DeckResults drc;
+	bool first = true;
+	for(int j=0; j < argc;++j) {
+		if(strcmp(argv[j],"-p") ==0 || strcmp(argv[j],"params")==0 ){
+			std::ifstream param_file(argv[j+1]);
+			
+			if (param_file.good() ) {
+				std::cout << "Loading params file " << argv[j+1] << std::endl;
+				std::string line,tmp,first_line="";
+				std::vector<std::string> first_split,cur_split;
+				while(param_file && !param_file.eof()) 
+				{
+					std::getline(param_file,line);
+					if(is_line_empty_or_commented(line))continue;
+					//std::cout << line << std::endl;
+					if(first_line==""){
+						first_line = line;
+						std::istringstream ss(first_line);
+						while(ss >> boost::io::quoted(tmp)) {
+							first_split.push_back(tmp);
+						}
+					}
+					else {
+						cur_split = first_split;
+						std::istringstream ss(line);
+						while( ss>> boost::io::quoted(tmp))
+							cur_split.push_back(tmp);
+						for( int i =0 ; i < argc;++i) {
+							if(i < j )
+								cur_split.insert(cur_split.begin()+i,std::string(argv[i]));
+							if (i > j+1)
+								cur_split.push_back(std::string(argv[i]));
+						}
+						if(!first) {
+
+							std::stringstream oss; 
+							oss << drc.first->commander->m_name << "," ;
+							if(drc.first->alpha_dominion) oss<< drc.first->alpha_dominion->m_name << ",";
+							print_cards_inline(drc.first->cards,oss);
+							cur_split.erase(cur_split.begin()+1);
+							std::string decks(oss.str());
+							std::replace(decks.begin(),decks.end(),'\n',' ');
+							cur_split.insert(cur_split.begin()+1,decks);
+
+						}
+						first = false;
+
+						std::cout <<std::endl<< "///////////////" << std::endl;
+						int k  =0;
+						for (auto& str : cur_split) {
+							if(k==1 || k==2) std::cout << "\"";
+    							std::cout << str ;
+							if(k==1 || k==2) std::cout << "\"";
+							std::cout << ' ';
+							k++;
+						}
+						std::cout << std::endl;
+						std::cout << "///////////////" << std::endl << std::endl;
+
+						drc = start(cur_split.size(),strlist(cur_split).data());
+						//print_cards_inline(drc.first->cards,std::cout);
+					}
+				}
+				return drc;
+			}
+			else {
+				std::cout << "Error loading params file " << argv[j+1] << std::endl;
+			}
+		}
+		else {
+			//return run(argc,argv);
+		}
+	}
+	return run(argc,argv);
+}
+
+
 #ifndef TEST
-int main(int argc,char** argv)
+int main(int argc,const char** argv)
 {
 #ifndef NTIMER
 	boost::timer::auto_cpu_timer t;
@@ -3126,19 +3222,8 @@ int main(int argc,char** argv)
 		usage(argc, argv);
 		return 255;
 	}
-	for(int j=0; j < argc;++j) {
-		if(strcmp(argv[j],"-p") ==0 || strcmp(argv[j],"params")==0 ){
-			std::ifstream param_file(argv[j+1]);
-			if (param_file.good() ) {
-				std::cout << "Loading params file " << argv[j+1] << std::endl;
-			}
-			else {
-				std::cout << "Error loading params file " << argv[j+1] << std::endl;
-			}
-		}
-	}
 	init();
-	run(argc,argv);
+	start(argc,argv);
 	return 0;
 }
 #endif

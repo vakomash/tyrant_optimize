@@ -39,6 +39,7 @@ tuo-x86.exe
 tuo-test.exe
 tuo-x86-test.exe
 .cproject
+test.tuo
 .project
 .settings/
 

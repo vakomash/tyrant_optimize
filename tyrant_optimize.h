@@ -25,6 +25,7 @@ struct Requirement
 #define EXTERN extern
 #endif
 namespace tuo {
+	EXTERN Cards all_cards;
 	EXTERN unsigned opt_num_threads;
 	EXTERN gamemode_t gamemode;
 	EXTERN OptimizationMode optimization_mode;
@@ -124,7 +125,7 @@ void thread_evaluate(boost::barrier& main_barrier,
 		const Process& p,
 		unsigned thread_id);
 #ifndef TEST
-int main(int argc, char** argv);
+int main(int argc, const char** argv);
 #endif
 DeckResults run(int argc, char** argv);
 void init();
@@ -138,7 +139,7 @@ std::vector<Results<uint64_t>> merge(std::vector<Results<uint64_t>> out, std::ve
 // some print functions
 void print_score_info(const EvaluatedResults& results, std::vector<long double>& factors);
 void print_results(const EvaluatedResults& results, std::vector<long double>& factors);
-void print_cards_inline(std::vector<const Card*> cards);
+void print_cards_inline(std::vector<const Card*> cards,std::ostream& =std::cout);
 void print_score_inline(const FinalResults<long double> score);
 void print_sim_card_values(Deck* original_deck, Process& p, unsigned iter); // run_deck == p.your_decks[0]
 void print_deck_inline(const unsigned deck_cost, const FinalResults<long double> score, Deck * deck);
