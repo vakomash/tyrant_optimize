@@ -902,7 +902,11 @@ DeckResults forts_climbing(unsigned num_iterations, Process& proc) {
 	std::cout << "Evaluated " << evaluated_decks.size() << " decks (" << simulations << " + " << skipped_simulations << " simulations)." << std::endl;
 	std::cout << "Optimized Deck: ";
 	print_cards_inline(best_forts);
-	return std::make_pair(nullptr,best_score);
+	Deck* tmp = proc.your_decks[0]->clone();
+	tmp->commander = nullptr;
+	tmp->alpha_dominion = nullptr;
+	tmp->cards = best_forts; // return forts
+	return std::make_pair(tmp,best_score);
 }
 
 inline bool contains(std::multimap<FinalResults<long double>, Deck*, std::greater<FinalResults<long double>>> best,Deck* d)

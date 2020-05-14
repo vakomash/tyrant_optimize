@@ -3139,8 +3139,10 @@ std::vector<const char*> strlist(std::vector<std::string> &input) {
 }
 
 DeckResults start(int argc, const char** argv) {
+	std::vector<std::string> result_decks;
 	DeckResults drc;
 	bool first = true;
+	result_decks.push_back(argv[1]);
 	for(int j=0; j < argc;++j) {
 		if(strcmp(argv[j],"-p") ==0 || strcmp(argv[j],"params")==0 ){
 			std::ifstream param_file(argv[j+1]);
@@ -3164,8 +3166,12 @@ DeckResults start(int argc, const char** argv) {
 					else {
 						cur_split = first_split;
 						std::istringstream ss(line);
-						while( ss>> boost::io::quoted(tmp))
+						while( ss>> boost::io::quoted(tmp)) {
+							for(unsigned z =0; z < result_decks.size();++z)  {
+								boost::replace_all(tmp,"@"+std::to_string(z) + "@",result_decks[z]);
+							}
 							cur_split.push_back(tmp);
+						}
 						for( int i =0 ; i < argc;++i) {
 							if(i < j )
 								cur_split.insert(cur_split.begin()+i,std::string(argv[i]));
@@ -3173,20 +3179,13 @@ DeckResults start(int argc, const char** argv) {
 								cur_split.push_back(std::string(argv[i]));
 						}
 						if(!first) {
-
-							std::stringstream oss; 
-							oss << drc.first->commander->m_name << "," ;
-							if(drc.first->alpha_dominion) oss<< drc.first->alpha_dominion->m_name << ",";
-							print_cards_inline(drc.first->cards,oss);
 							cur_split.erase(cur_split.begin()+1);
-							std::string decks(oss.str());
-							std::replace(decks.begin(),decks.end(),'\n',' ');
-							cur_split.insert(cur_split.begin()+1,decks);
-
+							cur_split.insert(cur_split.begin()+1,result_decks[result_decks.size()-1]);
 						}
 						first = false;
 
 						std::cout <<std::endl<< "///////////////" << std::endl;
+						std::cout << result_decks[result_decks.size()-1] <<std::endl;
 						int k  =0;
 						for (auto& str : cur_split) {
 							if(k>0)std::cout << "\"";
@@ -3199,6 +3198,16 @@ DeckResults start(int argc, const char** argv) {
 						std::cout << "///////////////" << std::endl << std::endl;
 
 						drc = start(cur_split.size(),strlist(cur_split).data());
+
+						//result to string
+						std::stringstream oss; 
+						if(drc.first->commander)oss << drc.first->commander->m_name << "," ;
+						if(drc.first->alpha_dominion) oss<< drc.first->alpha_dominion->m_name << ",";
+						print_cards_inline(drc.first->cards,oss);
+						std::string decks(oss.str());
+						std::replace(decks.begin(),decks.end(),'\n',' ');
+						result_decks.push_back(decks);
+
 						//print_cards_inline(drc.first->cards,std::cout);
 					}
 				}
