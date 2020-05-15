@@ -3186,7 +3186,7 @@ DeckResults start(int argc, const char** argv) {
 						first = false;
 
 						std::cout <<std::endl<< "///////////////" << std::endl;
-						std::cout << result_decks[result_decks.size()-1] <<std::endl;
+						//std::cout << result_decks[result_decks.size()-1] <<std::endl;
 						int k  =0;
 						for (auto& str : cur_split) {
 							if(k>0)std::cout << "\"";
