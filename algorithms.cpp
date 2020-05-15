@@ -752,7 +752,7 @@ DeckResults genetic_algorithm(unsigned num_min_iterations, unsigned num_iteratio
 		{
 			for (unsigned i = it+1; i < pool_size;i++)
 			{
-				if(pool[it].first->hash().substr(8)==pool[i].first->hash().substr(8)) //ignore commander + dominion
+				if(pool[it].first->alpha_dominion && pool[i].first->alpha_dominion && pool[it].first->hash().substr(8)==pool[i].first->hash().substr(8)) //ignore commander + dominion
 				{
 					mutate(pool[i].first->clone(),pool[i].first,all_candidates,re,best_gap, evaluated_decks);
 
