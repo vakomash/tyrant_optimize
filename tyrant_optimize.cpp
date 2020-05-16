@@ -1716,6 +1716,7 @@ bool parse_bge(
 
 DeckResults run(int argc, const char** argv)
 {
+	start_time = std::chrono::system_clock::now();
 	DeckResults fr;
 	opt_num_threads= 4;
 	DeckStrategy::DeckStrategy opt_your_strategy(DeckStrategy::random);
@@ -3233,7 +3234,6 @@ int main(int argc,const char** argv)
 #ifndef NTIMER
 	boost::timer::auto_cpu_timer t;
 #endif
-	start_time = std::chrono::system_clock::now();
 	if (argc == 2 && strcmp(argv[1], "-version") == 0)
 	{
 		std::cout << "Tyrant Unleashed Optimizer " << TYRANT_OPTIMIZER_VERSION << std::endl;
