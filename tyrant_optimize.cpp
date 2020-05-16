@@ -3146,77 +3146,107 @@ DeckResults start(int argc, const char** argv) {
 	bool first = true;
 	result_decks.push_back(argv[1]);
 	for(int j=0; j < argc;++j) {
+		int add_j_inc = 0;
 		if(strcmp(argv[j],"-p") ==0 || strcmp(argv[j],"params")==0 ){
-			std::ifstream param_file(argv[j+1]);
-			
-			if (param_file.good() ) {
-				std::cout << "Loading params file " << argv[j+1] << std::endl;
-				std::string line,tmp,first_line="";
-				std::vector<std::string> first_split,cur_split;
-				while(param_file && !param_file.eof()) 
-				{
-					std::getline(param_file,line);
-					if(is_line_empty_or_commented(line))continue;
-					//std::cout << line << std::endl;
-					if(first_line==""){
-						first_line = line;
-						std::istringstream ss(first_line);
-						while(ss >> boost::io::quoted(tmp)) {
-							first_split.push_back(tmp);
+			if(j+1 < argc) { 
+				std::ifstream param_file(argv[j+1]);
+				
+				if (param_file.good() ) {
+					std::cout << "Loading params file " << argv[j+1] << std::endl;
+					std::string line,tmp,first_line="";
+					std::vector<std::string> first_split,cur_split;
+					// first count parameters in file
+					while(param_file && !param_file.eof()) {
+						std::getline(param_file,line);
+						if(is_line_empty_or_commented(line))continue;
+						for(int z = 0; z < argc -j-1;++z) {
+							std::string rep("$"+std::to_string(z) + "$");
+							if(line.find(rep) != std::string::npos && z> add_j_inc) 
+								add_j_inc = z;
 						}
 					}
-					else {
-						cur_split = first_split;
-						std::istringstream ss(line);
-						while( ss>> boost::io::quoted(tmp)) {
-							for(unsigned z =0; z < result_decks.size();++z)  {
-								boost::replace_all(tmp,"@"+std::to_string(z) + "@",result_decks[z]);
+					param_file.clear();
+					param_file.seekg(0, std::ios::beg);
+					while(param_file && !param_file.eof()) 
+					{
+						std::getline(param_file,line);
+						if(is_line_empty_or_commented(line))continue;
+						//std::cout << line << std::endl;
+						if(first_line==""){
+							first_line = line;
+							std::istringstream ss(first_line);
+							while(ss >> boost::io::quoted(tmp)) {
+								for(unsigned z =0; z < result_decks.size();++z)  {
+									boost::replace_all(tmp,"@"+std::to_string(z) + "@",result_decks[z]);
+								}
+								for(int z = 0; z < argc -j-1;++z) {
+									std::string rep("$"+std::to_string(z) + "$");
+									boost::replace_all(tmp,rep,std::string(argv[j+1+z]));
+								}
+								first_split.push_back(tmp);
 							}
-							cur_split.push_back(tmp);
 						}
-						for( int i =0 ; i < argc;++i) {
-							if(i < j )
-								cur_split.insert(cur_split.begin()+i,std::string(argv[i]));
-							if (i > j+1)
-								cur_split.push_back(std::string(argv[i]));
+						else {
+							cur_split = first_split;
+							std::istringstream ss(line);
+							while( ss>> boost::io::quoted(tmp)) {
+								for(unsigned z =0; z < result_decks.size();++z)  {
+									boost::replace_all(tmp,"@"+std::to_string(z) + "@",result_decks[z]);
+								}
+								for(int z = 0; z < argc -j-1;++z) {
+									std::string rep("$"+std::to_string(z) + "$");
+									boost::replace_all(tmp,rep,std::string(argv[j+1+z]));
+								}
+								cur_split.push_back(tmp);
+							}
+							for( int i =0 ; i < argc;++i) {
+								if(i < j )
+									cur_split.insert(cur_split.begin()+i,std::string(argv[i]));
+								if (i > j+1+add_j_inc)
+									cur_split.push_back(std::string(argv[i]));
+							}
+							if(!first) {
+								// replace passed deck with most recent deck
+								cur_split.erase(cur_split.begin()+1);
+								cur_split.insert(cur_split.begin()+1,result_decks[result_decks.size()-1]);
+							}
+							first = false;
+
+							std::cout <<std::endl<< "///////////////" << std::endl;
+							//std::cout << result_decks[result_decks.size()-1] <<std::endl;
+							int k  =0;
+							for (auto& str : cur_split) {
+								if(k>0)std::cout << "\"";
+    								std::cout << str ;
+								if(k>0) std::cout << "\"";
+								std::cout << ' ';
+								k++;
+							}
+							std::cout << std::endl;
+							std::cout << "///////////////" << std::endl << std::endl;
+
+							drc = start(cur_split.size(),strlist(cur_split).data());
+
+							//result to string
+							std::stringstream oss; 
+							if(drc.first->commander)oss << drc.first->commander->m_name << "," ;
+							if(drc.first->alpha_dominion) oss<< drc.first->alpha_dominion->m_name << ",";
+							print_cards_inline(drc.first->cards,oss);
+							std::string decks(oss.str());
+							std::replace(decks.begin(),decks.end(),'\n',' ');
+							result_decks.push_back(decks);
+
+							//print_cards_inline(drc.first->cards,std::cout);
 						}
-						if(!first) {
-							cur_split.erase(cur_split.begin()+1);
-							cur_split.insert(cur_split.begin()+1,result_decks[result_decks.size()-1]);
-						}
-						first = false;
-
-						std::cout <<std::endl<< "///////////////" << std::endl;
-						//std::cout << result_decks[result_decks.size()-1] <<std::endl;
-						int k  =0;
-						for (auto& str : cur_split) {
-							if(k>0)std::cout << "\"";
-    							std::cout << str ;
-							if(k>0) std::cout << "\"";
-							std::cout << ' ';
-							k++;
-						}
-						std::cout << std::endl;
-						std::cout << "///////////////" << std::endl << std::endl;
-
-						drc = start(cur_split.size(),strlist(cur_split).data());
-
-						//result to string
-						std::stringstream oss; 
-						if(drc.first->commander)oss << drc.first->commander->m_name << "," ;
-						if(drc.first->alpha_dominion) oss<< drc.first->alpha_dominion->m_name << ",";
-						print_cards_inline(drc.first->cards,oss);
-						std::string decks(oss.str());
-						std::replace(decks.begin(),decks.end(),'\n',' ');
-						result_decks.push_back(decks);
-
-						//print_cards_inline(drc.first->cards,std::cout);
 					}
+					return drc;
 				}
-				return drc;
+				else {
+					std::cout << "Error loading params file " << argv[j+1] << std::endl;
+				}
 			}
 			else {
-				std::cout << "Error loading params file " << argv[j+1] << std::endl;
+					std::cout << "-p/params needs a file as parameter" << std::endl;
 			}
 		}
 		else {
