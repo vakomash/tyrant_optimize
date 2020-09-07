@@ -111,7 +111,7 @@ Gui, Add, Checkbox, vopenmp Checked%IniOpenMP%, openmp
 Gui, Add, Button, r2 w100 ys xs+200, Exit
 Gui, Add, Checkbox, vdebug Checked%IniDebug%, debug
 Gui, Add, Checkbox, vtime Checked%IniTime%, time
-Gui, Show,, Simple TUO Starter %VersionOfStarter% (version of %VersionOfTUO%)
+Gui, Show,, Simple TUO LiveSim %VersionOfStarter% (version of %VersionOfTUO%)
 return
 
 ButtonSimulate:
