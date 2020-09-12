@@ -784,7 +784,7 @@ struct PlayCard
 
             unsigned played_faction_mask(0);
             unsigned same_faction_cards_count(0);
-            bool bge_megamorphosis = fd->bg_effects[fd->tapi][PassiveBGE::megamorphosis];
+            bool bge_megamorphosis = fd->bg_effects[status->m_player][PassiveBGE::megamorphosis];
             //played_status = status;
             //played_card = card;
 
@@ -803,7 +803,7 @@ struct PlayCard
 
             // 1. Evaluate skill Allegiance & count assaults with same faction (structures will be counted later)
             // 2. Passive BGE Cold Sleep
-            for (CardStatus* status_i : fd->tap->assaults.m_indirect)
+            for (CardStatus* status_i : fd->players[status->m_player]->assaults.m_indirect)
             {
                 if (status_i == status || !is_alive(status_i)) { continue; } // except itself
                 //std::cout << status_description(status_i).c_str();
@@ -820,7 +820,7 @@ struct PlayCard
                         status_i->ext_hp(allegiance_value);
                     }
                 }
-                if (__builtin_expect(fd->bg_effects[fd->tapi][PassiveBGE::coldsleep], false)
+                if (__builtin_expect(fd->bg_effects[status->m_player][PassiveBGE::coldsleep], false)
                         && status_i->m_protected_stasis && can_be_healed(status_i))
                 {
                     unsigned bge_value = (status_i->m_protected_stasis + 1) / 2;
@@ -836,19 +836,19 @@ struct PlayCard
                 played_faction_mask = (1u << card->m_faction);
                 // do played card have stasis? mark this faction for stasis check
                 if (__builtin_expect(status->skill(Skill::stasis), false)
-                        || __builtin_expect(fd->bg_effects[fd->tapi][PassiveBGE::temporalbacklash] && status->skill(Skill::counter), false))
+                        || __builtin_expect(fd->bg_effects[status->m_player][PassiveBGE::temporalbacklash] && status->skill(Skill::counter), false))
                 {
-                    fd->tap->stasis_faction_bitmap |= played_faction_mask;
+                    fd->players[status->m_player]->stasis_faction_bitmap |= played_faction_mask;
                 }
             }
 
             // Evaluate Passive BGE Oath-of-Loyalty
             unsigned allegiance_value;
-            if (__builtin_expect(fd->bg_effects[fd->tapi][PassiveBGE::oath_of_loyalty], false)
+            if (__builtin_expect(fd->bg_effects[status->m_player][PassiveBGE::oath_of_loyalty], false)
                     && ((allegiance_value = status->skill(Skill::allegiance)) > 0))
             {
                 // count structures with same faction (except fortresses, dominions and other non-normal structures)
-                for (CardStatus * status_i : fd->tap->structures.m_indirect)
+                for (CardStatus * status_i : fd->players[status->m_player]->structures.m_indirect)
                 {
                     if ((status_i->m_card->m_category == CardCategory::normal)
                             && (bge_megamorphosis || (status_i->m_card->m_faction == card->m_faction)))
@@ -872,20 +872,20 @@ struct PlayCard
             //  1. Passive BGE Megamorphosis is enabled
             //  2. current faction is marked for it
             if ((card->m_delay > 0) && (card->m_type == CardType::assault)
-                    && __builtin_expect(bge_megamorphosis || (fd->tap->stasis_faction_bitmap & played_faction_mask), false))
+                    && __builtin_expect(bge_megamorphosis || (fd->players[status->m_player]->stasis_faction_bitmap & played_faction_mask), false))
             {
-                unsigned stacked_stasis = (bge_megamorphosis || (fd->tap->commander.m_card->m_faction == card->m_faction))
-                    ? fd->tap->commander.skill(Skill::stasis)
+                unsigned stacked_stasis = (bge_megamorphosis || (fd->players[status->m_player]->commander.m_card->m_faction == card->m_faction))
+                    ? fd->players[status->m_player]->commander.skill(Skill::stasis)
                     : 0u;
 #ifndef NDEBUG
                 if (stacked_stasis > 0)
                 {
                     _DEBUG_MSG(2, "+ Stasis [%s]: stacks +%u stasis protection from %s (total stacked: %u)\n",
                             faction_names[card->m_faction].c_str(), stacked_stasis,
-                            status_description(&fd->tap->commander).c_str(), stacked_stasis);
+                            status_description(&fd->players[status->m_player]->commander).c_str(), stacked_stasis);
                 }
 #endif
-                for (CardStatus * status_i : fd->tap->structures.m_indirect)
+                for (CardStatus * status_i : fd->players[status->m_player]->structures.m_indirect)
                 {
                     if ((bge_megamorphosis || (status_i->m_card->m_faction == card->m_faction)) && is_alive(status_i))
                     {
@@ -900,7 +900,7 @@ struct PlayCard
 #endif
                     }
                 }
-                for (CardStatus * status_i : fd->tap->assaults.m_indirect)
+                for (CardStatus * status_i : fd->players[status->m_player]->assaults.m_indirect)
                 {
                     if ((bge_megamorphosis || (status_i->m_card->m_faction == card->m_faction)) && is_alive(status_i))
                     {
@@ -913,7 +913,7 @@ struct PlayCard
                                     status_description(status_i).c_str(), stacked_stasis);
                         }
 #endif
-                        if (__builtin_expect(fd->bg_effects[fd->tapi][PassiveBGE::temporalbacklash] && status_i->skill(Skill::counter), false))
+                        if (__builtin_expect(fd->bg_effects[status->m_player][PassiveBGE::temporalbacklash] && status_i->skill(Skill::counter), false))
                         {
                             stacked_stasis += (status_i->skill(Skill::counter) + 1) / 2;
 #ifndef NDEBUG
@@ -935,14 +935,14 @@ struct PlayCard
                 // no more stasis for current faction: do unmark (if no Passive BGE Megamorphosis)
                 if (__builtin_expect(!bge_megamorphosis, true) && __builtin_expect(!stacked_stasis, false))
                 {
-                    fd->tap->stasis_faction_bitmap &= ~played_faction_mask;
+                    fd->players[status->m_player]->stasis_faction_bitmap &= ~played_faction_mask;
                     _DEBUG_MSG(1, "- Stasis [%s]: no more units with stasis from %s\n",
-                            faction_names[card->m_faction].c_str(),status_description(&fd->tap->commander).c_str());
+                            faction_names[card->m_faction].c_str(),status_description(&fd->players[status->m_player]->commander).c_str());
                 }
 
             }
             //Devotion BGE
-            if (__builtin_expect(fd->bg_effects[fd->tapi][PassiveBGE::devotion], false) && !summoned && card->m_category == CardCategory::normal && fd->tap->commander.m_card->m_faction == card->m_faction)
+            if (__builtin_expect(fd->bg_effects[status->m_player][PassiveBGE::devotion], false) && !summoned && card->m_category == CardCategory::normal && fd->players[status->m_player]->commander.m_card->m_faction == card->m_faction)
             {
                 _DEBUG_MSG(1, "Devotion %s: Gains %u HP\n",
                         status_description(status).c_str(), (card->m_health+4)/5);
