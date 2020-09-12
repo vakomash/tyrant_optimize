@@ -2302,7 +2302,6 @@ inline void perform_skill<Skill::fortify>(Field* fd, CardStatus* src, CardStatus
     template<>
 inline void perform_skill<Skill::mortar>(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s)
 {
-    _DEBUG_MSG(1,"absorb\n");
     if (dst->m_card->m_type == CardType::structure)
     {
         remove_hp(fd, dst, remove_absorption(fd,dst,s.x));
