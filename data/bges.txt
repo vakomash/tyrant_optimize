@@ -1,39 +1,49 @@
 // Guild War BGEs
-Halcyon's Command: Enhance All Armor 8; Heal All Imperial 10; Enrage Imperial 4
-Typhon's Blood: Enhance All Refresh 8; Enrage All Bloodthirsty 5; Heal 16
-Sandblast: Entrap All 10; Weaken All 10
-Plasma Burst: Heal 15; Protect 15; Sunder 15
-Landmine: Entrap 38
-Inspired: Rally all 7
-Blightblast: Enfeeble all 6
-Bombing Run: Strike all 3
-Triage: Enhance Fortify 9; Heal all 18
-Charged Up: Overload 3
-Combined Arms: Enhance All Coalition 3; Rally+Enfeeble+Strike all 3
-Blitzkrieg: Rush
-Paladin's Presence: Protect all 3
-Viral Warfare: Enhance all Poison 3
-Progenitor Tech: Heal+Protect+Rally+Enfeeble+Strike+Weaken all 4
-Diminisher: Sunder all 2
-Divine Blessing: Heal all 10; Rally all 7
-Opalescence: Heal+Protect all 2
-Power Source: Overload 1
-Ferocity: Enrage 6
-Tartarian Gift: Rally all 10; Enrage all 10
-Artillery: Enhance Mortar 4; Mortar all 18
-//Orbital Cannon: Strike 16
-Orbital Cannon: Enfeeble 14
-Bloodthirst: Enhance All Leech 6
-Emergency Aid: Heal 48
-Extended Reach: Enhance All Swipe 5
-Mirror Madness: Mimic 16
-Eternal Backlash: Enhance All Counter 6; Entrap 6
-Winter Tempest: Enhance all subdue 10; Protect All 5; Weaken All 7
+//Artillery: Enhance Mortar 100; Mortar all 70
+Artillery: Mortar all 70
+Divine Blessing: Heal all 120; Rally all 120; Strike all 120
+//Winter Tempest: Enhance all subdue 999; Protect All 100; Weaken All 100
+Winter Tempest: Protect All 100; Weaken All 100
+Charged Up: Overload all
+Progenitor Tech: Heal all 40; Protect all 40; Rally all 40; Enfeeble all 40; Strike all 40; Weaken all 40
+Plasma Burst: Heal all 60; Protect all 60; Sunder 60
+Tartarian Gift: Rally all 120; Enrage all 120
+//Combined Arms: Enhance All Coalition 70; Rally all 75; Enfeeble all 75; Strike all 75
+Combined Arms: Rally all 75; Enfeeble all 75; Strike all 75
+Inspired: Rally all 200
+Blightblast: Enfeeble all 300
+Emergency Aid: Heal All 70; Protect all 70; Enhance all Absorb 999
+Landmine: Entrap all 200; Weaken all 200
+//Triage: Enhance all Fortify 250; Heal 170; Protect 170
+Triage: Heal 170; Protect 170
+Mirror Madness: Mimic 700; Entrap all 100
+Surgical Strike: Mortar 150; Strike 200; Weaken 200
+Apocalypse: Mortar all 75; Enfeeble all 75; Strike all 75
+Minor Setback: Weaken 170; Strike 170; Mimic 170
+//Entrapment: Enhance all Counter 400; Entrap 50; Heal 50
+Entrapment: Entrap 50; Heal 50
+
+// Weird BGEs we will never ever see again
 Sulfuris Essence: Evolve All Poison Venom; Enhance All Venom 6
 Way of the Forsaken: Enhance All Corrosive 8; Heal All Raider 7; Enfeeble 7
 Critical Blast: Enhance All Swipe 4; Enfeeble All 4
 Will of the Nephilim: Enhance All Avenge 5; Protect All Bloodthirsty 4; Heal All Righteous 6
 Armada's Conquest: Enhance All Evade 4; Rally All Xeno 6; Mortar 10
+Eternal Backlash: Enhance All Counter 6; Entrap 6
+//Orbital Cannon: Strike 16
+Orbital Cannon: Enfeeble 14
+Bloodthirst: Enhance All Leech 6
+Diminisher: Sunder all 2
+Halcyon's Command: Enhance All Armor 8; Heal All Imperial 10; Enrage Imperial 4
+Typhon's Blood: Enhance All Refresh 8; Enrage All Bloodthirsty 5; Heal 16
+Extended Reach: Enhance All Swipe 5
+Bombing Run: Strike all 3
+Blitzkrieg: Rush
+Paladin's Presence: Protect all 3
+Viral Warfare: Enhance all Poison 3
+Opalescence: Heal+Protect all 2
+Power Source: Overload 1
+Ferocity: Enrage 6
 
 // Some other BGEs
 Soothing Chant: Heal all 2
