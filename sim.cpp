@@ -936,8 +936,8 @@ struct PlayCard
                 if (__builtin_expect(!bge_megamorphosis, true) && __builtin_expect(!stacked_stasis, false))
                 {
                     fd->tap->stasis_faction_bitmap &= ~played_faction_mask;
-                    _DEBUG_MSG(1, "- Stasis [%s]: no more units with stasis\n",
-                            faction_names[card->m_faction].c_str());
+                    _DEBUG_MSG(1, "- Stasis [%s]: no more units with stasis from %s\n",
+                            faction_names[card->m_faction].c_str(),status_description(&fd->tap->commander).c_str());
                 }
 
             }
@@ -3481,6 +3481,7 @@ Results<uint64_t> play(Field* fd,bool skip_init, bool skip_preplay,unsigned turn
                         break;
                 }
             }
+	    resolve_skill(fd);
             std::swap(fd->tapi, fd->tipi);
             std::swap(fd->tap, fd->tip);
             ai = opponent(ai);
