@@ -2,6 +2,7 @@
 #SingleInstance off
 SendMode Input  ; Recommended for new scripts due to its superior speed and reliability.
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
+FileCreateDir, %A_ScriptDir%\data
 
 VersionOfStarter := "v1.0.0"
 
@@ -66,10 +67,13 @@ Gui, Add, Text, r1, Flags:
 Gui, Add, Edit, vMyDeck ym w600 r5, %IniMyDeck%
 Gui, Add, Edit, vMySiege w600 r1, %IniMySiege%
 Gui, Add, Edit, vMyPlayedCards w600 r1, %IniMyPlayedCards%
-Gui, Add, Edit, vMyHand1 w600 r1, %IniMyHand1%
-Gui, Add, Edit, vMyHand2 w600 r1, %IniMyHand2%
-Gui, Add, Edit, vMyHand3 w600 r1, %IniMyHand3%
-Gui, Add, Edit, vEnemiesDeck w600 r5, %IniEnemiesDeck%
+Gui, Add, Edit, vMyHand1 w300 r1 section, %IniMyHand1%
+Gui, Add, Edit, vMyHand2 w300 r1, %IniMyHand2%
+Gui, Add, Edit, vMyHand3 w300 r1, %IniMyHand3%
+Gui, Add, Text, vMyHand1Score w300 r1 ys, 0
+Gui, Add, Text, vMyHand2Score w300 r1 altsubmit, 0
+Gui, Add, Text, vMyHand3Score w300 r1 altsubmit, 0
+Gui, Add, Edit, vEnemiesDeck w600 r5 xs , %IniEnemiesDeck%
 Gui, Add, Edit, vEnemySiege w600 r1, %IniEnemySiege%
 Gui, Add, Edit, vEnemyPlayedCards w600 r1, %IniEnemyPlayedCards%
 
@@ -92,12 +96,12 @@ if (IniEffectNum = 0) {
 
 Gui, Add, ComboBox, vEffect Choose%IniEffectNum% section, %BGEffects%
 Gui, Add, DDL, altsubmit vMode Choose%IniMode%, Battle / Mission|Battle (defense)|GW|GW (defense)|Brawl|Brawl (defense)|Raid|Campaign|CQ / Surge
-Gui, Add, DDL, altsubmit vOperation Group Choose%IniOperation% xs, Reorder|Sim
+Gui, Add, DDL, altsubmit vOperation Group Choose%IniOperation% xs, Reorder
 
 Gui, Add, Text, ys r1, Order:
 Gui, Add, Text, r1, Iterations:
 
-Gui, Add, DDL, ys altsubmit vOrder Group Choose%IniOrder%, Random|Ordered (honor 3-card hand)|Flexible
+Gui, Add, DDL, ys altsubmit vOrder Group Choose%IniOrder%, -R-a-n-d-o-m-|Ordered (honor 3-card hand)|-F-l-e-x-i-b-l-e-
 Gui, Add, Edit, vIterations w100 r1, %IniIterations%
 
 Gui, Add, Text,ys,Threads:
@@ -105,12 +109,13 @@ Gui, Add, Text,ys,Threads:
 Gui, Add, Edit, ys vThreads number r1 w40, %IniThreads%
 
 Gui, Add, Edit, vSimOptions r1 xs w600, %IniSimOptions%
-Gui, Add, Button, default r2 w100 x100 y+15 section, Simulate
+Gui, Add, Button, default r2 w100 x150 y+15 section, Simulate
 Gui, Add, Checkbox, vx86 Checked%Inix86%, x86 (32-bit)
 Gui, Add, Checkbox, vopenmp Checked%IniOpenMP%, openmp
-Gui, Add, Button, r2 w100 ys xs+200, Exit
+Gui, Add, Button, r2 w100 ys xs+200, Scores
 Gui, Add, Checkbox, vdebug Checked%IniDebug%, debug
 Gui, Add, Checkbox, vtime Checked%IniTime%, time
+Gui, Add, Button, r2 w100 ys xs+400, Exit
 Gui, Show,, Simple TUO LiveSim %VersionOfStarter% (version of %VersionOfTUO%)
 return
 
@@ -133,7 +138,7 @@ Gui, Submit, NoHide ; save the changes and not hide the windows)
 selTUO := "tuo" . (x86 ? "-x86" : "") . (openmp ? "-openmp" : "") . (debug ? "-debug" : (time ? "-time" : "")) . ".exe"
 selMode := (Mode == 1 ? "pvp" : Mode == 2 ? "pvp-defense" : Mode == 3 ? "gw" : Mode == 4 ? "gw-defense" :Mode == 5 ? "brawl" : Mode == 6 ? "brawl-defense" : Mode == 7 ? "raid" : Mode == 8 ? "campaign" : "surge")
 selOrder := (Order == 1 ? "random" : Order == 2 ? "ordered" : "flexible")
-selOperation :=  (Operation == 1 ? "reorder" : Operation == 2 ? "sim" )
+selOperation :=  "reorder"
 selMySiege := (MySiege == "" ? "" : "yf """ MySiege """ ")
 selEnemySiege := ( EnemySiege == "" ? "" : "ef """ EnemySiege """ ")
 selVIP := ( VIP == "" ? "" : "vip """ VIP """ " )
@@ -149,6 +154,116 @@ selMyHand = %selOpMyHand% "%MyPlayedCards%, %MyHand1%, %MyHand2%, %MyHand3%"
 selEnemyHand = %selOpEnemyHand% "%EnemyPlayedCards%"
 execString = %selTUO% "%MyDeck%" "%EnemiesDeck%" %selMode% %selOrder% %selMySiege%%selEnemySiege%%selVIP%%selEffect%%selThreads%%selTurn%%selSimOptions%%selOperation% %selIterations% %selMyHand% %selEnemyHand%
 Run, cmd.exe /c title TUOptimizeOutput && echo %execString% && %execString% & pause
+Gui, Show
+return
+
+; ----------------------------------------------------------------------------------------------------------------------
+; Function .....: StdoutToVar_CreateProcess
+; Description ..: Runs a command line program and returns its output.
+; Parameters ...: sCmd      - Commandline to execute.
+; ..............: sEncoding - Encoding used by the target process. Look at StrGet() for possible values.
+; ..............: sDir      - Working directory.
+; ..............: nExitCode - Process exit code, receive it as a byref parameter.
+; Return .......: Command output as a string on success, empty string on error.
+; AHK Version ..: AHK_L x32/64 Unicode/ANSI
+; Author .......: Sean (http://goo.gl/o3VCO8), modified by nfl and by Cyruz
+; License ......: WTFPL - http://www.wtfpl.net/txt/copying/
+; Changelog ....: Feb. 20, 2007 - Sean version.
+; ..............: Sep. 21, 2011 - nfl version.
+; ..............: Nov. 27, 2013 - Cyruz version (code refactored and exit code).
+; ..............: Mar. 09, 2014 - Removed input, doesn't seem reliable. Some code improvements.
+; ..............: Mar. 16, 2014 - Added encoding parameter as pointed out by lexikos.
+; ..............: Jun. 02, 2014 - Corrected exit code error.
+; ..............: Nov. 02, 2016 - Fixed blocking behavior due to ReadFile thanks to PeekNamedPipe.
+; ----------------------------------------------------------------------------------------------------------------------
+StdoutToVar_CreateProcess(sCmd, sEncoding:="CP0", sDir:="", ByRef nExitCode:=0) {
+    DllCall( "CreatePipe",           PtrP,hStdOutRd, PtrP,hStdOutWr, Ptr,0, UInt,0 )
+    DllCall( "SetHandleInformation", Ptr,hStdOutWr, UInt,1, UInt,1                 )
+
+            VarSetCapacity( pi, (A_PtrSize == 4) ? 16 : 24,  0 )
+    siSz := VarSetCapacity( si, (A_PtrSize == 4) ? 68 : 104, 0 )
+    NumPut( siSz,      si,  0,                          "UInt" )
+    NumPut( 0x100,     si,  (A_PtrSize == 4) ? 44 : 60, "UInt" )
+    NumPut( hStdOutWr, si,  (A_PtrSize == 4) ? 60 : 88, "Ptr"  )
+    NumPut( hStdOutWr, si,  (A_PtrSize == 4) ? 64 : 96, "Ptr"  )
+
+    If ( !DllCall( "CreateProcess", Ptr,0, Ptr,&sCmd, Ptr,0, Ptr,0, Int,True, UInt,0x08000000
+                                  , Ptr,0, Ptr,sDir?&sDir:0, Ptr,&si, Ptr,&pi ) )
+        Return ""
+      , DllCall( "CloseHandle", Ptr,hStdOutWr )
+      , DllCall( "CloseHandle", Ptr,hStdOutRd )
+
+    DllCall( "CloseHandle", Ptr,hStdOutWr ) ; The write pipe must be closed before reading the stdout.
+    While ( 1 )
+    { ; Before reading, we check if the pipe has been written to, so we avoid freezings.
+        If ( !DllCall( "PeekNamedPipe", Ptr,hStdOutRd, Ptr,0, UInt,0, Ptr,0, UIntP,nTot, Ptr,0 ) )
+            Break
+        If ( !nTot )
+        { ; If the pipe buffer is empty, sleep and continue checking.
+            Sleep, 100
+            Continue
+        } ; Pipe buffer is not empty, so we can read it.
+        VarSetCapacity(sTemp, nTot+1)
+        DllCall( "ReadFile", Ptr,hStdOutRd, Ptr,&sTemp, UInt,nTot, PtrP,nSize, Ptr,0 )
+        sOutput .= StrGet(&sTemp, nSize, sEncoding)
+    }
+    
+    ; * SKAN has managed the exit code through SetLastError.
+    DllCall( "GetExitCodeProcess", Ptr,NumGet(pi,0), UIntP,nExitCode )
+    DllCall( "CloseHandle",        Ptr,NumGet(pi,0)                  )
+    DllCall( "CloseHandle",        Ptr,NumGet(pi,A_PtrSize)          )
+    DllCall( "CloseHandle",        Ptr,hStdOutRd                     )
+    Return sOutput
+}
+
+ButtonScores:
+Gui, Submit
+selIterations := Iterations
+MyDeck := RegExReplace(MyDeck, "\R")
+MyDeck := RegExReplace(MyDeck, "(^\s*|\s*$)")
+
+EnemiesDeck := RegExReplace(EnemiesDeck, "\R")
+EnemiesDeck := RegExReplace(EnemiesDeck, "(^\s*|\s*$)")
+
+SimOptions := RegExReplace(SimOptions, "(^\s*|\s*$)")
+
+;GuiControl, , Edit1, %MyDeck% ; this will put the content of the variable in the editbox (edit1 is taken by the winspy)
+;GuiControl, , Edit3, %EnemiesDeck% ; this will put the content of the variable in the editbox (edit1 is taken by the winspy)
+;GuiControl, , Edit11, %SimOptions% ; this will put the content of the variable in the editbox (edit11 is taken by the winspy)
+Gui, Submit, NoHide ; save the changes and not hide the windows)
+
+selTUO := "tuo" . (x86 ? "-x86" : "") . (openmp ? "-openmp" : "") . (debug ? "-debug" : (time ? "-time" : "")) . ".exe"
+selMode := (Mode == 1 ? "pvp" : Mode == 2 ? "pvp-defense" : Mode == 3 ? "gw" : Mode == 4 ? "gw-defense" :Mode == 5 ? "brawl" : Mode == 6 ? "brawl-defense" : Mode == 7 ? "raid" : Mode == 8 ? "campaign" : "surge")
+selOrder := (Order == 1 ? "random" : Order == 2 ? "ordered" : "flexible")
+selOperation :=  "reorder"
+selMySiege := (MySiege == "" ? "" : "yf """ MySiege """ ")
+selEnemySiege := ( EnemySiege == "" ? "" : "ef """ EnemySiege """ ")
+selVIP := ( VIP == "" ? "" : "vip """ VIP """ " )
+selEffect := ( Effect == "" || Effect == "none" ? "" : "-e """ Effect """ ")
+selThreads := ( Threads == "4" ? "" : "-t " Threads " ")
+selSimOptions := ( SimOptions == "" ? "" : SimOptions " ")
+StringReplace MyPlayedCards, MyPlayedCards,`,,`,,UseErrorLevel
+Turn := ErrorLevel + 2
+selTurn := "freeze " Turn " "
+selOpMyHand := "hand "
+selOpenemyHand := "enemy:hand "
+selMyHand1 = %selOpMyHand% "%MyPlayedCards%, %MyHand1%"
+selMyHand2 = %selOpMyHand% "%MyPlayedCards%, %MyHand2%"
+selMyHand3 = %selOpMyHand% "%MyPlayedCards%, %MyHand3%"
+selEnemyHand = %selOpEnemyHand% "%EnemyPlayedCards%"
+execString1 =  %selTUO% "%MyDeck%" "%EnemiesDeck%" %selMode% %selOrder% %selMySiege%%selEnemySiege%%selVIP%%selEffect%%selThreads%%selTurn%%selSimOptions%%selOperation% %selIterations% %selMyHand1% %selEnemyHand%
+execString2 =  %selTUO% "%MyDeck%" "%EnemiesDeck%" %selMode% %selOrder% %selMySiege%%selEnemySiege%%selVIP%%selEffect%%selThreads%%selTurn%%selSimOptions%%selOperation% %selIterations% %selMyHand2% %selEnemyHand%
+execString3 =  %selTUO% "%MyDeck%" "%EnemiesDeck%" %selMode% %selOrder% %selMySiege%%selEnemySiege%%selVIP%%selEffect%%selThreads%%selTurn%%selSimOptions%%selOperation% %selIterations% %selMyHand3% %selEnemyHand%
+Test1 := StdoutToVar_CreateProcess( execString1 )
+Test2 := StdoutToVar_CreateProcess( execString2 )
+Test3 := StdoutToVar_CreateProcess( execString3 )
+pp1 := StrSplit(StrSplit(Test1, "Optimized Deck:")[2], ":")[2]
+pp2 := StrSplit(StrSplit(Test2, "Optimized Deck:")[2], ":")[2]
+pp3 := StrSplit(StrSplit(Test3, "Optimized Deck:")[2], ":")[2]
+GuiControl, , MyHand1Score, %pp1%
+GuiControl, , MyHand2Score, %pp2%
+GuiControl, , MyHand3Score, %pp3%
+Gui, Submit, NoHide 
 Gui, Show
 return
 
@@ -338,3 +453,4 @@ DownloadCards(url,file) {
 	}
 	return 1
 }
+
