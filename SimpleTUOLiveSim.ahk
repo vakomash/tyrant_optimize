@@ -235,7 +235,7 @@ Gui, Submit, NoHide ; save the changes and not hide the windows)
 selTUO := "tuo" . (x86 ? "-x86" : "") . (openmp ? "-openmp" : "") . (debug ? "-debug" : (time ? "-time" : "")) . ".exe"
 selMode := (Mode == 1 ? "pvp" : Mode == 2 ? "pvp-defense" : Mode == 3 ? "gw" : Mode == 4 ? "gw-defense" :Mode == 5 ? "brawl" : Mode == 6 ? "brawl-defense" : Mode == 7 ? "raid" : Mode == 8 ? "campaign" : "surge")
 selOrder := (Order == 1 ? "random" : Order == 2 ? "ordered" : "flexible")
-selOperation :=  "reorder"
+selOperation :=  "sim"
 selMySiege := (MySiege == "" ? "" : "yf """ MySiege """ ")
 selEnemySiege := ( EnemySiege == "" ? "" : "ef """ EnemySiege """ ")
 selVIP := ( VIP == "" ? "" : "vip """ VIP """ " )
@@ -257,9 +257,10 @@ execString3 =  %selTUO% "%MyDeck%" "%EnemiesDeck%" %selMode% %selOrder% %selMySi
 Test1 := StdoutToVar_CreateProcess( execString1 )
 Test2 := StdoutToVar_CreateProcess( execString2 )
 Test3 := StdoutToVar_CreateProcess( execString3 )
-pp1 := StrSplit(StrSplit(Test1, "Optimized Deck:")[2], ":")[2]
-pp2 := StrSplit(StrSplit(Test2, "Optimized Deck:")[2], ":")[2]
-pp3 := StrSplit(StrSplit(Test3, "Optimized Deck:")[2], ":")[2]
+pp1 := StrSplit(StrSplit(Test1, "win`%:")[2], "(")[1]
+pp2 := StrSplit(StrSplit(Test2, "win`%:")[2], "(")[1]
+pp3 := StrSplit(StrSplit(Test3, "win`%:")[2], "(")[1]
+MsgBox , %Test1%
 GuiControl, , MyHand1Score, %pp1%
 GuiControl, , MyHand2Score, %pp2%
 GuiControl, , MyHand3Score, %pp3%
