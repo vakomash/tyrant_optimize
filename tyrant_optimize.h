@@ -24,6 +24,7 @@ struct Requirement
 #else
 #define EXTERN extern
 #endif
+
 namespace tuo {
 	EXTERN Cards all_cards;
 	EXTERN unsigned opt_num_threads;
@@ -61,6 +62,11 @@ namespace tuo {
 	EXTERN unsigned eval_iter;
 	EXTERN unsigned eval_turn;
 	EXTERN Requirement requirement;
+	EXTERN double hp_scale;
+	EXTERN double atk_scale;
+	EXTERN std::map<Skill::Skill,double> x_skill_scale;
+	EXTERN std::map<Skill::Skill,double> n_skill_scale;
+	EXTERN std::map<Skill::Skill,double> c_skill_scale;
 #ifndef NQUEST
 	EXTERN Quest quest;
 #endif

@@ -12,6 +12,7 @@
 #include "cards.h"
 #include "deck.h"
 #include "tyrant.h"
+#include "tyrant_optimize.h"
 //---------------------- $20 cards.xml parsing ---------------------------------
 // Sets: 1 enclave; 2 nexus; 3 blight; 4 purity; 5 homeworld;
 // 6 phobos; 7 phobos aftermath; 8 awakening
@@ -152,6 +153,7 @@ bool parse_file(const std::string & filename, std::vector<char>& buffer, xml_doc
 //------------------------------------------------------------------------------
 void parse_card_node(Cards& all_cards, Card* card, xml_node<>* card_node)
 {
+    double eps = 1e-4;
     xml_node<>* id_node(card_node->first_node("id"));
     xml_node<>* card_id_node = card_node->first_node("card_id");
     assert(id_node || card_id_node);
@@ -171,8 +173,15 @@ void parse_card_node(Cards& all_cards, Card* card, xml_node<>* card_node)
     if (name_node) { card->m_name = name_node->value(); }
     if (level_node) { card->m_level = atoi(level_node->value()); }
     if (fusion_level_node) { card->m_fusion_level = atoi(fusion_level_node->value()); }
-    if (attack_node) { card->m_attack = atoi(attack_node->value()); }
-    if (health_node) { card->m_health = atoi(health_node->value()); }
+    if (attack_node) { card->m_attack = atoi(attack_node->value()); 
+	    if(abs(1-atk_scale)>eps)
+		card->m_attack = ceil(card->m_attack/(atk_scale));
+}
+    if (health_node) { card->m_health = atoi(health_node->value()); 
+	    if(abs(1-hp_scale)>eps)
+		card->m_health = ceil(card->m_health/(hp_scale));
+
+    }
     if (cost_node) { card->m_delay = atoi(cost_node->value()); }
     if (id_node)
     {
@@ -314,6 +323,16 @@ void parse_card_node(Cards& all_cards, Card* card, xml_node<>* card_node)
         auto s2 = skill_target_skill(skill_node, "s2");
         bool all = skill_node->first_attribute("all");
         auto card_id = node_value(skill_node, "card_id", 0);
+	//scaling
+	if(abs(1-x_skill_scale[Skill::no_skill]*x_skill_scale[skill_id])>eps)
+		x = ceil(x/(x_skill_scale[Skill::no_skill]*x_skill_scale[skill_id]));
+	if(abs(1-n_skill_scale[Skill::no_skill]*n_skill_scale[skill_id])>eps)
+		n = ceil(n/(n_skill_scale[Skill::no_skill]*n_skill_scale[skill_id]));
+	if(abs(1-c_skill_scale[Skill::no_skill]*c_skill_scale[skill_id])>eps)
+		c = ceil(c/(c_skill_scale[Skill::no_skill]*c_skill_scale[skill_id]));
+
+
+
         card->add_skill(trig, skill_id, x, y, n, c, s, s2, all, card_id);
     }
     all_cards.all_cards.push_back(card);
