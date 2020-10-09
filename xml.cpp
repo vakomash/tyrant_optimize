@@ -324,8 +324,8 @@ void parse_card_node(Cards& all_cards, Card* card, xml_node<>* card_node)
         bool all = skill_node->first_attribute("all");
         auto card_id = node_value(skill_node, "card_id", 0);
 	//scaling
-	if(abs(1-x_skill_scale[Skill::no_skill]*x_skill_scale[skill_id])>eps)
-		x = ceil(x/(x_skill_scale[Skill::no_skill]*x_skill_scale[skill_id]));
+	if(abs(1-x_skill_scale[Skill::no_skill]*x_skill_scale[skill_id==Skill::enhance?s:skill_id])>eps)
+		x = ceil(x/(x_skill_scale[Skill::no_skill]*x_skill_scale[skill_id==Skill::enhance?s:skill_id]));
 	if(abs(1-n_skill_scale[Skill::no_skill]*n_skill_scale[skill_id])>eps)
 		n = ceil(n/(n_skill_scale[Skill::no_skill]*n_skill_scale[skill_id]));
 	if(abs(1-c_skill_scale[Skill::no_skill]*c_skill_scale[skill_id])>eps)
