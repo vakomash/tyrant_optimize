@@ -61,9 +61,10 @@ jobs:
             -   name: Build
                 shell: cmd
                 run: |
+                    set BOOST_ROOT=%BOOST_ROOT_1_72_0%
                     md buildit
                     cd buildit
-                    cmake -DCMAKE_BUILD_TYPE=Release -G "Visual Studio 16 2019" ..
+                    cmake -DCMAKE_BUILD_TYPE=Release -G "Visual Studio 16 2019" -DBOOST_ROOT=%BOOST_ROOT_1_72_0% ..
                     cmake --build . --config Release
             -   name: Upload Artifact
                 uses: actions/upload-artifact@v2
