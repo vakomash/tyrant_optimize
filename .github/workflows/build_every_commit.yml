@@ -17,8 +17,8 @@ jobs:
             -   name: Build
                 run: |
                     sudo xcode-select -s /Library/Developer/CommandLineTools
-                    mkdir build
-                    cd build
+                    mkdir buildit
+                    cd buildit
                     cmake -DCMAKE_BUILD_TYPE=Release ..
                     echo !!! $(nproc)
                     make -j$(nproc)
@@ -37,8 +37,8 @@ jobs:
                     submodules: recursive
             -   name: Build
                 run: |
-                    mkdir build
-                    cd build
+                    mkdir buildit
+                    cd buildit
                     cmake -DCMAKE_BUILD_TYPE=Release ..
                     make -j$(nproc)
             -   name: Upload Artifact
@@ -58,8 +58,8 @@ jobs:
                 shell: cmd
                 run: |
                     call "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Auxiliary\Build\vcvars32.bat"
-                    md build
-                    cd build
+                    md buildit
+                    cd buildit
                     cmake -DCMAKE_BUILD_TYPE=Release -G "NMake Makefiles" ..
                     nmake
             -   name: Upload Artifact
@@ -79,8 +79,8 @@ jobs:
                 shell: cmd
                 run: |
                     call "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
-                    md build
-                    cd build
+                    md buildit
+                    cd buildit
                     cmake -DCMAKE_BUILD_TYPE=Release -G "NMake Makefiles" ..
                     nmake
             -   name: Upload Artifact
