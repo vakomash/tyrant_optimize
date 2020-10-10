@@ -17,7 +17,6 @@ jobs:
             -   name: Dependencies
                 run: |
                     brew update
-                    brew install cmake 
                     brew install boost
                     
 
