@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 2.6)
 
 #set(TGT test-${PKG}-cmake)
 set( CMAKE_CXX_STANDARD 11 )
-set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror -Ofast")
+set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Ofast")
 set( BUILD_SHARED_LIBRARIES OFF)
 set( BOOST_USE_STATIC_LIBS ON )
 set( CMAKE_EXE_LINKER_FLAGS "-static")
