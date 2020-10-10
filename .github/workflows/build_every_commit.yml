@@ -61,11 +61,10 @@ jobs:
             -   name: Build
                 shell: cmd
                 run: |
-                    call "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
                     md buildit
                     cd buildit
-                    cmake -DCMAKE_BUILD_TYPE=Release -G "NMake Makefiles" ..
-                    nmake
+                    cmake -DCMAKE_BUILD_TYPE=Release -G "Visual Studio 16 2019" ..
+                    cmake --build . --config Release
             -   name: Upload Artifact
                 uses: actions/upload-artifact@v2
                 with:
