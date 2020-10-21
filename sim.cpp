@@ -3167,7 +3167,7 @@ int evaluate_skill(Field* fd,const Card* c , SkillSpec* ss)
 {
 	// TODO optimize this
 	int tvalue = ss->x;
-	 
+
 	if(ss->card_id != 0)tvalue += 1*evaluate_card(fd,card_by_id_safe(fd->cards,ss->card_id));
 	tvalue += 10*(ss->id==Skill::flurry);
 	tvalue += 10*(ss->id==Skill::jam);
@@ -3242,8 +3242,8 @@ int evaluate_skill(Field* fd,const Card* c , SkillSpec* ss)
 int evaluate_card(Field* fd,const Card* cs)
 {
 	int value = 0;
-	value += cs->m_health;	
-	value += 2*cs->m_attack;	
+	value += cs->m_health;
+	value += 2*cs->m_attack;
 	for( auto ss : cs->m_skills) {
 		value += evaluate_skill(fd,cs,&ss);
 	}
@@ -3254,8 +3254,8 @@ int evaluate_card(Field* fd,const Card* cs)
 int evaluate_cardstatus(Field* fd,CardStatus* cs)
 {
 	int value = 0;
-	value += cs->m_hp;	
-	value += 2*cs->attack_power();	
+	value += cs->m_hp;
+	value += 2*cs->attack_power();
 	value += cs->protected_value();
 	for( auto ss : cs->m_card->m_skills) {
 		value += evaluate_skill(fd,cs->m_card,&ss);
@@ -3354,14 +3354,18 @@ Results<uint64_t> evaluate_sim_result(Field* fd, bool single_turn_both)
                                           {
                                               unsigned enemy_brawl_score = evaluate_brawl_score(fd, 1);
                                               unsigned max_score = max_possible_score[(size_t)OptimizationMode::brawl_defense];
-                                              return {0, 0, 1, (points_score_type)(max_score - enemy_brawl_score)};
+                                              if(enemy_brawl_score> max_score)
+                                                std::cerr << "WARNING: enemy_brawl_score > max_possible_brawl_score" << std::endl;
+                                              return {0, 0, 1, (points_score_type)safe_minus(max_score , enemy_brawl_score)};
                                           }
             case OptimizationMode::war: return {0,0,1, (points_score_type) 20};
             case OptimizationMode::war_defense:
                                         {
                                             unsigned enemy_war_score = evaluate_war_score(fd, 1);
                                             unsigned max_score = max_possible_score[(size_t)OptimizationMode::war_defense];
-                                            return {0, 0, 1, (points_score_type)(max_score - enemy_war_score)};
+                                            if(enemy_war_score> max_score)
+                                                std::cerr << "WARNING: enemy_war_score > max_possible_war_score" << std::endl;
+                                            return {0, 0, 1, (points_score_type)safe_minus(max_score , enemy_war_score)};
                                         }
 #ifndef NQUEST
             case OptimizationMode::quest: return {0, 0, 1, (points_score_type)(fd->quest.must_win ? 0 : quest_score)};

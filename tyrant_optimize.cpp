@@ -178,6 +178,14 @@ void init()
 	eval_iter=8;
 	eval_turn=8;
 	requirement.num_cards.clear();
+	for(unsigned i(0); i < Skill::num_skills;++i){
+		auto s = static_cast<Skill::Skill>(i);
+		x_skill_scale[s]=1.0;
+		n_skill_scale[s]=1.0;
+		c_skill_scale[s]=1.0;
+	}
+	hp_scale = 1.0;
+	atk_scale = 1.0;
 #ifndef NQUEST
 	//quest = new Quest(); //TODO Quest bugged in Android now here
 #endif
@@ -2328,6 +2336,49 @@ DeckResults run(int argc, const char** argv)
 			if (std::get<1>(opt_todo.back()) < 10) { opt_num_threads = 1; }
 			opt_do_reorder = true;
 			argIndex += 1;
+		}
+		else if (strncmp(argv[argIndex], "scale-opts:", 11) == 0) {
+			std::string climb_opts_str(argv[argIndex] + 11);
+			boost::tokenizer<boost::char_delimiters_separator<char>> climb_opts{climb_opts_str, boost::char_delimiters_separator<char>{false, ",", ""}};
+			for (const auto & opt : climb_opts)
+			{
+				const auto dot_pos = opt.find(".");
+				const auto slash_pos = opt.find("/");
+				const bool has_value = (dot_pos != std::string::npos);
+				if(slash_pos == std::string::npos)
+					throw std::runtime_error("scale-opts:" + opt + " requires an argument"); 
+				const std::string & opt_type = has_value ? opt.substr(0, dot_pos) : "";
+				const std::string opt_name{has_value ? opt.substr(dot_pos + 1,slash_pos-dot_pos-1) : opt.substr(0,slash_pos)};
+				const std::string opt_value{ opt.substr(slash_pos + 1) };
+				if ((opt_name == "hp") )
+				{
+					hp_scale = atof(opt_value.c_str());
+				}
+				else if ((opt_name == "atk"))
+				{
+					atk_scale = atof(opt_value.c_str());
+				}
+				else if (opt_name == "x")
+				{
+					x_skill_scale[skill_name_to_id(opt_type)] = atof(opt_value.c_str());
+				}
+				else if (opt_name == "n")
+				{
+					n_skill_scale[skill_name_to_id(opt_type)] = atof(opt_value.c_str());
+				}
+				else if (opt_name == "c")
+				{
+					c_skill_scale[skill_name_to_id(opt_type)] = atof(opt_value.c_str());
+				}
+				else
+				{
+					std::cerr << "Error: Unknown scale option " << opt_name << " of " << opt_type;
+					if (has_value)
+					{ std::cerr << " (value is: " << opt_value << ")"; }
+					std::cerr << std::endl;
+					exit(1);
+				}
+			}
 		}
 		// climbing options
 		else if (strncmp(argv[argIndex], "climb-opts:", 11) == 0)
