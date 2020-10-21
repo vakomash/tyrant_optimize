@@ -945,8 +945,8 @@ struct PlayCard
             if (__builtin_expect(fd->bg_effects[status->m_player][PassiveBGE::devotion], false) && !summoned && card->m_category == CardCategory::normal && fd->players[status->m_player]->commander.m_card->m_faction == card->m_faction)
             {
                 _DEBUG_MSG(1, "Devotion %s: Gains %u HP\n",
-                        status_description(status).c_str(), (card->m_health+4)/5);
-                status->ext_hp((card->m_health+4)/5); //20% bonus health (rounded up)
+                        status_description(status).c_str(), (2*card->m_health+4)/5);
+                status->ext_hp((2*card->m_health+4)/5); //40% bonus health (rounded up)
             }
 
 
