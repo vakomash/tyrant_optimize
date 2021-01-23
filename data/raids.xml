@@ -131,10 +131,11 @@
       </card_pool>
     </deck>
   </raid>
-  <raid>
+ <raid>
     <id>7</id>
     <name>Brood Mother</name>
     <commander>1652</commander>
+    <fortress_card id="19150"/>
     <levels>26</levels>
     <deck>
       <always_include>
@@ -155,17 +156,18 @@
       </card_pool>
     </deck>
   </raid>
-  <raid>
+ <raid>
     <id>8</id>
     <name>Lernaean Hydra</name>
     <commander>1698</commander>
+	<fortress_card id="8548"/>
     <levels>26</levels>
     <deck>
       <always_include>
-        <card>8548</card>
         <card>15480</card>
         <card>15480</card>
         <card>15490</card>
+	<card>15490</card>
         <card>15500</card>
         <card>15500</card>
         <card>15510</card>
