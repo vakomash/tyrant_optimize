@@ -52,6 +52,7 @@ namespace tuo {
 	EXTERN unsigned use_fused_commander_level;
 	EXTERN bool print_upgraded;
 	EXTERN bool print_values;
+	EXTERN int vc_x;
 	EXTERN bool simplify_output;
 	EXTERN bool show_ci;
 	EXTERN bool use_harmonic_mean;
@@ -72,6 +73,7 @@ namespace tuo {
 #endif
 	EXTERN std::unordered_set<unsigned> allowed_candidates;
 	EXTERN std::unordered_set<unsigned> disallowed_candidates;
+	EXTERN std::unordered_set<unsigned> disallowed_recipes;
 	EXTERN std::chrono::time_point<std::chrono::system_clock> start_time;
 	EXTERN long double maximum_time;
 	//anneal
@@ -145,10 +147,10 @@ std::vector<Results<uint64_t>> merge(std::vector<Results<uint64_t>> out, std::ve
 // some print functions
 void print_score_info(const EvaluatedResults& results, std::vector<long double>& factors);
 void print_results(const EvaluatedResults& results, std::vector<long double>& factors);
-void print_cards_inline(std::vector<const Card*> cards,std::ostream& =std::cout);
+void print_cards_inline(std::vector<const Card*> cards,std::ostream& =std::cout, Deck* =nullptr);
 void print_score_inline(const FinalResults<long double> score);
 void print_sim_card_values(Deck* original_deck, Process& p, unsigned iter); // run_deck == p.your_decks[0]
-void print_deck_inline(const unsigned deck_cost, const FinalResults<long double> score, Deck * deck);
+void print_deck_inline(const unsigned deck_cost, const FinalResults<long double> score, Deck * deck,bool print_locked=false);
 void print_upgraded_cards(Deck* deck);
 
 struct SimulationData

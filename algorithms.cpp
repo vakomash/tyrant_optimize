@@ -119,7 +119,7 @@ Deck* filter_best_deck(std::vector<Deck*> your_decks, Deck* d1,
 			best_score = cur_score;
 
 			std::cout << "Deck improved: " << d1->hash() <<":";
-			print_deck_inline(get_deck_cost(d1), best_score, d1);
+			print_deck_inline(get_deck_cost(d1), best_score,d1);
 		}
 	}
 	return cur_return;
@@ -151,7 +151,7 @@ DeckResults hill_climbing(unsigned num_min_iterations, unsigned num_iterations, 
 	std::vector<const Card*> best_cards = d1->cards;
 	unsigned deck_cost = get_deck_cost(d1);
 	fund = std::max(fund, deck_cost);
-	print_deck_inline(deck_cost, best_score, d1);
+	print_deck_inline(deck_cost, best_score, d1,true);
 	std::mt19937& re = proc.threads_data[0]->re;
 	unsigned best_gap = check_requirement(d1, requirement
 #ifndef NQUEST
@@ -303,10 +303,10 @@ DeckResults hill_climbing(unsigned num_min_iterations, unsigned num_iterations, 
 	for (auto evaluation: evaluated_decks)
 	{ simulations += evaluation.second.second; }
 	std::cout << "Evaluated " << evaluated_decks.size() << " decks (" << simulations << " + " << skipped_simulations << " simulations)." << std::endl;
-	std::cout << "Optimized Deck: ";
-	print_deck_inline(get_deck_cost(d1), best_score, d1);
-	print_upgraded_cards(d1);
 	print_sim_card_values(d1,proc,num_iterations);
+	std::cout << "Optimized Deck: ";
+	print_deck_inline(get_deck_cost(d1), best_score, d1,true);
+	print_upgraded_cards(d1);
 	return std::make_pair(d1->clone(),best_score);
 }
 
@@ -351,7 +351,7 @@ DeckResults simulated_annealing(unsigned num_min_iterations, unsigned num_iterat
 
 	unsigned deck_cost = get_deck_cost(cur_deck);
 	fund = std::max(fund, deck_cost);
-	print_deck_inline(deck_cost, best_score, cur_deck);
+	print_deck_inline(deck_cost, best_score, cur_deck,true);
 	std::mt19937& re = proc.threads_data[0]->re;
 	unsigned cur_gap = check_requirement(cur_deck, requirement
 #ifndef NQUEST
@@ -483,10 +483,10 @@ DeckResults simulated_annealing(unsigned num_min_iterations, unsigned num_iterat
 	for (auto evaluation: evaluated_decks)
 	{ simulations += evaluation.second.second; }
 	std::cout << "Evaluated " << evaluated_decks.size() << " decks (" << simulations << " + " << skipped_simulations << " simulations)." << std::endl;
-	std::cout << "Optimized Deck: ";
-	print_deck_inline(get_deck_cost(best_deck), best_score, best_deck);
-	print_upgraded_cards(best_deck);
 	print_sim_card_values(best_deck,proc,num_iterations);
+	std::cout << "Optimized Deck: ";
+	print_deck_inline(get_deck_cost(best_deck), best_score, best_deck,true);
+	print_upgraded_cards(best_deck);
 	return std::make_pair(best_deck->clone(),best_score);
 }
 
@@ -634,7 +634,7 @@ DeckResults genetic_algorithm(unsigned num_min_iterations, unsigned num_iteratio
 
 	unsigned deck_cost = get_deck_cost(cur_deck);
 	fund = std::max(fund, deck_cost);
-	print_deck_inline(deck_cost, best_score, cur_deck);
+	print_deck_inline(deck_cost, best_score, cur_deck,true);
 	std::mt19937& re = proc.threads_data[0]->re;
 	unsigned cur_gap = check_requirement(cur_deck, requirement
 #ifndef NQUEST
@@ -813,10 +813,10 @@ DeckResults genetic_algorithm(unsigned num_min_iterations, unsigned num_iteratio
 	for (auto evaluation: evaluated_decks)
 	{ simulations += evaluation.second.second; }
 	std::cout << "Evaluated " << evaluated_decks.size() << " decks (" << simulations << " + " << skipped_simulations << " simulations)." << std::endl;
-	std::cout << "Optimized Deck: ";
-	print_deck_inline(get_deck_cost(best_deck), best_score, best_deck);
-	print_upgraded_cards(best_deck);
 	print_sim_card_values(best_deck,proc,num_iterations);
+	std::cout << "Optimized Deck: ";
+	print_deck_inline(get_deck_cost(best_deck), best_score, best_deck,true);
+	print_upgraded_cards(best_deck);
 	return std::make_pair(best_deck->clone(),best_score);
 }
 
@@ -961,7 +961,7 @@ DeckResults beam_climb(unsigned num_min_iterations, unsigned num_iterations, std
 
 	unsigned deck_cost = get_deck_cost(cur_deck);
 	fund = std::max(fund, deck_cost);
-	print_deck_inline(deck_cost, best_score, cur_deck);
+	print_deck_inline(deck_cost, best_score, cur_deck,true);
 	std::mt19937& re = proc.threads_data[0]->re;
 	unsigned cur_gap = check_requirement(cur_deck, requirement
 #ifndef NQUEST
@@ -1167,9 +1167,9 @@ DeckResults beam_climb(unsigned num_min_iterations, unsigned num_iterations, std
 	for (auto evaluation: evaluated_decks)
 	{ simulations += evaluation.second.second; }
 	std::cout << "Evaluated " << evaluated_decks.size() << " decks (" << simulations << " + " << skipped_simulations << " simulations)." << std::endl;
-	std::cout << "Optimized Deck: ";
-	print_deck_inline(get_deck_cost(best_deck), best_score, best_deck);
-	print_upgraded_cards(best_deck);
 	print_sim_card_values(best_deck,proc,num_iterations);
+	std::cout << "Optimized Deck: ";
+	print_deck_inline(get_deck_cost(best_deck), best_score, best_deck,true);
+	print_upgraded_cards(best_deck);
 	return std::make_pair(best_deck->clone(),best_score);
 }

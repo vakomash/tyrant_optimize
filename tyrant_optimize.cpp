@@ -168,6 +168,7 @@ void init()
 	use_fused_commander_level=0;
 	print_upgraded=false;
 	print_values=false;
+	vc_x = 0;
 	simplify_output=false;
 	show_ci=false;
 	use_harmonic_mean=false;
@@ -191,6 +192,7 @@ void init()
 #endif
 	allowed_candidates.clear();
 	disallowed_candidates.clear();
+	disallowed_recipes.clear();
 
 	//std::chrono::time_point<std::chrono::system_clock> start_time;
 	maximum_time=0;
@@ -1112,15 +1114,19 @@ void print_upgraded_cards(Deck* deck)
 	std::cout << std::endl;
 }
 //------------------------------------------------------------------------------
-void print_cards_inline(std::vector<const Card*> cards,std::ostream& os)
+void print_cards_inline(std::vector<const Card*> cards,std::ostream& os, Deck* deck )
 {
 	std::string last_name="";
 	unsigned num_repeat(0);
 	bool first = true;
 
-	for (const Card* card: cards)
+	//for (const Card* card: cards)
+	//{
+	for (unsigned i =0; i < cards.size();++i)
 	{
-		if (card->m_name == last_name)
+		auto card = cards[i];
+	
+		if (deck==nullptr && card->m_name == last_name)
 		{
 			++ num_repeat;
 		}
@@ -1130,7 +1136,10 @@ void print_cards_inline(std::vector<const Card*> cards,std::ostream& os)
 			{
 				os << " #" << num_repeat;
 			}
-			os << (first?"":", ") << card->m_name;
+			if(deck!=nullptr)
+				os << (first?"":", ") << (deck->card_marks[i]=='!'?"!":"") << card->m_name;
+			else 
+				os << (first?"":", ") << card->m_name;
 			first = false;
 			last_name = card->m_name;
 			num_repeat = 1;
@@ -1202,8 +1211,13 @@ void print_score_inline(const FinalResults<long double> score) {
 // Calculates and prints individual card value in this deck
 void print_sim_card_values(Deck* original_deck, Process& p, unsigned iter) // run_deck == p.your_decks[0]
 {
-	if(!print_values)return;
+	if(!print_values && vc_x == 0)return;
 	if(p.your_decks.size() != 1)return; // only for single deck
+	//auto deck = original_deck;
+	if (original_deck->strategy == DeckStrategy::random || original_deck->strategy == DeckStrategy::flexible || original_deck->strategy == DeckStrategy::evaluate|| original_deck->strategy == DeckStrategy::evaluate_twice)
+	{
+		std::sort(original_deck->cards.begin(), original_deck->cards.end(), [](const Card* a, const Card* b) { return a->m_id < b->m_id; });
+	}
 	std::string last_name;
 	long  double score;
 	Deck* sim_deck = p.your_decks[0];
@@ -1217,15 +1231,16 @@ void print_sim_card_values(Deck* original_deck, Process& p, unsigned iter) // ru
 	results = p.evaluate(iter, results);
 	const FinalResults<long  double> fr_base= compute_score(results,p.factors);
 	long double base = fr_base.points;
-	std::cout << "Value of Cards: ";
+	std::multimap<long double,std::string> msn;
+	std::multimap<std::string,long double> mns;
 	for (unsigned i =0; i < cards.size();++i)
 	{
 		auto card = cards[i];
-		if (card->m_name == last_name)
-		{
-		}
-		else
-		{
+		//if (card->m_name == last_name)
+		//{
+		//}
+		//else
+		//{
 			last_name = card->m_name;
 			//sim it
 			sim_deck->cards = your_deck->cards; //reset cards
@@ -1234,13 +1249,44 @@ void print_sim_card_values(Deck* original_deck, Process& p, unsigned iter) // ru
 			results = p.evaluate(iter, results);
 			const FinalResults<long  double> fr= compute_score(results,p.factors);
 			score = base - fr.points; //subtract from result to get value
-			std::cout << card->m_name << " (" << score << "), ";
+			//std::cout << card->m_name << " (" << score << "), ";
+			msn.insert(std::make_pair(score, card->m_name));
+			mns.insert(std::make_pair(card->m_name,score));
+		//}
+	}
+	sim_deck->cards = your_deck->cards; //reset cards
+	if(vc_x > 0) 
+	{
+		//std::cout << "Locked Deck: ";
+		////std::cout << original_deck->cards.size() << " units: ";
+		////print_score_inline(fr_base);
+		////std::cout <<  ": ";
+		//std::cout << original_deck->commander->m_name;
+		// print dominions
+		//if (original_deck->alpha_dominion)
+		//{ std::cout << ", " << original_deck->alpha_dominion->m_name; }
+
+		for (unsigned i =0; i < cards.size();++i)
+		{
+			original_deck->card_marks.erase(i);
+			if(vc_x >= std::distance(msn.find(mns.find(cards[i]->m_name)->second), msn.end())) // or mns.start()
+			{
+				original_deck->card_marks[i] = '!';
+			}
 		}
 	}
-	std::cout << std::endl;
+	if(print_values) 
+	{
+		std::cout << "Value of Cards: ";
+		for (unsigned i =0; i < cards.size();++i)
+		{
+			std::cout << cards[i]->m_name << " (" << mns.find(cards[i]->m_name)->second << "), ";
+		}
+		std::cout << std::endl;
+	}
 }
 //------------------------------------------------------------------------------
-void print_deck_inline(const unsigned deck_cost, const FinalResults<long double> score, Deck * deck)
+void print_deck_inline(const unsigned deck_cost, const FinalResults<long double> score, Deck * deck, bool print_locked)
 {
 	// print units count
 	std::cout << deck->cards.size() << " units: ";
@@ -1312,16 +1358,19 @@ std::cout << " [" << opp_win_points << " per opp win]";
 	std::cout << ": " << deck->commander->m_name;
 
 	// print dominions
-if (deck->alpha_dominion)
-{ std::cout << ", " << deck->alpha_dominion->m_name; }
-
-// print deck cards
-if (deck->strategy == DeckStrategy::random || deck->strategy == DeckStrategy::flexible || deck->strategy == DeckStrategy::evaluate|| deck->strategy == DeckStrategy::evaluate_twice)
-{
-	std::sort(deck->cards.begin(), deck->cards.end(), [](const Card* a, const Card* b) { return a->m_id < b->m_id; });
-}
-std::cout << ", ";
-print_cards_inline(deck->cards);
+	if (deck->alpha_dominion)
+	{ std::cout << ", " << deck->alpha_dominion->m_name; }
+	
+	// print deck cards
+	if (deck->strategy == DeckStrategy::random || deck->strategy == DeckStrategy::flexible || deck->strategy == DeckStrategy::evaluate|| deck->strategy == DeckStrategy::evaluate_twice)
+	{
+		std::sort(deck->cards.begin(), deck->cards.end(), [](const Card* a, const Card* b) { return a->m_id < b->m_id; });
+	}
+	std::cout << ", ";
+	if(print_locked)
+		print_cards_inline(deck->cards,std::cout, deck);
+	else
+		print_cards_inline(deck->cards,std::cout);
 }
 //------------------------------------------------------------------------------
 bool is_timeout_reached()
@@ -1751,10 +1800,10 @@ DeckResults run(int argc, const char** argv)
 	std::vector<std::string> opt_effects[3];  // 0-you; 1-enemy; 2-global
 	std::array<signed short, PassiveBGE::num_passive_bges> opt_bg_effects[2];
 	std::vector<SkillSpec> opt_bg_skills[2];
-	std::unordered_set<unsigned> disallowed_recipes;
 
 	std::string your_deck_list{argv[1]};
 	std::string enemy_deck_list{argv[2]};
+
 
 	for (int argIndex = 3; argIndex < argc; ++argIndex)
 	{
@@ -2132,6 +2181,13 @@ DeckResults run(int argc, const char** argv)
 		else if (strcmp(argv[argIndex], "+vc") == 0)
 		{
 			print_values = true;
+		}
+		else if (strcmp(argv[argIndex], "+vc-x") == 0)
+		{
+			if(check_input_amount(argc,argv,argIndex,1))exit(1);
+			vc_x = atoi(argv[argIndex+1]);
+			//print_values = true;
+			argIndex += 1;
 		}
 		else if (strcmp(argv[argIndex], "+ci") == 0)
 		{
@@ -3074,7 +3130,7 @@ DeckResults run(int argc, const char** argv)
 					       results = p.evaluate(std::get<0>(op), results);
 					       print_results(results, p.factors);
 					       fr = std::make_pair(your_deck->clone(),compute_score(results,p.factors));
-					       print_sim_card_values(your_deck,p,std::get<0>(op));
+					       print_sim_card_values(fr.first,p,std::get<0>(op));
 					       break;
 				       }
 			case climb_forts: {
@@ -3280,9 +3336,9 @@ DeckResults start(int argc, const char** argv) {
 
 							//result to string
 							std::stringstream oss; 
-							if(drc.first->commander)oss << drc.first->commander->m_name << "," ;
-							if(drc.first->alpha_dominion) oss<< drc.first->alpha_dominion->m_name << ",";
-							print_cards_inline(drc.first->cards,oss);
+							if(drc.first->commander)oss << drc.first->commander->m_name << ", " ;
+							if(drc.first->alpha_dominion) oss<< drc.first->alpha_dominion->m_name << ", ";
+							print_cards_inline(drc.first->cards,oss,drc.first);
 							std::string decks(oss.str());
 							std::replace(decks.begin(),decks.end(),'\n',' ');
 							result_decks.push_back(decks);
