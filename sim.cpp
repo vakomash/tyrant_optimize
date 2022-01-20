@@ -2116,32 +2116,13 @@ inline bool skill_predicate<Skill::mimic>(Field* fd, CardStatus* src, CardStatus
     // skip dead units
     if (!is_alive(dst)) return false;
 
-    //include on activate/attacked/death
-    //for(const auto & a  : {dst->m_card->m_skills,dst->m_card->m_skills_on_play,dst->m_card->m_skills_on_death,dst->m_card->m_skills_on_attacked})
-    //
-    std::vector<std::vector<SkillSpec>> all;
-    all.emplace_back(dst->m_card->m_skills);
-    all.emplace_back(dst->m_card->m_skills_on_attacked);
+    auto& mimickable_skills = (src->m_card->m_type != CardType::assault) ?
+        dst->m_card->m_mimickable_skills :
+        dst->m_card->m_mimickable_skills_asOnlly;
 
-    for(std::vector<SkillSpec> & a  : all)
+    if (mimickable_skills.size())
     {
-    // scan all enemy skills until first activation
-    for (const SkillSpec & ss: a)
-    {
-        // get skill
-        Skill::Skill skill_id = static_cast<Skill::Skill>(ss.id);
-
-        // skip non-activation skills and Mimic (Mimic can't be mimicked)
-        if (!is_activation_skill(skill_id) || (skill_id == Skill::mimic))
-        { continue; }
-
-        // skip mend for non-assault mimickers
-        if ((skill_id == Skill::mend || skill_id == Skill::fortify) && (src->m_card->m_type != CardType::assault))
-        { continue; }
-
-        // enemy has at least one activation skill that can be mimicked, so enemy is eligible target for Mimic
         return true;
-    }
     }
 
     // found nothing (enemy has no skills to be mimicked, so enemy isn't eligible target for Mimic)
@@ -2395,34 +2376,11 @@ inline void perform_skill<Skill::sunder>(Field* fd, CardStatus* src, CardStatus*
     template<>
 inline void perform_skill<Skill::mimic>(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s)
 {
-    // collect all mimickable enemy skills
-    std::vector<const SkillSpec *> mimickable_skills;
-    mimickable_skills.reserve(dst->m_card->m_skills.size()+dst->m_card->m_skills_on_play.size()+dst->m_card->m_skills_on_death.size()+dst->m_card->m_skills_on_attacked.size());
+    auto& mimickable_skills = (src->m_card->m_type != CardType::assault) ?
+        dst->m_card->m_mimickable_skills :
+        dst->m_card->m_mimickable_skills_asOnlly;
+    
     _DEBUG_MSG(2, " * Mimickable skills of %s\n", status_description(dst).c_str());
-    //include on activate/attacked
-    std::vector<std::vector<SkillSpec>> all;
-    all.emplace_back(dst->m_card->m_skills);
-    all.emplace_back(dst->m_card->m_skills_on_attacked);
-    for(std::vector<SkillSpec> & a : all)
-    {
-    for (const SkillSpec & ss: a)
-    {
-        // get skill
-        Skill::Skill skill_id = static_cast<Skill::Skill>(ss.id);
-
-        // skip non-activation skills and Mimic (Mimic can't be mimicked)
-        if (!is_activation_skill(skill_id) || (skill_id == Skill::mimic))
-        { continue; }
-
-        // skip mend for non-assault mimickers
-        if ((skill_id == Skill::mend || skill_id == Skill::fortify) && (src->m_card->m_type != CardType::assault))
-        { continue; }
-
-        mimickable_skills.emplace_back(&ss);
-        _DEBUG_MSG(2, "  + %s\n", skill_description(fd->cards, ss).c_str());
-    }
-    }
-
     // select skill
     unsigned mim_idx = 0;
     switch (mimickable_skills.size())

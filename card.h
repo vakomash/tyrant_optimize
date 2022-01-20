@@ -26,6 +26,8 @@ public:
     //APN
     std::vector<SkillSpec> m_skills_on_attacked;
     std::vector<SkillSpec> m_skills_on_death;
+    std::vector<const SkillSpec*> m_mimickable_skills;
+    std::vector<const SkillSpec*> m_mimickable_skills_asOnlly;
     unsigned m_skill_value[Skill::num_skills];
     Skill::Trigger m_skill_trigger[Skill::num_skills];
     CardType::CardType m_type;

@@ -116,6 +116,44 @@ void Cards::organize()
 
 }
 //------------------------------------------------------------------------------
+void Cards::calculate_mimicable()
+{
+    for (Card* card : all_cards)
+    {
+        // collect all mimickable enemy skills
+        auto& mimickable_skills = card->m_mimickable_skills;
+        auto& mimickable_skills_asOnlly = card->m_mimickable_skills_asOnlly;
+        
+        //include on activate/attacked
+        std::vector<std::vector<SkillSpec>*> all;
+        all.emplace_back(&card->m_skills);
+        all.emplace_back(&card->m_skills_on_attacked);
+        for (std::vector<SkillSpec>* a : all)
+        {
+            for (const SkillSpec& ss : *a)
+            {
+                // get skill
+                Skill::Skill skill_id = static_cast<Skill::Skill>(ss.id);
+
+                // skip non-activation skills and Mimic (Mimic can't be mimicked)
+                if (!is_activation_skill(skill_id) || (skill_id == Skill::mimic))
+                {
+                    continue;
+                }
+
+                mimickable_skills_asOnlly.push_back(&ss);
+                // skip mend for non-assault mimickers
+                if ((skill_id == Skill::mend || skill_id == Skill::fortify))
+                {
+                    continue;
+                }
+                mimickable_skills.push_back(&ss);
+                
+            }
+        }
+    }
+}
+//------------------------------------------------------------------------------
 void Cards::fix_dominion_recipes()
 {
     for (Card* card: all_cards)

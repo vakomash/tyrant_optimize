@@ -29,6 +29,7 @@
 #include <tuple>
 #include <vector>
 #include <math.h>
+#include <fstream>
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
@@ -2534,6 +2535,7 @@ DeckResults run(int argc, const char** argv)
 			++ section);
 	all_cards.organize();
 	load_levels_xml(all_cards, prefix+"data/levels.xml", true);
+	all_cards.calculate_mimicable();
 	all_cards.fix_dominion_recipes();
 	for (const auto & suffix: fn_suffix_list)
 	{

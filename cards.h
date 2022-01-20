@@ -25,6 +25,7 @@ public:
     std::unordered_set<std::string> ambiguous_names;
     const Card* by_id(unsigned id) const;
     void organize();
+    void calculate_mimicable();
     void fix_dominion_recipes();
     void add_card(Card* card, const std::string & name);
     void erase_fusion_recipe(unsigned card_id);
