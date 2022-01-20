@@ -24,6 +24,7 @@
 #include <unordered_map>
 #include <set>
 #include <stack>
+#include <fstream>
 #include <string>
 #include <iomanip>
 #include <tuple>
