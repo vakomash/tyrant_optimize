@@ -1,4 +1,6 @@
-# tyrant_optimize 
+# tyrant_optimize
+[![CircleCI](https://circleci.com/gh/vakomash/tyrant_optimize/tree/merged.svg?style=shield)](https://circleci.com/gh/vakomash/tyrant_optimize/tree/merged)
+
 ## Pre-built Binaries for Windows and Linux
 
 Releases [here](https://github.com/vakomash/tyrant_optimize/releases)
