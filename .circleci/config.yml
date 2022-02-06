@@ -1,20 +1,7 @@
-# Use the latest 2.1 version of CircleCI pipeline process engine.
-# See: https://circleci.com/docs/2.0/configuration-reference
 version: 2.1
 
-
-commands:
-    save_artifacts:
-        steps:
-            - run: |
-                mkdir -p /tmp/bins
-                cp *.exe /tmp/bins || :
-                cp tuo-test /tmp/bins || :
-                cp tuo-debug /tmp/bins || :
-                cp tuo /tmp/bins || :
-                echo "done"
-            - store_artifacts:
-                path: /tmp/bins
+orbs:
+  win: circleci/windows@2.2.0
 
 jobs:
     build-linux:
@@ -49,21 +36,18 @@ jobs:
                 dbg=<< parameters.dbg >>
                 bit=<< parameters.bit >>
 
-                BUILD_TAG=v4.4.2
-
+                BUILD_TAG=`git describe --tags --abbrev=1 --dirty | sed -e 's/-/./g'`
                 MXE_DIR=/usr/lib/mxe
 
                 DFLAGS=""
                 BDIR="build-dir${bit}${omp}${dbg}"
                 export NAME="tuo${bit}${omp}${dbg}.exe"
 
-                if [ "$bit" = "" ]; then
-                #Windows x64 Build
-                MXE_TARGET=x86_64-w64-mingw32.static
-                fi
                 if [ "$bit" = "-x86" ]; then
-                #Windows x86 Build
-                MXE_TARGET=i686-w64-mingw32.static
+                    #Windows x86 Build
+                    MXE_TARGET=i686-w64-mingw32.static
+                else
+                    MXE_TARGET=x86_64-w64-mingw32.static
                 fi
 
                 #No windows timer on default
@@ -90,20 +74,44 @@ jobs:
             - persist_to_workspace:
                 root: workspace
                 paths: "*.exe"
-    
+
+    build-ahk:
+        executor:
+            name: win/default
+            shell: powershell.exe
+        steps:
+            - checkout
+            - run:
+                command: |
+                    $ProgressPreference = "SilentlyContinue"
+                    Invoke-WebRequest -Uri "https://www.autohotkey.com/download/ahk.zip" -OutFile "ahk.zip"
+                    Expand-Archive .\\ahk.zip .
+                    mkdir workspace
+                    .\\Compiler\\Ahk2Exe.exe /in SimpleTUOLiveSim.ahk /out workspace\\SimpleTUOLiveSim.exe /bin "Compiler\\Unicode 64-bit.bin"
+                    .\\Compiler\\Ahk2Exe.exe /in SimpleTUOLiveSim.ahk /out workspace\\SimpleTUOLiveSim-x86.exe /bin "Compiler\\Unicode 32-bit.bin"
+                    .\\Compiler\\Ahk2Exe.exe /in SimpleTUOptimizeStarter.ahk /out workspace\\SimpleTUOptimizeStarter.exe /bin "Compiler\\Unicode 64-bit.bin"
+                    .\\Compiler\\Ahk2Exe.exe /in SimpleTUOptimizeStarter.ahk /out workspace\\SimpleTUOptimizeStarter-x86.exe /bin "Compiler\\Unicode 32-bit.bin"
+            - persist_to_workspace:
+                root: workspace
+                paths: "*.exe"
+            
+  
     save_art:
         docker:
             - image: cimg/base:2021.04
         steps:
             - attach_workspace:
                 at: .
-            - run: ls
+            - run: |
+                ls
+                zip -r release.zip *
             - store_artifacts:
-                path: .
+                path: ./release.zip
 
 workflows:
     build-workflow:
         jobs:
+            - build-ahk
             - build-linux:
                 matrix:
                     parameters:
@@ -116,5 +124,7 @@ workflows:
                         bit: ["", "-x86"]
             - save_art:
                 requires:
+                    - build-ahk
                     - build-linux
                     - build-win
+
