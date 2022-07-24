@@ -38,7 +38,7 @@ and games modes:
 
 For more details check out the [Wiki](https://github.com/APN-Pucky/tyrant_optimize/wiki/Flags)
 
-A list of available flags is [here](https://github.com/APN-Pucky/tyrant_optimize/wiki/Flags) or use tuo `--help`.
+A list of available flags is [here](https://github.com/APN-Pucky/tyrant_optimize/wiki/Flags) or use `tuo --help`.
 
 ## Downloads
 
