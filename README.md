@@ -1,7 +1,7 @@
 # tyrant_optimize 
 [![Build Status](https://travis-ci.org/APN-Pucky/tyrant_optimize.svg?branch=merged)](https://travis-ci.org/APN-Pucky/tyrant_optimize) [![Coverage Status](https://coveralls.io/repos/github/APN-Pucky/tyrant_optimize/badge.svg?branch=merged)](https://coveralls.io/github/APN-Pucky/tyrant_optimize?branch=merged) ![downloads](https://img.shields.io/github/downloads/APN-Pucky/tyrant_optimize/total)
 
-Simulator for the card game [tyrant_unleashed](https://www.kongregate.com/games/synapticon/tyrant-unleashed-web) (See also [Tyrant Wiki](https://tyrantunleashed.fandom.com/wiki/Tyrant_Unleashed_Wiki))
+Simulator for the card game [tyrant_unleashed](https://www.kongregate.com/games/synapticon/tyrant-unleashed-web) (See also [Tyrant Wiki](https://tyrantunleashed.fandom.com/wiki/Tyrant_Unleashed_Wiki)).
 
 tuo provides several algorithms to find an optimized deck:
 
