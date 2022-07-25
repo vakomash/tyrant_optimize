@@ -240,7 +240,7 @@ void init()
 extern "C" JNIEXPORT void
 
 JNICALL
-Java_de_neuwirthinformatik_Alexander_mTUO_TUO_callMain(
+Java_de_neuwirthinformatik_alexander_mTUO_TUO_callMain(
 		JNIEnv *env,
 		jobject obj/* this */,jobjectArray stringArray) {
 	envv = env;
@@ -268,7 +268,7 @@ Java_de_neuwirthinformatik_Alexander_mTUO_TUO_callMain(
 							"%s",
 							sss);
 					jstring jstr = envv->NewStringUTF(sss);
-					jclass clazz = envv->FindClass("de/neuwirthinformatik/Alexander/mTUO/TUO");
+					jclass clazz = envv->FindClass("de/neuwirthinformatik/alexander/mTUO/TUO");
 					jmethodID messageMe = envv->GetMethodID(clazz, "output", "(Ljava/lang/String;)V");
 					envv->CallVoidMethod(objv, messageMe, jstr);
 					rc = 0;
@@ -306,7 +306,7 @@ Java_de_neuwirthinformatik_Alexander_mTUO_TUO_callMain(
 extern "C" JNIEXPORT jstring
 
 	JNICALL
-Java_de_neuwirthinformatik_Alexander_mTUO_TUO_stringFromJNI( JNIEnv* env,
+Java_de_neuwirthinformatik_alexander_mTUO_TUO_stringFromJNI( JNIEnv* env,
 		jobject thiz,jstring s )
 {
 	std::string str = env->GetStringUTFChars(s,NULL);
