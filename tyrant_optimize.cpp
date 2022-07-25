@@ -268,7 +268,7 @@ Java_de_neuwirthinformatik_alexander_mTUO_TUO_callMain(
 							"%s",
 							sss);
 					jstring jstr = envv->NewStringUTF(sss);
-					jclass clazz = envv->FindClass("de/neuwirthinformatik/alexander/mTUO/TUO");
+					jclass clazz = envv->FindClass("de/neuwirthinformatik/alexander/mtuo/TUO");
 					jmethodID messageMe = envv->GetMethodID(clazz, "output", "(Ljava/lang/String;)V");
 					envv->CallVoidMethod(objv, messageMe, jstr);
 					rc = 0;
