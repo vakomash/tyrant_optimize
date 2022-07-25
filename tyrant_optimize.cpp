@@ -240,7 +240,7 @@ void init()
 extern "C" JNIEXPORT void
 
 JNICALL
-Java_de_neuwirthinformatik_Alexander_mTUO_TUOIntentService_callMain(
+Java_de_neuwirthinformatik_Alexander_mTUO_TUO_callMain(
 		JNIEnv *env,
 		jobject obj/* this */,jobjectArray stringArray) {
 	envv = env;
@@ -268,7 +268,7 @@ Java_de_neuwirthinformatik_Alexander_mTUO_TUOIntentService_callMain(
 							"%s",
 							sss);
 					jstring jstr = envv->NewStringUTF(sss);
-					jclass clazz = envv->FindClass("de/neuwirthinformatik/Alexander/mTUO/TUOIntentService");
+					jclass clazz = envv->FindClass("de/neuwirthinformatik/Alexander/mTUO/TUO");
 					jmethodID messageMe = envv->GetMethodID(clazz, "output", "(Ljava/lang/String;)V");
 					envv->CallVoidMethod(objv, messageMe, jstr);
 					rc = 0;
@@ -291,7 +291,7 @@ Java_de_neuwirthinformatik_Alexander_mTUO_TUOIntentService_callMain(
 		param[i] = const_cast<char*>(cparam[i]);
 	}
 
-	main(stringCount,param);
+	main(stringCount,cparam);
 	std::cout << std::flush;
 	__android_log_write(ANDROID_LOG_DEBUG, "TUO_TUO", "END");
 
@@ -306,7 +306,7 @@ Java_de_neuwirthinformatik_Alexander_mTUO_TUOIntentService_callMain(
 extern "C" JNIEXPORT jstring
 
 	JNICALL
-Java_de_neuwirthinformatik_Alexander_mTUO_TUOIntentService_stringFromJNI( JNIEnv* env,
+Java_de_neuwirthinformatik_Alexander_mTUO_TUO_stringFromJNI( JNIEnv* env,
 		jobject thiz,jstring s )
 {
 	std::string str = env->GetStringUTFChars(s,NULL);
@@ -3366,7 +3366,7 @@ DeckResults start(int argc, const char** argv) {
 }
 
 
-#ifndef TEST
+#if !defined(TEST)
 int main(int argc,const char** argv)
 {
 #ifndef NTIMER

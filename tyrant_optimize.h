@@ -132,7 +132,7 @@ void thread_evaluate(boost::barrier& main_barrier,
 		SimulationData& sim,
 		const Process& p,
 		unsigned thread_id);
-#ifndef TEST
+#if !defined(TEST)
 int main(int argc, const char** argv);
 #endif
 DeckResults run(int argc, const char** argv);
