@@ -240,7 +240,7 @@ void init()
 extern "C" JNIEXPORT void
 
 JNICALL
-Java_de_neuwirthinformatik_alexander_mTUO_TUO_callMain(
+Java_de_neuwirthinformatik_alexander_mtuo_TUO_callMain(
 		JNIEnv *env,
 		jobject obj/* this */,jobjectArray stringArray) {
 	envv = env;
@@ -306,7 +306,7 @@ Java_de_neuwirthinformatik_alexander_mTUO_TUO_callMain(
 extern "C" JNIEXPORT jstring
 
 	JNICALL
-Java_de_neuwirthinformatik_alexander_mTUO_TUO_stringFromJNI( JNIEnv* env,
+Java_de_neuwirthinformatik_alexander_mtuo_TUO_stringFromJNI( JNIEnv* env,
 		jobject thiz,jstring s )
 {
 	std::string str = env->GetStringUTFChars(s,NULL);
