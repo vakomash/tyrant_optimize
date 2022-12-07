@@ -22,7 +22,7 @@ jobs:
       run: |
        lcov -b . -d . -o coverage.output --capture
        lcov --remove coverage.output '/usr/include/*' './include/*' -o coverage.output
-       lcov --remove coverage.output *.hpp' -o coverage.output
+       lcov --remove coverage.output '*.hpp' -o coverage.output
     - name: Coveralls
       uses: coverallsapp/github-action@master
       with:
