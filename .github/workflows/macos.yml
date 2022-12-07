@@ -220,31 +220,7 @@ jobs:
         path: ./${{ matrix.config.artifact }}
         name: ${{ matrix.config.artifact }}
 
-  release:
-    if: contains(github.ref, 'tags/v')
-    runs-on: ubuntu-latest
-    needs: build
 
-    steps:
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ github.ref }}
-        release_name: Release ${{ github.ref }}
-        draft: false
-        prerelease: false
-
-    - name: Store Release url
-      run: |
-        echo "${{ steps.create_release.outputs.upload_url }}" > ./upload_url
-
-    - uses: actions/upload-artifact@v3
-      with:
-        path: ./upload_url
-        name: upload_url
 
   publish:
     if: contains(github.ref, 'tags/v')
