@@ -152,6 +152,9 @@ jobs:
             -D CMAKE_C_COMPILER_LAUNCHER=ccache
             -D CMAKE_CXX_COMPILER_LAUNCHER=ccache
             -D STATIC=ON
+            ${{ matrix.debug }}
+            ${{ matrix.time }}
+            ${{ matrix.openmp }}
           RESULT_VARIABLE result
         )
         if (NOT result EQUAL 0)
@@ -284,19 +287,7 @@ jobs:
       matrix:
         config:
         - {
-            name: "Windows Latest MSVC", artifact: "Windows-MSVC.zip",
-            os: ubuntu-latest
-          }
-        - {
-            name: "Windows Latest MinGW", artifact: "Windows-MinGW.zip",
-            os: ubuntu-latest
-          }
-        - {
             name: "Ubuntu Latest GCC", artifact: "Linux.zip",
-            os: ubuntu-latest
-          }
-        - {
-            name: "macOS Latest Clang", artifact: "macOS.zip",
             os: ubuntu-latest
           }
     needs: release
@@ -327,6 +318,6 @@ jobs:
         upload_url: ${{ steps.set_upload_url.outputs.upload_url }}
         asset_path: ./${{ matrix.config.artifact }}
         asset_name: ${{ matrix.config.artifact }}
-        asset_content_type: application/x-gtar
+        asset_content_type: application/zip
 
 

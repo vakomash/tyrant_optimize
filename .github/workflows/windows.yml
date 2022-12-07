@@ -285,18 +285,6 @@ jobs:
             name: "Windows Latest MSVC", artifact: "Windows-MSVC.zip",
             os: ubuntu-latest
           }
-        - {
-            name: "Windows Latest MinGW", artifact: "Windows-MinGW.zip",
-            os: ubuntu-latest
-          }
-        - {
-            name: "Ubuntu Latest GCC", artifact: "Linux.zip",
-            os: ubuntu-latest
-          }
-        - {
-            name: "macOS Latest Clang", artifact: "macOS.zip",
-            os: ubuntu-latest
-          }
     needs: release
 
     steps:
