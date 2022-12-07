@@ -1,0 +1,20 @@
+name: test
+
+on: [push, pull_request]
+
+jobs:
+ release:
+    runs-on: ubuntu-20.04
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: install
+      run: |
+        sudo apt-get update
+        sudo apt-get --yes install g++ make cmake libboost-all-dev 
+    - name: build
+      run: make debug && make test
+    - name: xml fetch
+      run: ./update_xml.sh
+    - name: test
+      run: ./tuo-test
