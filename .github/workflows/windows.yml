@@ -285,7 +285,7 @@ jobs:
             name: "Windows Latest MSVC", artifact: "Windows-MSVC.zip",
             os: ubuntu-latest
           }
-    needs: release
+    needs: build
 
     steps:
     - name: Download artifact
@@ -294,15 +294,12 @@ jobs:
         name: ${{ matrix.config.artifact }}
         path: ./
 
-    - name: Download URL
-      uses: actions/download-artifact@v3
-      with:
-        name: upload_url
-        path: ./
-    - id: set_upload_url
-      run: |
-        upload_url=`cat ./upload_url`
-        echo upload_url=$upload_url >> $GITHUB_OUTPUT
+    - name: Get release
+      id: get_release
+      uses: bruceadams/get-release@v1.3.2
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+    
 
     - name: Upload to Release
       id: upload_to_release
@@ -310,7 +307,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        upload_url: ${{ steps.set_upload_url.outputs.upload_url }}
+        upload_url: ${{ steps.get_release.outputs.upload_url }}
         asset_path: ./${{ matrix.config.artifact }}
         asset_name: ${{ matrix.config.artifact }}
         asset_content_type: application/x-gtar
