@@ -3315,7 +3315,7 @@ Results<uint64_t> evaluate_sim_result(Field* fd, bool single_turn_both)
     {
 	bool sign = evaluate_field(fd)<0;
 	unsigned val = evaluate_field(fd) *(1-2*sign);
-	return {!is_alive(&fd->players[1]->commander),sign,!is_alive(&fd->players[0]->commander),val};
+	return {!is_alive(&fd->players[1]->commander),sign,!is_alive(&fd->players[0]->commander),val,1};
     }
     switch (fd->optimization_mode)
     {
@@ -3348,29 +3348,29 @@ Results<uint64_t> evaluate_sim_result(Field* fd, bool single_turn_both)
         _DEBUG_MSG(1, "You lose.\n");
         switch (fd->optimization_mode)
         {
-            case OptimizationMode::raid: return {0, 0, 1, (points_score_type)raid_damage};
-            case OptimizationMode::brawl: return {0, 0, 1, (points_score_type) 5};
+            case OptimizationMode::raid: return {0, 0, 1, (points_score_type)raid_damage,1};
+            case OptimizationMode::brawl: return {0, 0, 1, (points_score_type) 5,1};
             case OptimizationMode::brawl_defense:
                                           {
                                               unsigned enemy_brawl_score = evaluate_brawl_score(fd, 1);
                                               unsigned max_score = max_possible_score[(size_t)OptimizationMode::brawl_defense];
                                               if(enemy_brawl_score> max_score)
                                                 std::cerr << "WARNING: enemy_brawl_score > max_possible_brawl_score" << std::endl;
-                                              return {0, 0, 1, (points_score_type)safe_minus(max_score , enemy_brawl_score)};
+                                              return {0, 0, 1, (points_score_type)safe_minus(max_score , enemy_brawl_score),1};
                                           }
-            case OptimizationMode::war: return {0,0,1, (points_score_type) 20};
+            case OptimizationMode::war: return {0,0,1, (points_score_type) 20,1};
             case OptimizationMode::war_defense:
                                         {
                                             unsigned enemy_war_score = evaluate_war_score(fd, 1);
                                             unsigned max_score = max_possible_score[(size_t)OptimizationMode::war_defense];
                                             if(enemy_war_score> max_score)
                                                 std::cerr << "WARNING: enemy_war_score > max_possible_war_score" << std::endl;
-                                            return {0, 0, 1, (points_score_type)safe_minus(max_score , enemy_war_score)};
+                                            return {0, 0, 1, (points_score_type)safe_minus(max_score , enemy_war_score),1};
                                         }
 #ifndef NQUEST
-            case OptimizationMode::quest: return {0, 0, 1, (points_score_type)(fd->quest.must_win ? 0 : quest_score)};
+            case OptimizationMode::quest: return {0, 0, 1, (points_score_type)(fd->quest.must_win ? 0 : quest_score),1};
 #endif
-            default: return {0, 0, 1, 0};
+            default: return {0, 0, 1, 0,1};
         }
     }
     // you win
@@ -3382,36 +3382,36 @@ Results<uint64_t> evaluate_sim_result(Field* fd, bool single_turn_both)
             case OptimizationMode::brawl:
                 {
                     unsigned brawl_score = evaluate_brawl_score(fd, 0);
-                    return {1, 0, 0, (points_score_type)brawl_score};
+                    return {1, 0, 0, (points_score_type)brawl_score,1};
                 }
             case OptimizationMode::brawl_defense:
                 {
                     unsigned max_score = max_possible_score[(size_t)OptimizationMode::brawl_defense];
                     unsigned min_score = min_possible_score[(size_t)OptimizationMode::brawl_defense];
-                    return {1, 0, 0, (points_score_type)(max_score - min_score)};
+                    return {1, 0, 0, (points_score_type)(max_score - min_score),1};
                 }
             case OptimizationMode::campaign:
                 {
                     unsigned total_dominions_destroyed = (p[0]->deck->alpha_dominion != nullptr) - p[0]->structures.count(is_it_dominion);
                     unsigned campaign_score = 100 - 10 * (p[0]->total_nonsummon_cards_destroyed - total_dominions_destroyed);
-                    return {1, 0, 0, (points_score_type)campaign_score};
+                    return {1, 0, 0, (points_score_type)campaign_score,1};
                 }
             case OptimizationMode::war:
                 {
                     unsigned war_score = evaluate_war_score(fd, 0);
-                    return {1,0,0, (points_score_type) war_score};
+                    return {1,0,0, (points_score_type) war_score,1};
                 }
             case OptimizationMode::war_defense:
                 {
                     unsigned max_score = max_possible_score[(size_t)OptimizationMode::war_defense];
                     unsigned min_score = min_possible_score[(size_t)OptimizationMode::war_defense];
-                    return {1, 0, 0, (points_score_type)(max_score - min_score)};
+                    return {1, 0, 0, (points_score_type)(max_score - min_score),1};
                 }
 #ifndef NQUEST
-            case OptimizationMode::quest: return {1, 0, 0, (points_score_type)(fd->quest.win_score + quest_score)};
+            case OptimizationMode::quest: return {1, 0, 0, (points_score_type)(fd->quest.win_score + quest_score),1};
 #endif
             default:
-                                          return {1, 0, 0, 100};
+                                          return {1, 0, 0, 100,1};
         }
     }
     if (fd->turn > turn_limit)
@@ -3419,32 +3419,32 @@ Results<uint64_t> evaluate_sim_result(Field* fd, bool single_turn_both)
         _DEBUG_MSG(1, "Stall after %u turns.\n", turn_limit);
         switch (fd->optimization_mode)
         {
-            case OptimizationMode::defense: return {0, 1, 0, 100};
-            case OptimizationMode::raid: return {0, 1, 0, (points_score_type)raid_damage};
-            case OptimizationMode::brawl: return {0, 1, 0, 5};
+            case OptimizationMode::defense: return {0, 1, 0, 100,1};
+            case OptimizationMode::raid: return {0, 1, 0, (points_score_type)raid_damage,1};
+            case OptimizationMode::brawl: return {0, 1, 0, 5,1};
             case OptimizationMode::brawl_defense:
                                           {
                                               unsigned max_score = max_possible_score[(size_t)OptimizationMode::brawl_defense];
                                               unsigned min_score = min_possible_score[(size_t)OptimizationMode::brawl_defense];
-                                              return {1, 0, 0, (points_score_type)(max_score - min_score)};
+                                              return {1, 0, 0, (points_score_type)(max_score - min_score),1};
                                           }
-            case OptimizationMode::war: return {0,1,0, (points_score_type) 20};
+            case OptimizationMode::war: return {0,1,0, (points_score_type) 20,1};
             case OptimizationMode::war_defense:
                                         {
                                             unsigned max_score = max_possible_score[(size_t)OptimizationMode::war_defense];
                                             unsigned min_score = min_possible_score[(size_t)OptimizationMode::war_defense];
-                                            return {1, 0, 0, (points_score_type)(max_score - min_score)};
+                                            return {1, 0, 0, (points_score_type)(max_score - min_score),1};
                                         }
 #ifndef NQUEST
-            case OptimizationMode::quest: return {0, 1, 0, (points_score_type)(fd->quest.must_win ? 0 : quest_score)};
+            case OptimizationMode::quest: return {0, 1, 0, (points_score_type)(fd->quest.must_win ? 0 : quest_score),1};
 #endif
-            default: return {0, 1, 0, 0};
+            default: return {0, 1, 0, 0,1};
         }
     }
 
     // Huh? How did we get here?
     assert(false);
-    return {0, 0, 0, 0};
+    return {0, 0, 0, 0,1};
 }
 
 //------------------------------------------------------------------------------
