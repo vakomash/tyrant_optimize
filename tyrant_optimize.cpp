@@ -1212,7 +1212,7 @@ void print_results(const EvaluatedResults& results, std::vector<long double>& fa
 	{
 		// points = win% * win_score + (must_win ? win% : 100%) * quest% * quest_score
 		// quest% = (points - win% * win_score) / (must_win ? win% : 100%) / quest_score
-		std::cout << "quest%: " << (final.points - final.wins * quest.win_score) / (quest.must_win ? final.wins : 1) / quest.quest_score * 100 << std::endl;
+		std::cout << "quest%: " << (final.points - final.wins * tuo::quest.win_score) / (tuo::quest.must_win ? final.wins : 1) / tuo::quest.quest_score * 100 << std::endl;
 	}
 #endif
 
@@ -1353,7 +1353,7 @@ void print_score_inline(const FinalResults<long double> score) {
 #ifndef NQUEST
 			if (optimization_mode == OptimizationMode::quest)
 			{
-				std::cout << ", " << (score.points - score.wins * quest.win_score) / (quest.must_win ? score.wins : 1) / quest.quest_score * 100 << "% quest";
+				std::cout << ", " << (score.points - score.wins * tuo::quest.win_score) / (tuo::quest.must_win ? score.wins : 1) / tuo::quest.quest_score * 100 << "% quest";
 			}
 #endif
 			if (show_ci)
@@ -2870,7 +2870,7 @@ DeckResults run(int argc, const char** argv)
 				throw std::runtime_error("Expect one of: su n skill; sd n skill; cu n faction/strcture; ck n structure");
 			}
 			auto type_str = boost::to_lower_copy(tokens[0]);
-			quest.quest_value = boost::lexical_cast<unsigned>(tokens[1]);
+			tuo::quest.quest_value = boost::lexical_cast<unsigned>(tokens[1]);
 			auto key_str = boost::to_lower_copy(tokens[2]);
 			unsigned quest_index = 3;
 			if (type_str == "su" || type_str == "sd")
@@ -2881,20 +2881,20 @@ DeckResults run(int argc, const char** argv)
 					std::cerr << "Error: Expect skill in quest \"" << opt_quest << "\".\n";
 					exit(1);
 				}
-				quest.quest_type = type_str == "su" ? QuestType::skill_use : QuestType::skill_damage;
-				quest.quest_key = skill_id;
+				tuo::quest.quest_type = type_str == "su" ? QuestType::skill_use : QuestType::skill_damage;
+				tuo::quest.quest_key = skill_id;
 			}
 			else if (type_str == "cu" || type_str == "ck")
 			{
 				if (key_str == "assault")
 				{
-					quest.quest_type = type_str == "cu" ? QuestType::type_card_use : QuestType::type_card_kill;
-					quest.quest_key = CardType::assault;
+					tuo::quest.quest_type = type_str == "cu" ? QuestType::type_card_use : QuestType::type_card_kill;
+					tuo::quest.quest_key = CardType::assault;
 				}
 				else if (key_str == "structure")
 				{
-					quest.quest_type = type_str == "cu" ? QuestType::type_card_use : QuestType::type_card_kill;
-					quest.quest_key = CardType::structure;
+					tuo::quest.quest_type = type_str == "cu" ? QuestType::type_card_use : QuestType::type_card_kill;
+					tuo::quest.quest_key = CardType::structure;
 				}
 				else
 				{
@@ -2902,12 +2902,12 @@ DeckResults run(int argc, const char** argv)
 					{
 						if (key_str == boost::to_lower_copy(faction_names[i]))
 						{
-							quest.quest_type = type_str == "cu" ? QuestType::faction_assault_card_use : QuestType::faction_assault_card_kill;
-							quest.quest_key = i;
+							tuo::quest.quest_type = type_str == "cu" ? QuestType::faction_assault_card_use : QuestType::faction_assault_card_kill;
+							tuo::quest.quest_key = i;
 							break;
 						}
 					}
-					if (quest.quest_key == 0)
+					if (tuo::quest.quest_key == 0)
 					{
 						std::cerr << "Error: Expect assault, structure or faction in quest \"" << opt_quest << "\".\n";
 						exit(1);
@@ -2923,8 +2923,8 @@ DeckResults run(int argc, const char** argv)
 				try
 				{
 					parse_card_spec(all_cards, key_str, card_id, card_num, num_sign, mark);
-					quest.quest_type = QuestType::card_survival;
-					quest.quest_key = card_id;
+					tuo::quest.quest_type = QuestType::card_survival;
+					tuo::quest.quest_key = card_id;
 				}
 				catch (const std::runtime_error& e)
 				{
@@ -2948,9 +2948,9 @@ DeckResults run(int argc, const char** argv)
 				{
 					parse_card_spec(all_cards, boost::to_lower_copy(tokens[3]), card_id, card_num, num_sign, mark);
 					quest_index += 1;
-					quest.quest_type = QuestType::skill_use;
-					quest.quest_key = skill_id;
-					quest.quest_2nd_key = card_id;
+					tuo::quest.quest_type = QuestType::skill_use;
+					tuo::quest.quest_key = skill_id;
+					tuo::quest.quest_2nd_key = card_id;
 				}
 				catch (const std::runtime_error& e)
 				{
@@ -2962,25 +2962,25 @@ DeckResults run(int argc, const char** argv)
 			{
 				throw std::runtime_error("Expect one of: su n skill; sd n skill; cu n faction/strcture; ck n structure");
 			}
-			quest.quest_score = quest.quest_value;
+			tuo::quest.quest_score = tuo::quest.quest_value;
 			for (unsigned i = quest_index; i < tokens.size(); ++ i)
 			{
 				const auto & token = tokens[i];
 				if (token == "each")
 				{
-					quest.must_fulfill = true;
-					quest.quest_score = 100;
+					tuo::quest.must_fulfill = true;
+					tuo::quest.quest_score = 100;
 				}
 				else if (token == "win")
-				{ quest.must_win = true; }
+				{ tuo::quest.must_win = true; }
 				else if (token.substr(0, 2) == "q=")
-				{ quest.quest_score = boost::lexical_cast<unsigned>(token.substr(2)); }
+				{ tuo::quest.quest_score = boost::lexical_cast<unsigned>(token.substr(2)); }
 				else if (token.substr(0, 2) == "w=")
-				{ quest.win_score = boost::lexical_cast<unsigned>(token.substr(2)); }
+				{ tuo::quest.win_score = boost::lexical_cast<unsigned>(token.substr(2)); }
 				else
 				{ throw std::runtime_error("Cannot recognize " + token); }
 			}
-			max_possible_score[(size_t)optimization_mode] = quest.quest_score + quest.win_score;
+			max_possible_score[(size_t)optimization_mode] = tuo::quest.quest_score + tuo::quest.win_score;
 		}
 		catch (const boost::bad_lexical_cast & e)
 		{
@@ -3298,7 +3298,7 @@ DeckResults run(int argc, const char** argv)
 	}
 	Process p(opt_num_threads, all_cards, decks, proc_decks, enemy_decks, factors, gamemode,
 #ifndef NQUEST
-			quest,
+			tuo::quest,
 #endif
 			opt_bg_effects[0], opt_bg_effects[1], opt_bg_skills[0], opt_bg_skills[1]);
 
@@ -3327,7 +3327,7 @@ DeckResults run(int argc, const char** argv)
 					    //TODO check for your_decks.size()==1
 					    fr=hill_climbing(std::get<0>(op), std::get<1>(op), your_decks, p, requirement
 #ifndef NQUEST
-							    , quest
+							    , tuo::quest
 #endif
 							    );
 					    break;
@@ -3336,7 +3336,7 @@ DeckResults run(int argc, const char** argv)
 					     //TODO check for your_decks.size()==1
 					     fr= simulated_annealing(std::get<0>(op), std::get<1>(op), your_decks, p, requirement
 #ifndef NQUEST
-							     , quest
+							     , tuo::quest
 #endif
 							     );
 					     break;
@@ -3345,7 +3345,7 @@ DeckResults run(int argc, const char** argv)
 			case genetic: {
 					      fr=genetic_algorithm(std::get<0>(op), std::get<1>(op), your_decks, p, requirement
 #ifndef NQUEST
-							      , quest
+							      , tuo::quest
 #endif
 							      );
 					      break;
@@ -3355,7 +3355,7 @@ DeckResults run(int argc, const char** argv)
 			case beam: {
 					      fr=beam_climb(std::get<0>(op), std::get<1>(op), your_decks, p, requirement
 #ifndef NQUEST
-							      , quest
+							      , tuo::quest
 #endif
 							      );
 					      break;
@@ -3380,7 +3380,7 @@ DeckResults run(int argc, const char** argv)
 					      std::vector<Deck*> single_deck =  {your_deck};
 					      fr=hill_climbing(std::get<0>(op), std::get<1>(op), single_deck, p, requirement
 #ifndef NQUEST
-							      , quest
+							      , tuo::quest
 #endif
 							      );
 					      break;

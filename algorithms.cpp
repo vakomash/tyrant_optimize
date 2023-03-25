@@ -9,7 +9,11 @@ inline bool try_improve_deck(Deck* d1, unsigned from_slot, unsigned to_slot, con
 		const Card*& best_commander, const Card*& best_alpha_dominion, std::vector<const Card*>& best_cards,
 		FinalResults<long double>& best_score, unsigned& best_gap, std::string& best_deck,
 		std::unordered_map<std::string, EvaluatedResults>& evaluated_decks, EvaluatedResults& zero_results,
-		unsigned long& skipped_simulations, Process& proc, bool print=true)
+		unsigned long& skipped_simulations, Process& proc, bool print
+#ifndef NQUEST
+		, Quest & quest
+#endif
+        )
 {
 	unsigned deck_cost(0);
 	std::vector<std::pair<signed, const Card *>> cards_out, cards_in;
@@ -223,7 +227,6 @@ DeckResults hill_climbing(unsigned num_min_iterations, unsigned num_iterations, 
 			d1->cards = best_cards;
 			auto evaluate_result = proc.evaluate(std::min(prev_results.second * iterations_multiplier, num_iterations), prev_results);
 			best_score = compute_score(evaluate_result, proc.factors);
-			std::cout << "Results refined: ";
 			print_score_info(evaluate_result, proc.factors);
 			dead_slot = from_slot;
 		}
@@ -242,7 +245,11 @@ DeckResults hill_climbing(unsigned num_min_iterations, unsigned num_iterations, 
 				{ continue; }
 				deck_has_been_improved |= try_improve_deck(d1, -1, -1, commander_candidate,
 						best_commander, best_alpha_dominion, best_cards, best_score, best_gap, best_deck,
-						evaluated_decks, zero_results, skipped_simulations, proc);
+						evaluated_decks, zero_results, skipped_simulations, proc,true
+#ifndef NQUEST
+			, quest
+#endif
+                        );
 			}
 			// Now that all commanders are evaluated, take the best one
 			d1->commander = best_commander;
@@ -262,7 +269,11 @@ DeckResults hill_climbing(unsigned num_min_iterations, unsigned num_iterations, 
 				{ continue; }
 				deck_has_been_improved |= try_improve_deck(d1, -1, -1, alpha_dominion_candidate,
 						best_commander, best_alpha_dominion, best_cards, best_score, best_gap, best_deck,
-						evaluated_decks, zero_results, skipped_simulations, proc);
+						evaluated_decks, zero_results, skipped_simulations, proc,true
+#ifndef NQUEST
+			, quest
+#endif
+                        );
 			}
 			// Now that all alpha dominions are evaluated, take the best one
 			d1->commander = best_commander;
@@ -289,7 +300,11 @@ DeckResults hill_climbing(unsigned num_min_iterations, unsigned num_iterations, 
 				{ continue; }
 				deck_has_been_improved |= try_improve_deck(d1, from_slot, to_slot, card_candidate,
 						best_commander, best_alpha_dominion, best_cards, best_score, best_gap, best_deck,
-						evaluated_decks, zero_results, skipped_simulations, proc);
+						evaluated_decks, zero_results, skipped_simulations, proc,true
+#ifndef NQUEST
+			, quest
+#endif
+                        );
 			}
 			if (best_score.points - target_score > -1e-9)
 			{ break; }
@@ -493,7 +508,11 @@ DeckResults simulated_annealing(unsigned num_min_iterations, unsigned num_iterat
 
 
 
-void crossover(Deck* src1,Deck* src2, Deck* cur_deck, std::mt19937& re,unsigned best_gap,std::unordered_map<std::string, EvaluatedResults>& evaluated_decks)
+void crossover(Deck* src1,Deck* src2, Deck* cur_deck, std::mt19937& re,unsigned best_gap,std::unordered_map<std::string, EvaluatedResults>& evaluated_decks
+#ifndef NQUEST
+		, Quest & quest
+#endif
+)
 {
 	cur_deck->commander = std::uniform_int_distribution<unsigned>(0, 1)(re)?src1->commander:src2->commander;
 	cur_deck->alpha_dominion = std::uniform_int_distribution<unsigned>(0, 1)(re)?src1->alpha_dominion:src2->alpha_dominion;
@@ -529,7 +548,11 @@ void crossover(Deck* src1,Deck* src2, Deck* cur_deck, std::mt19937& re,unsigned 
 	if(!finished) copy_deck(std::uniform_int_distribution<unsigned>(0, 1)(re)?src1:src2,cur_deck);
 }
 
-void mutate(Deck* src, Deck* cur_deck, std::vector<const Card*> all_candidates, std::mt19937& re,unsigned best_gap,std::unordered_map<std::string, EvaluatedResults>& evaluated_decks)
+void mutate(Deck* src, Deck* cur_deck, std::vector<const Card*> all_candidates, std::mt19937& re,unsigned best_gap,std::unordered_map<std::string, EvaluatedResults>& evaluated_decks
+#ifndef NQUEST
+		, Quest & quest
+#endif
+)
 {
 	copy_deck(src,cur_deck);
 
@@ -690,11 +713,19 @@ DeckResults genetic_algorithm(unsigned num_min_iterations, unsigned num_iteratio
 		Deck* nxt = your_decks[j]->clone();
 		if(std::uniform_int_distribution<unsigned>(0,1)(re))
 		{
-			mutate(your_decks[i],nxt,all_candidates,re,best_gap,evaluated_decks);
+			mutate(your_decks[i],nxt,all_candidates,re,best_gap,evaluated_decks
+#ifndef NQUEST
+					, quest
+#endif
+            );
 		}
 		else
 		{
-			crossover(your_decks[i],your_decks[j],nxt,re,best_gap,evaluated_decks);
+			crossover(your_decks[i],your_decks[j],nxt,re,best_gap,evaluated_decks
+#ifndef NQUEST
+					, quest
+#endif
+            );
 		}
 		your_decks.push_back(nxt);
 	}
@@ -735,7 +766,11 @@ DeckResults genetic_algorithm(unsigned num_min_iterations, unsigned num_iteratio
 			unsigned k = -1;
 			while (k >= pool_size-pool_mutate)
 				k=std::geometric_distribution<unsigned>(0.2)(re); //prefer crossover with strong decks
-			crossover(pool[i].first,pool[k].first,pool[j].first,re,best_gap, evaluated_decks);
+			crossover(pool[i].first,pool[k].first,pool[j].first,re,best_gap, evaluated_decks
+#ifndef NQUEST
+					, quest
+#endif
+            );
 			//crossover(pool[it+pool_size/4*2].first,pool[it+pool_size/4*3].first,pool[it+pool_size/4*3].first,re,best_gap, evaluated_decks);
 			//crossover(pool[it].first,pool[(it+pool_size/8)%(pool_size/4)].first,pool[it+pool_size/4*2].first,re,best_gap, evaluated_decks);
 			//mutate(pool[it].first,pool[it+pool_size/4*3].first,all_candidates,re,best_gap, evaluated_decks);
@@ -745,7 +780,11 @@ DeckResults genetic_algorithm(unsigned num_min_iterations, unsigned num_iteratio
 		{
 			unsigned i = std::uniform_int_distribution<unsigned>(0,pool_keep-1)(re);
 			//unsigned j = std::uniform_int_distribution<unsigned>(pool_keep,pool_size-1)(re);
-			mutate(pool[i].first,pool[it].first,all_candidates,re,best_gap, evaluated_decks);
+			mutate(pool[i].first,pool[it].first,all_candidates,re,best_gap, evaluated_decks
+#ifndef NQUEST
+					, quest
+#endif
+            );
 		}
 		//mutate duplicates
 		for ( unsigned it = 0; it < pool_size;it++)
@@ -754,7 +793,11 @@ DeckResults genetic_algorithm(unsigned num_min_iterations, unsigned num_iteratio
 			{
 				if(pool[it].first->alpha_dominion && pool[i].first->alpha_dominion && pool[it].first->hash().substr(8)==pool[i].first->hash().substr(8)) //ignore commander + dominion
 				{
-					mutate(pool[i].first->clone(),pool[i].first,all_candidates,re,best_gap, evaluated_decks);
+					mutate(pool[i].first->clone(),pool[i].first,all_candidates,re,best_gap, evaluated_decks
+#ifndef NQUEST
+					, quest
+#endif
+                    );
 
 					FinalResults<long double> nil{0, 0, 0, 0, 0, 0, 1};
 					pool[i].second = nil; //lowest score approx Null
@@ -1035,7 +1078,11 @@ DeckResults beam_climb(unsigned num_min_iterations, unsigned num_iterations, std
 		unsigned j = std::uniform_int_distribution<unsigned>(0,your_decks.size()-1)(re);
 		unsigned i = std::uniform_int_distribution<unsigned>(0,your_decks.size()-1)(re);
 		Deck* nxt = your_decks[j]->clone();
-		mutate(your_decks[i],nxt,card_candidates,re,cur_gap,evaluated_decks); //no crossovers here only fill with mutations
+		mutate(your_decks[i],nxt,card_candidates,re,cur_gap,evaluated_decks
+#ifndef NQUEST
+					, quest
+#endif
+        ); //no crossovers here only fill with mutations
 		copy_deck(nxt,cur_deck);
 		auto tscore = fitness(cur_deck,nil,evaluated_decks,zero_results,skipped_simulations,proc);
 		if(!contains(best,nxt)){best.insert(std::make_pair(tscore,nxt));}
@@ -1097,7 +1144,11 @@ DeckResults beam_climb(unsigned num_min_iterations, unsigned num_iterations, std
 				//std::cout << "TRY CMD" << std::endl;
 				if(try_improve_deck(cur_deck, -1, -1, commander_candidate,
 						best_deck->commander, best_deck->alpha_dominion, best_deck->cards, best_score, cur_gap, best_hash,
-						evaluated_decks, zero_results, skipped_simulations, proc,false))
+						evaluated_decks, zero_results, skipped_simulations, proc,false
+#ifndef NQUEST
+			, quest
+#endif
+                        ))
 						{
 								check_and_update(best,cur_deck,deck_has_been_improved,best_score);
 						}
@@ -1117,7 +1168,11 @@ DeckResults beam_climb(unsigned num_min_iterations, unsigned num_iterations, std
 				{ continue; }
 				if(try_improve_deck(cur_deck, -1, -1, alpha_dominion_candidate,
 						best_deck->commander, best_deck->alpha_dominion, best_deck->cards, best_score, cur_gap, best_hash,
-						evaluated_decks, zero_results, skipped_simulations, proc,false))
+						evaluated_decks, zero_results, skipped_simulations, proc,false
+#ifndef NQUEST
+			, quest
+#endif
+                        ))
 						{
 								check_and_update(best,cur_deck,deck_has_been_improved,best_score);
 						}
@@ -1147,7 +1202,11 @@ DeckResults beam_climb(unsigned num_min_iterations, unsigned num_iterations, std
 				//print_deck_inline(get_deck_cost(best_deck),best_score,best_deck);
 				if(try_improve_deck(cur_deck, from_slot, to_slot, card_candidate,
 						best_deck->commander, best_deck->alpha_dominion, best_deck->cards, best_score, cur_gap, best_hash,
-						evaluated_decks, zero_results, skipped_simulations, proc,false))
+						evaluated_decks, zero_results, skipped_simulations, proc,false
+#ifndef NQUEST
+			, quest
+#endif
+                        ))
 						{
 								check_and_update(best,cur_deck,deck_has_been_improved,best_score);
 						}
