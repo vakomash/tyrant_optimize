@@ -15,10 +15,10 @@ jobs:
       - run: ./update_xml.sh
       - run: source build/windows/package.sh
 
-      - name: Upload info.log
+      - name: Upload tuo
         uses: actions/upload-artifact@v3
         with:
-          name: info_log
+          name: tuo
           path: |
             *.exe
             *.zip
