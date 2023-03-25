@@ -3,7 +3,7 @@
 set -xue
 
 sudo apt-get update
-sudo apt-get install libssl1.0.0 libssl-dev
+sudo apt-get install libssl-dev
 
 echo "deb http://mirror.mxe.cc/repos/apt/ trusty main" \
     | sudo tee /etc/apt/sources.list.d/mxeapt.list
