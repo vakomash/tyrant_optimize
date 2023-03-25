@@ -1,0 +1,15 @@
+name: ubuntu
+
+on: [push]
+
+jobs:
+  build:
+    name: ubuntu
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - run: "./build/windows/requirements.sh"
+      - run: "./build/windows/build.sh"
+      - run: ./update_xml.sh
+      - run: "./build/windows/test.sh"
