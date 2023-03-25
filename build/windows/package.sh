@@ -7,7 +7,7 @@ set -xue
 
 #cp build-dir/tuo.exe $TUO_FILE
 
-export TUO_FILE_ZIP="tuo.${TRAVIS_TAG}_32+64_bit.zip"
+export TUO_FILE_ZIP="tuo.$(git describe --tags --abbrev=0 --dirty)_32+64_bit.zip"
 
 #ls -la
 
