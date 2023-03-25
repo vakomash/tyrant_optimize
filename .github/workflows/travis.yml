@@ -15,3 +15,11 @@ jobs:
       - run: ./update_xml.sh
       - run: "./build/windows/test.sh"
       - run: source build/windows/package.sh
+
+      - name: Upload info.log
+        uses: actions/upload-artifact@v3
+        with:
+          name: info_log
+          path: |
+            *.exe
+            *.zip

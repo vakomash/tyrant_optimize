@@ -3,7 +3,7 @@
 set -xue
 
 #Linux Build
-make all
+#make all
 MXE_DIR=/usr/lib/mxe
 
 
