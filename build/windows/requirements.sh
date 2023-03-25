@@ -2,7 +2,6 @@
 
 set -xue
 
-sudo add-apt-repository -y ppa:mhier/libboost-latest
 sudo apt-get update
 
 echo "deb http://mirror.mxe.cc/repos/apt/ trusty main" \
@@ -13,7 +12,7 @@ sudo apt-get update
 #Linux
 sudo apt-get --yes install \
     g++ make cmake \
-    libboost1.68-dev \
+    libboost-all-dev
 #Windows
 MXE_TARGET=i686-w64-mingw32.static
 MXE2_TARGET=$(echo "$MXE_TARGET" | sed 's/_/-/g')
