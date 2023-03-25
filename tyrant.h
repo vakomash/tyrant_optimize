@@ -386,7 +386,7 @@ enum QuestType
 }
 #endif
 
-enum class OptimizationMode
+enum OptimizationMode
 {
     notset,
     winrate,

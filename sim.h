@@ -25,10 +25,11 @@ extern unsigned turn_limit;
 template<typename result_type>
 struct Results
 {
-    result_type wins;
-    result_type draws;
-    result_type losses;
-    result_type points;
+    result_type wins = 0;
+    result_type draws = 0;
+    result_type losses = 0;
+    result_type points = 0;
+    result_type count = 0; // number of simulations, this is equal to wins + draws + losses in 99% of cases
     template<typename other_result_type>
     Results& operator+=(const Results<other_result_type>& other)
     {
@@ -36,10 +37,12 @@ struct Results
         draws += other.draws;
         losses += other.losses;
         points += other.points;
+        count += other.count;
         return *this;
     }
 };
 
+// pair<Results of size enemy_decks.size() * your_dekcs.size(), number of simulations >
 typedef std::pair<std::vector<Results<uint64_t>>, unsigned> EvaluatedResults;
 
 template<typename result_type>

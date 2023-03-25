@@ -104,6 +104,10 @@ namespace tuo {
 	//fixes
 	EXTERN bool fixes[Fix::num_fixes];
 
+    // TUO5 db of results
+    // map<hash of sim including decks but also more,result>
+    EXTERN std::map<std::string, Results<uint64_t>> database;
+
 #if defined(ANDROID) || defined(__ANDROID__)
 	EXTERN JNIEnv *envv;
 	EXTERN jobject objv;
@@ -210,7 +214,10 @@ struct SimulationData
 	}
 
   void set_decks(std::vector<Deck*> const your_decks_, std::vector<Deck*> const & enemy_decks_);
-  inline std::vector<Results<uint64_t>> evaluate();
+  inline std::vector<Results<uint64_t>> evaluate(const  std::vector<bool> & deck_mask);
+  inline std::vector<Results<uint64_t>> evaluate() ;
+
+
 };
 class Process
 {
@@ -231,6 +238,7 @@ public:
     #endif
     std::array<signed short, PassiveBGE::num_passive_bges> your_bg_effects, enemy_bg_effects;
     std::vector<SkillSpec> your_bg_skills, enemy_bg_skills;
+    std::vector<bool> mask;
   public:
     Process(unsigned num_threads_, const Cards& cards_, const Decks& decks_, std::vector<Deck*> your_decks_, std::vector<Deck*> enemy_decks_, std::vector<long double> factors_, gamemode_t gamemode_,
 #ifndef NQUEST
@@ -255,6 +263,7 @@ public:
 			your_bg_skills(your_bg_skills_),
 			enemy_bg_skills(enemy_bg_skills_)
 			{
+                mask = std::vector<bool>(your_decks.size() * enemy_decks.size(), true);
 				destroy_threads = false;
 				unsigned seed(sim_seed ? sim_seed : std::chrono::system_clock::now().time_since_epoch().count() * 2654435761);  // Knuth multiplicative hash
 				if (num_threads_ == 1)
@@ -283,9 +292,16 @@ public:
 			for (auto thread: threads) { thread->join(); }
 			for (auto data: threads_data) { delete(data); }
 		}
+  // all hashed except the array of decks
+  std::string partial_hash();
+  // all hashed
+  std::vector<std::string> hashes();
+   bool check_db(std::vector<std::string> const & vhashes,unsigned num_iterations, EvaluatedResults & evaluated_results);
+   void save_db(std::vector<std::string> const & vhashes,EvaluatedResults & evaluated_results);
 
     EvaluatedResults & evaluate(unsigned num_iterations, EvaluatedResults & evaluated_results);
     EvaluatedResults & compare(unsigned num_iterations, EvaluatedResults & evaluated_results, const FinalResults<long double> & best_results);
+
 #ifdef _OPENMP
 		void openmp_evaluate_reduction(EvaluatedResults & evaluated_results);
     void openmp_compare_reduction(EvaluatedResults & evaluated_results);

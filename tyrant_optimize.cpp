@@ -136,6 +136,36 @@ namespace tuo {
 #endif
 }
 */
+
+// load database map from file
+void load(std::string prefix) {
+    // open file to read from
+    std::ifstream file;
+    file.open(prefix + "data/database.txt");
+    // read map from file
+    std::string name;
+    uint64_t wins, draws, losses, points, count;
+    while (file >> name >> wins >> draws >> losses >> points >> count) {
+        database[name] = {wins, draws, losses, points, count};
+    }
+    // close file
+    file.close();
+
+}
+
+// write database map to file
+void save(std::string prefix) {
+    // open file to write to
+    std::ofstream file;
+    file.open(prefix + "data/database.txt");
+    // write map to file
+    for (auto it = database.begin(); it != database.end(); ++it) {
+        file << it->first << " " << it->second.wins << " " << it->second.draws << " " << it->second.losses << " " << it->second.points << " " << it->second.count << std::endl;
+    }
+    // close file
+    file.close();
+}
+
 void init()
 {
 	thread_num_iterations=0; // written by threads
@@ -235,6 +265,7 @@ void init()
 	fixes[Fix::death_from_bge] = true;
 	fixes[Fix::legion_under_mega] = true;
 }
+
 
 #if defined(ANDROID) || defined(__ANDROID__)
 extern "C" JNIEXPORT void
@@ -605,9 +636,9 @@ FinalResults<long double> compute_score(const EvaluatedResults& results, std::ve
 	long double max_possible = max_possible_score[(size_t)optimization_mode];
 	for (unsigned index(0); index < results.first.size(); ++index)
 	{
-		final.wins += results.first[index].wins * factors[index];
-		final.draws += results.first[index].draws * factors[index];
-		final.losses += results.first[index].losses * factors[index];
+		final.wins += results.first[index].wins * factors[index] * results.second/results.first[index].count;
+		final.draws += results.first[index].draws * factors[index]* results.second/results.first[index].count;
+		final.losses += results.first[index].losses * factors[index]* results.second/results.first[index].count;
 		//APN
 		auto trials = results.second;
 		auto prob = 1-confidence_level;
@@ -673,37 +704,112 @@ FinalResults<long double> compute_score(const EvaluatedResults& results, std::ve
 		}
 	}
 
-	inline std::vector<Results<uint64_t>> SimulationData::evaluate()
+    std::vector<std::string> Process::hashes() {
+        std::vector<std::string> hashes;
+        hashes.reserve(your_decks.size() * enemy_decks.size());
+        std::string hash = partial_hash();
+        for (auto const & ydeck : your_decks) {
+            for (auto const & edeck : enemy_decks) {
+                hashes.emplace_back(ydeck->hash() + ";" + edeck->hash() + ";" + hash);
+            }
+        }
+        return hashes;
+    }
+
+    // Compute field hash from two decks
+    std::string Process::partial_hash()
+    {
+        // db caching is incompatible with quest mode
+        std::stringstream ios;
+        ios << std::to_string(gamemode) << ";";
+        ios << std::to_string(optimization_mode) << ";";
+        for ( int i = 0; i < PassiveBGE::num_passive_bges; ++i)
+            ios << std::to_string(your_bg_effects[i]) << ",";
+        ios << ";";
+        for ( int i = 0; i < PassiveBGE::num_passive_bges; ++i)
+            ios << std::to_string(enemy_bg_effects[i]) << ",";
+        ios << ";";
+        for ( auto const & bge : your_bg_skills) {
+            ios << std::to_string(bge.id) << "_";
+            ios << std::to_string(bge.x) << "_";
+            ios << std::to_string(bge.y) << "_";
+            ios << std::to_string(bge.n) << "_";
+            ios << std::to_string(bge.c) << "_";
+            ios << std::to_string(bge.s) << "_";
+            ios << std::to_string(bge.s2) << "_";
+            ios << std::to_string(bge.all) << "_";
+            ios << std::to_string(bge.card_id) << ",";
+        }
+        ios << ";";
+        for ( auto const & bge : enemy_bg_skills)
+        {
+            ios << std::to_string(bge.id) << "_";
+            ios << std::to_string(bge.x) << "_";
+            ios << std::to_string(bge.y) << "_";
+            ios << std::to_string(bge.n) << "_";
+            ios << std::to_string(bge.c) << "_";
+            ios << std::to_string(bge.s) << "_";
+            ios << std::to_string(bge.s2) << "_";
+            ios << std::to_string(bge.all) << "_";
+            ios << std::to_string(bge.card_id) << ",";
+        }
+
+        ios << ";";
+        for (int i = 0; i < Fix::num_fixes; ++i)
+        {
+            ios << std::to_string(fixes[i]) << ",";
+        }
+        ios << ";";
+        ios << std::to_string(flexible_iter )<< ";" << std::to_string(flexible_turn) << ";" <<std::to_string( eval_iter) << ";" << std::to_string(eval_turn);
+        return ios.str();
+    }
+
+
+	inline std::vector<Results<uint64_t>> SimulationData::evaluate(const std::vector<bool> & deck_mask)
 	{
 		std::vector<Results<uint64_t>> res;
 		res.reserve(enemy_hands.size()*your_hands.size());
+        assert(deck_mask.size() == your_hands.size()*enemy_hands.size());
+        int i = 0;
 		for(Hand* your_hand : your_hands)
 		{
 			for (Hand* enemy_hand: enemy_hands)
 			{
-				your_hand->reset(re);
-				enemy_hand->reset(re);
-				Field fd(re, cards, *your_hand, *enemy_hand, gamemode, optimization_mode,
+                // TUO5 added mask to already computed decks from db
+                if( deck_mask[i] != 0 )
+                {
+				    your_hand->reset(re);
+				    enemy_hand->reset(re);
+				    Field fd(re, cards, *your_hand, *enemy_hand, gamemode, optimization_mode,
 #ifndef NQUEST
-						quest,
+				    		quest,
 #endif
-						your_bg_effects, enemy_bg_effects, your_bg_skills, enemy_bg_skills,fixes, flexible_iter,flexible_turn, eval_iter,eval_turn);
-				Results<uint64_t> result(play(&fd));
-				if (__builtin_expect(mode_open_the_deck, false))
-				{
-					// are there remaining (unopened) cards?
-					if (fd.players[1]->deck->shuffled_cards.size())
-					{
-						// apply min score (there are unopened cards, so mission failed)
-						result.points = min_possible_score[(size_t)optimization_mode];
-					}
-				}
-				res.emplace_back(result);
+				    		your_bg_effects, enemy_bg_effects, your_bg_skills, enemy_bg_skills,fixes, flexible_iter,flexible_turn, eval_iter,eval_turn);
+				    Results<uint64_t> result(play(&fd));
+				    if (__builtin_expect(mode_open_the_deck, false))
+				    {
+				    	// are there remaining (unopened) cards?
+				    	if (fd.players[1]->deck->shuffled_cards.size())
+				    	{
+				    		// apply min score (there are unopened cards, so mission failed)
+				    		result.points = min_possible_score[(size_t)optimization_mode];
+				    	}
+				    }
+				    res.emplace_back(result);
+                }
+                else {
+                    res.emplace_back(Results<uint64_t>()); // no change since masked
+                }
+                i++;
 			}
 		}
 		//std::cout << std::endl<<  "Deck hash: " << your_hand.deck->hash() << "#"<< std::endl;
 		return(res);
 	}
+
+    inline std::vector<Results<uint64_t>> SimulationData::evaluate() {
+        return evaluate( std::vector<bool>(your_hands.size()*enemy_hands.size(), true) );
+    }
 //------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
@@ -722,9 +828,9 @@ FinalResults<long double> compute_score(const EvaluatedResults& results, std::ve
 #pragma omp for reduction(VecPlus:results) schedule(runtime)
 				for(unsigned i =0; i < thread_num_iterations;++i) {
 					if(results.size()==0)
-						results =sim->evaluate();				//calculate single sim
+						results =sim->evaluate(mask);				//calculate single sim
 					else {
-						results =merge(results,sim->evaluate());				//calculate single sim
+						results =merge(results,sim->evaluate(mask));				//calculate single sim
 					}
 				}
 #pragma omp for schedule(runtime)
@@ -761,9 +867,9 @@ FinalResults<long double> compute_score(const EvaluatedResults& results, std::ve
 #pragma omp cancellation point for
 					if(!compare_stop){
 						if(results.size()==0)
-							results =sim->evaluate();				//calculate single sim
+							results =sim->evaluate(mask);				//calculate single sim
 						else
-							results =merge(results,sim->evaluate());				//calculate single sim
+							results =merge(results,sim->evaluate(mask));				//calculate single sim
 						long double score_accum_d = 0.0;
 						for(unsigned j=0; j < results.size(); ++j)
 							score_accum_d+=results[j].points * sim->factors[j];
@@ -821,12 +927,69 @@ FinalResults<long double> compute_score(const EvaluatedResults& results, std::ve
 			return out;
 		}
 #endif
+
+        inline bool Process::check_db(std::vector<std::string> const & vhashes,unsigned num_iterations, EvaluatedResults & evaluated_results) {
+            bool run = false;
+            //TODO TUO5 check db for results
+            // TODO TUO5 calculate mask for sim evaluate based on missing results in db
+            for (unsigned i = 0; i < vhashes.size(); i++)
+            {
+                std::string hash = vhashes[i];
+                // TODO TUO5 check db for hash
+                auto it = database.find(hash);
+                // TODO TUO5 if hash not in db, add to mask
+                if (it == database.end()){
+                    mask[i] = true;
+                    run = true;
+                }
+                else
+                {
+                    if(it->second.count >= num_iterations) {
+                        mask[i] = false;
+                        // TUO5 load results from db
+                        // renormalized to asked num_iterations
+                        Results<uint64_t> r = {
+                            static_cast<uint64_t>(std::round((1.0*it->second.wins*num_iterations  )/it->second.count)), 
+                            static_cast<uint64_t>(std::round((1.0*it->second.draws*num_iterations )/it->second.count)), 
+                            static_cast<uint64_t>(std::round((1.0*it->second.losses*num_iterations)/it->second.count)), 
+                            static_cast<uint64_t>(std::round((1.0*it->second.points*num_iterations )/it->second.count)), 
+                            static_cast<uint64_t>(num_iterations)};
+                        evaluated_results.first[i] =r;
+                    }
+                    else {
+                        mask[i] = true;
+                        run = true;
+                    }
+                }
+            }
+            return run;
+        }
+
+        inline void Process::save_db(std::vector<std::string> const & vhashes,EvaluatedResults & evaluated_results) {
+            // TODO TUO5 save results to db
+            for (unsigned i = 0; i < vhashes.size(); i++)
+            {
+                if(mask[i]) {
+                    std::string hash = vhashes[i];
+                    database[hash] = evaluated_results.first[i];
+                }
+            }
+        }
+
 		EvaluatedResults & Process::evaluate(unsigned num_iterations, EvaluatedResults & evaluated_results)
 		{
 			if (num_iterations <= evaluated_results.second)
 			{
 				return evaluated_results;
 			}
+            std::vector<std::string> vhashes = hashes();
+            if( !check_db(vhashes,num_iterations, evaluated_results)) {
+                // 100% covered by db
+                evaluated_results.second = num_iterations;
+                return evaluated_results;
+            }
+
+
 			thread_num_iterations = num_iterations - evaluated_results.second;
 			thread_results = &evaluated_results;
 			thread_compare = false;
@@ -838,6 +1001,8 @@ FinalResults<long double> compute_score(const EvaluatedResults& results, std::ve
 #else
 			openmp_evaluate_reduction(evaluated_results);
 #endif
+            save_db(vhashes, evaluated_results);
+
 			return evaluated_results;
 		}
 
@@ -847,6 +1012,12 @@ FinalResults<long double> compute_score(const EvaluatedResults& results, std::ve
 			{
 				return evaluated_results;
 			}
+            std::vector<std::string> vhashes = hashes();
+            if( !check_db(vhashes,num_iterations, evaluated_results)) {
+                // 100% covered by db
+                evaluated_results.second = num_iterations;
+                return evaluated_results;
+            }
 			thread_num_iterations = num_iterations - evaluated_results.second;
 			thread_results = &evaluated_results;
 			thread_best_results = &best_results;
@@ -860,6 +1031,7 @@ FinalResults<long double> compute_score(const EvaluatedResults& results, std::ve
 #else
 			openmp_compare_reduction(evaluated_results);
 #endif
+            save_db(vhashes, evaluated_results);
 			return evaluated_results;
 		}
 //------------------------------------------------------------------------------
@@ -889,14 +1061,24 @@ void thread_evaluate(boost::barrier& main_barrier,
 			{
 				--thread_num_iterations; //!
 				shared_mutex.unlock(); //>>>>
-				std::vector<Results<uint64_t>> result{sim.evaluate()};
+				std::vector<Results<uint64_t>> result{sim.evaluate(p.mask)};
 				shared_mutex.lock(); //<<<<
 				std::vector<uint64_t> thread_score_local(thread_results->first.size(), 0u); //!
+                unsigned counter = 0;
 				for (unsigned index(0); index < result.size(); ++index)
 				{
 					thread_results->first[index] += result[index]; //!
-					thread_score_local[index] = thread_results->first[index].points; //!
+                    if (counter == 0 || thread_results->first[index].count < counter) {
+                        counter = thread_results->first[index].count;
+                    }
+
 				}
+                for (unsigned index(0); index < result.size(); ++index)
+				{
+                    // TUO5 we weight scores by the number of times a deck is used, since the results are no langer same sized in partially cached case
+					thread_score_local[index] =(thread_results->first[index].points * (counter))/thread_results->first[index].count; //!
+					//thread_score_local[index] = static_cast<uint64_t>(std::round((thread_results->first[index].points * (counter))/thread_results->first[index].count)); //!
+                }
 				++thread_results->second; //!
 				unsigned thread_total_local{thread_results->second}; //!
 				shared_mutex.unlock(); //>>>>
@@ -927,10 +1109,11 @@ void thread_evaluate(boost::barrier& main_barrier,
 					auto successes = score_accum / max_possible;
 					if(successes > trials)
 					{
-						successes = trials;
-						printf("WARNING: biominal successes > trials in Threads");
+						std::cout << "WARNING: biominal successes > trials in Threads" << successes << " " << trials << " " << counter << std::endl;
 						_DEBUG_MSG(2,"WARNING: biominal successes > trials in Threads");
+						successes = trials;
 					}
+                    else{
 
 
 					// Get a loose (better than no) upper bound. TODO: Improve it.
@@ -943,6 +1126,7 @@ void thread_evaluate(boost::barrier& main_barrier,
 						thread_compare_stop = true; //!
 						shared_mutex.unlock(); //>>>>
 					}
+                    }
 				}
 			}
 		}
@@ -2519,6 +2703,7 @@ DeckResults run(int argc, const char** argv)
 			exit(1);
 		}
 	}
+    load(prefix);
 
 #ifdef _OPENMP
 	opt_num_threads = omp_get_max_threads();
@@ -3233,6 +3418,7 @@ DeckResults run(int argc, const char** argv)
 					 }
 		}
 	}
+    save(prefix);
 	return fr;
 }
 
@@ -3362,7 +3548,8 @@ DeckResults start(int argc, const char** argv) {
 		}
 	}
 	init();
-	return run(argc,argv);
+	auto rtrn = run(argc,argv);
+    return rtrn;
 }
 
 
