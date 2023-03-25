@@ -5,9 +5,12 @@ set -xue
 sudo apt-get update
 sudo apt-get install libssl-dev
 
-echo "deb http://mirror.mxe.cc/repos/apt/ trusty main" \
-    | sudo tee /etc/apt/sources.list.d/mxeapt.list
-sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys C6BF758A33A3A276
+sudo apt-key adv \
+    --keyserver keyserver.ubuntu.com \
+    --recv-keys 86B72ED9 && \
+sudo add-apt-repository \
+    "deb [arch=amd64] https://pkg.mxe.cc/repos/apt `lsb_release -sc` main" && \
+
 
 sudo apt-get update
 #Linux
