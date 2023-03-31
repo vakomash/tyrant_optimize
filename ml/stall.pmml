@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<PMML xmlns="http://www.dmg.org/PMML-4_4" xmlns:data="http://jpmml.org/jpmml-model/InlineTable" version="4.4">
+	<Header>
+		<Application name="SkLearn2PMML package" version="0.91.1"/>
+		<Timestamp>2023-03-31T20:22:36Z</Timestamp>
+	</Header>
+	<DataDictionary>
+		<DataField name="y" optype="continuous" dataType="double"/>
+		<DataField name="x3" optype="continuous" dataType="float">
+			<Value value="NaN" property="missing"/>
+		</DataField>
+	</DataDictionary>
+	<MiningModel functionName="regression" algorithmName="XGBoost (GBTree)" x-mathContext="float">
+		<MiningSchema>
+			<MiningField name="y" usageType="target"/>
+			<MiningField name="x3"/>
+		</MiningSchema>
+		<Targets>
+			<Target field="y" rescaleConstant="0.013632848"/>
+		</Targets>
+		<Segmentation multipleModelMethod="sum" missingPredictionTreatment="returnMissing">
+			<Segment id="1">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="defaultChild" splitCharacteristic="binarySplit" x-mathContext="float">
+					<MiningSchema>
+						<MiningField name="x3"/>
+					</MiningSchema>
+					<Node id="0" defaultChild="1">
+						<True/>
+						<Node id="1" score="-0.0040117195">
+							<SimplePredicate field="x3" operator="lessThan" value="14838.5"/>
+						</Node>
+						<Node id="2" score="-0.0010678835">
+							<SimplePredicate field="x3" operator="greaterOrEqual" value="14838.5"/>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="2">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="defaultChild" splitCharacteristic="binarySplit" x-mathContext="float">
+					<MiningSchema>
+						<MiningField name="x3"/>
+					</MiningSchema>
+					<Node id="0" defaultChild="1">
+						<True/>
+						<Node id="1" score="-0.0021317832">
+							<SimplePredicate field="x3" operator="lessThan" value="14838.5"/>
+						</Node>
+						<Node id="2" score="-4.8403887E-4">
+							<SimplePredicate field="x3" operator="greaterOrEqual" value="14838.5"/>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="3">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="defaultChild" splitCharacteristic="binarySplit" x-mathContext="float">
+					<MiningSchema>
+						<MiningField name="x3"/>
+					</MiningSchema>
+					<Node id="0" defaultChild="1">
+						<True/>
+						<Node id="1" score="-0.0015455429">
+							<SimplePredicate field="x3" operator="lessThan" value="14838.5"/>
+						</Node>
+						<Node id="2" score="-4.11433E-4">
+							<SimplePredicate field="x3" operator="greaterOrEqual" value="14838.5"/>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="4">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="defaultChild" splitCharacteristic="binarySplit" x-mathContext="float">
+					<MiningSchema>
+						<MiningField name="x3"/>
+					</MiningSchema>
+					<Node id="0" defaultChild="1">
+						<True/>
+						<Node id="1" score="-8.212834E-4">
+							<SimplePredicate field="x3" operator="lessThan" value="14838.5"/>
+						</Node>
+						<Node id="2" score="-1.8649889E-4">
+							<SimplePredicate field="x3" operator="greaterOrEqual" value="14838.5"/>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+		</Segmentation>
+	</MiningModel>
+</PMML>

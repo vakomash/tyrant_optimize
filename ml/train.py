@@ -39,16 +39,37 @@ def hash_to_ids_ext_b64(hash):
 import hashlib
 
 xdata = [] # 10 + 10 ids each
-ydata = [] # one score
+wdata = [] # one score
+sdata = [] # one score
+ldata = [] # one score
+pdata = [] # one score
 for ll in l:
     for k in db[ll].keys():
         for kk in db[ll][k]:
-            hfield = int(hashlib.sha256(ll.encode()).hexdigest(), 16) % (10 ** 9)
+            # split "_", "," and ";" and make all int
+            lll = [ll]
+            for c in ['_',';',',']:
+                lllll= []
+                for llll in lll:
+                    lllll += llll.split(c)
+                lll = lllll
+            # if empty make 0
+            hx = []
+            for x in lll:
+                i = 0 
+                if x != '':
+                    i = int(x)
+                hx.append(i)
+            #hfield = int(hashlib.sha256(ll.encode()).hexdigest(), 16) % (10 ** 9)
+
             #print(hfield)
             res = db[ll][k][kk].split(" ")
             if int(res[-1]) > 10000:
-                xdata.append([hfield] + hash_to_ids_ext_b64(k) +  hash_to_ids_ext_b64(kk))
-                ydata.append(float(res[0]) / float(res[-1]))
+                xdata.append( hash_to_ids_ext_b64(k)  + hash_to_ids_ext_b64(kk) + hx )
+                wdata.append(float(res[0]) / float(res[-1]))
+                sdata.append(float(res[1]) / float(res[-1]))
+                ldata.append(float(res[2]) / float(res[-1]))
+                pdata.append(float(res[3]) / float(res[-1]))
                 print(k,hash_to_ids_ext_b64(k), kk , hash_to_ids_ext_b64(kk), float(res[0]) / float(res[-1]), res[-1])
 
 # evaluate xgboost algorithm for classification
@@ -62,11 +83,16 @@ from xgboost.sklearn import XGBRegressor
 from sklearn.model_selection import RepeatedKFold
 
 #X, y = make_regression(n_samples=1000, n_features=20, n_informative=15, noise=0.1, random_state=7)
-X, y = asmatrix(xdata), asarray(ydata)
 #print(xdata)
 # define the model
-model = XGBRegressor()
-model.fit(X,y)
+wmodel = XGBRegressor()
+wmodel.fit(asarray(xdata), asarray(wdata))
+smodel = XGBRegressor()
+smodel.fit(asarray(xdata), asarray(sdata))
+lmodel = XGBRegressor()
+lmodel.fit(asarray(xdata), asarray(ldata))
+pmodel = XGBRegressor()
+pmodel.fit(asarray(xdata), asarray(pdata))
 # evaluate the model
 #cv = RepeatedKFold(n_splits=10, n_repeats=3, random_state=1)
 #n_scores = cross_val_score(model, X, y, scoring='neg_mean_absolute_error', cv=cv, n_jobs=-1, error_score='raise')
@@ -74,17 +100,35 @@ model.fit(X,y)
 #print('MAE: %.3f (%.3f)' % (mean(n_scores), std(n_scores)))
 
 # aOhdOsUVtZJvZJvXSwPN9dW9cO+MN/ [1498, 12765, 14004, 15673, 15673, 16983, 30127, 30429, 31196, 32172, 0, 0] aOhdOsUVtZJvZJvXSwPN9dW9cO+ME/MN/ [1498, 12765, 14004, 15673, 15673, 16983, 30127, 30429, 31196, 31884, 32172, 0]
-print(model.predict([[1498, 12765, 14004, 15673, 15673, 16983, 30127, 30429, 31196, 32172, 0, 0,1498, 12765, 14004, 15673, 15673, 16983, 30127, 30429, 31196, 31884, 32172, 0]]))
+print(wmodel.predict([[1498, 12765, 14004, 15673, 15673, 16983, 30127, 30429, 31196, 32172, 0, 0,1498, 12765, 14004, 15673, 15673, 16983, 30127, 30429, 31196, 31884, 32172, 0]]))
 from sklearn2pmml import sklearn2pmml
 from sklearn2pmml.pipeline import PMMLPipeline
 
-pmml_pipeline = PMMLPipeline([
-  ("regressor", XGBRegressor())
-])
-pmml_pipeline.fit(X, y)
-pmml_pipeline.configure(compact = False)
-sklearn2pmml(pmml_pipeline, "tuo.pmml")
+wpmml_pipeline = PMMLPipeline([ ("regressor", XGBRegressor()) ])
+wpmml_pipeline.fit(asarray(xdata), asarray(wdata))
+wpmml_pipeline.configure(compact = False)
+sklearn2pmml(wpmml_pipeline, "win.pmml")
 
+spmml_pipeline = PMMLPipeline([ ("regressor", XGBRegressor()) ])
+spmml_pipeline.fit(asarray(xdata), asarray(sdata))
+spmml_pipeline.configure(compact = False)
+sklearn2pmml(spmml_pipeline, "stall.pmml")
+
+lpmml_pipeline = PMMLPipeline([ ("regressor", XGBRegressor()) ])
+lpmml_pipeline.fit(asarray(xdata), asarray(ldata))
+lpmml_pipeline.configure(compact = False)
+sklearn2pmml(lpmml_pipeline, "loss.pmml")
+
+ppmml_pipeline = PMMLPipeline([ ("regressor", XGBRegressor()) ])
+ppmml_pipeline.fit(asarray(xdata), asarray(pdata))
+ppmml_pipeline.configure(compact = False)
+sklearn2pmml(ppmml_pipeline, "points.pmml")
+
+
+print(wpmml_pipeline.predict([[1498, 12765, 14004, 15673, 15673, 16983, 30127, 30429, 31196, 32172, 0, 0,1498, 12765, 14004, 15673, 15673, 16983, 30127, 30429, 31196, 31884, 32172, 0]]))
+print(spmml_pipeline.predict([[1498, 12765, 14004, 15673, 15673, 16983, 30127, 30429, 31196, 32172, 0, 0,1498, 12765, 14004, 15673, 15673, 16983, 30127, 30429, 31196, 31884, 32172, 0]]))
+print(lpmml_pipeline.predict([[1498, 12765, 14004, 15673, 15673, 16983, 30127, 30429, 31196, 32172, 0, 0,1498, 12765, 14004, 15673, 15673, 16983, 30127, 30429, 31196, 31884, 32172, 0]]))
+print(ppmml_pipeline.predict([[1498, 12765, 14004, 15673, 15673, 16983, 30127, 30429, 31196, 32172, 0, 0,1498, 12765, 14004, 15673, 15673, 16983, 30127, 30429, 31196, 31884, 32172, 0]]))
 #	const char* pc = hash;
 #	while (*pc)
 #	{

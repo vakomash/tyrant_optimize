@@ -2,7 +2,7 @@
 <PMML xmlns="http://www.dmg.org/PMML-4_4" xmlns:data="http://jpmml.org/jpmml-model/InlineTable" version="4.4">
 	<Header>
 		<Application name="SkLearn2PMML package" version="0.91.1"/>
-		<Timestamp>2023-03-31T20:13:31Z</Timestamp>
+		<Timestamp>2023-03-31T20:22:25Z</Timestamp>
 	</Header>
 	<DataDictionary>
 		<DataField name="y" optype="continuous" dataType="double"/>
