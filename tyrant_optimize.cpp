@@ -14,6 +14,7 @@
 //#define NDEBUG
 #define BOOST_THREAD_USE_LIB
 
+#include <array>
 #include <cassert>
 #include <chrono>
 #include <cstring>
@@ -138,15 +139,39 @@ namespace tuo {
 */
 
 // load database map from file
-void load(std::string prefix) {
+void load_db(std::string prefix) {
     // open file to read from
     std::ifstream file;
-    file.open(prefix + "data/database.txt");
+    file.open(prefix + "data/database.yml");
     // read map from file
     std::string name;
     uint64_t wins, draws, losses, points, count;
-    while (file >> name >> wins >> draws >> losses >> points >> count) {
-        database[name] = {wins, draws, losses, points, count};
+	std::string version;
+	std::string line;
+	getline(file,line);
+	if ( line.find(":") != std::string::npos)
+		version = line.substr(line.find(":")+2);
+	std::cout << "DB version " << version<< std::endl;
+	std::string hfield;
+	std::string hydeck;
+	std::string hedeck;
+    while (getline(file , line)) {
+		if (line.rfind("\t\t", 0) == 0 && line.find(":") != std::string::npos) { 
+			hedeck = line.substr(2,line.find(":")-2);
+			std::istringstream reader(line.substr(line.find(":")+2));
+			reader >> wins >> draws >> losses >> points >> count;
+			database[hfield][hydeck][hedeck] = {wins, draws, losses, points, count};
+			//std::cout << "load db: " << hfield << " " << hydeck << " " << hedeck << " " <<wins<< " "<< draws<< " "<< losses<< " " <<points<< " " <<count << std::endl;
+		}
+		else if (line.rfind("\t", 0) == 0&& line.find(":") != std::string::npos) { 
+			hydeck = line.substr(1,line.find(":")-1);
+		}
+		else if (line.find(":") != std::string::npos) {
+			hfield = line.substr(0,line.find(":"));
+		}
+		else {
+			std::cout << "unknown db line: " << line;
+		}
     }
     // close file
     file.close();
@@ -154,13 +179,20 @@ void load(std::string prefix) {
 }
 
 // write database map to file
-void save(std::string prefix) {
+void write_db(std::string prefix) {
     // open file to write to
     std::ofstream file;
-    file.open(prefix + "data/database.txt");
+    file.open(prefix + "data/database.yml");
+	file << "version: " << TYRANT_OPTIMIZER_VERSION << std::endl;
     // write map to file
-    for (auto it = database.begin(); it != database.end(); ++it) {
-        file << it->first << " " << it->second.wins << " " << it->second.draws << " " << it->second.losses << " " << it->second.points << " " << it->second.count << std::endl;
+    for (auto it1 = database.begin(); it1 != database.end(); ++it1) {
+		file << it1->first << ":" << std::endl;
+    	for (auto it2 = it1->second.begin(); it2 != it1->second.end(); ++it2) {
+			file << "\t" << it2->first << ":" << std::endl;
+    		for (auto it3 = it2->second.begin(); it3 != it2->second.end(); ++it3) {
+				file << "\t\t" << it3->first << ": " << it3->second.wins << " " << it3->second.draws << " " << it3->second.losses << " " << it3->second.points << " " << it3->second.count << std::endl;
+			}
+		}
     }
     // close file
     file.close();
@@ -704,13 +736,13 @@ FinalResults<long double> compute_score(const EvaluatedResults& results, std::ve
 		}
 	}
 
-    std::vector<std::string> Process::hashes() {
-        std::vector<std::string> hashes;
+    std::vector<std::array<std::string,3>> Process::hashes() {
+        std::vector<std::array<std::string,3>> hashes;
         hashes.reserve(your_decks.size() * enemy_decks.size());
         std::string hash = partial_hash();
         for (auto const & ydeck : your_decks) {
             for (auto const & edeck : enemy_decks) {
-                hashes.emplace_back(ydeck->hash() + ";" + edeck->hash() + ";" + hash);
+                hashes.emplace_back(std::array<std::string,3>{hash,ydeck->hash() , edeck->hash() });
             }
         }
         return hashes;
@@ -928,17 +960,30 @@ FinalResults<long double> compute_score(const EvaluatedResults& results, std::ve
 		}
 #endif
 
-        inline bool Process::check_db(std::vector<std::string> const & vhashes,unsigned num_iterations, EvaluatedResults & evaluated_results) {
+        inline bool Process::check_db(std::vector<std::array<std::string,3>> const & vhashes,unsigned num_iterations, EvaluatedResults & evaluated_results) {
             bool run = false;
             //TODO TUO5 check db for results
             // TODO TUO5 calculate mask for sim evaluate based on missing results in db
+			bool found = false;
             for (unsigned i = 0; i < vhashes.size(); i++)
             {
-                std::string hash = vhashes[i];
+                std::string hash = vhashes[i][0];
                 // TODO TUO5 check db for hash
-                auto it = database.find(hash);
+                auto it1 = database.find(hash);
+				std::map<std::string,Results<uint64_t>>::iterator it;
+				if ( it1 != database.end()) {
+					auto it2 = it1->second.find(vhashes[i][1]);
+					if ( it2 != it1->second.end()) {
+						auto it3 = it2->second.find(vhashes[i][2]);
+						if ( it3 != it2->second.end()) {
+							it = it3;
+							found = true;
+							//std::cout << "hit databse" << std::endl;
+						}
+					}
+				}
                 // TODO TUO5 if hash not in db, add to mask
-                if (it == database.end()){
+                if (!found){
                     mask[i] = true;
                     run = true;
                 }
@@ -965,13 +1010,20 @@ FinalResults<long double> compute_score(const EvaluatedResults& results, std::ve
             return run;
         }
 
-        inline void Process::save_db(std::vector<std::string> const & vhashes,EvaluatedResults & evaluated_results) {
+        inline void Process::save_db(std::vector<std::array<std::string,3>> const & vhashes,EvaluatedResults & evaluated_results) {
             // TODO TUO5 save results to db
             for (unsigned i = 0; i < vhashes.size(); i++)
             {
                 if(mask[i]) {
-                    std::string hash = vhashes[i];
-                    database[hash] = evaluated_results.first[i];
+                    std::array<std::string,3> hash = vhashes[i];
+					// check if map is initialized otherwise initialize
+					if (database.find(hash[0]) == database.end()) {
+						database[hash[0]] = std::map<std::string, std::map<std::string, Results<uint64_t>>>();
+					}
+					if (database[hash[0]].find(hash[1]) == database[hash[0]].end()) {
+						database[hash[0]][hash[1]] = std::map<std::string, Results<uint64_t>>();
+					}
+                    database[hash[0]][hash[1]][hash[2]] = evaluated_results.first[i];
                 }
             }
         }
@@ -982,7 +1034,7 @@ FinalResults<long double> compute_score(const EvaluatedResults& results, std::ve
 			{
 				return evaluated_results;
 			}
-            std::vector<std::string> vhashes = hashes();
+            std::vector<std::array<std::string,3>> vhashes = hashes();
             if( !check_db(vhashes,num_iterations, evaluated_results)) {
                 // 100% covered by db
                 evaluated_results.second = num_iterations;
@@ -1012,7 +1064,7 @@ FinalResults<long double> compute_score(const EvaluatedResults& results, std::ve
 			{
 				return evaluated_results;
 			}
-            std::vector<std::string> vhashes = hashes();
+            std::vector<std::array<std::string,3>> vhashes = hashes();
             if( !check_db(vhashes,num_iterations, evaluated_results)) {
                 // 100% covered by db
                 evaluated_results.second = num_iterations;
@@ -2703,7 +2755,7 @@ DeckResults run(int argc, const char** argv)
 			exit(1);
 		}
 	}
-    load(prefix);
+    load_db(prefix);
 
 #ifdef _OPENMP
 	opt_num_threads = omp_get_max_threads();
@@ -3418,7 +3470,7 @@ DeckResults run(int argc, const char** argv)
 					 }
 		}
 	}
-    save(prefix);
+    write_db(prefix);
 	return fr;
 }
 

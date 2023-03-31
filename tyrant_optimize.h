@@ -4,6 +4,8 @@
 #include <iostream>
 #include <boost/thread/thread.hpp>
 #include <chrono>
+#include <array>
+#include <vector>
 // OpenMP Header
 #ifdef _OPENMP
 #include <omp.h>
@@ -105,8 +107,9 @@ namespace tuo {
 	EXTERN bool fixes[Fix::num_fixes];
 
     // TUO5 db of results
-    // map<hash of sim including decks but also more,result>
-    EXTERN std::map<std::string, Results<uint64_t>> database;
+    // map<hash of proc,ydeck edeck decks but also more,result>
+    //EXTERN std::map<std::string, Results<uint64_t>> database;
+	EXTERN std::map<std::string,std::map<std::string,std::map<std::string,Results<uint64_t>>>> database;
 
 #if defined(ANDROID) || defined(__ANDROID__)
 	EXTERN JNIEnv *envv;
@@ -295,9 +298,9 @@ public:
   // all hashed except the array of decks
   std::string partial_hash();
   // all hashed
-  std::vector<std::string> hashes();
-   bool check_db(std::vector<std::string> const & vhashes,unsigned num_iterations, EvaluatedResults & evaluated_results);
-   void save_db(std::vector<std::string> const & vhashes,EvaluatedResults & evaluated_results);
+  std::vector<std::array<std::string,3>> hashes();
+   bool check_db(std::vector<std::array<std::string,3>> const & vhashes,unsigned num_iterations, EvaluatedResults & evaluated_results);
+   void save_db(std::vector<std::array<std::string,3>>  const & vhashes,EvaluatedResults & evaluated_results);
 
     EvaluatedResults & evaluate(unsigned num_iterations, EvaluatedResults & evaluated_results);
     EvaluatedResults & compare(unsigned num_iterations, EvaluatedResults & evaluated_results, const FinalResults<long double> & best_results);
