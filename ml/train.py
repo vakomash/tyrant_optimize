@@ -38,6 +38,9 @@ def hash_to_ids_ext_b64(hash):
 
 import hashlib
 
+import pandas 
+df = pandas.DataFrame()
+
 xdata = [] # 10 + 10 ids each
 wdata = [] # one score
 sdata = [] # one score
@@ -65,13 +68,24 @@ for ll in l:
             #print(hfield)
             res = db[ll][k][kk].split(" ")
             if int(res[-1]) > 10000:
-                xdata.append( hash_to_ids_ext_b64(k)  + hash_to_ids_ext_b64(kk) + hx )
-                wdata.append(float(res[0]) / float(res[-1]))
-                sdata.append(float(res[1]) / float(res[-1]))
-                ldata.append(float(res[2]) / float(res[-1]))
-                pdata.append(float(res[3]) / float(res[-1]))
+                dic = {}
+                for i in range(0,100):
+                    v = hx[i] if i < len(hx) else 0
+                    dic["f" + str(i)] = v
+                hk = hash_to_ids_ext_b64(k)
+                for i in range(0,len(hk)):
+                    dic["y" + str(i)] = hk[i]
+                hkk = hash_to_ids_ext_b64(kk)
+                for i in range(0,len(hkk)):
+                    dic["e" + str(i)] = hkk[i]
+                dic["w"] = float(res[0]) / float(res[-1])
+                dic["s"] = float(res[1]) / float(res[-1])
+                dic["l"] = float(res[2]) / float(res[-1])
+                dic["p"] = float(res[3]) / float(res[-1])
+                df = df.append(dic,ignore_index=True)
                 print(k,hash_to_ids_ext_b64(k), kk , hash_to_ids_ext_b64(kk), float(res[0]) / float(res[-1]), res[-1])
-
+print(dic)
+print(df.columns.difference(['w','s','l','p']))
 # evaluate xgboost algorithm for classification
 from numpy import asarray, asmatrix
 from numpy import mean
@@ -84,15 +98,13 @@ from sklearn.model_selection import RepeatedKFold
 
 #X, y = make_regression(n_samples=1000, n_features=20, n_informative=15, noise=0.1, random_state=7)
 #print(xdata)
-# define the model
-wmodel = XGBRegressor()
-wmodel.fit(asarray(xdata), asarray(wdata))
-smodel = XGBRegressor()
-smodel.fit(asarray(xdata), asarray(sdata))
-lmodel = XGBRegressor()
-lmodel.fit(asarray(xdata), asarray(ldata))
-pmodel = XGBRegressor()
-pmodel.fit(asarray(xdata), asarray(pdata))
+#xdata = df[df.columns.difference(['w','s','l','p'])].to_numpy()
+## define the model
+#wmodel = XGBRegressor()
+#wmodel.fit(xdata, wdata)
+#
+xdata = df[df.columns.difference(['w','s','l','p'])]
+
 # evaluate the model
 #cv = RepeatedKFold(n_splits=10, n_repeats=3, random_state=1)
 #n_scores = cross_val_score(model, X, y, scoring='neg_mean_absolute_error', cv=cv, n_jobs=-1, error_score='raise')
@@ -100,27 +112,27 @@ pmodel.fit(asarray(xdata), asarray(pdata))
 #print('MAE: %.3f (%.3f)' % (mean(n_scores), std(n_scores)))
 
 # aOhdOsUVtZJvZJvXSwPN9dW9cO+MN/ [1498, 12765, 14004, 15673, 15673, 16983, 30127, 30429, 31196, 32172, 0, 0] aOhdOsUVtZJvZJvXSwPN9dW9cO+ME/MN/ [1498, 12765, 14004, 15673, 15673, 16983, 30127, 30429, 31196, 31884, 32172, 0]
-print(wmodel.predict([[1498, 12765, 14004, 15673, 15673, 16983, 30127, 30429, 31196, 32172, 0, 0,1498, 12765, 14004, 15673, 15673, 16983, 30127, 30429, 31196, 31884, 32172, 0]]))
+#print(wmodel.predict([[1498, 12765, 14004, 15673, 15673, 16983, 30127, 30429, 31196, 32172, 0, 0,1498, 12765, 14004, 15673, 15673, 16983, 30127, 30429, 31196, 31884, 32172, 0]]))
 from sklearn2pmml import sklearn2pmml
 from sklearn2pmml.pipeline import PMMLPipeline
 
 wpmml_pipeline = PMMLPipeline([ ("regressor", XGBRegressor()) ])
-wpmml_pipeline.fit(asarray(xdata), asarray(wdata))
+wpmml_pipeline.fit(xdata, df["w"])
 wpmml_pipeline.configure(compact = False)
 sklearn2pmml(wpmml_pipeline, "win.pmml")
 
 spmml_pipeline = PMMLPipeline([ ("regressor", XGBRegressor()) ])
-spmml_pipeline.fit(asarray(xdata), asarray(sdata))
+spmml_pipeline.fit(xdata, df["s"])
 spmml_pipeline.configure(compact = False)
 sklearn2pmml(spmml_pipeline, "stall.pmml")
 
 lpmml_pipeline = PMMLPipeline([ ("regressor", XGBRegressor()) ])
-lpmml_pipeline.fit(asarray(xdata), asarray(ldata))
+lpmml_pipeline.fit(xdata, df["l"])
 lpmml_pipeline.configure(compact = False)
 sklearn2pmml(lpmml_pipeline, "loss.pmml")
 
 ppmml_pipeline = PMMLPipeline([ ("regressor", XGBRegressor()) ])
-ppmml_pipeline.fit(asarray(xdata), asarray(pdata))
+ppmml_pipeline.fit(xdata, df["p"])
 ppmml_pipeline.configure(compact = False)
 sklearn2pmml(ppmml_pipeline, "points.pmml")
 
