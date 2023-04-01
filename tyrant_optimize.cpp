@@ -49,6 +49,9 @@
 #include "sim.h"
 #include "tyrant.h"
 #include "xml.h"
+
+#include "hPMML.h"
+
 #define DEFINE_GLOBALS
 #include "algorithms.h"
 
@@ -137,6 +140,13 @@ namespace tuo {
 #endif
 }
 */
+
+void load_ml(std::string prefix) {
+    win_model = hpmml::Model(prefix + "data/win.pmml");
+    stall_model = hpmml::Model(prefix + "data/stall.pmml");
+    loss_model = hpmml::Model(prefix + "data/loss.pmml");
+    points_model = hpmml::Model(prefix + "data/points.pmml");
+}
 
 // load database map from file
 void load_db(std::string prefix) {
@@ -736,6 +746,41 @@ FinalResults<long double> compute_score(const EvaluatedResults& results, std::ve
 		}
 	}
 
+    std::vector<std::unordered_map<std::string,std::string>> Process::samples() {
+        std::vector<std::unordered_map<std::string,std::string>> samples;
+        
+        int i = 0;
+        // loop over partial ids and prefix with f add to fmap
+        auto ids = partial_ids();
+        for (auto const & ydeck : your_decks) {
+            auto yids = ydeck->sorted_ids();
+            for (auto const & edeck : enemy_decks) {
+                auto eids = edeck ->sorted_ids();
+                std::unordered_map<std::string,std::string> fmap;
+                i = 0;
+                for (auto const & id : ids) {
+                    fmap.emplace("f"+std::to_string(i),std::to_string(id));
+                    i++;
+                }
+                i = 0;
+                for (auto const & id : yids) {
+                    fmap.emplace("y"+std::to_string(i),std::to_string(id->m_id));
+                    i++;
+                }
+                i = 0;
+                for (auto const & id : eids) {
+                    fmap.emplace("e"+std::to_string(i),std::to_string(id->m_id));
+                    i++;
+                }
+                samples.emplace_back(fmap);
+            }
+        }
+
+
+        return samples;
+
+    }
+
     std::vector<std::array<std::string,3>> Process::hashes() {
         std::vector<std::array<std::string,3>> hashes;
         hashes.reserve(your_decks.size() * enemy_decks.size());
@@ -748,51 +793,70 @@ FinalResults<long double> compute_score(const EvaluatedResults& results, std::ve
         return hashes;
     }
 
+    std::vector<unsigned int> Process::partial_ids() {
+        std::vector<unsigned int> ids;
+        ids.emplace_back(gamemode);
+        ids.emplace_back(optimization_mode);
+        for (int i = 0; i < Fix::num_fixes; ++i)
+        {
+            ids.emplace_back(fixes[i]);
+        }
+        ids.emplace_back(flexible_iter);
+        ids.emplace_back(flexible_turn);
+        ids.emplace_back(eval_iter);
+        ids.emplace_back(eval_turn);
+        for ( int i = 0; i < PassiveBGE::num_passive_bges; ++i)
+            ids.emplace_back(your_bg_effects[i]);
+        for ( int i = 0; i < PassiveBGE::num_passive_bges; ++i)
+            ids.emplace_back(enemy_bg_effects[i]);
+        if( your_bg_skills.size() > 0 ) {
+            auto bge = your_bg_skills[0];
+            ids.emplace_back(bge.id);
+            ids.emplace_back(bge.x);
+            ids.emplace_back(bge.y);
+            ids.emplace_back(bge.n);
+            ids.emplace_back(bge.c);
+            ids.emplace_back(bge.s);
+            ids.emplace_back(bge.s2);
+            ids.emplace_back(bge.all);
+            ids.emplace_back(bge.card_id);
+        }
+        else {
+            // emplace back 9 zeros
+            for ( int i = 0; i < 9; ++i)
+                ids.emplace_back(0);
+        }
+        if( enemy_bg_skills.size() >0 ) {
+            auto bge = enemy_bg_skills[0];
+            ids.emplace_back(bge.id);
+            ids.emplace_back(bge.x);
+            ids.emplace_back(bge.y);
+            ids.emplace_back(bge.n);
+            ids.emplace_back(bge.c);
+            ids.emplace_back(bge.s);
+            ids.emplace_back(bge.s2);
+            ids.emplace_back(bge.all);
+            ids.emplace_back(bge.card_id);
+        }
+        else {
+            // emplace back 9 zeros
+            for ( int i = 0; i < 9; ++i)
+                ids.emplace_back(0);
+        }
+
+
+        
+        return ids;
+    }
+
     // Compute field hash from two decks
     std::string Process::partial_hash()
     {
-        // db caching is incompatible with quest mode
+        // TODO fail if quest enabled since, db caching is incompatible with quest mode
         std::stringstream ios;
-        ios << std::to_string(gamemode) << ";";
-        ios << std::to_string(optimization_mode) << ";";
-        for ( int i = 0; i < PassiveBGE::num_passive_bges; ++i)
-            ios << std::to_string(your_bg_effects[i]) << ",";
-        ios << ";";
-        for ( int i = 0; i < PassiveBGE::num_passive_bges; ++i)
-            ios << std::to_string(enemy_bg_effects[i]) << ",";
-        ios << ";";
-        for ( auto const & bge : your_bg_skills) {
-            ios << std::to_string(bge.id) << "_";
-            ios << std::to_string(bge.x) << "_";
-            ios << std::to_string(bge.y) << "_";
-            ios << std::to_string(bge.n) << "_";
-            ios << std::to_string(bge.c) << "_";
-            ios << std::to_string(bge.s) << "_";
-            ios << std::to_string(bge.s2) << "_";
-            ios << std::to_string(bge.all) << "_";
-            ios << std::to_string(bge.card_id) << ",";
-        }
-        ios << ";";
-        for ( auto const & bge : enemy_bg_skills)
-        {
-            ios << std::to_string(bge.id) << "_";
-            ios << std::to_string(bge.x) << "_";
-            ios << std::to_string(bge.y) << "_";
-            ios << std::to_string(bge.n) << "_";
-            ios << std::to_string(bge.c) << "_";
-            ios << std::to_string(bge.s) << "_";
-            ios << std::to_string(bge.s2) << "_";
-            ios << std::to_string(bge.all) << "_";
-            ios << std::to_string(bge.card_id) << ",";
-        }
+        for( auto id : partial_ids() )
+            encode_id_ext_b64(ios,id);
 
-        ios << ";";
-        for (int i = 0; i < Fix::num_fixes; ++i)
-        {
-            ios << std::to_string(fixes[i]) << ",";
-        }
-        ios << ";";
-        ios << std::to_string(flexible_iter )<< ";" << std::to_string(flexible_turn) << ";" <<std::to_string( eval_iter) << ";" << std::to_string(eval_turn);
         return ios.str();
     }
 
@@ -960,6 +1024,28 @@ FinalResults<long double> compute_score(const EvaluatedResults& results, std::ve
 		}
 #endif
 
+        inline bool Process::eval_ml(unsigned num_iterations, EvaluatedResults & evaluated_results) {
+            auto sampls = samples();
+           // iterate results from samples()
+            for (unsigned i = 0; i < sampls.size(); i++)
+            {
+                auto s  = sampls[i];
+                auto wins = atof(win_model.predict(s).c_str());
+                auto losses= atof(loss_model.predict(s).c_str());
+                auto draws= atof(stall_model.predict(s).c_str());
+                auto points = atof(points_model.predict(s).c_str());
+                        Results<uint64_t> r = {
+                            static_cast<uint64_t>(std::round((1.0*wins*num_iterations /(wins + losses + draws)  ))), 
+                            static_cast<uint64_t>(std::round((1.0*draws*num_iterations /(wins + losses + draws) ))), 
+                            static_cast<uint64_t>(std::round((1.0*losses*num_iterations /(wins + losses + draws)))), 
+                            static_cast<uint64_t>(std::round((1.0*points*num_iterations ))), 
+                            static_cast<uint64_t>(num_iterations)};
+                        evaluated_results.first[i] =r;
+           }
+
+           return false;  // MAYBE return false if ml is bad
+        }
+
         inline bool Process::check_db(std::vector<std::array<std::string,3>> const & vhashes,unsigned num_iterations, EvaluatedResults & evaluated_results) {
             bool run = false;
             //TODO TUO5 check db for results
@@ -1040,6 +1126,11 @@ FinalResults<long double> compute_score(const EvaluatedResults& results, std::ve
                 evaluated_results.second = num_iterations;
                 return evaluated_results;
             }
+            if ( !eval_ml(num_iterations, evaluated_results) ) {
+                // ml is good
+                evaluated_results.second = num_iterations;
+                return evaluated_results;
+            }
 
 
 			thread_num_iterations = num_iterations - evaluated_results.second;
@@ -1067,6 +1158,11 @@ FinalResults<long double> compute_score(const EvaluatedResults& results, std::ve
             std::vector<std::array<std::string,3>> vhashes = hashes();
             if( !check_db(vhashes,num_iterations, evaluated_results)) {
                 // 100% covered by db
+                evaluated_results.second = num_iterations;
+                return evaluated_results;
+            }
+            if ( !eval_ml(num_iterations, evaluated_results) ) {
+                // ml is good
                 evaluated_results.second = num_iterations;
                 return evaluated_results;
             }
@@ -1864,7 +1960,7 @@ bool parse_bge(
 	      )
 {
 	// skip empty
-	trim(bge_name);
+	tuo::trim(bge_name);
 	if (bge_name.empty()) { return true; }
 
 	// is effect combined?
@@ -2756,6 +2852,7 @@ DeckResults run(int argc, const char** argv)
 		}
 	}
     load_db(prefix);
+    load_ml(prefix);
 
 #ifdef _OPENMP
 	opt_num_threads = omp_get_max_threads();
@@ -2768,7 +2865,7 @@ DeckResults run(int argc, const char** argv)
 	std::unordered_map<std::string, std::string> bge_aliases;
 	load_skills_set_xml(all_cards, prefix+"data/skills_set.xml", true);
 	for (unsigned section = 1;
-			load_cards_xml(all_cards, prefix+"data/cards_section_" + to_string(section) + ".xml", false);
+			load_cards_xml(all_cards, prefix+"data/cards_section_" + std::to_string(section) + ".xml", false);
 			++ section);
 	all_cards.organize();
 	load_levels_xml(all_cards, prefix+"data/levels.xml", true);
