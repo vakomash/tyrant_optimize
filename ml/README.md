@@ -22,8 +22,8 @@ Alternatively, if some errors occur in later steps:
 # Run it
 
 ```
-$ tuo_ml --help
-$ tuo_ml
+tuo/data $ tuo_ml --help
+tuo/data $ tuo_ml
 ```
 
 The output should look similar to:
@@ -61,10 +61,9 @@ $ cd tuo/ml
 tuo/ml $ poetry install 
 ```
 
-## Modify train.py
-To your likings.
+## Modify train.py to your likings.
 
 ## Run it
 ```
-$ poetry run tuo_ml
+tuo/data $ poetry run tuo_ml
 ```
