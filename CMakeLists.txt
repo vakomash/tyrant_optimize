@@ -15,6 +15,8 @@ add_definitions(-DTYRANT_OPTIMIZER_VERSION="${VERSION}" ${DEBUG} -DNQUEST)
 project(tuo)
 file(GLOB TUO_SOURCES "*.cpp")
 
+add_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/extern/hPMML/include)
+
 enable_language(CXX)
 add_executable(tuo ${TUO_SOURCES})
 
