@@ -13,7 +13,7 @@ $ pip install tuo_ml
 
 If you do not have administrator rights append `--user`/`--break-system-packages` to above command.
 
-Alternatively, if some errors occur in later steps:
+Alternatively, if some errors occur in later steps to install from source.
 
 
 
