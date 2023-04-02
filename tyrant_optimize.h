@@ -6,6 +6,8 @@
 #include <chrono>
 #include <array>
 #include <vector>
+#include "hPMML.h"
+
 // OpenMP Header
 #ifdef _OPENMP
 #include <omp.h>
@@ -110,6 +112,7 @@ namespace tuo {
     // map<hash of proc,ydeck edeck decks but also more,result>
     //EXTERN std::map<std::string, Results<uint64_t>> database;
 	EXTERN std::map<std::string,std::map<std::string,std::map<std::string,Results<uint64_t>>>> database;
+    EXTERN hpmml::Model win_model, loss_model, stall_model, points_model;
 
 #if defined(ANDROID) || defined(__ANDROID__)
 	EXTERN JNIEnv *envv;
@@ -297,8 +300,12 @@ public:
 		}
   // all hashed except the array of decks
   std::string partial_hash();
+  std::vector<unsigned int> partial_ids();
   // all hashed
   std::vector<std::array<std::string,3>> hashes();
+  std::vector<std::unordered_map<std::string,std::string>> samples();
+
+   bool eval_ml(unsigned num_iterations, EvaluatedResults & evaluated_results);
    bool check_db(std::vector<std::array<std::string,3>> const & vhashes,unsigned num_iterations, EvaluatedResults & evaluated_results);
    void save_db(std::vector<std::array<std::string,3>>  const & vhashes,EvaluatedResults & evaluated_results);
 

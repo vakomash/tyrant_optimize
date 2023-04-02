@@ -22,6 +22,7 @@ unsigned read_card_abbrs(Cards& cards, const std::string& filename);
 unsigned read_bge_aliases(std::unordered_map<std::string, std::string> & bge_aliases, const std::string & filename);
 std::unordered_map<unsigned, unsigned> read_custom_cards(Cards& all_cards, const std::string& filename, bool abort_on_missing);
 
+namespace tuo {
 // trim from start
 static inline std::string &ltrim(std::string &s)
 {
@@ -41,7 +42,7 @@ static inline std::string &trim(std::string &s)
 {
     return ltrim(rtrim(s));
 }
-
+}
 // is line should be skipped?
 static inline bool is_line_empty_or_commented(std::string &s)
 {
