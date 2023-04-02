@@ -115,11 +115,13 @@ namespace tuo {
     EXTERN hpmml::Model win_model, loss_model, stall_model, points_model;
 
     EXTERN long int db_limit;
-    EXTERN bool use_ml;
-    EXTERN bool use_only_ml;
     EXTERN bool use_strict_db;
     EXTERN bool use_db_load;
     EXTERN bool use_db_write;
+
+    EXTERN bool use_ml;
+    EXTERN bool use_only_ml;
+    EXTERN double ml_precision;
 
 #if defined(ANDROID) || defined(__ANDROID__)
 	EXTERN JNIEnv *envv;
