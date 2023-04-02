@@ -61,8 +61,7 @@ $ cd tuo/ml
 tuo/ml $ poetry install 
 ```
 
-## Modify train.py
-To your likings.
+## Modify train.py to your likings.
 
 ## Run it
 ```
