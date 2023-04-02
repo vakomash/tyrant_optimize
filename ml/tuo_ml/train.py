@@ -79,7 +79,7 @@ def main():
     )
     args = parser.parse_args()
 
-    print("Loading database...", end="")
+    print("Loading database...", end="", flush=True)
     db = yaml.load(sed("\t", "  ", args.database), Loader=SafeLoader)
     print("done")
     # print(db.keys())
