@@ -234,6 +234,7 @@ void init()
 	fixes[Fix::revenge_on_death] = true;
 	fixes[Fix::death_from_bge] = true;
 	fixes[Fix::legion_under_mega] = true;
+	fixes[Fix::barrier_each_turn] = true;
 }
 
 #if defined(ANDROID) || defined(__ANDROID__)
@@ -2217,6 +2218,14 @@ DeckResults run(int argc, const char** argv)
 		else if (strcmp(argv[argIndex], "fix-legion-under-megamorphosis") == 0)
 		{
 			fixes[Fix::legion_under_mega] = true;
+		}
+        else if (strcmp(argv[argIndex], "update-barrier-each-turn") == 0)
+		{
+			fixes[Fix::barrier_each_turn] = true;
+		}
+        else if (strcmp(argv[argIndex], "no-update-barrier-each-turn") == 0)
+		{
+			fixes[Fix::barrier_each_turn] = false;
 		}
 		else if (strcmp(argv[argIndex], "seed") == 0)
 		{

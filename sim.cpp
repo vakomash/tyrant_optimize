@@ -1249,6 +1249,9 @@ void turn_start_phase_update(Field*fd,CardStatus * status)
                 status->m_absorption = status->skill_base_value(Skill::absorb);
             }
             check_and_perform_bravery(fd,status);
+            if(__builtin_expect(fd->fixes[Fix::barrier_each_turn],true)){
+                status->m_protected += status->skill(Skill::barrier);
+            }
             if (status->m_delay > 0)
             {
                 _DEBUG_MSG(1, "%s reduces its timer\n", status_description(status).c_str());

@@ -21,6 +21,7 @@ enum Fix
     revenge_on_death,
     death_from_bge,
     legion_under_mega,
+    barrier_each_turn,
     num_fixes
 };
 
