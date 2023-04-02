@@ -22,8 +22,8 @@ Alternatively, if some errors occur in later steps:
 # Run it
 
 ```
-$ tuo_ml --help
-$ tuo_ml
+tuo/data $ tuo_ml --help
+tuo/data $ tuo_ml
 ```
 
 The output should look similar to:
