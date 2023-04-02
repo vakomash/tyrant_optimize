@@ -18,7 +18,7 @@ all: $(MAIN)
 
 obj/%.o: %.cpp $(INCS)
 	-@if not exist "obj" mkdir "obj"
-	$(CXX) $(CPPFLAGS) -o $@ -c $<
+	$(CXX) $(CPPFLAGS) -I extern/hPMML/include -o $@ -c $<
 
 $(MAIN): $(OBJS)
 	$(CXX) -o $@ $(OBJS) $(LDFLAGS)

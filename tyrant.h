@@ -393,7 +393,7 @@ enum QuestType
 }
 #endif
 
-enum class OptimizationMode
+enum OptimizationMode
 {
     notset,
     winrate,
@@ -433,6 +433,7 @@ using SkillSpecXMult = _SkillSpec<double>;
 
 // --------------------------------------------------------------------------------
 // Common functions
+namespace tuo {
 template<typename T>
 std::string to_string(const T val)
 {
@@ -440,7 +441,7 @@ std::string to_string(const T val)
     s << val;
     return s.str();
 }
-
+}
 inline uint8_t byte_bits_count(uint8_t i)
 {
     i = i - ((i >> 1) & 0x55);

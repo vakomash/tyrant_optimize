@@ -273,7 +273,7 @@ const Card* card_by_id_safe(const Cards& cards, const unsigned card_id)
 std::string card_name_by_id_safe(const Cards& cards, const unsigned card_id)
 {
     const auto cardIter = cards.cards_by_id.find(card_id);
-    if (cardIter == cards.cards_by_id.end()) { return "UnknownCard.id[" + to_string(card_id) + "]"; }
+    if (cardIter == cards.cards_by_id.end()) { return "UnknownCard.id[" + tuo::to_string(card_id) + "]"; }
     return cardIter->second->m_name;
 }
 //------------------------------------------------------------------------------
@@ -284,13 +284,13 @@ std::string card_description(const Cards& cards, const Card* c)
     switch(c->m_type)
     {
         case CardType::assault:
-            desc += ": " + to_string(c->m_attack) + "/" + to_string(c->m_health) + "/" + to_string(c->m_delay);
+            desc += ": " + tuo::to_string(c->m_attack) + "/" + tuo::to_string(c->m_health) + "/" + tuo::to_string(c->m_delay);
             break;
         case CardType::structure:
-            desc += ": " + to_string(c->m_health) + "/" + to_string(c->m_delay);
+            desc += ": " + tuo::to_string(c->m_health) + "/" + tuo::to_string(c->m_delay);
             break;
         case CardType::commander:
-            desc += ": hp:" + to_string(c->m_health);
+            desc += ": hp:" + tuo::to_string(c->m_health);
             break;
         case CardType::num_cardtypes:
             assert(false);
@@ -308,57 +308,57 @@ std::string card_description(const Cards& cards, const Card* c)
 //------------------------------------------------------------------------------
 std::string CardStatus::description() const
 {
-    std::string desc = "P" + to_string(m_player) + " ";
+    std::string desc = "P" + tuo::to_string(m_player) + " ";
     switch(m_card->m_type)
     {
         case CardType::commander: desc += "Commander "; break;
-        case CardType::assault: desc += "Assault " + to_string(m_index) + " "; break;
-        case CardType::structure: desc += "Structure " + to_string(m_index) + " "; break;
+        case CardType::assault: desc += "Assault " + tuo::to_string(m_index) + " "; break;
+        case CardType::structure: desc += "Structure " + tuo::to_string(m_index) + " "; break;
         case CardType::num_cardtypes: assert(false); break;
     }
     desc += "[" + m_card->m_name;
     switch (m_card->m_type)
     {
         case CardType::assault:
-            desc += " att:[[" + to_string(m_card->m_attack) + "(base)";
+            desc += " att:[[" + tuo::to_string(m_card->m_attack) + "(base)";
             if (m_perm_attack_buff)
             {
-                desc += "+[" + to_string(m_perm_attack_buff) + "(perm)";
-                if (m_subdued) { desc += "-" + to_string(m_subdued) + "(subd)"; }
+                desc += "+[" + tuo::to_string(m_perm_attack_buff) + "(perm)";
+                if (m_subdued) { desc += "-" + tuo::to_string(m_subdued) + "(subd)"; }
                 desc += "]";
             }
-            if (m_corroded_weakened) { desc += "-" + to_string(m_corroded_weakened) + "(corr)"; }
+            if (m_corroded_weakened) { desc += "-" + tuo::to_string(m_corroded_weakened) + "(corr)"; }
             desc += "]";
-            if (m_temp_attack_buff) { desc += (m_temp_attack_buff > 0 ? "+" : "") + to_string(m_temp_attack_buff) + "(temp)"; }
-            desc += "]=" + to_string(attack_power());
+            if (m_temp_attack_buff) { desc += (m_temp_attack_buff > 0 ? "+" : "") + tuo::to_string(m_temp_attack_buff) + "(temp)"; }
+            desc += "]=" + tuo::to_string(attack_power());
         case CardType::structure:
         case CardType::commander:
-            desc += " hp:" + to_string(m_hp);
-            if(m_absorption)desc += " absorb:" + to_string(m_absorption);
+            desc += " hp:" + tuo::to_string(m_hp);
+            if(m_absorption)desc += " absorb:" + tuo::to_string(m_absorption);
             break;
         case CardType::num_cardtypes:
             assert(false);
             break;
     }
-    if (m_delay) { desc += " cd:" + to_string(m_delay); }
+    if (m_delay) { desc += " cd:" + tuo::to_string(m_delay); }
     // Status w/o value
     if (m_jammed) { desc += ", jammed"; }
     if (m_overloaded) { desc += ", overloaded"; }
     if (m_sundered) { desc += ", sundered"; }
     if (m_summoned) { desc+= ", summoned"; }
     // Status w/ value
-    if (m_corroded_weakened || m_corroded_rate) { desc += ", corroded " + to_string(m_corroded_weakened) + " (rate: " + to_string(m_corroded_rate) + ")"; }
-    if (m_subdued) { desc += ", subdued " + to_string(m_subdued); }
-    if (m_enfeebled) { desc += ", enfeebled " + to_string(m_enfeebled); }
-    if (m_inhibited) { desc += ", inhibited " + to_string(m_inhibited); }
-    if (m_sabotaged) { desc += ", sabotaged " + to_string(m_sabotaged); }
-    if (m_poisoned) { desc += ", poisoned " + to_string(m_poisoned); }
-    if (m_protected) { desc += ", protected " + to_string(m_protected); }
-    if (m_protected_stasis) { desc += ", stasis " + to_string(m_protected_stasis); }
-    if (m_enraged) { desc += ", enraged " + to_string(m_enraged); }
-    if (m_entrapped) { desc += ", entrapped " + to_string(m_entrapped); }
-    if (m_marked) { desc += ", marked " + to_string(m_marked); }
-    if (m_diseased) { desc += ", diseased " + to_string(m_diseased); }
+    if (m_corroded_weakened || m_corroded_rate) { desc += ", corroded " + tuo::to_string(m_corroded_weakened) + " (rate: " + tuo::to_string(m_corroded_rate) + ")"; }
+    if (m_subdued) { desc += ", subdued " + tuo::to_string(m_subdued); }
+    if (m_enfeebled) { desc += ", enfeebled " + tuo::to_string(m_enfeebled); }
+    if (m_inhibited) { desc += ", inhibited " + tuo::to_string(m_inhibited); }
+    if (m_sabotaged) { desc += ", sabotaged " + tuo::to_string(m_sabotaged); }
+    if (m_poisoned) { desc += ", poisoned " + tuo::to_string(m_poisoned); }
+    if (m_protected) { desc += ", protected " + tuo::to_string(m_protected); }
+    if (m_protected_stasis) { desc += ", stasis " + tuo::to_string(m_protected_stasis); }
+    if (m_enraged) { desc += ", enraged " + tuo::to_string(m_enraged); }
+    if (m_entrapped) { desc += ", entrapped " + tuo::to_string(m_entrapped); }
+    if (m_marked) { desc += ", marked " + tuo::to_string(m_marked); }
+    if (m_diseased) { desc += ", diseased " + tuo::to_string(m_diseased); }
     //    if(m_step != CardStep::none) { desc += ", Step " + to_string(static_cast<int>(m_step)); }
     //APN
     const Skill::Trigger s_triggers[] = { Skill::Trigger::play, Skill::Trigger::activate, Skill::Trigger::death , Skill::Trigger::attacked};
@@ -390,7 +390,7 @@ std::string CardStatus::description() const
         {
             std::string skill_desc;
             if (m_evolved_skill_offset[ss.id]) { skill_desc += "->" + skill_names[ss.id + m_evolved_skill_offset[ss.id]]; }
-            if (m_enhanced_value[ss.id]) { skill_desc += " +" + to_string(m_enhanced_value[ss.id]); }
+            if (m_enhanced_value[ss.id]) { skill_desc += " +" + tuo::to_string(m_enhanced_value[ss.id]); }
             if (!skill_desc.empty())
             {
                 desc += ", " + (
@@ -1711,7 +1711,7 @@ struct PerformAttack
                 if(marked_value)
                 {
 #ifndef NDEBUG
-                    if (debug_print > 0) { desc += "+" + to_string(marked_value) + "(mark)"; }
+                    if (debug_print > 0) { desc += "+" + tuo::to_string(marked_value) + "(mark)"; }
 #endif
                     att_dmg += marked_value;
                 }
@@ -1734,7 +1734,7 @@ struct PerformAttack
                     {
                         legion_value *= legion_base;
 #ifndef NDEBUG
-                        if (debug_print > 0) { desc += "+" + to_string(legion_value) + "(legion)"; }
+                        if (debug_print > 0) { desc += "+" + tuo::to_string(legion_value) + "(legion)"; }
 #endif
                         att_dmg += legion_value;
                     }
@@ -1754,7 +1754,7 @@ struct PerformAttack
                     unsigned uniq_factions = byte_bits_count(factions_bitmap);
                     coalition_value = coalition_base * uniq_factions;
 #ifndef NDEBUG
-                    if (debug_print > 0) { desc += "+" + to_string(coalition_value) + "(coalition/x" + to_string(uniq_factions) + ")"; }
+                    if (debug_print > 0) { desc += "+" + tuo::to_string(coalition_value) + "(coalition/x" + tuo::to_string(uniq_factions) + ")"; }
 #endif
                     att_dmg += coalition_value;
                 }
@@ -1764,7 +1764,7 @@ struct PerformAttack
                 if (rupture_value > 0)
                 {
 #ifndef NDEBUG
-                    if (debug_print > 0) { desc += "+" + to_string(rupture_value) + "(rupture)"; }
+                    if (debug_print > 0) { desc += "+" + tuo::to_string(rupture_value) + "(rupture)"; }
 #endif
                     att_dmg += rupture_value;
                 }
@@ -1774,7 +1774,7 @@ struct PerformAttack
                 if (venom_value > 0 && def_status->m_poisoned > 0)
                 {
 #ifndef NDEBUG
-                    if (debug_print > 0) { desc += "+" + to_string(venom_value) + "(venom)"; }
+                    if (debug_print > 0) { desc += "+" + tuo::to_string(venom_value) + "(venom)"; }
 #endif
                     att_dmg += venom_value;
                 }
@@ -1783,7 +1783,7 @@ struct PerformAttack
                 if (fd->bloodlust_value > 0)
                 {
 #ifndef NDEBUG
-                    if (debug_print > 0) { desc += "+" + to_string(fd->bloodlust_value) + "(bloodlust)"; }
+                    if (debug_print > 0) { desc += "+" + tuo::to_string(fd->bloodlust_value) + "(bloodlust)"; }
 #endif
                     att_dmg += fd->bloodlust_value;
                 }
@@ -1792,7 +1792,7 @@ struct PerformAttack
                 if (def_status->m_enfeebled > 0)
                 {
 #ifndef NDEBUG
-                    if (debug_print > 0) { desc += "+" + to_string(def_status->m_enfeebled) + "(enfeebled)"; }
+                    if (debug_print > 0) { desc += "+" + tuo::to_string(def_status->m_enfeebled) + "(enfeebled)"; }
 #endif
                     att_dmg += def_status->m_enfeebled;
                 }
@@ -1820,14 +1820,14 @@ struct PerformAttack
             if (armor_value > 0)
             {
 #ifndef NDEBUG
-                if(debug_print > 0) { reduced_desc += to_string(armor_value) + "(armor)"; }
+                if(debug_print > 0) { reduced_desc += tuo::to_string(armor_value) + "(armor)"; }
 #endif
                 reduced_dmg += armor_value;
             }
             if (def_status->protected_value() > 0)
             {
 #ifndef NDEBUG
-                if(debug_print > 0) { reduced_desc += (reduced_desc.empty() ? "" : "+") + to_string(def_status->protected_value()) + "(protected)"; }
+                if(debug_print > 0) { reduced_desc += (reduced_desc.empty() ? "" : "+") + tuo::to_string(def_status->protected_value()) + "(protected)"; }
 #endif
                 reduced_dmg += def_status->protected_value();
             }
@@ -1835,7 +1835,7 @@ struct PerformAttack
             if (reduced_dmg > 0 && pierce_value > 0)
             {
 #ifndef NDEBUG
-                if (debug_print > 0) { reduced_desc += "-" + to_string(pierce_value) + "(pierce)"; }
+                if (debug_print > 0) { reduced_desc += "-" + tuo::to_string(pierce_value) + "(pierce)"; }
 #endif
                 reduced_dmg = safe_minus(reduced_dmg, pierce_value);
             }
@@ -1844,7 +1844,7 @@ struct PerformAttack
             if (debug_print > 0)
             {
                 if(!reduced_desc.empty()) { desc += "-[" + reduced_desc + "]"; }
-                if(!desc.empty()) { desc += "=" + to_string(att_dmg); }
+                if(!desc.empty()) { desc += "=" + tuo::to_string(att_dmg); }
                 _DEBUG_MSG(1, "%s attacks %s for %u%s damage\n",
                         status_description(att_status).c_str(),
                         status_description(def_status).c_str(), pre_modifier_dmg, desc.c_str());
@@ -3356,7 +3356,7 @@ Results<uint64_t> evaluate_sim_result(Field* fd, bool single_turn_both)
     {
 	bool sign = evaluate_field(fd)<0;
 	unsigned val = evaluate_field(fd) *(1-2*sign);
-	return {!is_alive(&fd->players[1]->commander),sign,!is_alive(&fd->players[0]->commander),val};
+	return {!is_alive(&fd->players[1]->commander),sign,!is_alive(&fd->players[0]->commander),val,1};
     }
     switch (fd->optimization_mode)
     {
@@ -3389,29 +3389,29 @@ Results<uint64_t> evaluate_sim_result(Field* fd, bool single_turn_both)
         _DEBUG_MSG(1, "You lose.\n");
         switch (fd->optimization_mode)
         {
-            case OptimizationMode::raid: return {0, 0, 1, (points_score_type)raid_damage};
-            case OptimizationMode::brawl: return {0, 0, 1, (points_score_type) 5};
+            case OptimizationMode::raid: return {0, 0, 1, (points_score_type)raid_damage,1};
+            case OptimizationMode::brawl: return {0, 0, 1, (points_score_type) 5,1};
             case OptimizationMode::brawl_defense:
                                           {
                                               unsigned enemy_brawl_score = evaluate_brawl_score(fd, 1);
                                               unsigned max_score = max_possible_score[(size_t)OptimizationMode::brawl_defense];
                                               if(enemy_brawl_score> max_score)
                                                 std::cerr << "WARNING: enemy_brawl_score > max_possible_brawl_score" << std::endl;
-                                              return {0, 0, 1, (points_score_type)safe_minus(max_score , enemy_brawl_score)};
+                                              return {0, 0, 1, (points_score_type)safe_minus(max_score , enemy_brawl_score),1};
                                           }
-            case OptimizationMode::war: return {0,0,1, (points_score_type) 20};
+            case OptimizationMode::war: return {0,0,1, (points_score_type) 20,1};
             case OptimizationMode::war_defense:
                                         {
                                             unsigned enemy_war_score = evaluate_war_score(fd, 1);
                                             unsigned max_score = max_possible_score[(size_t)OptimizationMode::war_defense];
                                             if(enemy_war_score> max_score)
                                                 std::cerr << "WARNING: enemy_war_score > max_possible_war_score" << std::endl;
-                                            return {0, 0, 1, (points_score_type)safe_minus(max_score , enemy_war_score)};
+                                            return {0, 0, 1, (points_score_type)safe_minus(max_score , enemy_war_score),1};
                                         }
 #ifndef NQUEST
-            case OptimizationMode::quest: return {0, 0, 1, (points_score_type)(fd->quest.must_win ? 0 : quest_score)};
+            case OptimizationMode::quest: return {0, 0, 1, (points_score_type)(fd->quest.must_win ? 0 : quest_score),1};
 #endif
-            default: return {0, 0, 1, 0};
+            default: return {0, 0, 1, 0,1};
         }
     }
     // you win
@@ -3423,36 +3423,36 @@ Results<uint64_t> evaluate_sim_result(Field* fd, bool single_turn_both)
             case OptimizationMode::brawl:
                 {
                     unsigned brawl_score = evaluate_brawl_score(fd, 0);
-                    return {1, 0, 0, (points_score_type)brawl_score};
+                    return {1, 0, 0, (points_score_type)brawl_score,1};
                 }
             case OptimizationMode::brawl_defense:
                 {
                     unsigned max_score = max_possible_score[(size_t)OptimizationMode::brawl_defense];
                     unsigned min_score = min_possible_score[(size_t)OptimizationMode::brawl_defense];
-                    return {1, 0, 0, (points_score_type)(max_score - min_score)};
+                    return {1, 0, 0, (points_score_type)(max_score - min_score),1};
                 }
             case OptimizationMode::campaign:
                 {
                     unsigned total_dominions_destroyed = (p[0]->deck->alpha_dominion != nullptr) - p[0]->structures.count(is_it_dominion);
                     unsigned campaign_score = 100 - 10 * (p[0]->total_nonsummon_cards_destroyed - total_dominions_destroyed);
-                    return {1, 0, 0, (points_score_type)campaign_score};
+                    return {1, 0, 0, (points_score_type)campaign_score,1};
                 }
             case OptimizationMode::war:
                 {
                     unsigned war_score = evaluate_war_score(fd, 0);
-                    return {1,0,0, (points_score_type) war_score};
+                    return {1,0,0, (points_score_type) war_score,1};
                 }
             case OptimizationMode::war_defense:
                 {
                     unsigned max_score = max_possible_score[(size_t)OptimizationMode::war_defense];
                     unsigned min_score = min_possible_score[(size_t)OptimizationMode::war_defense];
-                    return {1, 0, 0, (points_score_type)(max_score - min_score)};
+                    return {1, 0, 0, (points_score_type)(max_score - min_score),1};
                 }
 #ifndef NQUEST
-            case OptimizationMode::quest: return {1, 0, 0, (points_score_type)(fd->quest.win_score + quest_score)};
+            case OptimizationMode::quest: return {1, 0, 0, (points_score_type)(fd->quest.win_score + quest_score),1};
 #endif
             default:
-                                          return {1, 0, 0, 100};
+                                          return {1, 0, 0, 100,1};
         }
     }
     if (fd->turn > turn_limit)
@@ -3460,32 +3460,32 @@ Results<uint64_t> evaluate_sim_result(Field* fd, bool single_turn_both)
         _DEBUG_MSG(1, "Stall after %u turns.\n", turn_limit);
         switch (fd->optimization_mode)
         {
-            case OptimizationMode::defense: return {0, 1, 0, 100};
-            case OptimizationMode::raid: return {0, 1, 0, (points_score_type)raid_damage};
-            case OptimizationMode::brawl: return {0, 1, 0, 5};
+            case OptimizationMode::defense: return {0, 1, 0, 100,1};
+            case OptimizationMode::raid: return {0, 1, 0, (points_score_type)raid_damage,1};
+            case OptimizationMode::brawl: return {0, 1, 0, 5,1};
             case OptimizationMode::brawl_defense:
                                           {
                                               unsigned max_score = max_possible_score[(size_t)OptimizationMode::brawl_defense];
                                               unsigned min_score = min_possible_score[(size_t)OptimizationMode::brawl_defense];
-                                              return {1, 0, 0, (points_score_type)(max_score - min_score)};
+                                              return {1, 0, 0, (points_score_type)(max_score - min_score),1};
                                           }
-            case OptimizationMode::war: return {0,1,0, (points_score_type) 20};
+            case OptimizationMode::war: return {0,1,0, (points_score_type) 20,1};
             case OptimizationMode::war_defense:
                                         {
                                             unsigned max_score = max_possible_score[(size_t)OptimizationMode::war_defense];
                                             unsigned min_score = min_possible_score[(size_t)OptimizationMode::war_defense];
-                                            return {1, 0, 0, (points_score_type)(max_score - min_score)};
+                                            return {1, 0, 0, (points_score_type)(max_score - min_score),1};
                                         }
 #ifndef NQUEST
-            case OptimizationMode::quest: return {0, 1, 0, (points_score_type)(fd->quest.must_win ? 0 : quest_score)};
+            case OptimizationMode::quest: return {0, 1, 0, (points_score_type)(fd->quest.must_win ? 0 : quest_score),1};
 #endif
-            default: return {0, 1, 0, 0};
+            default: return {0, 1, 0, 0,1};
         }
     }
 
     // Huh? How did we get here?
     assert(false);
-    return {0, 0, 0, 0};
+    return {0, 0, 0, 0,1};
 }
 
 //------------------------------------------------------------------------------

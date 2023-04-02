@@ -25,10 +25,11 @@ extern unsigned turn_limit;
 template<typename result_type>
 struct Results
 {
-    result_type wins;
-    result_type draws;
-    result_type losses;
-    result_type points;
+    result_type wins = 0;
+    result_type draws = 0;
+    result_type losses = 0;
+    result_type points = 0;
+    result_type count = 0; // number of simulations, this is equal to wins + draws + losses in 99% of cases
     template<typename other_result_type>
     Results& operator+=(const Results<other_result_type>& other)
     {
@@ -36,10 +37,12 @@ struct Results
         draws += other.draws;
         losses += other.losses;
         points += other.points;
+        count += other.count;
         return *this;
     }
 };
 
+// pair<Results of size enemy_decks.size() * your_dekcs.size(), number of simulations >
 typedef std::pair<std::vector<Results<uint64_t>>, unsigned> EvaluatedResults;
 
 template<typename result_type>
@@ -429,13 +432,13 @@ inline std::string skill_description(const Cards& cards, const _SkillSpec<x_type
             (trig == Skill::Trigger::attacked) ? "(On Attacked)" :
             (trig == Skill::Trigger::death) ? "(On Death)" : "") +
         skill_names[s.id] +
-        (s.card_id == 0 ? "" : " " + card_name_by_id_safe(cards, s.card_id) + " id[" + to_string(s.card_id) + "]") +
-        (s.all ? " all" : s.n == 0 ? "" : std::string(" ") + to_string(s.n)) +
+        (s.card_id == 0 ? "" : " " + card_name_by_id_safe(cards, s.card_id) + " id[" + tuo::to_string(s.card_id) + "]") +
+        (s.all ? " all" : s.n == 0 ? "" : std::string(" ") + tuo::to_string(s.n)) +
         (s.y == allfactions ? "" : std::string(" ") + faction_names[s.y]) +
         (s.s == Skill::no_skill ? "" : std::string(" ") + skill_names[s.s]) +
         (s.s2 == Skill::no_skill ? "" : std::string(" ") + skill_names[s.s2]) +
-        (s.x == 0 ? "" : std::string(" ") + to_string(s.x)) +
-        (s.c == 0 ? "" : std::string(" every ") + to_string(s.c));
+        (s.x == 0 ? "" : std::string(" ") + tuo::to_string(s.x)) +
+        (s.c == 0 ? "" : std::string(" every ") + tuo::to_string(s.c));
 }
 
 template<typename x_type>
@@ -449,7 +452,7 @@ inline std::string skill_short_description(const Cards& cards, const _SkillSpec<
         (s.card_id == 0 ? "" : " " + card_name_by_id_safe(cards, s.card_id)) +
         (s.s == Skill::no_skill ? "" : std::string(" ") + skill_names[s.s]) +
         (s.s2 == Skill::no_skill ? "" : std::string(" ") + skill_names[s.s2]) +
-        (s.x == 0 ? "" : " " + to_string(s.x));
+        (s.x == 0 ? "" : " " + tuo::to_string(s.x));
 }
 
 #endif

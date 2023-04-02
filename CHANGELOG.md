@@ -17,7 +17,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update poison skill
 - Added options `update-poison-after-attacked` to toggle new behaviour
 
-
 ## [4.7.0] - 2023-04-02
 
 - Update mimic skill
@@ -32,3 +31,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Update barrier skill
 - Added options `update-barrier-each-turn` and `no-update-barrier-each-turn` to toggle new behaviour
+
+## [6.0.0] - 2023-04-02
+
+- Add machine learning in data/*.pmml
+- To train you own model checkout ml/README.md
+
+## [5.0.0] - 2023-03-25
+
+- Add database in data/database.yml

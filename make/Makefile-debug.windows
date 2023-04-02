@@ -17,7 +17,7 @@ all: $(MAIN)
 
 obj-debug/%.o: %.cpp $(INCS)
 	-@if not exist "obj-debug" mkdir "obj-debug"
-	$(CXX) $(CPPFLAGS) -o $@ -c $<
+	$(CXX) $(CPPFLAGS) -I extern/hPMML/include -o $@ -c $<
 
 $(MAIN): $(OBJS)
 	$(CXX) -o $@ $(OBJS) $(LDFLAGS)

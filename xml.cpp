@@ -495,7 +495,7 @@ Deck* read_deck(Decks& decks, const Cards& all_cards, xml_node<>* node, DeckType
         {
             auto skill_name = skill_node->first_attribute("id")->value();
             Skill::Skill skill_id = skill_name_to_id(skill_name);
-            if (skill_id == Skill::no_skill) { throw std::runtime_error("unknown skill id:" + to_string(skill_name)); }
+            if (skill_id == Skill::no_skill) { throw std::runtime_error("unknown skill id:" + tuo::to_string(skill_name)); }
             auto x = node_value_float(skill_node, "x", 0.0);
             auto y = skill_faction(skill_node);
             auto n = node_value(skill_node, "n", 0);
@@ -591,7 +591,7 @@ Deck* read_deck(Decks& decks, const Cards& all_cards, xml_node<>* node, DeckType
 
     for (unsigned level = 1; level < max_level; ++ level)
     {
-        std::string deck_name = base_deck_name + "-" + to_string(level);
+        std::string deck_name = base_deck_name + "-" + tuo::to_string(level);
         unsigned upgrade_points = ceil(upgrade_opportunities * (level - 1) / (double)(max_level - 1));
         decks.decks.push_back(Deck{all_cards, decktype, id, deck_name, upgrade_points, upgrade_opportunities});
         Deck* deck = &decks.decks.back();
@@ -600,7 +600,7 @@ Deck* read_deck(Decks& decks, const Cards& all_cards, xml_node<>* node, DeckType
         deck->effects = effects;
         deck->level = level;
         decks.add_deck(deck, deck_name);
-        decks.add_deck(deck, decktype_names[decktype] + " #" + to_string(id) + "-" + to_string(level));
+        decks.add_deck(deck, decktype_names[decktype] + " #" + tuo::to_string(id) + "-" + tuo::to_string(level));
     }
 
     decks.decks.push_back(Deck{all_cards, decktype, id, base_deck_name});
@@ -632,9 +632,9 @@ Deck* read_deck(Decks& decks, const Cards& all_cards, xml_node<>* node, DeckType
     }
 
     decks.add_deck(deck, base_deck_name);
-    decks.add_deck(deck, base_deck_name + "-" + to_string(max_level));
-    decks.add_deck(deck, decktype_names[decktype] + " #" + to_string(id));
-    decks.add_deck(deck, decktype_names[decktype] + " #" + to_string(id) + "-" + to_string(max_level));
+    decks.add_deck(deck, base_deck_name + "-" + tuo::to_string(max_level));
+    decks.add_deck(deck, decktype_names[decktype] + " #" + tuo::to_string(id));
+    decks.add_deck(deck, decktype_names[decktype] + " #" + tuo::to_string(id) + "-" + tuo::to_string(max_level));
     decks.by_type_id[{decktype, id}] = deck;
     return deck;
 }
