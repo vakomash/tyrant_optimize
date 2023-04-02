@@ -118,7 +118,7 @@ def main():
 
     df = pandas.DataFrame(dics)
     if dic is None:
-        raise RuntimeError("No data found")
+        raise RuntimeError("No data found, consider decreasing the limit parameter (-l)")
 
     xdata = df[df.columns.difference(["w", "s", "l", "p"])]
 
