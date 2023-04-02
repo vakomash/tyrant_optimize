@@ -7,17 +7,17 @@ parser = argparse.ArgumentParser(
                     prog='Machine Learning for TUO',
                     description='Train a model for TUO',
                     epilog='Author: Alexander Puck Neuwirth')
-parser.add_argument('-d', '--database', help='database file', type=str, default = "../data/database.yml")
-parser.add_argument('-o', '--output', help='output directory', type=str, default = "data/")
+parser.add_argument('-d', '--database', help='database file', type=str, default = "database.yml")
+parser.add_argument('-o', '--output', help='output directory', type=str, default = ".")
 parser.add_argument('-l', '--limit', help='minimum iterations needed to be included', type=int, default =10000)
 args = parser.parse_args()
 
 base64_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 
 db = yaml.load(sed('\t',"  ",args.database),Loader=SafeLoader)
-print(db.keys())
-l = list(db.keys())[1:]
-print(db[l[0]])
+#print(db.keys())
+l = list(db.keys())[2:]
+#print(db[l[0]])
 
 def hash_to_ids_ext_b64(hash, nmin=12):
     ids = []
@@ -67,10 +67,9 @@ for ll in l:
 
             #print(hfield)
             res = db[ll][k][kk].split(" ")
-            if int(res[-1]) > args.limit:
+            if int(res[-1]) >= args.limit:
                 dic = {}
-                for i in len(hx):
-                    v = hx[i]
+                for i,v in enumerate(hx):
                     dic["f" + str(i)] = v
                 hk = hash_to_ids_ext_b64(k)
                 for i in range(0,len(hk)):
@@ -82,8 +81,9 @@ for ll in l:
                 dic["s"] = float(res[1]) / float(res[-1])
                 dic["l"] = float(res[2]) / float(res[-1])
                 dic["p"] = float(res[3]) / float(res[-1])
-                df = df.append(dic,ignore_index=True)
-                print(k,hash_to_ids_ext_b64(k), kk , hash_to_ids_ext_b64(kk), float(res[0]) / float(res[-1]), res[-1])
+                df = pandas.concat([df, pandas.DataFrame.from_records([dic])])
+                #df = df.append(dic,ignore_index=True)
+                #print(k,hash_to_ids_ext_b64(k), kk , hash_to_ids_ext_b64(kk), float(res[0]) / float(res[-1]), res[-1])
 if dic is None:
     raise RuntimeError("No data found")
 print(dic)
@@ -121,28 +121,28 @@ from sklearn2pmml.pipeline import PMMLPipeline
 wpmml_pipeline = PMMLPipeline([ ("regressor", XGBRegressor()) ])
 wpmml_pipeline.fit(xdata, df["w"])
 wpmml_pipeline.configure(compact = False)
-sklearn2pmml(wpmml_pipeline, args.ouput +"win.pmml")
+sklearn2pmml(wpmml_pipeline, args.output +"/win.pmml")
 
 spmml_pipeline = PMMLPipeline([ ("regressor", XGBRegressor()) ])
 spmml_pipeline.fit(xdata, df["s"])
 spmml_pipeline.configure(compact = False)
-sklearn2pmml(spmml_pipeline, args.ouput +"stall.pmml")
+sklearn2pmml(spmml_pipeline, args.output +"/stall.pmml")
 
 lpmml_pipeline = PMMLPipeline([ ("regressor", XGBRegressor()) ])
 lpmml_pipeline.fit(xdata, df["l"])
 lpmml_pipeline.configure(compact = False)
-sklearn2pmml(lpmml_pipeline, args.ouput +"loss.pmml")
+sklearn2pmml(lpmml_pipeline, args.output +"/loss.pmml")
 
 ppmml_pipeline = PMMLPipeline([ ("regressor", XGBRegressor()) ])
 ppmml_pipeline.fit(xdata, df["p"])
 ppmml_pipeline.configure(compact = False)
-sklearn2pmml(ppmml_pipeline, args.ouput + "/points.pmml")
+sklearn2pmml(ppmml_pipeline, args.output + "/points.pmml")
 
 
-print(wpmml_pipeline.predict([[1498, 12765, 14004, 15673, 15673, 16983, 30127, 30429, 31196, 32172, 0, 0,1498, 12765, 14004, 15673, 15673, 16983, 30127, 30429, 31196, 31884, 32172, 0]]))
-print(spmml_pipeline.predict([[1498, 12765, 14004, 15673, 15673, 16983, 30127, 30429, 31196, 32172, 0, 0,1498, 12765, 14004, 15673, 15673, 16983, 30127, 30429, 31196, 31884, 32172, 0]]))
-print(lpmml_pipeline.predict([[1498, 12765, 14004, 15673, 15673, 16983, 30127, 30429, 31196, 32172, 0, 0,1498, 12765, 14004, 15673, 15673, 16983, 30127, 30429, 31196, 31884, 32172, 0]]))
-print(ppmml_pipeline.predict([[1498, 12765, 14004, 15673, 15673, 16983, 30127, 30429, 31196, 32172, 0, 0,1498, 12765, 14004, 15673, 15673, 16983, 30127, 30429, 31196, 31884, 32172, 0]]))
+#print(wpmml_pipeline.predict([[1498, 12765, 14004, 15673, 15673, 16983, 30127, 30429, 31196, 32172, 0, 0,1498, 12765, 14004, 15673, 15673, 16983, 30127, 30429, 31196, 31884, 32172, 0]]))
+#print(spmml_pipeline.predict([[1498, 12765, 14004, 15673, 15673, 16983, 30127, 30429, 31196, 32172, 0, 0,1498, 12765, 14004, 15673, 15673, 16983, 30127, 30429, 31196, 31884, 32172, 0]]))
+#print(lpmml_pipeline.predict([[1498, 12765, 14004, 15673, 15673, 16983, 30127, 30429, 31196, 32172, 0, 0,1498, 12765, 14004, 15673, 15673, 16983, 30127, 30429, 31196, 31884, 32172, 0]]))
+#print(ppmml_pipeline.predict([[1498, 12765, 14004, 15673, 15673, 16983, 30127, 30429, 31196, 32172, 0, 0,1498, 12765, 14004, 15673, 15673, 16983, 30127, 30429, 31196, 31884, 32172, 0]]))
 #	const char* pc = hash;
 #	while (*pc)
 #	{
