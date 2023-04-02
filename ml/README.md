@@ -3,6 +3,14 @@
 1. Python 3.X with pip/Anaconda on Windows
 2. Java 1.8 or higher
 
+# Download
+
+Download the source zip from github and unzip it. Or better clone the repo
+```
+$ git clone https://github.com/APN-Pucky/tyrant_optimize.git tuo
+$ cd tuo/ml
+```
+
 # Install
 
 ```
