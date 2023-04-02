@@ -310,7 +310,7 @@ unsigned read_card_abbrs(Cards& all_cards, const std::string& filename)
         {
             std::string abbr_string;
             getline(abbr_file, abbr_string);
-            trim(abbr_string);
+            tuo::trim(abbr_string);
             ++num_line;
             if (is_line_empty_or_commented(abbr_string))
             { continue; }
@@ -370,7 +370,7 @@ std::unordered_map<unsigned, unsigned> read_custom_cards(Cards& all_cards, const
     	{
             std::string card_spec;
             getline(cards_file, card_spec);
-            trim(card_spec);
+            tuo::trim(card_spec);
             ++num_line;
             if (is_line_empty_or_commented(card_spec))
             { continue; }
@@ -425,7 +425,7 @@ unsigned load_custom_decks(Decks& decks, Cards& all_cards, const std::string & f
         {
             std::string deck_string;
             getline(decks_file, deck_string);
-            trim(deck_string);
+            tuo::trim(deck_string);
             ++num_line;
             if (is_line_empty_or_commented(deck_string))
             { continue; }
@@ -516,7 +516,7 @@ void read_owned_cards(Cards& all_cards, std::map<unsigned, unsigned>& owned_card
     {
         std::string card_spec;
         getline(owned_file, card_spec);
-        trim(card_spec);
+        tuo::trim(card_spec);
         ++num_line;
         if (is_line_empty_or_commented(card_spec))
         { continue; }

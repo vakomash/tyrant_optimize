@@ -20,7 +20,7 @@ obj-test/.stamp:
 	touch obj-test/.stamp
 
 obj-test/%.o: %.cpp $(INCS) obj-test/.stamp
-	$(CXX) $(CPPFLAGS) -o $@ -c $<
+	$(CXX) $(CPPFLAGS) -I extern/hPMML/include -o $@ -c $<
 
 $(MAIN): $(OBJS)
 	$(CXX) -o $@ $(OBJS) $(LDFLAGS)
