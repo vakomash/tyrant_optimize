@@ -13,7 +13,7 @@ $ pip install tuo_ml
 
 If you do not have administrator rights append `--user`/`--break-system-packages` to above command.
 
-Alternatively, if some errors occur in later steps:
+Alternatively, if some errors occur in later steps to install from source.
 
 
 
@@ -22,8 +22,8 @@ Alternatively, if some errors occur in later steps:
 # Run it
 
 ```
-tuo/data $ tuo_ml --help
-tuo/data $ tuo_ml
+tuo/data $ tuo_train --help
+tuo/data $ tuo_train
 ```
 
 The output should look similar to:
@@ -65,5 +65,5 @@ tuo/ml $ poetry install
 
 ## Run it
 ```
-tuo/data $ poetry run tuo_ml
+tuo/data $ poetry run tuo_train
 ```
