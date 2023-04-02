@@ -23,6 +23,7 @@ enum Fix
     legion_under_mega,
     barrier_each_turn,
     dont_evade_mimic_selection,
+    leech_increase_max_hp,
     num_fixes
 };
 

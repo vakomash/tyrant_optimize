@@ -236,6 +236,7 @@ void init()
 	fixes[Fix::legion_under_mega] = true;
 	fixes[Fix::barrier_each_turn] = true;
 	fixes[Fix::dont_evade_mimic_selection] = true;
+	fixes[Fix::leech_increase_max_hp] = true;
 }
 
 #if defined(ANDROID) || defined(__ANDROID__)
@@ -2235,6 +2236,14 @@ DeckResults run(int argc, const char** argv)
         else if (strcmp(argv[argIndex], "no-update-dont-evade-mimic-selection") == 0)
 		{
 			fixes[Fix::dont_evade_mimic_selection] = false;
+		}
+        else if (strcmp(argv[argIndex], "update-leech-increase-max-hp") == 0)
+		{
+			fixes[Fix::leech_increase_max_hp] = true;
+		}
+        else if (strcmp(argv[argIndex], "no-update-leech-increase-max-hp") == 0)
+		{
+			fixes[Fix::leech_increase_max_hp] = false;
 		}
 		else if (strcmp(argv[argIndex], "seed") == 0)
 		{

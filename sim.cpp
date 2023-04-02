@@ -169,17 +169,30 @@ inline unsigned CardStatus::max_hp() const
 {
     return (m_card->m_health + safe_minus(m_perm_health_buff, m_subdued));
 }
-//------------------------------------------------------------------------------
+/** @brief Increase of current health.
+ *  This takes disease into account and removes as needed.
+ *
+ *  @param [in] value increase of health.
+ *  @return applied increase of health.
+ */
 inline unsigned CardStatus::add_hp(unsigned value)
 {
     value = remove_disease(this,value);
     return (m_hp = std::min(m_hp + value, max_hp()));
 }
-//------------------------------------------------------------------------------
+/** @brief Permanent increase of maximum health.
+ *  This takes disease into account and removes as needed.
+ *  The increase of the maximum health entails an increase of current health by the same amount.
+ *
+ *  @param [in] value increase of maximum health.
+ *  @return applied increase of maximum health.
+ */ 
 inline unsigned CardStatus::ext_hp(unsigned value)
 {
     value = remove_disease(this,value);
     m_perm_health_buff += value;
+    // we can safely call add_hp without worring about the second call to remove_disease because
+    // the first call will have already removed the disease or the value will be 0
     return add_hp(value);
 }
 //------------------------------------------------------------------------------
@@ -1056,7 +1069,7 @@ inline bool skill_check<Skill::jam>(Field* fd, CardStatus* c, CardStatus* ref)
     template<>
 inline bool skill_check<Skill::leech>(Field* fd, CardStatus* c, CardStatus* ref)
 {
-    return can_be_healed(c);
+    return can_be_healed(c) || (fd->fixes[Fix::leech_increase_max_hp] && is_alive(c));
 }
 
     template<>
@@ -1946,7 +1959,12 @@ void PerformAttack::do_leech<CardType::assault>()
         }
 #endif
         _DEBUG_MSG(1, "%s leeches %u health\n", status_description(att_status).c_str(), leech_value);
-        att_status->add_hp(leech_value);
+        if (__builtin_expect(fd->fixes[Fix::leech_increase_max_hp],true)) {
+            att_status->ext_hp(leech_value);
+        }
+        else {
+            att_status->add_hp(leech_value);
+        }
     }
 }
 
