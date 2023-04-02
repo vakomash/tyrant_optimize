@@ -1,15 +1,25 @@
 import yaml
-#from smpl_io import io
+from smpl_io.io import sed
 from yaml.loader import SafeLoader
+import argparse
+
+parser = argparse.ArgumentParser(
+                    prog='Machine Learning for TUO',
+                    description='Train a model for TUO',
+                    epilog='Author: Alexander Puck Neuwirth')
+parser.add_argument('-d', '--database', help='database file', type=str, default = "../data/database.yml")
+parser.add_argument('-o', '--output', help='output directory', type=str, default = "data/")
+parser.add_argument('-l', '--limit', help='minimum iterations needed to be included', type=int, default =10000)
+args = parser.parse_args()
+
 base64_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 
-# TODO switch to smpl_io sed
-db = yaml.load(open("database.yml",'r').read().replace('\t',"  "),Loader=SafeLoader)
+db = yaml.load(sed('\t',"  ",args.database),Loader=SafeLoader)
 print(db.keys())
 l = list(db.keys())[1:]
 print(db[l[0]])
 
-def hash_to_ids_ext_b64(hash):
+def hash_to_ids_ext_b64(hash, nmin=12):
     ids = []
     c = 0 
     while c < len(hash):
@@ -32,7 +42,7 @@ def hash_to_ids_ext_b64(hash):
         id += factor * (d - 32)
         c = c +1
         ids.append(id)
-    while len(ids) < 12:
+    while len(ids) < nmin:
         ids.append(0)
     return ids
 
@@ -46,31 +56,21 @@ wdata = [] # one score
 sdata = [] # one score
 ldata = [] # one score
 pdata = [] # one score
+dic = None
 for ll in l:
+    print(ll)
+    hx = hash_to_ids_ext_b64(ll)
+    print(hx)
     for k in db[ll].keys():
         for kk in db[ll][k]:
-            # split "_", "," and ";" and make all int
-            lll = [ll]
-            for c in ['_',';',',']:
-                lllll= []
-                for llll in lll:
-                    lllll += llll.split(c)
-                lll = lllll
-            # if empty make 0
-            hx = []
-            for x in lll:
-                i = 0 
-                if x != '':
-                    i = int(x)
-                hx.append(i)
             #hfield = int(hashlib.sha256(ll.encode()).hexdigest(), 16) % (10 ** 9)
 
             #print(hfield)
             res = db[ll][k][kk].split(" ")
-            if int(res[-1]) > 10000:
+            if int(res[-1]) > args.limit:
                 dic = {}
-                for i in range(0,100):
-                    v = hx[i] if i < len(hx) else 0
+                for i in len(hx):
+                    v = hx[i]
                     dic["f" + str(i)] = v
                 hk = hash_to_ids_ext_b64(k)
                 for i in range(0,len(hk)):
@@ -84,6 +84,8 @@ for ll in l:
                 dic["p"] = float(res[3]) / float(res[-1])
                 df = df.append(dic,ignore_index=True)
                 print(k,hash_to_ids_ext_b64(k), kk , hash_to_ids_ext_b64(kk), float(res[0]) / float(res[-1]), res[-1])
+if dic is None:
+    raise RuntimeError("No data found")
 print(dic)
 print(df.columns.difference(['w','s','l','p']))
 # evaluate xgboost algorithm for classification
@@ -119,22 +121,22 @@ from sklearn2pmml.pipeline import PMMLPipeline
 wpmml_pipeline = PMMLPipeline([ ("regressor", XGBRegressor()) ])
 wpmml_pipeline.fit(xdata, df["w"])
 wpmml_pipeline.configure(compact = False)
-sklearn2pmml(wpmml_pipeline, "win.pmml")
+sklearn2pmml(wpmml_pipeline, args.ouput +"win.pmml")
 
 spmml_pipeline = PMMLPipeline([ ("regressor", XGBRegressor()) ])
 spmml_pipeline.fit(xdata, df["s"])
 spmml_pipeline.configure(compact = False)
-sklearn2pmml(spmml_pipeline, "stall.pmml")
+sklearn2pmml(spmml_pipeline, args.ouput +"stall.pmml")
 
 lpmml_pipeline = PMMLPipeline([ ("regressor", XGBRegressor()) ])
 lpmml_pipeline.fit(xdata, df["l"])
 lpmml_pipeline.configure(compact = False)
-sklearn2pmml(lpmml_pipeline, "loss.pmml")
+sklearn2pmml(lpmml_pipeline, args.ouput +"loss.pmml")
 
 ppmml_pipeline = PMMLPipeline([ ("regressor", XGBRegressor()) ])
 ppmml_pipeline.fit(xdata, df["p"])
 ppmml_pipeline.configure(compact = False)
-sklearn2pmml(ppmml_pipeline, "points.pmml")
+sklearn2pmml(ppmml_pipeline, args.ouput + "/points.pmml")
 
 
 print(wpmml_pipeline.predict([[1498, 12765, 14004, 15673, 15673, 16983, 30127, 30429, 31196, 32172, 0, 0,1498, 12765, 14004, 15673, 15673, 16983, 30127, 30429, 31196, 31884, 32172, 0]]))

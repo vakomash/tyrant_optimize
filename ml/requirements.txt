@@ -1,5 +1,0 @@
-numpy
-scikit-learn
-xgboost
-sklearn2pmml
-pandas

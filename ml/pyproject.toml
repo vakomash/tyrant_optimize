@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "smpl_doc"
+name = "tuo_ml"
 version = "0.0.0"
 description = "Machine Learning for TUO"
 authors = ["Alexander Puck Neuwirth <alexander@neuwirth-informatik.de>"]
@@ -16,3 +16,8 @@ scikit-learn="^1.1"
 xgboost="^1.6"
 sklearn2pmml="^0.92"
 pandas="^1.5"
+smpl_io="^1.1.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.masonry.api"

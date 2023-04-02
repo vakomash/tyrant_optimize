@@ -5,11 +5,18 @@
 
 # Install
 
+Alternatively:
 ```
-$ pip install -r requirements.txt
+tuo/ml $ poetry install 
+tuo/ml $ poetry 
 ```
 
-If you do not have adminstartor rights append --user to above command.
+Alternatively:
+```
+tuo/ml $ pip install .
+```
+
+If you do not have administrator rights append --user to above command.
 
 
 # Run it
