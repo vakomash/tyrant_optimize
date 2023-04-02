@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [4.7.0] - 2023-04-02
 
-- Update mimic skill
+- Update leech skill
 - Added options `update-leech-increase-max-hp` and `no-update-leech-increase-max-hp` to toggle new behaviour
 
 ## [4.6.0] - 2023-04-02
