@@ -48,3 +48,7 @@ cmake_install.cmake
 CMakeFiles
 CMakeCache.txt
 .vscode
+
+ml/dist
+ml/tuo_ml/__pycache__
+ml/tuo_ml/*.pmml
