@@ -49,4 +49,8 @@ POINTS...Average Error: +-1.760 (+-0.031)
 ```
 
 The uncertainty of the training is indicated.
+<<<<<<< HEAD
 You can copy the `*.pmml` files into your `data/` folder to use them in tuo now.
+=======
+You can copy the `*.pmml` files into your `data/` folder to use them in tuo now.
+>>>>>>> tuo6

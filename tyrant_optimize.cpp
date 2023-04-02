@@ -420,49 +420,50 @@ void init()
 #ifndef NQUEST
     // quest = new Quest(); //TODO Quest bugged in Android now here
 #endif
-	allowed_candidates.clear();
-	disallowed_candidates.clear();
-	disallowed_recipes.clear();
+    allowed_candidates.clear();
+    disallowed_candidates.clear();
+    disallowed_recipes.clear();
 
-	//std::chrono::time_point<std::chrono::system_clock> start_time;
-	maximum_time=0;
-	temperature = 1000;
-	coolingRate = 0.001;
+    // std::chrono::time_point<std::chrono::system_clock> start_time;
+    maximum_time = 0;
+    temperature = 1000;
+    coolingRate = 0.001;
 
-	generations = 50;
-	pool_size = 0;
-	min_pool_size = 20;
-	opt_pool_keep = 1;
-	opt_pool_mutate = 1;
-	opt_pool_cross = 1;
+    generations = 50;
+    pool_size = 0;
+    min_pool_size = 20;
+    opt_pool_keep = 1;
+    opt_pool_mutate = 1;
+    opt_pool_cross = 1;
 
-	min_beam_size = 5;
+    min_beam_size = 5;
 
-	yfpool=0;
-	efpool=0;
+    yfpool = 0;
+    efpool = 0;
 
-	factions.clear();
-	invert_factions=false;
-	only_recent=false;
-	prefered_recent=false;
-	recent_percent=5;
-	skills.clear();
-	invert_skills=false;
-	prefered_skills.clear();
-	prefered_factor=3;
+    factions.clear();
+    invert_factions = false;
+    only_recent = false;
+    prefered_recent = false;
+    recent_percent = 5;
+    skills.clear();
+    invert_skills = false;
+    prefered_skills.clear();
+    prefered_factor = 3;
 
-	for(Card *c : all_cards.all_cards) delete c; // prevent memory leak
-	all_cards.visible_cardset.clear();
+    for (Card *c : all_cards.all_cards)
+        delete c; // prevent memory leak
+    all_cards.visible_cardset.clear();
 
+    // fix defaults
+    for (int i = 0; i < Fix::num_fixes; ++i)
+        fixes[i] = false;
 
-	//fix defaults
-	for (int i=0; i < Fix::num_fixes;++i) fixes[i]=false;
-
-    //recommended/default fixes
-	fixes[Fix::enhance_early] = true;
-	fixes[Fix::revenge_on_death] = true;
-	fixes[Fix::death_from_bge] = true;
-	fixes[Fix::legion_under_mega] = true;
+    // recommended/default fixes
+    fixes[Fix::enhance_early] = true;
+    fixes[Fix::revenge_on_death] = true;
+    fixes[Fix::death_from_bge] = true;
+    fixes[Fix::legion_under_mega] = true;
 
 	fixes[Fix::barrier_each_turn] = true;
 	fixes[Fix::dont_evade_mimic_selection] = true;
@@ -2914,7 +2915,6 @@ DeckResults run(int argc, const char **argv)
 #ifdef _OPENMP
             omp_set_num_threads(opt_num_threads);
 #endif
-
             argIndex += 1;
         }
         else if (strcmp(argv[argIndex], "target") == 0)
@@ -3424,7 +3424,6 @@ DeckResults run(int argc, const char **argv)
     }
     load_db(prefix);
     load_ml(prefix);
-
 
 #ifdef _OPENMP
     opt_num_threads = omp_get_max_threads();
