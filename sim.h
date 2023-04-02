@@ -452,7 +452,7 @@ inline std::string skill_short_description(const Cards& cards, const _SkillSpec<
         (s.card_id == 0 ? "" : " " + card_name_by_id_safe(cards, s.card_id)) +
         (s.s == Skill::no_skill ? "" : std::string(" ") + skill_names[s.s]) +
         (s.s2 == Skill::no_skill ? "" : std::string(" ") + skill_names[s.s2]) +
-        (s.x == 0 ? "" : " " + to_string(s.x));
+        (s.x == 0 ? "" : " " + tuo::to_string(s.x));
 }
 
 #endif

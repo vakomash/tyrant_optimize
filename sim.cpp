@@ -1675,7 +1675,7 @@ struct PerformAttack
                 if(marked_value)
                 {
 #ifndef NDEBUG
-                    if (debug_print > 0) { desc += "+" + to_string(marked_value) + "(mark)"; }
+                    if (debug_print > 0) { desc += "+" + tuo::to_string(marked_value) + "(mark)"; }
 #endif
                     att_dmg += marked_value;
                 }
@@ -1698,7 +1698,7 @@ struct PerformAttack
                     {
                         legion_value *= legion_base;
 #ifndef NDEBUG
-                        if (debug_print > 0) { desc += "+" + to_string(legion_value) + "(legion)"; }
+                        if (debug_print > 0) { desc += "+" + tuo::to_string(legion_value) + "(legion)"; }
 #endif
                         att_dmg += legion_value;
                     }
@@ -1718,7 +1718,7 @@ struct PerformAttack
                     unsigned uniq_factions = byte_bits_count(factions_bitmap);
                     coalition_value = coalition_base * uniq_factions;
 #ifndef NDEBUG
-                    if (debug_print > 0) { desc += "+" + to_string(coalition_value) + "(coalition/x" + to_string(uniq_factions) + ")"; }
+                    if (debug_print > 0) { desc += "+" + tuo::to_string(coalition_value) + "(coalition/x" + tuo::to_string(uniq_factions) + ")"; }
 #endif
                     att_dmg += coalition_value;
                 }
@@ -1728,7 +1728,7 @@ struct PerformAttack
                 if (rupture_value > 0)
                 {
 #ifndef NDEBUG
-                    if (debug_print > 0) { desc += "+" + to_string(rupture_value) + "(rupture)"; }
+                    if (debug_print > 0) { desc += "+" + tuo::to_string(rupture_value) + "(rupture)"; }
 #endif
                     att_dmg += rupture_value;
                 }
@@ -1738,7 +1738,7 @@ struct PerformAttack
                 if (venom_value > 0 && def_status->m_poisoned > 0)
                 {
 #ifndef NDEBUG
-                    if (debug_print > 0) { desc += "+" + to_string(venom_value) + "(venom)"; }
+                    if (debug_print > 0) { desc += "+" + tuo::to_string(venom_value) + "(venom)"; }
 #endif
                     att_dmg += venom_value;
                 }
@@ -1747,7 +1747,7 @@ struct PerformAttack
                 if (fd->bloodlust_value > 0)
                 {
 #ifndef NDEBUG
-                    if (debug_print > 0) { desc += "+" + to_string(fd->bloodlust_value) + "(bloodlust)"; }
+                    if (debug_print > 0) { desc += "+" + tuo::to_string(fd->bloodlust_value) + "(bloodlust)"; }
 #endif
                     att_dmg += fd->bloodlust_value;
                 }
@@ -1756,7 +1756,7 @@ struct PerformAttack
                 if (def_status->m_enfeebled > 0)
                 {
 #ifndef NDEBUG
-                    if (debug_print > 0) { desc += "+" + to_string(def_status->m_enfeebled) + "(enfeebled)"; }
+                    if (debug_print > 0) { desc += "+" + tuo::to_string(def_status->m_enfeebled) + "(enfeebled)"; }
 #endif
                     att_dmg += def_status->m_enfeebled;
                 }
@@ -1784,14 +1784,14 @@ struct PerformAttack
             if (armor_value > 0)
             {
 #ifndef NDEBUG
-                if(debug_print > 0) { reduced_desc += to_string(armor_value) + "(armor)"; }
+                if(debug_print > 0) { reduced_desc += tuo::to_string(armor_value) + "(armor)"; }
 #endif
                 reduced_dmg += armor_value;
             }
             if (def_status->protected_value() > 0)
             {
 #ifndef NDEBUG
-                if(debug_print > 0) { reduced_desc += (reduced_desc.empty() ? "" : "+") + to_string(def_status->protected_value()) + "(protected)"; }
+                if(debug_print > 0) { reduced_desc += (reduced_desc.empty() ? "" : "+") + tuo::to_string(def_status->protected_value()) + "(protected)"; }
 #endif
                 reduced_dmg += def_status->protected_value();
             }
@@ -1799,7 +1799,7 @@ struct PerformAttack
             if (reduced_dmg > 0 && pierce_value > 0)
             {
 #ifndef NDEBUG
-                if (debug_print > 0) { reduced_desc += "-" + to_string(pierce_value) + "(pierce)"; }
+                if (debug_print > 0) { reduced_desc += "-" + tuo::to_string(pierce_value) + "(pierce)"; }
 #endif
                 reduced_dmg = safe_minus(reduced_dmg, pierce_value);
             }
@@ -1808,7 +1808,7 @@ struct PerformAttack
             if (debug_print > 0)
             {
                 if(!reduced_desc.empty()) { desc += "-[" + reduced_desc + "]"; }
-                if(!desc.empty()) { desc += "=" + to_string(att_dmg); }
+                if(!desc.empty()) { desc += "=" + tuo::to_string(att_dmg); }
                 _DEBUG_MSG(1, "%s attacks %s for %u%s damage\n",
                         status_description(att_status).c_str(),
                         status_description(def_status).c_str(), pre_modifier_dmg, desc.c_str());

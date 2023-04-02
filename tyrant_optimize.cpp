@@ -14,6 +14,7 @@
 // #define NDEBUG
 #define BOOST_THREAD_USE_LIB
 
+#include <unistd.h>
 #include <array>
 #include <cassert>
 #include <chrono>
@@ -465,11 +466,13 @@ void init()
     fixes[Fix::legion_under_mega] = true;
 
     db_limit = -1;
-    use_ml = false;
-    use_only_ml = false;
     use_strict_db = false;
     use_db_write = true;
     use_db_load = true;
+
+    use_ml = false;
+    use_only_ml = false;
+    ml_precision = 0.01;
 }
 
 #if defined(ANDROID) || defined(__ANDROID__)
@@ -900,13 +903,14 @@ FinalResults<long double> compute_score(const EvaluatedResults &results, std::ve
     long double max_possible = max_possible_score[(size_t)optimization_mode];
     for (unsigned index(0); index < results.first.size(); ++index)
     {
+        // std::cout << results.second << " " << results.first[index].points << " " << results.first[index].count << std::endl;
         final.wins += results.first[index].wins * factors[index] * results.second / results.first[index].count;
         final.draws += results.first[index].draws * factors[index] * results.second / results.first[index].count;
         final.losses += results.first[index].losses * factors[index] * results.second / results.first[index].count;
         // APN
         auto trials = results.second;
         auto prob = 1 - confidence_level;
-        auto successes = results.first[index].points / max_possible;
+        auto successes = results.first[index].points * results.second / results.first[index].count / max_possible;
         if (successes > trials)
         {
             successes = trials;
@@ -918,13 +922,13 @@ FinalResults<long double> compute_score(const EvaluatedResults &results, std::ve
         auto upper_bound = boost::math::binomial_distribution<>::find_upper_bound_on_p(trials, successes, prob) * max_possible;
         if (use_harmonic_mean)
         {
-            final.points += factors[index] / results.first[index].points;
+            final.points += factors[index] / (results.first[index].points * results.second / results.first[index].count);
             final.points_lower_bound += factors[index] / lower_bound;
             final.points_upper_bound += factors[index] / upper_bound;
         }
         else
         {
-            final.points += results.first[index].points * factors[index];
+            final.points += results.first[index].points * factors[index] * results.second / results.first[index].count;
             final.points_lower_bound += lower_bound * factors[index];
             final.points_upper_bound += upper_bound * factors[index];
         }
@@ -1291,36 +1295,42 @@ inline bool Process::eval_ml(unsigned num_iterations, EvaluatedResults &evaluate
     // iterate results from samples()
     for (unsigned i = 0; i < sampls.size(); i++)
     {
-        auto s = sampls[i];
-        auto wins = atof(win_model.predict(s).c_str());
-        auto losses = atof(loss_model.predict(s).c_str());
-        auto draws = atof(stall_model.predict(s).c_str());
-        auto points = atof(points_model.predict(s).c_str());
-        if (wins < 0)
-            wins = 0;
-        if (losses < 0)
-            losses = 0;
-        if (draws < 0)
-            draws = 0;
-        if (points < 0)
-            points = 0;
-        // if((wins + losses + draws) > 1.05 || (wins + losses + draws) < 0.95) {
-        //     std::cout << "WARNING: ML model returned invalid sample: " << wins << " "  << draws << " " <<losses << " points " << points << std::endl;
-        // }
-        if (use_only_ml || (wins + losses + draws) < 1.05) // we use the sum of wins, losses and draws to determine if the sample is valid
+        // already found in db?
+        if (mask[i])
         {
-            Results<uint64_t> r = {
-                static_cast<uint64_t>(std::round((1.0 * wins * num_iterations / (wins + losses + draws)))),
-                static_cast<uint64_t>(std::round((1.0 * draws * num_iterations / (wins + losses + draws)))),
-                static_cast<uint64_t>(std::round((1.0 * losses * num_iterations / (wins + losses + draws)))),
-                static_cast<uint64_t>(std::round((1.0 * points * num_iterations))),
-                static_cast<uint64_t>(num_iterations)};
-            evaluated_results.first[i] = r;
-        }
-        else
-        {
-            mask[i] = true;
-            run = true;
+            auto s = sampls[i];
+            auto wins = atof(win_model.predict(s).c_str());
+            auto losses = atof(loss_model.predict(s).c_str());
+            auto draws = atof(stall_model.predict(s).c_str());
+            auto points = atof(points_model.predict(s).c_str());
+            if (wins < 0)
+                wins = 0;
+            if (losses < 0)
+                losses = 0;
+            if (draws < 0)
+                draws = 0;
+            if (points < 0)
+                points = 0;
+            // if((wins + losses + draws) > 1.05 || (wins + losses + draws) < 0.95) {
+            //     std::cout << "WARNING: ML model returned invalid sample: " << wins << " "  << draws << " " <<losses << " points " << points << std::endl;
+            // }
+            if (use_only_ml || ((wins + losses + draws) < 1.00 + ml_precision && (wins + losses + draws) > 1.00 - ml_precision)) // we use the sum of wins, losses and draws to determine if the sample is valid
+            {
+                // std::cout << "ML model returned: " << wins << " "  << draws << " " <<losses << " points " << points << " " << num_iterations << std::endl;
+                mask[i] = false;
+                Results<uint64_t> r = {
+                    static_cast<uint64_t>(std::round((1.0 * wins * num_iterations / (wins + losses + draws)))),
+                    static_cast<uint64_t>(std::round((1.0 * draws * num_iterations / (wins + losses + draws)))),
+                    static_cast<uint64_t>(std::round((1.0 * losses * num_iterations / (wins + losses + draws)))),
+                    static_cast<uint64_t>(std::round((1.0 * points * num_iterations))),
+                    static_cast<uint64_t>(num_iterations)};
+                evaluated_results.first[i] = r;
+            }
+            else
+            {
+                mask[i] = true;
+                run = true;
+            }
         }
     }
 
@@ -1415,6 +1425,8 @@ EvaluatedResults &Process::evaluate(unsigned num_iterations, EvaluatedResults &e
         return evaluated_results;
     }
     std::vector<std::array<std::string, 3>> vhashes = hashes();
+    // fill mask with true
+    mask = std::vector<bool>(vhashes.size(), true);
     if (!check_db(vhashes, num_iterations, evaluated_results))
     {
         // 100% covered by db
@@ -1451,6 +1463,8 @@ EvaluatedResults &Process::compare(unsigned num_iterations, EvaluatedResults &ev
         return evaluated_results;
     }
     std::vector<std::array<std::string, 3>> vhashes = hashes();
+    // fill mask with true
+    mask = std::vector<bool>(vhashes.size(), true);
     if (!check_db(vhashes, num_iterations, evaluated_results))
     {
         // 100% covered by db
@@ -2534,6 +2548,13 @@ DeckResults run(int argc, const char **argv)
             use_only_ml = true;
             use_db_write = false;
         }
+        else if (strcmp(argv[argIndex], "ml-precision") == 0)
+        {
+            if (check_input_amount(argc, argv, argIndex, 1))
+                exit(1);
+            ml_precision = std::stof(argv[argIndex + 1]);
+            argIndex += 1;
+        }
         else if (strcmp(argv[argIndex], "no-db-write") == 0)
         {
             use_db_write = false;
@@ -2558,6 +2579,7 @@ DeckResults run(int argc, const char **argv)
             db_limit = std::stoi(argv[argIndex + 1]);
             argIndex += 1;
         }
+
         // Base Game Mode
         else if (strcmp(argv[argIndex], "fight") == 0)
         {
