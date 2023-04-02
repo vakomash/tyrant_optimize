@@ -66,5 +66,5 @@ To your likings.
 
 ## Run it
 ```
-$ poetry run tuo_ml
+tuo/data $ poetry run tuo_ml
 ```
