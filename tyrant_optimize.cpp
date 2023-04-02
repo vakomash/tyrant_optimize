@@ -235,6 +235,7 @@ void init()
 	fixes[Fix::death_from_bge] = true;
 	fixes[Fix::legion_under_mega] = true;
 	fixes[Fix::barrier_each_turn] = true;
+	fixes[Fix::dont_evade_mimic_selection] = true;
 }
 
 #if defined(ANDROID) || defined(__ANDROID__)
@@ -2226,6 +2227,14 @@ DeckResults run(int argc, const char** argv)
         else if (strcmp(argv[argIndex], "no-update-barrier-each-turn") == 0)
 		{
 			fixes[Fix::barrier_each_turn] = false;
+		}
+        else if (strcmp(argv[argIndex], "update-dont-evade-mimic-selection") == 0)
+		{
+			fixes[Fix::dont_evade_mimic_selection] = true;
+		}
+        else if (strcmp(argv[argIndex], "no-update-dont-evade-mimic-selection") == 0)
+		{
+			fixes[Fix::dont_evade_mimic_selection] = false;
 		}
 		else if (strcmp(argv[argIndex], "seed") == 0)
 		{

@@ -22,6 +22,7 @@ enum Fix
     death_from_bge,
     legion_under_mega,
     barrier_each_turn,
+    dont_evade_mimic_selection,
     num_fixes
 };
 

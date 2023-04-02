@@ -2972,7 +2972,7 @@ void perform_targetted_hostile_fast(Field* fd, CardStatus* src, const SkillSpec&
         }
 
         // check & apply skill to target(dst)
-        if (check_and_perform_skill<skill_id>(fd, src, dst, s, ! src->m_overloaded
+        if (check_and_perform_skill<skill_id>(fd, src, dst, s, ! (src->m_overloaded || (__builtin_expect(fd->fixes[Fix::dont_evade_mimic_selection],true) &&  skill_id == Skill::mimic))
 #ifndef NQUEST
                     , has_counted_quest
 #endif
