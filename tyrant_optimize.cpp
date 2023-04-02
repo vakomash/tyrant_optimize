@@ -236,6 +236,9 @@ unsigned int checksumcards(std::string prefix) {
     unsigned int crc = 0;
     // loop cardsections 
     unsigned int ii = 1;
+
+    crc = file_xrcrc32(prefix + "data/raids.xml",crc);
+    crc = file_xrcrc32(prefix + "data/missions.xml",crc);
     std::string fname = prefix + "data/cards_section_1.xml";
     while (access(fname.c_str(), F_OK) == 0) {
         crc = file_xrcrc32(fname,crc);
@@ -321,7 +324,7 @@ void write_db(std::string prefix) {
     file.open(prefix + "data/database.yml");
 	file << "version: " << TYRANT_OPTIMIZER_VERSION << std::endl;
 
-    file << "check_sum_cards_sections: " << checksumcards(prefix) << std::endl;
+    file << "xml_check_sum: " << checksumcards(prefix) << std::endl;
     auto lines_to_write = db_limit;
     // write map to file
     for (auto it1 = database.begin(); lines_to_write != 0 &&it1 != database.end(); ++it1) {
@@ -905,14 +908,32 @@ FinalResults<long double> compute_score(const EvaluatedResults& results, std::ve
                     fmap.emplace("y"+std::to_string(i),std::to_string(id->m_id));
                     i++;
                 }
+                // fill up with zeros up to id 12
+                while ( i < 12) {
+                    fmap.emplace("y"+std::to_string(i),std::to_string(0));
+                    i++;
+                }
                 i = 0;
                 for (auto const & id : eids) {
                     fmap.emplace("e"+std::to_string(i),std::to_string(id->m_id));
                     i++;
                 }
+                // fill up with zeros up to id 12
+                while ( i < 12) {
+                    fmap.emplace("e"+std::to_string(i),std::to_string(0));
+                    i++;
+                }
                 samples.emplace_back(fmap);
             }
         }
+        /*
+        auto myMap = samples.at(0);
+        for(auto it = myMap.begin(); it != myMap.end(); ++it)
+        {
+            std::cout << it->first << " " << it->second  <<"\n";
+        }
+        */
+
 
 
         return samples;
@@ -1174,6 +1195,13 @@ FinalResults<long double> compute_score(const EvaluatedResults& results, std::ve
                 auto losses= atof(loss_model.predict(s).c_str());
                 auto draws= atof(stall_model.predict(s).c_str());
                 auto points = atof(points_model.predict(s).c_str());
+                if (wins < 0) wins = 0;
+                if (losses < 0) losses = 0;
+                if (draws < 0) draws = 0;
+                if (points < 0) points = 0;
+                //if((wins + losses + draws) > 1.05 || (wins + losses + draws) < 0.95) {
+                //    std::cout << "WARNING: ML model returned invalid sample: " << wins << " "  << draws << " " <<losses << " points " << points << std::endl;
+                //}
                 if (use_only_ml || (wins + losses + draws) < 1.05) // we use the sum of wins, losses and draws to determine if the sample is valid
                 {
                         Results<uint64_t> r = {
