@@ -2348,6 +2348,13 @@ DeckResults run(int argc, const char** argv)
             use_ml = true;
             use_db_write = false;
         }
+        else if (strcmp(argv[argIndex], "noop") == 0)
+        {
+        }
+        else if (strcmp(argv[argIndex], "no-ml") == 0)
+        {
+            use_ml = false;
+        }
         else if (strcmp(argv[argIndex], "only-ml") == 0)
         {
             use_ml = true;
@@ -3801,11 +3808,36 @@ DeckResults start(int argc, const char** argv) {
 	result_decks.push_back(argv[1]);
 	for(int j=0; j < argc;++j) {
 		int add_j_inc = 0;
+        bool do_it = false;
+        std::stringstream param_file;
+		if(strcmp(argv[j],"ml-boost") ==0){
+            do_it = true;
+            add_j_inc = -1;
+            param_file << "noop"<<std::endl
+                       << "only-ml"<<std::endl
+                       << "deck @1@ no-ml"<<std::endl;
+        }
 		if(strcmp(argv[j],"-p") ==0 || strcmp(argv[j],"params")==0 ){
 			if(j+1 < argc) { 
-				std::ifstream param_file(argv[j+1]);
-				
-				if (param_file.good() ) {
+				std::ifstream in_param_file(argv[j+1]);
+				if (in_param_file.good() ) {
+                      param_file << in_param_file.rdbuf();    
+                      in_param_file.close();
+                      do_it = true;
+                }
+                else {
+					std::cout << "Error loading params file " << argv[j+1] << std::endl;
+				}
+			}
+			else {
+					std::cout << "-p/params needs a file as parameter" << std::endl;
+			}
+        }
+        if(do_it) {
+                {
+					param_file.clear();
+					param_file.seekg(0, std::ios::beg);
+                    // param_file to istream
 					std::cout << "Loading params file " << argv[j+1] << std::endl;
 					std::string line,tmp,first_line="";
 					std::vector<std::string> first_split,cur_split;
@@ -3895,13 +3927,6 @@ DeckResults start(int argc, const char** argv) {
 					}
 					return drc;
 				}
-				else {
-					std::cout << "Error loading params file " << argv[j+1] << std::endl;
-				}
-			}
-			else {
-					std::cout << "-p/params needs a file as parameter" << std::endl;
-			}
 		}
 		else {
 			//return run(argc,argv);
