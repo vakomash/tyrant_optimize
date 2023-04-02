@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [4.8.0] - 2023-04-02
+
+- Update subdue skill
+- Added options `update-subdue-before-attack` and `no-update-subdue-before-attack` to toggle new behaviour
+- Update counter skill
+- Added options `update-counter-without-damage` to toggle new behaviour
+- Update corrosive skill
+- Added options `update-corrosive-protect-armor` to toggle new behaviour
+- Update poison skill
+- Added options `update-poison-after-attacked` to toggle new behaviour
+
+
 ## [4.7.0] - 2023-04-02
 
 - Update mimic skill

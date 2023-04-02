@@ -234,9 +234,15 @@ void init()
 	fixes[Fix::revenge_on_death] = true;
 	fixes[Fix::death_from_bge] = true;
 	fixes[Fix::legion_under_mega] = true;
+
 	fixes[Fix::barrier_each_turn] = true;
 	fixes[Fix::dont_evade_mimic_selection] = true;
 	fixes[Fix::leech_increase_max_hp] = true;
+	fixes[Fix::subdue_before_attack] = true;
+
+	fixes[Fix::counter_without_damage] = false;
+	fixes[Fix::corrosive_protect_armor] = false;
+	fixes[Fix::poison_after_attacked] = false;
 }
 
 #if defined(ANDROID) || defined(__ANDROID__)
@@ -2244,6 +2250,38 @@ DeckResults run(int argc, const char** argv)
         else if (strcmp(argv[argIndex], "no-update-leech-increase-max-hp") == 0)
 		{
 			fixes[Fix::leech_increase_max_hp] = false;
+		}
+        else if (strcmp(argv[argIndex], "update-counter-without-damage") == 0)
+		{
+			fixes[Fix::counter_without_damage] = true;
+		}
+        else if (strcmp(argv[argIndex], "no-update-counter-without-damage") == 0)
+		{
+			fixes[Fix::counter_without_damage] = false;
+		}
+        else if (strcmp(argv[argIndex], "update-corrosive-protect-armor") == 0)
+		{
+			fixes[Fix::corrosive_protect_armor] = true;
+		}
+        else if (strcmp(argv[argIndex], "no-update-corrosive-protect-armor") == 0)
+		{
+			fixes[Fix::corrosive_protect_armor] = false;
+		}
+        else if (strcmp(argv[argIndex], "update-poison-after-attacked") == 0)
+		{
+			fixes[Fix::poison_after_attacked] = true;
+		}
+        else if (strcmp(argv[argIndex], "no-update-poison-after-attacked") == 0)
+		{
+			fixes[Fix::poison_after_attacked] = false;
+		}
+        else if (strcmp(argv[argIndex], "update-subdue-before-attack") == 0)
+		{
+			fixes[Fix::subdue_before_attack] = true;
+		}
+        else if (strcmp(argv[argIndex], "no-update-subdue-before-attack") == 0)
+		{
+			fixes[Fix::subdue_before_attack] = false;
 		}
 		else if (strcmp(argv[argIndex], "seed") == 0)
 		{

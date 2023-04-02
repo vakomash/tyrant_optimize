@@ -469,7 +469,13 @@ inline void resolve_scavenge(Storage<CardStatus>& store)
     }
 }
 //------------------------------------------------------------------------------
-void prepend_on_death(Field* fd,bool paybacked=false)
+/**
+ * @brief Handle death of a card
+ * 
+ * @param fd Field pointer 
+ * @param paybacked Is the death caused by payback?
+ */
+void prepend_on_death(Field* fd, bool paybacked=false)
 {
     if (fd->killed_units.empty())
         return;
@@ -1156,6 +1162,13 @@ inline unsigned remove_absorption(Field* fd, CardStatus* status, unsigned dmg)
 {
     return remove_absorption(status,dmg);
 }
+/**
+ * @brief Remove absorption from a CardStatus
+ * 
+ * @param status CardStatus to remove absorption from
+ * @param dmg damage to remove absorption from
+ * @return unsigned remaining damage after absorption is removed
+ */
 inline unsigned remove_absorption(CardStatus* status, unsigned dmg)
 {
     unsigned remaining_dmg(dmg);
@@ -1431,13 +1444,20 @@ void turn_end_phase(Field* fd)
 }
 
 //---------------------- $50 attack by assault card implementation -------------
-// Counter damage dealt to the attacker (att) by defender (def)
-// pre-condition: only valid if m_card->m_counter > 0
-
-
+/**
+ * @brief Return the damage dealt to the attacker (att) by defender (def) through counter skill
+ * The counter is increased by the attacker's enfeebled value, while the attacker's protected value is subtracted from the damage.
+ * The absorption is removed from the damage before the protected value is subtracted.
+ * 
+ * @param fd Field pointer 
+ * @param att attacker CardStatus
+ * @param def defender CardStatus
+ * @return unsigned 
+ */
 inline unsigned counter_damage(Field* fd, CardStatus* att, CardStatus* def)
 {
     _DEBUG_ASSERT(att->m_card->m_type == CardType::assault);
+    _DEBUG_ASSERT(def->skill(Skill::counter) > 0); // counter skill must be present otherwise enfeeble is wrongly applied
 
     return safe_minus(remove_absorption(fd,att,def->skill(Skill::counter) + att->m_enfeebled), att->protected_value());
 }
