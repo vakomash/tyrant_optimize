@@ -125,7 +125,7 @@ def main():
 
 
     print("Training...")
-    print("Win........", end="")
+    print("Win........", end="",flush=True)
     wpmml_pipeline = PMMLPipeline([("regressor", XGBRegressor())])
     wpmml_pipeline.fit(xdata, df["w"])
     wpmml_pipeline.configure(compact=False)
@@ -133,21 +133,21 @@ def main():
     test_it(wpmml_pipeline, xdata, df["w"])
 
 
-    print("Stall......", end="")
+    print("Stall......", end="",flush=True)
     spmml_pipeline = PMMLPipeline([("regressor", XGBRegressor())])
     spmml_pipeline.fit(xdata, df["s"])
     spmml_pipeline.configure(compact=False)
     sklearn2pmml(spmml_pipeline, args.output + "/stall.pmml")
     test_it(spmml_pipeline, xdata, df["s"])
 
-    print("Loss.......", end="")
+    print("Loss.......", end="",flush=True)
     lpmml_pipeline = PMMLPipeline([("regressor", XGBRegressor())])
     lpmml_pipeline.fit(xdata, df["l"])
     lpmml_pipeline.configure(compact=False)
     sklearn2pmml(lpmml_pipeline, args.output + "/loss.pmml")
     test_it(lpmml_pipeline, xdata, df["l"])
 
-    print("Points.....", end="")
+    print("Points.....", end="",flush=True)
     ppmml_pipeline = PMMLPipeline([("regressor", XGBRegressor())])
     ppmml_pipeline.fit(xdata, df["p"])
     ppmml_pipeline.configure(compact=False)
