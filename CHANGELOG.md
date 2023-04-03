@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Update subdue skill
 - Added options `update-subdue-before-attack` and `no-update-subdue-before-attack` to toggle new behaviour
-- Changed order of operations on an attack to
+- Changed order of operations on an attack to: 
     Flying
     Subdue
     Attack Damage
