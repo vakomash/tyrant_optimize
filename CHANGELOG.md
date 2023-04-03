@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     Flying
     Subdue
     Attack Damage
-    OA Skills
+    OA-Skills
     Counter
     Leech
     Drain
