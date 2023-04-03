@@ -379,16 +379,35 @@ public:
     {
     }
 
+    /**
+     * @brief Get a random number between x and y
+     * 
+     * @param x lower bound
+     * @param y upper bound
+     * @return unsigned a random number between x and y
+     */
     inline unsigned rand(unsigned x, unsigned y)
     {
         return(std::uniform_int_distribution<unsigned>(x, y)(re));
     }
 
+    /**
+     * @brief Flip a coin, 50/50, 0 or 1
+     * 
+     * @return unsigned 0 or 1
+     */
     inline unsigned flip()
     {
         return(this->rand(0,1));
     }
 
+    /**
+     * @brief Get a random element from a vector
+     * 
+     * @tparam T type of the vector
+     * @param v the vector
+     * @return T a random element from the vector
+     */
     template <typename T>
     inline T random_in_vector(const std::vector<T>& v)
     {

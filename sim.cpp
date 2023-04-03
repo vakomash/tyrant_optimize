@@ -13,6 +13,9 @@
 #include "cards.h"
 #include "deck.h"
 
+void perform_drain(Field* fd, CardStatus* att_status, CardStatus* def_status, unsigned att_dmg);
+void perform_hunt(Field* fd, CardStatus* att_status, CardStatus* def_status);
+void perform_subdue(Field* fd, CardStatus* att_status, CardStatus* def_status);
 bool check_and_perform_valor(Field* fd, CardStatus* src);
 bool check_and_perform_bravery(Field* fd, CardStatus* src);
 bool check_and_perform_early_enhance(Field* fd, CardStatus* src);
@@ -165,6 +168,12 @@ inline unsigned CardStatus::protected_value() const
     return m_protected + m_protected_stasis;
 }
 //------------------------------------------------------------------------------
+/**
+ * @brief Maximum health.
+ * This takes subduing into account by reducing the permanent health buffs by subdue.
+ * 
+ * @return unsigned maximum health.
+ */
 inline unsigned CardStatus::max_hp() const
 {
     return (m_card->m_health + safe_minus(m_perm_health_buff, m_subdued));
@@ -243,6 +252,11 @@ inline void CardStatus::set(const Card& card)
     std::memset(m_skill_cd, 0, sizeof m_skill_cd);
 }
 //------------------------------------------------------------------------------
+/**
+ * @brief Calculate the attack power of the CardStatus.
+ * 
+ * @return unsigned 
+ */
 inline unsigned CardStatus::attack_power() const
 {
     signed attack = calc_attack_power();
@@ -254,6 +268,16 @@ inline unsigned CardStatus::attack_power() const
     return (unsigned)attack;
 }
 
+/**
+ * @brief Calculate the attack power of the CardStatus.
+ * 
+ * The attack power is the base attack plus. 
+ * The subdued value gets subtracted from the permanet attack buff, if this is above zero it is added to the attack power.
+ * The corroded value gets subtracted from the attack power, but not below zero.
+ * Finally the temporary attack buff is added.
+ * 
+ * @return signed attack power.
+ */
 inline signed CardStatus::calc_attack_power() const
 {
     return
@@ -1514,22 +1538,41 @@ struct PerformAttack
     PerformAttack(Field* fd_, CardStatus* att_status_, CardStatus* def_status_) :
         fd(fd_), att_status(att_status_), def_status(def_status_), att_dmg(0)
     {}
-
+    /**
+     * @brief Perform the attack
+     * 
+     * New Evaluation order:
+     *  Flying
+     *  Subdue
+     *  Attack Damage
+     *  On-Attacked Skills
+     *  Counter
+     *  Leech
+     *  Drain
+     *  Berserk
+     *  Mark
+     * 
+     * Old Evaluation order:
+     *  check flying
+     *  modify damage
+     *  deal damage
+     *  assaults only: (poison,inihibit, sabotage)
+     *  on-attacked skills
+     *  counter, berserk
+     *  assaults only: (leech if still alive)
+     *  bge
+     *  subdue
+     * 
+     * @tparam def_cardtype 
+     * @return unsigned 
+     */
     template<enum CardType::CardType def_cardtype>
         unsigned op()
         {
             unsigned pre_modifier_dmg = att_status->attack_power();
+            // Bug fix? 2023-04-03 a card with zero attack power can not attack and won't trigger subdue
+            if(pre_modifier_dmg == 0) { return 0; }
 
-            // Evaluation order:
-            // check flying
-            // modify damage
-            // deal damage
-            // assaults only: (poison,inihibit, sabotage)
-            // on-attacked skills
-            // counter, berserk
-            // assaults only: (leech if still alive)
-            // bge
-            // subdue
 
             if(__builtin_expect(def_status->has_skill(Skill::flying),false) && fd->flip()) {
                 _DEBUG_MSG(1, "%s flies away from %s\n",
@@ -1538,9 +1581,15 @@ struct PerformAttack
                 return 0;
             }
 
+            if ( __builtin_expect(fd->fixes[Fix::subdue_before_attack],true)) {
+                perform_subdue(fd, att_status, def_status);
+            }
+
             modify_attack_damage<def_cardtype>(pre_modifier_dmg);
+
             if (!att_dmg) { on_attacked<def_cardtype>();return 0; }
 
+            // Deal the attack damage
             attack_damage<def_cardtype>();
 
             if (__builtin_expect(fd->end, false)) { return att_dmg; }
@@ -1599,6 +1648,14 @@ struct PerformAttack
                 att_status->m_corroded_rate = corrosive_value;
             }
 
+            // Bug fix? 2023-04-03 leech after counter but before drain/berserk
+            // Skill: Leech
+            do_leech<def_cardtype>();
+
+            // Bug fix? 2023-04-03 drain now part of the PerformAttack.op() instead of attack_phase, like hunt.
+            // perform swipe/drain
+            perform_drain(fd, att_status, def_status, att_dmg);
+
             // Skill: Berserk
             unsigned berserk_value = att_status->skill(Skill::berserk);
             if (!att_status->m_sundered && (berserk_value > 0))
@@ -1626,8 +1683,15 @@ struct PerformAttack
                 }
             }
 
-            // Skill: Leech
-            do_leech<def_cardtype>();
+            // Bug fix? 2023-04-03 mark should come after berserk
+            // Increase Mark-counter
+            unsigned mark_base = att_status->skill(Skill::mark);
+            if(mark_base && skill_check<Skill::mark>(fd,att_status,def_status)) {
+                _DEBUG_MSG(1, "%s marks %s for %u\n",
+                        status_description(att_status).c_str(), status_description(def_status).c_str(), mark_base);
+                def_status->m_marked += mark_base;
+            }
+
 
             // Passive BGE: Heroism
             unsigned valor_value;
@@ -1662,32 +1726,20 @@ struct PerformAttack
                 att_status->ext_hp(bge_value);
             }
 
-            // Skill: Subdue
-            unsigned subdue_value = def_status->skill(Skill::subdue);
-            if (__builtin_expect(subdue_value, false))
-            {
-                _DEBUG_MSG(1, "%s subdues %s by %u\n",
-                        status_description(def_status).c_str(),
-                        status_description(att_status).c_str(), subdue_value);
-                att_status->m_subdued += subdue_value;
-                //fix negative attack
-                if(att_status->calc_attack_power()<0)
-                {
-                    att_status->m_temp_attack_buff -= att_status->calc_attack_power();
-                }
-                if (att_status->m_hp > att_status->max_hp())
-                {
-                    _DEBUG_MSG(1, "%s loses %u HP due to subdue (max hp: %u)\n",
-                            status_description(att_status).c_str(),
-                            (att_status->m_hp - att_status->max_hp()),
-                            att_status->max_hp());
-                    att_status->m_hp = att_status->max_hp();
-                }
+            if ( __builtin_expect(!fd->fixes[Fix::subdue_before_attack],false)) {
+                perform_subdue(fd, att_status, def_status);
             }
 
             return att_dmg;
         }
 
+        /**
+         * @brief Modify attack damage
+         * This setts att_dmg in PerformAttack.
+         * 
+         * @tparam CardType::CardType 
+         * @param pre_modifier_dmg base damage
+         */
     template<enum CardType::CardType>
         void modify_attack_damage(unsigned pre_modifier_dmg)
         {
@@ -1867,15 +1919,6 @@ struct PerformAttack
                         status_description(att_status).c_str(), (coalition_value + 1)/2);
                 att_status->add_hp((coalition_value + 1)/2);
             }
-
-            // Increase Mark-counter
-            unsigned mark_base = att_status->skill(Skill::mark);
-            if(mark_base && skill_check<Skill::mark>(fd,att_status,def_status)) {
-                _DEBUG_MSG(1, "%s marks %s for %u\n",
-                        status_description(att_status).c_str(), status_description(def_status).c_str(), mark_base);
-                def_status->m_marked += mark_base;
-            }
-
         }
 
     template<enum CardType::CardType>
@@ -2018,62 +2061,9 @@ bool attack_phase(Field* fd)
     {
         CardStatus* def_status = &def_assaults[fd->current_ci];
         att_dmg = PerformAttack{fd, att_status, def_status}.op<CardType::assault>();
-        // perform swipe/drain
-        unsigned swipe_value = att_status->skill(Skill::swipe);
-        unsigned drain_value = att_status->skill(Skill::drain);
-        if (swipe_value || drain_value)
-        {
-            bool critical_reach = fd->bg_effects[fd->tapi][PassiveBGE::criticalreach];
-            auto drain_total_dmg = att_dmg;
-            unsigned adj_size = 1 + (unsigned)(critical_reach);
-            unsigned host_idx = def_status->m_index;
-            unsigned from_idx = safe_minus(host_idx, adj_size);
-            unsigned till_idx = std::min(host_idx + adj_size, safe_minus(def_assaults.size(), 1));
-            for (; from_idx <= till_idx; ++ from_idx)
-            {
-                if (from_idx == host_idx) { continue; }
-                CardStatus* adj_status = &def_assaults[from_idx];
-                if (!is_alive(adj_status)) { continue; }
-                //unsigned swipe_dmg = safe_minus(
-                //    swipe_value + drain_value + def_status->m_enfeebled,
-                //    def_status->protected_value());
-                unsigned remaining_dmg = remove_absorption(fd,adj_status,swipe_value + drain_value + adj_status->m_enfeebled);
-                remaining_dmg = safe_minus(remaining_dmg,adj_status->protected_value());
-                _DEBUG_MSG(1, "%s swipes %s for %u damage\n",
-                        status_description(att_status).c_str(),
-                        status_description(adj_status).c_str(), remaining_dmg);
-
-                remove_hp(fd, adj_status, remaining_dmg);
-                drain_total_dmg += remaining_dmg;
-            }
-            if (drain_value && skill_check<Skill::drain>(fd, att_status, nullptr))
-            {
-                _DEBUG_MSG(1, "%s drains %u hp\n",
-                        status_description(att_status).c_str(), drain_total_dmg);
-                att_status->add_hp(drain_total_dmg);
-            }
-            prepend_on_death(fd);
-            resolve_skill(fd);
-        }
+        
         // perform hunt
-        unsigned hunt_value = att_status->skill(Skill::hunt);
-        if(hunt_value)
-        {
-            CardStatus* hunted_status{select_first_enemy_assault(fd)};
-            if (hunted_status != nullptr)
-            {
-                unsigned remaining_dmg = remove_absorption(fd,hunted_status,hunt_value + hunted_status->m_enfeebled);
-                remaining_dmg = safe_minus(remaining_dmg,hunted_status->protected_value());
-                _DEBUG_MSG(1, "%s hunts %s for %u damage\n",
-                        status_description(att_status).c_str(),
-                        status_description(hunted_status).c_str(), remaining_dmg);
-
-                remove_hp(fd, hunted_status, remaining_dmg);
-
-                prepend_on_death(fd);
-                resolve_skill(fd);
-            }
-        }
+        perform_hunt(fd, att_status, def_status);
     }
     else
     {
@@ -2700,6 +2690,112 @@ bool check_and_perform_later_enhance(Field* fd, CardStatus* src)
 {
       return check_and_perform_enhance(fd,src,false);
 }
+/**
+ * @brief Perform drain skill
+ * 
+ * @param fd Field
+ * @param att_status Attacker status
+ * @param def_status Defender status
+ * @param att_dmg damage dealt by attacker
+ */
+void perform_drain(Field* fd, CardStatus* att_status, CardStatus* def_status,unsigned att_dmg) {
+        unsigned swipe_value = att_status->skill(Skill::swipe);
+        unsigned drain_value = att_status->skill(Skill::drain);
+        if (swipe_value || drain_value)
+        {
+            Storage<CardStatus>& def_assaults(fd->tip->assaults);
+            bool critical_reach = fd->bg_effects[fd->tapi][PassiveBGE::criticalreach];
+            auto drain_total_dmg = att_dmg;
+            unsigned adj_size = 1 + (unsigned)(critical_reach);
+            unsigned host_idx = def_status->m_index;
+            unsigned from_idx = safe_minus(host_idx, adj_size);
+            unsigned till_idx = std::min(host_idx + adj_size, safe_minus(def_assaults.size(), 1));
+            for (; from_idx <= till_idx; ++ from_idx)
+            {
+                if (from_idx == host_idx) { continue; }
+                CardStatus* adj_status = &def_assaults[from_idx];
+                if (!is_alive(adj_status)) { continue; }
+                //unsigned swipe_dmg = safe_minus(
+                //    swipe_value + drain_value + def_status->m_enfeebled,
+                //    def_status->protected_value());
+                unsigned remaining_dmg = remove_absorption(fd,adj_status,swipe_value + drain_value + adj_status->m_enfeebled);
+                remaining_dmg = safe_minus(remaining_dmg,adj_status->protected_value());
+                _DEBUG_MSG(1, "%s swipes %s for %u damage\n",
+                        status_description(att_status).c_str(),
+                        status_description(adj_status).c_str(), remaining_dmg);
+
+                remove_hp(fd, adj_status, remaining_dmg);
+                drain_total_dmg += remaining_dmg;
+            }
+            if (drain_value && skill_check<Skill::drain>(fd, att_status, nullptr))
+            {
+                _DEBUG_MSG(1, "%s drains %u hp\n",
+                        status_description(att_status).c_str(), drain_total_dmg);
+                att_status->add_hp(drain_total_dmg);
+            }
+            prepend_on_death(fd);
+            resolve_skill(fd);
+        }
+}
+/**
+ * @brief Perform Hunt skill
+ * 
+ * @param fd Field 
+ * @param att_status Attacker status
+ * @param def_status Defender status
+ */
+void perform_hunt(Field* fd, CardStatus* att_status, CardStatus* def_status) {
+    unsigned hunt_value = att_status->skill(Skill::hunt);
+        if(hunt_value)
+        {
+            CardStatus* hunted_status{select_first_enemy_assault(fd)};
+            if (hunted_status != nullptr)
+            {
+                unsigned remaining_dmg = remove_absorption(fd,hunted_status,hunt_value + hunted_status->m_enfeebled);
+                remaining_dmg = safe_minus(remaining_dmg,hunted_status->protected_value());
+                _DEBUG_MSG(1, "%s hunts %s for %u damage\n",
+                        status_description(att_status).c_str(),
+                        status_description(hunted_status).c_str(), remaining_dmg);
+
+                remove_hp(fd, hunted_status, remaining_dmg);
+
+                prepend_on_death(fd);
+                resolve_skill(fd);
+            }
+        }
+}
+/**
+ * @brief Perform Subdue skill
+ * 
+ * @param fd Field
+ * @param att_status Attacker status
+ * @param def_status Defender status
+ */
+void perform_subdue(Field* fd, CardStatus* att_status, CardStatus* def_status)
+{
+                // Skill: Subdue
+                unsigned subdue_value = def_status->skill(Skill::subdue);
+                if (__builtin_expect(subdue_value, false))
+                {
+                    _DEBUG_MSG(1, "%s subdues %s by %u\n",
+                            status_description(def_status).c_str(),
+                            status_description(att_status).c_str(), subdue_value);
+                    att_status->m_subdued += subdue_value;
+                    //fix negative attack
+                    if(att_status->calc_attack_power()<0)
+                    {
+                        att_status->m_temp_attack_buff -= att_status->calc_attack_power();
+                    }
+                    if (att_status->m_hp > att_status->max_hp())
+                    {
+                        _DEBUG_MSG(1, "%s loses %u HP due to subdue (max hp: %u)\n",
+                                status_description(att_status).c_str(),
+                                (att_status->m_hp - att_status->max_hp()),
+                                att_status->max_hp());
+                        att_status->m_hp = att_status->max_hp();
+                    }
+                }
+}
 bool check_and_perform_valor(Field* fd, CardStatus* src)
 {
     unsigned valor_value = src->skill(Skill::valor);
@@ -3303,7 +3399,9 @@ int evaluate_cardstatus(Field* fd,CardStatus* cs)
 	}
 	value -= (cs->m_enfeebled);
 	int denom_scale = 1+cs->m_delay*0;
+#ifdef DEBUG
 	if(value > 10000) std::cout << cs->m_card->m_name << value <<std::endl;
+#endif
 	return value /denom_scale;
 }
 // calculate a value for current field, high values are better for fd->tap
