@@ -320,7 +320,13 @@ inline void map_keys_to_set(const std::unordered_map<unsigned, unsigned>& m, std
         s.insert(it->first);
     }
 }
-
+/**
+ * @brief Subtract two unsigned integers, but return 0 if the result would be negative.
+ * 
+ * @param x value to subtract from
+ * @param y value to subtract
+ * @return unsigned result of subtraction, or 0 if the result would be negative
+ */
 inline unsigned safe_minus(unsigned x, unsigned y)
 {
     return (x > y) ? (x - y) : 0;
