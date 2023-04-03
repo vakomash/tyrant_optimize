@@ -51,7 +51,7 @@ If you want to define your own ML model follow these steps.
 
 Download the source zip from github and unzip it. Or better clone the repo
 ```
-$ git clone https://github.com/APN-Pucky/tyrant_optimize.git tuo
+$ git clone --recursive https://github.com/APN-Pucky/tyrant_optimize.git tuo
 $ cd tuo/ml
 ```
 
