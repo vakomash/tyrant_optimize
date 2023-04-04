@@ -5,11 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [6.1.0] - 2023-04-02
+## [6.1.0] - 2023-04-04
 
 - Added changes of versions [4.5.0-4.8.0] to database+ml tuo version [5.0.0-6.0.0]
 
-## [4.8.0] - 2023-04-02
+## [4.8.0] - 2023-04-04
 
 - Update subdue skill
 - Added options `update-subdue-before-attack` and `no-update-subdue-before-attack` to toggle new behaviour
