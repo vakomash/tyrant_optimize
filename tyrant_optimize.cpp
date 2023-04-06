@@ -469,10 +469,10 @@ void init()
 	fixes[Fix::dont_evade_mimic_selection] = true;
 	fixes[Fix::leech_increase_max_hp] = true;
 	fixes[Fix::subdue_before_attack] = true;
+	fixes[Fix::counter_without_damage] = true;
+	fixes[Fix::poison_after_attacked] = true;
 
-	fixes[Fix::counter_without_damage] = false;
 	fixes[Fix::corrosive_protect_armor] = false;
-	fixes[Fix::poison_after_attacked] = false;
   
   
     db_limit = -1;
