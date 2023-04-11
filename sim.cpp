@@ -840,12 +840,16 @@ struct PlayCard
             bool bge_megamorphosis = fd->bg_effects[status->m_player][PassiveBGE::megamorphosis];
             //played_status = status;
             //played_card = card;
-
+            if(__builtin_expect(fd->fixes[Fix::barrier_each_turn],true) && status->has_skill(Skill::barrier)){
+                _DEBUG_MSG(1,"%s gets barrier protection %u per turn\n",status_description(status).c_str(),status->skill(Skill::barrier));
+                status->m_protected += status->skill(Skill::barrier);
+            }
             check_and_perform_bravery(fd,status);
             if (status->m_delay == 0)
             {
                 check_and_perform_valor(fd, status);
             }
+            
 
             //refresh/init absorb
             if(status->has_skill(Skill::absorb))
@@ -1297,6 +1301,8 @@ void cooldown_skills(CardStatus * status)
 /**
  * Handle:
  * Absorb, (Activation)Summon, Bravery, (Initial)Valor, Inhibit, Sabotage, Disease, Enhance, (Cooldown/Every X) Reductions
+ * 
+ * Does not handle these skills for newly summoned units ( i.e. valor, barrier)
  **/
 void turn_start_phase_update(Field*fd,CardStatus * status)
 {
@@ -1308,10 +1314,11 @@ void turn_start_phase_update(Field*fd,CardStatus * status)
             {
                 status->m_absorption = status->skill_base_value(Skill::absorb);
             }
-            check_and_perform_bravery(fd,status);
-            if(__builtin_expect(fd->fixes[Fix::barrier_each_turn],true)){
+            if(__builtin_expect(fd->fixes[Fix::barrier_each_turn],true) && status->has_skill(Skill::barrier)){
+                _DEBUG_MSG(1,"%s gets barrier protection %u per turn\n",status_description(status).c_str(),status->skill(Skill::barrier));
                 status->m_protected += status->skill(Skill::barrier);
             }
+            check_and_perform_bravery(fd,status);
             if (status->m_delay > 0)
             {
                 _DEBUG_MSG(1, "%s reduces its timer\n", status_description(status).c_str());
