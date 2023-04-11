@@ -1,27 +1,27 @@
 // Guild War BGEs
-//Artillery: Enhance Mortar 100; Mortar all 70
-Artillery: Mortar all 70
-Divine Blessing: Heal all 120; Rally all 120; Strike all 120
-//Winter Tempest: Enhance all subdue 999; Protect All 100; Weaken All 100
-Winter Tempest: Protect All 100; Weaken All 100
+Artillery: Enhance Mortar 15; Mortar all 10
+//Artillery: Mortar all 10
+Divine Blessing: Heal all 15; Rally all 15; Strike all 15
+Winter Tempest: Enhance all subdue 125; Protect All 15; Weaken All 15
+//Winter Tempest: Protect All 15; Weaken All 15
 Charged Up: Overload all
-Progenitor Tech: Heal all 40; Protect all 40; Rally all 40; Enfeeble all 40; Strike all 40; Weaken all 40
-Plasma Burst: Heal all 60; Protect all 60; Sunder 60
-Tartarian Gift: Rally all 120; Enrage all 120
-//Combined Arms: Enhance All Coalition 70; Rally all 75; Enfeeble all 75; Strike all 75
-Combined Arms: Rally all 75; Enfeeble all 75; Strike all 75
-Inspired: Rally all 200
-Blightblast: Enfeeble all 300
-Emergency Aid: Heal All 70; Protect all 70; Enhance all Absorb 999
-Landmine: Entrap all 200; Weaken all 200
-//Triage: Enhance all Fortify 250; Heal 170; Protect 170
-Triage: Heal 170; Protect 170
-Mirror Madness: Mimic 700; Entrap all 100
-Surgical Strike: Mortar 150; Strike 200; Weaken 200
-Apocalypse: Mortar all 75; Enfeeble all 75; Strike all 75
-Minor Setback: Weaken 170; Strike 170; Mimic 170
-//Entrapment: Enhance all Counter 400; Entrap 50; Heal 50
-Entrapment: Entrap 50; Heal 50
+Progenitor Tech: Heal all 5; Protect all 5; Rally all 5; Enfeeble all 5; Strike all 5; Weaken all 5
+Plasma Burst: Heal all 10; Protect all 10; Sunder 10
+Tartarian Gift: Rally all 15; Enrage all 15
+Combined Arms: Enhance All Coalition 10; Rally all 10; Enfeeble all 10; Strike all 10
+//Combined Arms: Rally all 10; Enfeeble all 10; Strike all 10
+Inspired: Rally all 25
+Blightblast: Enfeeble all 35
+Emergency Aid: Heal All 10; Protect all 10; Enhance all Absorb 125
+Landmine: Entrap all 25; Weaken all 25
+Triage: Enhance all Fortify 35; Heal 25; Protect 25
+//Triage: Heal 25; Protect 25
+Mirror Madness: Mimic 85; Entrap all 15
+Surgical Strike: Mortar 20; Strike 25; Weaken 25
+Apocalypse: Mortar all 10; Enfeeble all 10; Strike all 10
+Minor Setback: Weaken 25; Strike 25; Mimic 25
+Entrapment: Enhance all Counter 50; Entrap 10; Heal 10
+//Entrapment: Entrap 10; Heal 10
 
 // Weird BGEs we will never ever see again
 Sulfuris Essence: Evolve All Poison Venom; Enhance All Venom 6
