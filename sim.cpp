@@ -1464,10 +1464,10 @@ void turn_end_phase(Field* fd)
                     }
                 }
                 else {
-                    unsigned poison_dmg = (status.m_poisoned +1 ) /2;
+                    unsigned poison_dmg = status.m_poisoned;
                     _DEBUG_MSG(1, "%s takes poison damage %u\n", status_description(&status).c_str(), poison_dmg);
                     remove_hp(fd, &status, poison_dmg);  // simultaneous
-                    status.m_poisoned = status.m_poisoned - poison_dmg;
+                    status.m_poisoned = status.m_poisoned - (poison_dmg+1)/2;
                 }
             }
             // end of the opponent's next turn for enemy units
