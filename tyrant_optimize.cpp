@@ -3405,6 +3405,9 @@ DeckResults run(int argc, const char **argv)
         {
             opt_todo.push_back(std::make_tuple(0u, 0u, debug));
             opt_num_threads = 1;
+            // disable saving to db
+            use_db_write= false;
+            use_db_load = false;
         }
         else if (strcmp(argv[argIndex], "debuguntil") == 0)
         {
@@ -3415,6 +3418,9 @@ DeckResults run(int argc, const char **argv)
             opt_todo.push_back(std::make_tuple((unsigned)atoi(argv[argIndex + 1]), (unsigned)atoi(argv[argIndex + 2]), debuguntil));
             opt_num_threads = 1;
             argIndex += 2;
+            // disable saving to db
+            use_db_write= false;
+            use_db_load = false;
         }
         else
         {
