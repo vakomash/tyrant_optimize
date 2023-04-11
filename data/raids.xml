@@ -947,6 +947,29 @@
 		</card_pool>
 		</deck>
 	</raid>
+    <raid>
+		<id>115</id>
+		<name>Orbocalypse Raid</name>
+		<levels>26</levels>
+		<commander>26602</commander>	<!-- Orbo Commander -->
+		<fortress_card id="19436"/> 	<!-- Orbodrive -->
+		<fortress_card id="19446"/> 	<!-- Orbopolis -->
+		<fortress_card id="19456"/> 	<!-- Orboloader -->
+		<fortress_card id="19466"/> 	<!-- Orbarricade -->
+		<fortress_card id="19476"/> 	<!-- Orbocloner -->
+		<fortress_card id="19486"/> 	<!-- Orbolauncher -->
+		<fortress_card id="19496"/> 	<!-- MirrOrbo -->
+		<fortress_card id="19506"/> 	<!-- Orbolifter -->
+		<fortress_card id="19516"/> 	<!-- Orbotaliator -->
+		<fortress_card id="19526"/> 	<!-- Orbamboozler -->
+		<deck>
+			<always_include>
+				<card replicates="7">58572</card>	<!-- Orbo (rare) -->
+				<card replicates="2">58573</card>	<!-- Orbo (mythic) -->
+				<card replicates="1">68466</card>	<!-- Orbo the Vengeful -->
+			</always_include>
+		</deck>
+	</raid>
   <!-- END of Raids -->
   <!-- Campaigns -->
   <campaign>
