@@ -844,9 +844,9 @@ struct PlayCard
                 _DEBUG_MSG(1,"%s gets barrier protection %u per turn\n",status_description(status).c_str(),status->skill(Skill::barrier));
                 status->m_protected += status->skill(Skill::barrier);
             }
-            check_and_perform_bravery(fd,status);
             if (status->m_delay == 0)
             {
+            	check_and_perform_bravery(fd,status);
                 check_and_perform_valor(fd, status);
             }
             
@@ -1304,7 +1304,7 @@ void cooldown_skills(CardStatus * status)
  * 
  * Does not handle these skills for newly summoned units ( i.e. valor, barrier)
  **/
-void turn_start_phase_update(Field*fd,CardStatus * status)
+void turn_start_phase_update(Field*fd, CardStatus * status)
 {
             //apply Absorb + Triggered\{Valor} Enhances
             check_and_perform_early_enhance(fd,status);
