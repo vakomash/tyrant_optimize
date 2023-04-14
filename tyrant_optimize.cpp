@@ -2588,7 +2588,7 @@ DeckResults run(int argc, const char **argv)
         }
         else if (strcmp(argv[argIndex], "no-strict-db") == 0)
         {
-            use_strict_db = true;
+            use_strict_db = false;
         }
         else if (strcmp(argv[argIndex], "db-limit") == 0)
         {
