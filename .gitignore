@@ -2,6 +2,7 @@ obj/**
 obj-debug/**
 obj-test/**
 data/ownedcards_*.txt
+data/database.yml
 data/customdecks_*.txt
 data/*.etg
 data/cards_section_*.xml
@@ -52,3 +53,5 @@ CMakeCache.txt
 ml/dist
 ml/tuo_ml/__pycache__
 ml/tuo_ml/*.pmml
+
+database.yml

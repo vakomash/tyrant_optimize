@@ -844,9 +844,9 @@ struct PlayCard
                 _DEBUG_MSG(1,"%s gets barrier protection %u per turn\n",status_description(status).c_str(),status->skill(Skill::barrier));
                 status->m_protected += status->skill(Skill::barrier);
             }
-            check_and_perform_bravery(fd,status);
             if (status->m_delay == 0)
             {
+            	check_and_perform_bravery(fd,status);
                 check_and_perform_valor(fd, status);
             }
             
@@ -1304,7 +1304,7 @@ void cooldown_skills(CardStatus * status)
  * 
  * Does not handle these skills for newly summoned units ( i.e. valor, barrier)
  **/
-void turn_start_phase_update(Field*fd,CardStatus * status)
+void turn_start_phase_update(Field*fd, CardStatus * status)
 {
             //apply Absorb + Triggered\{Valor} Enhances
             check_and_perform_early_enhance(fd,status);
@@ -1912,20 +1912,21 @@ void PerformAttack::damage_dependant_pre_oa<CardType::assault>()
         def_status->m_poisoned = poison_value;
     }
     }
-    else {
-        if (skill_check<Skill::venom>(fd, att_status, def_status)) {
+    else {	    
+        unsigned venom_value = att_status->skill(Skill::venom);
+        if (venom_value > 0 && skill_check<Skill::venom>(fd, att_status, def_status)) {
 #ifndef NQUEST
-        if (att_status->m_player == 0)
-        {
-            fd->inc_counter(QuestType::skill_use, Skill::venom);
-        }
+              if (att_status->m_player == 0)
+              {
+                 fd->inc_counter(QuestType::skill_use, Skill::venom);
+              }
 #endif
-            unsigned venom_value = att_status->skill(Skill::venom);
-            _DEBUG_MSG(1, "%s venoms %s by %u\n",
-                status_description(att_status).c_str(),
-                status_description(def_status).c_str(), venom_value);
-            // new venom keeps adding stacks
-            def_status->m_poisoned += venom_value;
+
+              _DEBUG_MSG(1, "%s venoms %s by %u\n",
+                  status_description(att_status).c_str(),
+                  status_description(def_status).c_str(), venom_value);
+              // new venom keeps adding stacks
+              def_status->m_poisoned += venom_value;
         }
     }
 }

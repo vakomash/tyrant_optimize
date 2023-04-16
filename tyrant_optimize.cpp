@@ -289,15 +289,19 @@ void load_db(std::string prefix)
         {
             if (version.compare(TYRANT_OPTIMIZER_VERSION) != 0)
             {
-                std::cout << "TUO DB version, please delete database.yml and restart" << std::endl;
-                std::cout << "TUO DB version " << version << " != " << TYRANT_OPTIMIZER_VERSION << std::endl;
-                exit(1);
+                std::cout << "DB TUO version outdated" << std::endl;
+                std::cout << "DB TUO version " << version << " != " << TYRANT_OPTIMIZER_VERSION << std::endl;
+                std::cout << "DB ignoring database.yml" << std::endl;
+                use_db_load = false;
+                return;
             }
             if (check.compare(std::to_string(checksumcards(prefix))) != 0)
             {
-                std::cout << "cards_sections mismatch to db, please delete database.yml and restart" << std::endl;
-                std::cout << "cards_sections checksum " << checksumcards(prefix) << " != " << check << std::endl;
-                exit(1);
+                std::cout << "DB cards_sections mismatch to db" << std::endl;
+                std::cout << "DB cards_sections checksum " << checksumcards(prefix) << " != " << check << std::endl;
+                std::cout << "DB ignoring database.yml" << std::endl;
+                use_db_load = false;
+                return;
             }
         }
 
@@ -476,7 +480,7 @@ void init()
   
   
     db_limit = -1;
-    use_strict_db = false;
+    use_strict_db = true;
     use_db_write = true;
     use_db_load = true;
 
@@ -2581,6 +2585,10 @@ DeckResults run(int argc, const char **argv)
         else if (strcmp(argv[argIndex], "strict-db") == 0)
         {
             use_strict_db = true;
+        }
+        else if (strcmp(argv[argIndex], "no-strict-db") == 0)
+        {
+            use_strict_db = false;
         }
         else if (strcmp(argv[argIndex], "db-limit") == 0)
         {
