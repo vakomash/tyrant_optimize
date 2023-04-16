@@ -2582,9 +2582,16 @@ DeckResults run(int argc, const char **argv)
             use_db_load = false;
             use_db_write = false;
         }
+        else if (strcmp(argv[argIndex], "db") == 0)
+        {
+            use_db_load = true;
+            use_db_write = true;
+        }
         else if (strcmp(argv[argIndex], "strict-db") == 0)
         {
             use_strict_db = true;
+            use_db_load = true;
+            use_db_write = true;
         }
         else if (strcmp(argv[argIndex], "no-strict-db") == 0)
         {
