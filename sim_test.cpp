@@ -150,8 +150,8 @@ inline void check_win_sim(TestInfo ti)
     const char *argv[] = {"tuo", ti.your_deck.c_str(), ti.enemy_deck.c_str(), "-e", ti.bge.c_str(), "sim", ii, "seed", iii, "prefix", "tests/sim/"}; // much output on error?! // better 100 iterations for test, 10 for checking errors
     // const char* argv[] = {"tuo",ti.your_deck.c_str(),ti.enemy_deck.c_str(),"-e",ti.bge.c_str(),"sim", ii,"seed", iii}; //much output on error?! // better 100 iterations for test, 10 for checking errors
     Result result(run_sim(sizeof(argv) / sizeof(*argv), argv));
-    delete ii;
-    delete iii;
+    delete[] ii;
+    delete[] iii;
     // result.second += "\nTest: " + ti.your_deck + "; " + ti.enemy_deck + "; " + ti.bge;
     check_win(result);
 }
@@ -169,8 +169,8 @@ inline double time_db_sim(std::string gnt1, std::string gnt2)
     const char *argv[] = {"tuo", gnt1.c_str(), gnt2.c_str(), "sim", ii, "seed", iii, "prefix", "tests/db/", "no-db-load"}; // much output on error?! // better 100 iterations for test, 10 for checking errors
     // const char* argv[] = {"tuo",ti.your_deck.c_str(),ti.enemy_deck.c_str(),"-e",ti.bge.c_str(),"sim", ii,"seed", iii}; //much output on error?! // better 100 iterations for test, 10 for checking errors
     Result result(run_sim(sizeof(argv) / sizeof(*argv), argv));
-    delete ii;
-    delete iii;
+    delete[] ii;
+    delete[] iii;
     // result.second += "\nTest: " + ti.your_deck + "; " + ti.enemy_deck + "; " + ti.bge;
     // check_win(result);
     return std::get<2>(result);
@@ -186,11 +186,11 @@ inline double time_db(std::string gnt1, std::string gnt2)
     s = std::to_string(seed);
     char *iii = new char[s.length()];
     strcpy(iii, s.c_str());
-    const char *argv[] = {"tuo", gnt1.c_str(), gnt2.c_str(), "sim", ii, "seed", iii, "prefix", "tests/ml/", "db"}; // much output on error?! // better 100 iterations for test, 10 for checking errors
+    const char *argv[] = {"tuo", gnt1.c_str(), gnt2.c_str(), "sim", ii, "seed", iii, "prefix", "tests/db/", "db"}; // much output on error?! // better 100 iterations for test, 10 for checking errors
     // const char* argv[] = {"tuo",ti.your_deck.c_str(),ti.enemy_deck.c_str(),"-e",ti.bge.c_str(),"sim", ii,"seed", iii}; //much output on error?! // better 100 iterations for test, 10 for checking errors
     Result result(run_sim(sizeof(argv) / sizeof(*argv), argv));
-    delete ii;
-    delete iii;
+    delete[] ii;
+    delete[] iii;
     // result.second += "\nTest: " + ti.your_deck + "; " + ti.enemy_deck + "; " + ti.bge;
     // check_win(result);
     return std::get<2>(result);
@@ -209,8 +209,8 @@ inline double time_ml_sim(std::string gnt1, std::string gnt2)
     const char *argv[] = {"tuo", gnt1.c_str(), gnt2.c_str(), "sim", ii, "seed", iii, "prefix", "tests/ml/", "no-db-load"}; // much output on error?! // better 100 iterations for test, 10 for checking errors
     // const char* argv[] = {"tuo",ti.your_deck.c_str(),ti.enemy_deck.c_str(),"-e",ti.bge.c_str(),"sim", ii,"seed", iii}; //much output on error?! // better 100 iterations for test, 10 for checking errors
     Result result(run_sim(sizeof(argv) / sizeof(*argv), argv));
-    delete ii;
-    delete iii;
+    delete[] ii;
+    delete[] iii;
     // result.second += "\nTest: " + ti.your_deck + "; " + ti.enemy_deck + "; " + ti.bge;
     // check_win(result);
     return std::get<2>(result);
@@ -229,8 +229,8 @@ inline double time_ml(std::string gnt1, std::string gnt2)
     const char *argv[] = {"tuo", gnt1.c_str(), gnt2.c_str(), "sim", ii, "seed", iii, "prefix", "tests/ml/", "no-db", "ml"}; // much output on error?! // better 100 iterations for test, 10 for checking errors
     // const char* argv[] = {"tuo",ti.your_deck.c_str(),ti.enemy_deck.c_str(),"-e",ti.bge.c_str(),"sim", ii,"seed", iii}; //much output on error?! // better 100 iterations for test, 10 for checking errors
     Result result(run_sim(sizeof(argv) / sizeof(*argv), argv));
-    delete ii;
-    delete iii;
+    delete[] ii;
+    delete[] iii;
     // result.second += "\nTest: " + ti.your_deck + "; " + ti.enemy_deck + "; " + ti.bge;
     // check_win(result);
     return std::get<2>(result);
@@ -265,8 +265,8 @@ inline void check_algo(std::string gnt1, std::string gnt2, std::string algo)
     // Rerun sim with optimized deck to check if algo produced wrong sim result
     const char *argv3[] = {"tuo", std::get<3>(result).c_str(), gnt2.c_str(), "sim", ii, "seed", iii, "prefix", "tests/algo/", "no-db"};
     Result result_opt(run_sim(sizeof(argv3) / sizeof(*argv3), argv3));
-    delete ii;
-    delete iii;
+    delete[] ii;
+    delete[] iii;
     BOOST_CHECK_MESSAGE(std::get<0>(result_sim).wins <= std::get<0>(result_opt).wins,
                         std::get<1>(result_sim) + "\n" + std::get<1>(result_opt) + "\nWrongly from " + algo + ": " +
                             std::to_string(std::get<0>(result_sim).wins) + ">" + std::to_string(std::get<0>(result_opt).wins));
@@ -295,10 +295,10 @@ inline void check_anneal(std::string gnt1, std::string gnt2)
     // Rerun sim with optimized deck to check if algo produced wrong sim result
     const char *argv3[] = {"tuo", std::get<3>(result).c_str(), gnt2.c_str(), "sim", ii, "seed", iii, "prefix", "tests/algo/", "no-db"};
     Result result_opt(run_sim(sizeof(argv3) / sizeof(*argv3), argv3));
-    delete ii;
-    delete iii;
-    delete iv;
-    delete v;
+    delete[] ii;
+    delete[] iii;
+    delete[] iv;
+    delete[] v;
     BOOST_CHECK_MESSAGE(std::get<0>(result_sim).wins <= std::get<0>(result_opt).wins,
                         std::get<1>(result_sim) + "\n" + std::get<1>(result_opt) + "\nWrongly from " + algo + ": " +
                             std::to_string(std::get<0>(result_sim).wins) + ">" + std::to_string(std::get<0>(result_opt).wins));
@@ -323,9 +323,9 @@ inline void check_climbex(std::string gnt1, std::string gnt2)
     // Rerun sim with optimized deck to check if algo produced wrong sim result
     const char *argv3[] = {"tuo", std::get<3>(result).c_str(), gnt2.c_str(), "sim", ii, "seed", iii, "prefix", "tests/algo/", "no-db"};
     Result result_opt(run_sim(sizeof(argv3) / sizeof(*argv3), argv3));
-    delete ii;
-    delete iii;
-    delete iv;
+    delete[] ii;
+    delete[] iii;
+    delete[] iv;
     BOOST_CHECK_MESSAGE(std::get<0>(result_sim).wins <= std::get<0>(result_opt).wins,
                         std::get<1>(result_sim) + "\n" + std::get<1>(result_opt) + "\nWrongly from " + algo + ": " +
                             std::to_string(std::get<0>(result_sim).wins) + ">" + std::to_string(std::get<0>(result_opt).wins));
@@ -351,9 +351,9 @@ inline void check_climb_forts(std::string gnt1, std::string gnt2, std::string yf
     // Rerun sim with optimized deck to check if algo produced wrong sim result
     // const char* argv3[] = {"tuo",gnt1.c_str(),gnt2.c_str(),"sim",ii, "seed", iii,  "yf",std::get<3>(result).c_str(), "yfpool","2", "ef", ef.c_str(), "efpool", "2","prefix" , "tests/algo/", "no-db"};
     // Result result_opt(run_sim(sizeof(argv3)/sizeof(*argv3),argv3));
-    delete ii;
-    delete iii;
-    delete iv;
+    delete[] ii;
+    delete[] iii;
+    delete[] iv;
     BOOST_CHECK_MESSAGE(std::get<0>(result_sim).wins <= std::get<0>(result_opt).wins,
                         std::get<1>(result_sim) + "\n" + std::get<1>(result_opt) + "\nWrongly from " + algo + ": " +
                             std::to_string(std::get<0>(result_sim).wins) + ">" + std::to_string(std::get<0>(result_opt).wins));
