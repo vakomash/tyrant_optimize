@@ -508,8 +508,8 @@ BOOST_AUTO_TEST_CASE(test_db_init)
 BOOST_AUTO_TEST_SUITE(test_db_scaling)
 BOOST_AUTO_TEST_CASE(test_db_scaling)
 {
-    auto t1 = time_sim("Mission#134", "Savatage");
-    auto t2 = time_db("Mission#134", "Savatage");
+    auto t1 = time_sim("Sir Alaric the Swift-1, Broodmother's Nexus-6, Mystic Gatekeeper-6, Ruthless Pursuer-6, Maculakornos-6, Primal Yeren-6, Megalift Foundry-6, Kinaxa Soulspark-6, Mangler of Existence-6, Mangler of Existence-6, Eranore's Obstructor-6, Eranore's Obstructor-6, ", "Sir Alaric the Swift-1, Broodmother's Nexus-6, Mystic Gatekeeper-6, Ruthless Pursuer-6, Maculakornos-6, Primal Yeren-6, Megalift Foundry-6, Kinaxa Soulspark-6, Mangler of Existence-6, Mangler of Existence-6, Eranore's Obstructor-6, Eranore's Obstructor-6,");
+    auto t2 = time_ml("Sir Alaric the Swift-1, Broodmother's Nexus-6, Mystic Gatekeeper-6, Ruthless Pursuer-6, Maculakornos-6, Primal Yeren-6, Megalift Foundry-6, Kinaxa Soulspark-6, Mangler of Existence-6, Mangler of Existence-6, Eranore's Obstructor-6, Eranore's Obstructor-6, ", "Sir Alaric the Swift-1, Broodmother's Nexus-6, Mystic Gatekeeper-6, Ruthless Pursuer-6, Maculakornos-6, Primal Yeren-6, Megalift Foundry-6, Kinaxa Soulspark-6, Mangler of Existence-6, Mangler of Existence-6, Eranore's Obstructor-6, Eranore's Obstructor-6,");
     BOOST_CHECK_MESSAGE(t1 > t2, "DB time improvement failed: " + std::to_string(t1) + " > " + std::to_string(t2));
 }
 BOOST_AUTO_TEST_SUITE_END()
