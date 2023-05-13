@@ -206,7 +206,7 @@ inline double time_ml_sim(std::string gnt1, std::string gnt2)
     s = std::to_string(seed);
     char *iii = new char[s.length()];
     strcpy(iii, s.c_str());
-    const char *argv[] = {"tuo", gnt1.c_str(), gnt2.c_str(), "sim", ii, "seed", iii, "prefix", "tests/db/", "no-db-load"}; // much output on error?! // better 100 iterations for test, 10 for checking errors
+    const char *argv[] = {"tuo", gnt1.c_str(), gnt2.c_str(), "sim", ii, "seed", iii, "prefix", "tests/ml/", "no-db-load"}; // much output on error?! // better 100 iterations for test, 10 for checking errors
     // const char* argv[] = {"tuo",ti.your_deck.c_str(),ti.enemy_deck.c_str(),"-e",ti.bge.c_str(),"sim", ii,"seed", iii}; //much output on error?! // better 100 iterations for test, 10 for checking errors
     Result result(run_sim(sizeof(argv) / sizeof(*argv), argv));
     delete ii;
@@ -226,7 +226,7 @@ inline double time_ml(std::string gnt1, std::string gnt2)
     s = std::to_string(seed);
     char *iii = new char[s.length()];
     strcpy(iii, s.c_str());
-    const char *argv[] = {"tuo", gnt1.c_str(), gnt2.c_str(), "sim", ii, "seed", iii, "prefix", "tests/db/", "no-db", "ml"}; // much output on error?! // better 100 iterations for test, 10 for checking errors
+    const char *argv[] = {"tuo", gnt1.c_str(), gnt2.c_str(), "sim", ii, "seed", iii, "prefix", "tests/ml/", "no-db", "ml"}; // much output on error?! // better 100 iterations for test, 10 for checking errors
     // const char* argv[] = {"tuo",ti.your_deck.c_str(),ti.enemy_deck.c_str(),"-e",ti.bge.c_str(),"sim", ii,"seed", iii}; //much output on error?! // better 100 iterations for test, 10 for checking errors
     Result result(run_sim(sizeof(argv) / sizeof(*argv), argv));
     delete ii;
