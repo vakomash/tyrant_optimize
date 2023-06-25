@@ -1358,9 +1358,9 @@ inline bool Process::check_db(std::vector<std::array<std::string, 3>> const &vha
     bool run = false;
     // TODO TUO5 check db for results
     //  TODO TUO5 calculate mask for sim evaluate based on missing results in db
-    bool found = false;
     for (unsigned i = 0; i < vhashes.size(); i++)
     {
+        bool found = false;
         std::string hash = vhashes[i][0];
         // TODO TUO5 check db for hash
         auto it1 = database.find(hash);
