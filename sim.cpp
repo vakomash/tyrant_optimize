@@ -1620,6 +1620,10 @@ struct PerformAttack
 
             if ( __builtin_expect(fd->fixes[Fix::subdue_before_attack],true)) {
                 perform_subdue(fd, att_status, def_status);
+                if(att_status->attack_power() == 0) // MK - 05/01/2023 6:58 AM: "Previously, when an attack was made, it checked if it had 0 attack and canceled. Now, after that check, it applies Subdue and checks again if it has 0 attack, and then cancels the rest of the attack.Previously, when an attack was made, it checked if it had 0 attack and canceled. Now, after that check, it applies Subdue and checks again if it has 0 attack, and then cancels the rest of the attack."
+                { 
+                    return 0; 
+                }
             }
 
             modify_attack_damage<def_cardtype>(pre_modifier_dmg);
