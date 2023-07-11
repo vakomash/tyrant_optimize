@@ -281,7 +281,7 @@ inline unsigned CardStatus::attack_power() const
  * @brief Calculate the attack power of the CardStatus.
  * 
  * The attack power is the base attack plus. 
- * The subdued value gets subtracted from the permanet attack buff, if this is above zero it is added to the attack power.
+ * The subdued value gets subtracted from the permanent attack buff, if this is above zero it is added to the attack power.
  * The corroded value gets subtracted from the attack power, but not below zero.
  * Finally the temporary attack buff is added.
  * 
@@ -289,12 +289,23 @@ inline unsigned CardStatus::attack_power() const
  */
 inline signed CardStatus::calc_attack_power() const
 {
-    return
+    if(__builtin_expect(this->m_field->fixes[Fix::corrosive_protect_armor],true)) // MK - 05/01/2023 6:58 AM: "Corrosive now counts as temporary attack reduction instead of permanent, so it is calculated after Subdue and can now counter Rally even if the permanent attack is zeroed."
+    {
+        return
+        (signed)safe_minus(
+                m_card->m_attack + safe_minus(m_perm_attack_buff, m_subdued)+ m_temp_attack_buff,
+                m_corroded_weakened
+                );
+    }
+    else{
+        return
         (signed)safe_minus(
                 m_card->m_attack + safe_minus(m_perm_attack_buff, m_subdued),
                 m_corroded_weakened
                 )
         + m_temp_attack_buff;
+    }
+
 }
 //------------------------------------------------------------------------------
 const Card* card_by_id_safe(const Cards& cards, const unsigned card_id)
@@ -1037,6 +1048,7 @@ struct PlayCard
             status->set(card);
             status->m_index = storage->size() - 1;
             status->m_player = actor_index;
+            status->m_field = fd;
 #ifndef NQUEST
             if (actor_index == 0)
             {
@@ -1628,7 +1640,7 @@ struct PerformAttack
             {
                 perform_counter<def_cardtype>(fd, att_status, def_status);    
             }
-            if (is_alive(att_status) && (__builtin_expect(fd->fixes[Fix::corrosive_protect_armor],true) ||att_dmg ))
+            if (is_alive(att_status) && (__builtin_expect(fd->fixes[Fix::corrosive_protect_armor],true) ||att_dmg )) // MK - 05/01/2023 6:58 AM: "Corrosive will apply to an attacker even if the attack did 0 damage, just like new Counter"
             {
                 perform_corrosive(fd, att_status, def_status);
             }
@@ -1832,7 +1844,8 @@ struct PerformAttack
 #endif
                 reduced_dmg = safe_minus(reduced_dmg, rupture_value);
             }
-            if(__builtin_expect(fd->fixes[Fix::corrosive_protect_armor],true)) {
+            if(__builtin_expect(fd->fixes[Fix::corrosive_protect_armor],true)) // MK - 05/01/2023 6:58 AM: "Corrosive status reduces protection from attacks (equivalent to giving the attacker Pierce X). Note that the value is equal to initial Corrosive application, not attack removed."
+            {
                 unsigned corrosive_value = def_status->m_corroded_rate;
                 if (reduced_dmg > 0 && corrosive_value > 0)
                 {
