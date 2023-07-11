@@ -468,7 +468,7 @@ void init()
     fixes[Fix::revenge_on_death] = true;
     fixes[Fix::death_from_bge] = true;
     fixes[Fix::legion_under_mega] = true;
-
+    // Sort of a misnomer, but updated skills are also treated as fixes
 	fixes[Fix::barrier_each_turn] = true;
 	fixes[Fix::dont_evade_mimic_selection] = true;
 	fixes[Fix::leech_increase_max_hp] = true;
@@ -476,7 +476,7 @@ void init()
 	fixes[Fix::counter_without_damage] = true;
 	fixes[Fix::poison_after_attacked] = true;
 
-	fixes[Fix::corrosive_protect_armor] = false;
+	fixes[Fix::corrosive_protect_armor] = true;
   
   
     db_limit = -1;
@@ -3024,7 +3024,7 @@ DeckResults run(int argc, const char **argv)
         {
             fixes[Fix::legion_under_mega] = true;
         }
-    else if (strcmp(argv[argIndex], "update-barrier-each-turn") == 0)
+        else if (strcmp(argv[argIndex], "update-barrier-each-turn") == 0)
 		{
 			fixes[Fix::barrier_each_turn] = true;
 		}
