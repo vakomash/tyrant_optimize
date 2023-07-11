@@ -1628,7 +1628,7 @@ struct PerformAttack
             {
                 perform_counter<def_cardtype>(fd, att_status, def_status);    
             }
-            if (is_alive(att_status) && att_dmg)
+            if (is_alive(att_status) && (__builtin_expect(fd->fixes[Fix::corrosive_protect_armor],true) ||att_dmg ))
             {
                 perform_corrosive(fd, att_status, def_status);
             }
@@ -1786,7 +1786,7 @@ struct PerformAttack
 #ifndef NDEBUG
             std::string reduced_desc;
 #endif
-            unsigned reduced_dmg(0);
+            unsigned reduced_dmg(0); // damage reduced by armor, protect and in turn again canceled by pierce, etc.
             unsigned armor_value = 0;
             // Armor
             if (def_status->m_card->m_type == CardType::assault) {
@@ -1816,13 +1816,31 @@ struct PerformAttack
 #endif
                 reduced_dmg += def_status->protected_value();
             }
-            unsigned pierce_value = att_status->skill(Skill::pierce) + att_status->skill(Skill::rupture);
+            unsigned pierce_value = att_status->skill(Skill::pierce);
             if (reduced_dmg > 0 && pierce_value > 0)
             {
 #ifndef NDEBUG
                 if (debug_print > 0) { reduced_desc += "-" + tuo::to_string(pierce_value) + "(pierce)"; }
 #endif
                 reduced_dmg = safe_minus(reduced_dmg, pierce_value);
+            }
+            unsigned rupture_value = att_status->skill(Skill::rupture);
+            if (reduced_dmg > 0 && rupture_value > 0)
+            {
+#ifndef NDEBUG
+                if (debug_print > 0) { reduced_desc += "-" + tuo::to_string(rupture_value) + "(rupture)"; }
+#endif
+                reduced_dmg = safe_minus(reduced_dmg, rupture_value);
+            }
+            if(__builtin_expect(fd->fixes[Fix::corrosive_protect_armor],true)) {
+                unsigned corrosive_value = def_status->m_corroded_rate;
+                if (reduced_dmg > 0 && corrosive_value > 0)
+                {
+#ifndef NDEBUG
+                    if (debug_print > 0) { reduced_desc += "-" + tuo::to_string(corrosive_value) + "(corrosive)"; }
+#endif
+                    reduced_dmg = safe_minus(reduced_dmg, corrosive_value);
+                }
             }
             att_dmg = safe_minus(att_dmg, reduced_dmg);
 #ifndef NDEBUG
