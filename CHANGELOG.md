@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.5.0] - 2024-03-15
+
 ### Added
 
 - more tests of skills and bges (#66, #71)
@@ -19,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - memory leak in test runs (#71)
 - segfault on missing operation (#71)
 
-## [6.5.0] - 2023-07-11
+## [6.5.0-alpha] - 2023-07-11
 
 - Updated Subdue skill now cancels an attack, if subdue reduces the attack to 0
 - Update corrosive skill
