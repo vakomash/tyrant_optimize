@@ -268,6 +268,7 @@ void load_db(std::string prefix)
 {
     if (use_db_load)
     {
+        _DEBUG_MSG(1, "start loading db\n");
         // open file to read from
         std::ifstream file;
         file.open(prefix + "data/database.yml");
@@ -333,6 +334,7 @@ void load_db(std::string prefix)
         }
         // close file
         file.close();
+        _DEBUG_MSG(1, "done loading db\n");
     }
 }
 
@@ -341,6 +343,7 @@ void write_db(std::string prefix)
 {
     if (use_db_write)
     {
+        _DEBUG_MSG(1, "start writing to db\n");
         // open file to write to
         std::ofstream file;
         file.open(prefix + "data/database.yml");
@@ -365,11 +368,14 @@ void write_db(std::string prefix)
         }
         // close file
         file.close();
+        _DEBUG_MSG(1, "done writing to db\n");
     }
 }
 
 void init()
 {
+    debug_str.clear();
+    database.clear();
     thread_num_iterations = 0; // written by threads
     thread_results = nullptr;  // written by threads
     thread_best_results = nullptr;
@@ -455,9 +461,7 @@ void init()
     prefered_skills.clear();
     prefered_factor = 3;
 
-    for (Card *c : all_cards.all_cards)
-        delete c; // prevent memory leak
-    all_cards.visible_cardset.clear();
+    all_cards.clear();
 
     // fix defaults
     for (int i = 0; i < Fix::num_fixes; ++i)
@@ -542,8 +546,11 @@ extern "C" JNIEXPORT void
         }
         char buffer[bufsize];
     };
-    std::cout.rdbuf(new androidbuf);
-    std::cerr.rdbuf(new androidbuf);
+    // TODO should these news be deleted at some point?
+    auto ao = new androidbuf();
+    auto ae = new androidbuf();
+    std::cout.rdbuf(ao);
+    std::cerr.rdbuf(ae);
     __android_log_write(ANDROID_LOG_DEBUG, "TUO_TUO", "START");
     int stringCount = env->GetArrayLength(stringArray);
     char **param = new char *[stringCount];
@@ -566,6 +573,11 @@ extern "C" JNIEXPORT void
     }
     // std::string text = "return";
     // return env->NewStringUTF(text.c_str());
+    delete[] param;
+    delete[] cparam;
+    delete[] strs;
+    delete ao;
+    delete ae;
 }
 
 extern "C" JNIEXPORT jstring
@@ -3449,9 +3461,11 @@ DeckResults run(int argc, const char **argv)
 #ifdef _OPENMP
     opt_num_threads = omp_get_max_threads();
 #endif
-    // TODO delete ? since prefix/suffix might change we reload all cards.
-    // if(all_cards.all_cards.size()>0) delete(&all_cards); // complains invalid pointer
-    // all_cards.organize();
+    // delete, since prefix/suffix might change we reload all cards.
+    // redundant to calling init() before run()
+    all_cards.clear();
+    owned_alpha_dominion = nullptr;
+
     all_cards = Cards();
     Decks decks;
     std::unordered_map<std::string, std::string> bge_aliases;
@@ -4071,6 +4085,8 @@ DeckResults run(int argc, const char **argv)
 
     auto your_deck = your_decks[0];
 
+    if (!opt_todo.empty())
+    {
     auto op = opt_todo.back();
     // for (auto op: opt_todo)
     {
@@ -4197,6 +4213,10 @@ DeckResults run(int argc, const char **argv)
         }
     }
     write_db(prefix);
+    }
+    else {
+        std::cout << "No operation specified" << std::endl;
+    }
     return fr;
 }
 
@@ -4396,7 +4416,6 @@ int main(int argc, const char **argv)
         usage(argc, argv);
         return 255;
     }
-    // init();
     start(argc, argv);
     return 0;
 }

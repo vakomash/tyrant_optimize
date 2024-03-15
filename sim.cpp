@@ -1435,6 +1435,8 @@ void turn_end_phase(Field* fd)
             {
                 continue;
             }
+            // reset the structure's (barrier) protect
+            status.m_protected = 0;
             status.m_evaded = 0;  // so far only useful in Inactive turn
         }
     }
@@ -1608,6 +1610,7 @@ struct PerformAttack
         {
             unsigned pre_modifier_dmg = att_status->attack_power();
             // Bug fix? 2023-04-03 a card with zero attack power can not attack and won't trigger subdue
+            // Confirmed subdue behaviour by MK 2023-07-12
             if(pre_modifier_dmg == 0) { return 0; }
 
 
@@ -2289,12 +2292,25 @@ inline void perform_skill<Skill::fortify>(Field* fd, CardStatus* src, CardStatus
 {
     dst->ext_hp(s.x);
 }
+
+    template<>
+inline void perform_skill<Skill::siege>(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s)
+{ 
+    //only structures can be sieged
+    _DEBUG_ASSERT(dst->m_card->m_type != CardType::assault);
+    _DEBUG_ASSERT(dst->m_card->m_type != CardType::commander);
+    unsigned siege_dmg = remove_absorption(fd,dst,s.x);
+    // structure should not have protect normally..., but let's allow it for barrier support
+    siege_dmg = safe_minus(siege_dmg, src->m_overloaded ? 0 : dst->m_protected);
+    remove_hp(fd, dst, siege_dmg);
+}
+
     template<>
 inline void perform_skill<Skill::mortar>(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s)
 {
     if (dst->m_card->m_type == CardType::structure)
     {
-        remove_hp(fd, dst, remove_absorption(fd,dst,s.x));
+        perform_skill<Skill::siege>(fd, src, dst, s);
     }
     else
     {
@@ -2353,12 +2369,6 @@ inline void perform_skill<Skill::rush>(Field* fd, CardStatus* src, CardStatus* d
         check_and_perform_valor(fd, dst);
         if(dst->m_card->m_skill_trigger[Skill::summon] == Skill::Trigger::activate)check_and_perform_summon(fd, dst);
     }
-}
-
-    template<>
-inline void perform_skill<Skill::siege>(Field* fd, CardStatus* src, CardStatus* dst, const SkillSpec& s)
-{
-    remove_hp(fd, dst, remove_absorption(fd,dst,s.x));
 }
 
     template<>
