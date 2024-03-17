@@ -3268,6 +3268,8 @@ DeckResults run(int argc, const char **argv)
         }
         
         if (!tokenParsed)
+        {
+        //no indent: keep two parts of a nested if at the same level
         if (strcmp(argv[argIndex], "genetic") == 0)
         {
             if (check_input_amount(argc, argv, argIndex, 1))
@@ -3467,6 +3469,7 @@ DeckResults run(int argc, const char **argv)
             std::cerr << "Error: Unknown option " << argv[argIndex] << std::endl;
             exit(1);
         }
+        } // if (tokenParsed)
     }
     load_db(prefix);
     load_ml(prefix);
